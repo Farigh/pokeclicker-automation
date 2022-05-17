@@ -1,11 +1,21 @@
-var autoClickEnabled = true;
-var hatcheryAutomationEnabled = true;
-var autoFarmingEnabled = true;
-var autoMiningEnabled = true;
+function initializeAutomationStatus(automationName)
+{
+    // Enable automation by default, in not already set in cookies
+    if (localStorage.getItem(automationName) == null)
+    {
+        localStorage.setItem(automationName, true)
+    }
+}
+
+initializeAutomationStatus('autoClickEnabled');
+initializeAutomationStatus('hatcheryAutomationEnabled');
+initializeAutomationStatus('autoFarmingEnabled');
+initializeAutomationStatus('autoMiningEnabled');
 
 function addAutomationButton(name, id)
 {
-    return name + ' : <button id="' + id + '" class="btn btn-success" style="width: 30px; height: 20px; padding:0px; border: 0px;" type="button">On</button><br>'
+    button_class = (localStorage.getItem(id) == "true") ? "btn-success" : "btn-danger";
+    return name + ' : <button id="' + id + '" class="btn ' + button_class + '" style="width: 30px; height: 20px; padding:0px; border: 0px;" type="button">On</button><br>'
 }
 
 function sendAutomationNotif(message_to_display)
@@ -31,37 +41,40 @@ document.body.appendChild(node);
 node.innerHTML = '<div id="clickBody" style="background-color:#444444; border-radius:5px; padding:5px 0px 10px 0px; border:solid #AAAAAA 1px;">'
                +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">Automation</div>'
                +     '<div style="padding:0px 10px; line-height:24px;">'
-               +         addAutomationButton("AutoClick", "toggleClick")
-               +         addAutomationButton("Hatchery", "toggleHatchery")
-               +         addAutomationButton("Farming", "toggleFarming")
-               +         addAutomationButton("Mining", "toggleMining")
+               +         addAutomationButton("AutoClick", "autoClickEnabled")
+               +         addAutomationButton("Hatchery", "hatcheryAutomationEnabled")
+               +         addAutomationButton("Farming", "autoFarmingEnabled")
+               +         addAutomationButton("Mining", "autoMiningEnabled")
                +     '</div>'
                + '</div>';
 
-document.getElementById('toggleClick').addEventListener('click', ToggleAutoClick, false);
-document.getElementById('toggleHatchery').addEventListener('click', ToggleHatcheryAutomation, false);
-document.getElementById('toggleFarming').addEventListener('click', ToggleFarmingAutomation, false);
-document.getElementById('toggleMining').addEventListener('click', ToggleMiningAutomation, false);
+document.getElementById('autoClickEnabled').addEventListener('click', ToggleAutoClick, false);
+document.getElementById('hatcheryAutomationEnabled').addEventListener('click', ToggleHatcheryAutomation, false);
+document.getElementById('autoFarmingEnabled').addEventListener('click', ToggleFarmingAutomation, false);
+document.getElementById('autoMiningEnabled').addEventListener('click', ToggleMiningAutomation, false);
 
 /*****************************\
         AUTO BATTLE
 \*****************************/
 
-function ToggleAutoClick(){
-    autoClickEnabled = !autoClickEnabled;
-    var button = document.getElementById('toggleClick');
-    if (!autoClickEnabled)
-    {
-        button.classList.remove('btn-success');
-        button.classList.add('btn-danger');
-        button.innerText = 'Off';
-    }
-    else
+function ToggleAutoClick()
+{
+    newStatus = !(localStorage.getItem('autoClickEnabled') == "true");
+    var button = document.getElementById('autoClickEnabled');
+    if (newStatus)
     {
         button.classList.remove('btn-danger');
         button.classList.add('btn-success');
         button.innerText = 'On';
     }
+    else
+    {
+        button.classList.remove('btn-success');
+        button.classList.add('btn-danger');
+        button.innerText = 'Off';
+    }
+
+    localStorage.setItem('autoClickEnabled', newStatus);
 }
 
 // Based on : https://github.com/ivanlay/pokeclicker-automator/blob/main/auto_clicker.js
@@ -70,7 +83,7 @@ function autoClicker()
 {
     var autoClickerLoop = setInterval(function ()
     {
-        if (autoClickEnabled)
+        if (localStorage.getItem('autoClickEnabled') == "true")
         {
             // Click while in a normal battle
             if (App.game.gameState == GameConstants.GameState.fighting)
@@ -117,9 +130,9 @@ function autoClicker()
 \*****************************/
 
 function ToggleHatcheryAutomation(){
-    hatcheryAutomationEnabled = !hatcheryAutomationEnabled;
-    var button = document.getElementById('toggleHatchery');
-    if (hatcheryAutomationEnabled)
+    newStatus = !(localStorage.getItem('hatcheryAutomationEnabled') == "true");
+    var button = document.getElementById('hatcheryAutomationEnabled');
+    if (newStatus)
     {
         button.classList.remove('btn-danger');
         button.classList.add('btn-success');
@@ -131,6 +144,8 @@ function ToggleHatcheryAutomation(){
         button.classList.add('btn-danger');
         button.innerText = 'Off';
     }
+
+    localStorage.setItem('hatcheryAutomationEnabled', newStatus);
 }
 
 // Based on : https://github.com/ivanlay/pokeclicker-automator/blob/main/auto_hatchery.js
@@ -139,7 +154,7 @@ function loopEggs()
 {
     var eggLoop = setInterval(function ()
     {
-        if (hatcheryAutomationEnabled)
+        if (localStorage.getItem('hatcheryAutomationEnabled') == "true")
         {
             // Attempt to hatch each egg. If the egg is at 100% it will succeed
             [0, 1, 2, 3].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
@@ -223,25 +238,31 @@ function loopEggs()
        AUTO UNDERGROUND
 \*****************************/
 
-function ToggleMiningAutomation(){
-    autoMiningEnabled = !autoMiningEnabled;
-    var button = document.getElementById('toggleMining');
-    if (!autoMiningEnabled) {
-        button.classList.remove('btn-success');
-        button.classList.add('btn-danger');
-        button.innerText = 'Off';
-    } else {
+function ToggleMiningAutomation()
+{
+    newStatus = !(localStorage.getItem('autoMiningEnabled') == "true");
+    var button = document.getElementById('autoMiningEnabled');
+    if (newStatus)
+    {
         button.classList.remove('btn-danger');
         button.classList.add('btn-success');
         button.innerText = 'On';
     }
+    else
+    {
+        button.classList.remove('btn-success');
+        button.classList.add('btn-danger');
+        button.innerText = 'Off';
+    }
+
+    localStorage.setItem('autoMiningEnabled', newStatus)
 }
 
 function loopMine() {
     var bombLoop = setInterval(function ()
     {
         mining_appened = false;
-        if (autoMiningEnabled)
+        if (localStorage.getItem('autoMiningEnabled') == "true")
         {
             while (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
             {
@@ -262,25 +283,31 @@ function loopMine() {
         AUTO FARMING
 \*****************************/
 
-function ToggleFarmingAutomation(){
-    autoFarmingEnabled = !autoFarmingEnabled;
-    var button = document.getElementById('toggleFarming');
-    if (!autoFarmingEnabled) {
-        button.classList.remove('btn-success');
-        button.classList.add('btn-danger');
-        button.innerText = 'Off';
-    } else {
+function ToggleFarmingAutomation()
+{
+    newStatus = !(localStorage.getItem('autoFarmingEnabled') == "true");
+    var button = document.getElementById('autoFarmingEnabled');
+    if (newStatus)
+    {
         button.classList.remove('btn-danger');
         button.classList.add('btn-success');
         button.innerText = 'On';
     }
+    else
+    {
+        button.classList.remove('btn-success');
+        button.classList.add('btn-danger');
+        button.innerText = 'Off';
+    }
+
+    localStorage.setItem('autoFarmingEnabled', newStatus)
 }
 
 function autoFarm()
 {
     var autoFarmingLoop = setInterval(function ()
     {
-        if (autoFarmingEnabled)
+        if (localStorage.getItem('autoFarmingEnabled') == "true")
         {
             ready_to_harvest_count = 0
             // Check if any berry is ready to harvest
