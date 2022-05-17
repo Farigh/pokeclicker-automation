@@ -1,4 +1,4 @@
-function addAutomationButton(name, id)
+function addAutomationButton(name, id, add_separator = false)
 {
     // Enable automation by default, in not already set in cookies
     if (localStorage.getItem(id) == null)
@@ -8,24 +8,22 @@ function addAutomationButton(name, id)
 
     button_class = (localStorage.getItem(id) == "true") ? "btn-success" : "btn-danger";
     button_text = (localStorage.getItem(id) == "true") ? "On" : "Off";
-    new_button = name + ' : <button id="' + id + '" class="btn ' + button_class + '" '
-               + 'style="width: 30px; height: 20px; padding:0px; border: 0px;" '
-               + 'onClick="ToggleAutomation(\'' + id + '\')"'
-               + 'type="button">' + button_text + '</button><br>'
 
     button_div = document.getElementById('automation_button_div')
 
-    button_div.innerHTML += new_button;
-}
+    if (add_separator)
+    {
+        button_div.innerHTML += '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin:10px 0px; padding-bottom:5px;"></div>'
+    }
 
-function sendAutomationNotif(message_to_display)
-{
-    Notifier.notify({
-                        title: 'Automation',
-                        message: message_to_display,
-                        type: NotificationConstants.NotificationOption.primary,
-                        timeout: 3000,
-                    });
+    new_button = '<div style="padding:0px 10px; line-height:24px;">'
+               + name + ' : <button id="' + id + '" class="btn ' + button_class + '" '
+               + 'style="width: 30px; height: 20px; padding:0px; border: 0px;" '
+               + 'onClick="ToggleAutomation(\'' + id + '\')"'
+               + 'type="button">' + button_text + '</button><br>'
+               + '</div>';
+
+    button_div.innerHTML += new_button;
 }
 
 var node = document.createElement('div');
@@ -39,8 +37,10 @@ node.setAttribute('id', 'autoClickContainer');
 document.body.appendChild(node);
 
 node.innerHTML = '<div id="clickBody" style="background-color:#444444; border-radius:5px; padding:5px 0px 10px 0px; border:solid #AAAAAA 1px;">'
-               +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">Automation</div>'
-               +     '<div id="automation_button_div" style="padding:0px 10px; line-height:24px;">'
+               +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
+               +         '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">'
+               +     '</div>'
+               +     '<div id="automation_button_div">'
                +     '</div>'
                + '</div>';
 
@@ -48,6 +48,7 @@ addAutomationButton("AutoClick", "autoClickEnabled");
 addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
 addAutomationButton("Farming", "autoFarmingEnabled");
 addAutomationButton("Mining", "autoMiningEnabled");
+addAutomationButton("Notification", "automationNotificationsEnabled", true);
 
 function ToggleAutomation(id)
 {
@@ -67,6 +68,19 @@ function ToggleAutomation(id)
     }
 
     localStorage.setItem(button.id, newStatus);
+}
+
+function sendAutomationNotif(message_to_display)
+{
+    if (localStorage.getItem('automationNotificationsEnabled') == "true")
+    {
+        Notifier.notify({
+                            title: 'Automation',
+                            message: message_to_display,
+                            type: NotificationConstants.NotificationOption.primary,
+                            timeout: 3000,
+                        });
+    }
 }
 
 /*****************************\
