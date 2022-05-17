@@ -1,21 +1,21 @@
-function initializeAutomationStatus(automationName)
-{
-    // Enable automation by default, in not already set in cookies
-    if (localStorage.getItem(automationName) == null)
-    {
-        localStorage.setItem(automationName, true)
-    }
-}
-
-initializeAutomationStatus('autoClickEnabled');
-initializeAutomationStatus('hatcheryAutomationEnabled');
-initializeAutomationStatus('autoFarmingEnabled');
-initializeAutomationStatus('autoMiningEnabled');
-
 function addAutomationButton(name, id)
 {
+    // Enable automation by default, in not already set in cookies
+    if (localStorage.getItem(id) == null)
+    {
+        localStorage.setItem(id, true)
+    }
+
     button_class = (localStorage.getItem(id) == "true") ? "btn-success" : "btn-danger";
-    return name + ' : <button id="' + id + '" class="btn ' + button_class + '" style="width: 30px; height: 20px; padding:0px; border: 0px;" type="button">On</button><br>'
+    button_text = (localStorage.getItem(id) == "true") ? "On" : "Off";
+    new_button = name + ' : <button id="' + id + '" class="btn ' + button_class + '" '
+               + 'style="width: 30px; height: 20px; padding:0px; border: 0px;" '
+               + 'onClick="ToggleAutomation(\'' + id + '\')"'
+               + 'type="button">' + button_text + '</button><br>'
+
+    button_div = document.getElementById('automation_button_div')
+
+    button_div.innerHTML += new_button;
 }
 
 function sendAutomationNotif(message_to_display)
@@ -40,27 +40,19 @@ document.body.appendChild(node);
 
 node.innerHTML = '<div id="clickBody" style="background-color:#444444; border-radius:5px; padding:5px 0px 10px 0px; border:solid #AAAAAA 1px;">'
                +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">Automation</div>'
-               +     '<div style="padding:0px 10px; line-height:24px;">'
-               +         addAutomationButton("AutoClick", "autoClickEnabled")
-               +         addAutomationButton("Hatchery", "hatcheryAutomationEnabled")
-               +         addAutomationButton("Farming", "autoFarmingEnabled")
-               +         addAutomationButton("Mining", "autoMiningEnabled")
+               +     '<div id="automation_button_div" style="padding:0px 10px; line-height:24px;">'
                +     '</div>'
                + '</div>';
 
-document.getElementById('autoClickEnabled').addEventListener('click', ToggleAutoClick, false);
-document.getElementById('hatcheryAutomationEnabled').addEventListener('click', ToggleHatcheryAutomation, false);
-document.getElementById('autoFarmingEnabled').addEventListener('click', ToggleFarmingAutomation, false);
-document.getElementById('autoMiningEnabled').addEventListener('click', ToggleMiningAutomation, false);
+addAutomationButton("AutoClick", "autoClickEnabled");
+addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
+addAutomationButton("Farming", "autoFarmingEnabled");
+addAutomationButton("Mining", "autoMiningEnabled");
 
-/*****************************\
-        AUTO BATTLE
-\*****************************/
-
-function ToggleAutoClick()
+function ToggleAutomation(id)
 {
-    newStatus = !(localStorage.getItem('autoClickEnabled') == "true");
-    var button = document.getElementById('autoClickEnabled');
+    var button = document.getElementById(id);
+    newStatus = !(localStorage.getItem(button.id) == "true");
     if (newStatus)
     {
         button.classList.remove('btn-danger');
@@ -74,8 +66,12 @@ function ToggleAutoClick()
         button.innerText = 'Off';
     }
 
-    localStorage.setItem('autoClickEnabled', newStatus);
+    localStorage.setItem(button.id, newStatus);
 }
+
+/*****************************\
+        AUTO BATTLE
+\*****************************/
 
 // Based on : https://github.com/ivanlay/pokeclicker-automator/blob/main/auto_clicker.js
 
@@ -128,25 +124,6 @@ function autoClicker()
 /*****************************\
         AUTO HATCHERY
 \*****************************/
-
-function ToggleHatcheryAutomation(){
-    newStatus = !(localStorage.getItem('hatcheryAutomationEnabled') == "true");
-    var button = document.getElementById('hatcheryAutomationEnabled');
-    if (newStatus)
-    {
-        button.classList.remove('btn-danger');
-        button.classList.add('btn-success');
-        button.innerText = 'On';
-    }
-    else
-    {
-        button.classList.remove('btn-success');
-        button.classList.add('btn-danger');
-        button.innerText = 'Off';
-    }
-
-    localStorage.setItem('hatcheryAutomationEnabled', newStatus);
-}
 
 // Based on : https://github.com/ivanlay/pokeclicker-automator/blob/main/auto_hatchery.js
 
@@ -238,26 +215,6 @@ function loopEggs()
        AUTO UNDERGROUND
 \*****************************/
 
-function ToggleMiningAutomation()
-{
-    newStatus = !(localStorage.getItem('autoMiningEnabled') == "true");
-    var button = document.getElementById('autoMiningEnabled');
-    if (newStatus)
-    {
-        button.classList.remove('btn-danger');
-        button.classList.add('btn-success');
-        button.innerText = 'On';
-    }
-    else
-    {
-        button.classList.remove('btn-success');
-        button.classList.add('btn-danger');
-        button.innerText = 'Off';
-    }
-
-    localStorage.setItem('autoMiningEnabled', newStatus)
-}
-
 function loopMine() {
     var bombLoop = setInterval(function ()
     {
@@ -282,26 +239,6 @@ function loopMine() {
 /*****************************\
         AUTO FARMING
 \*****************************/
-
-function ToggleFarmingAutomation()
-{
-    newStatus = !(localStorage.getItem('autoFarmingEnabled') == "true");
-    var button = document.getElementById('autoFarmingEnabled');
-    if (newStatus)
-    {
-        button.classList.remove('btn-danger');
-        button.classList.add('btn-success');
-        button.innerText = 'On';
-    }
-    else
-    {
-        button.classList.remove('btn-success');
-        button.classList.add('btn-danger');
-        button.innerText = 'Off';
-    }
-
-    localStorage.setItem('autoFarmingEnabled', newStatus)
-}
 
 function autoFarm()
 {
