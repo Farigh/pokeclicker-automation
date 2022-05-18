@@ -150,6 +150,7 @@ function loopEggs()
             // Attempt to hatch each egg. If the egg is at 100% it will succeed
             [0, 1, 2, 3].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
+            // Try to use eggs first
             try_use_egg_func = function (type)
             {
                 while (App.game.breeding.canBreedPokemon() && player.itemList[type.name]() && type.checkCanUse())
@@ -159,7 +160,6 @@ function loopEggs()
                 }
             };
 
-            // Try to use eggs first
             try_use_egg_func(ItemList.Dragon_egg);
             try_use_egg_func(ItemList.Fire_egg);
             try_use_egg_func(ItemList.Water_egg);
@@ -167,7 +167,26 @@ function loopEggs()
             try_use_egg_func(ItemList.Fighting_egg);
             try_use_egg_func(ItemList.Mystery_egg);
 
-            // Now add eggs to empty slots if we can
+            // Then try to use fossils
+            try_use_fossil_func = function (type)
+            {
+                while (App.game.breeding.canBreedPokemon() && (type.amount() > 0))
+                {
+                    // Hatching a fossil is performed by selling it
+                    Underground.sellMineItem(type.id);
+                    sendAutomationNotif("Added a " + type.name + " to the Hatchery!");
+                }
+            };
+
+            currently_held_fossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
+            i = 0;
+            while (App.game.breeding.canBreedPokemon() && (i < currently_held_fossils.length))
+            {
+                try_use_fossil_func(currently_held_fossils[i]);
+                i++;
+            }
+
+            // Now add lvl 100 pokemons to empty slots if we can
             if (App.game.breeding.canBreedPokemon())
             {
                 // Filter the sorted list of Pokemon based on the parameters set in the Hatchery screen
