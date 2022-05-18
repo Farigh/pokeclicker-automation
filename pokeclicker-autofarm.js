@@ -150,6 +150,23 @@ function loopEggs()
             // Attempt to hatch each egg. If the egg is at 100% it will succeed
             [0, 1, 2, 3].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
+            try_use_egg_func = function (type)
+            {
+                while (App.game.breeding.canBreedPokemon() && player.itemList[type.name]() && type.checkCanUse())
+                {
+                    type.use();
+                    sendAutomationNotif("Added a " + type.displayName + " to the Hatchery!");
+                }
+            };
+
+            // Try to use eggs first
+            try_use_egg_func(ItemList.Dragon_egg);
+            try_use_egg_func(ItemList.Fire_egg);
+            try_use_egg_func(ItemList.Water_egg);
+            try_use_egg_func(ItemList.Grass_egg);
+            try_use_egg_func(ItemList.Fighting_egg);
+            try_use_egg_func(ItemList.Mystery_egg);
+
             // Now add eggs to empty slots if we can
             if (App.game.breeding.canBreedPokemon())
             {
@@ -231,9 +248,9 @@ function loopEggs()
                                          }
 
                                          return 0;
-                                     })
+                                     });
 
-                i = 0
+                i = 0;
                 while ((i < filteredEggList.length) && App.game.breeding.canBreedPokemon())
                 {
                     App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
