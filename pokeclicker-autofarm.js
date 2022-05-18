@@ -151,7 +151,7 @@ function loopEggs()
             [0, 1, 2, 3].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
             // Now add eggs to empty slots if we can
-            while (App.game.breeding.canBreedPokemon())  // Helper in code to do this.
+            if (App.game.breeding.canBreedPokemon())
             {
                 // Filter the sorted list of Pokemon based on the parameters set in the Hatchery screen
                 let filteredEggList = App.game.party.caughtPokemon.filter(
@@ -215,10 +215,30 @@ function loopEggs()
                     return true;
                 });
 
-                if (App.game.breeding.canBreedPokemon())
+                // Sort list by breeding efficiency
+                filteredEggList.sort((a, b) =>
+                                     {
+                                         a_value = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
+                                         b_value = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
+
+                                         if (a_value < b_value)
+                                         {
+                                             return 1;
+                                         }
+                                         if (a_value > b_value)
+                                         {
+                                             return -1;
+                                         }
+
+                                         return 0;
+                                     })
+
+                i = 0
+                while ((i < filteredEggList.length) && App.game.breeding.canBreedPokemon())
                 {
-                    App.game.breeding.addPokemonToHatchery(filteredEggList[0]);
-                    sendAutomationNotif("Added " + filteredEggList[0].name + " to the Hatchery!");
+                    App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
+                    sendAutomationNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
+                    i++;
                 }
             }
         }
