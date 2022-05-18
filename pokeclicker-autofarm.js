@@ -1,4 +1,4 @@
-function addAutomationButton(name, id, add_separator = false)
+function addAutomationButton(name, id, add_separator = false, parent_div = "automation_button_div", hidden = false)
 {
     // Enable automation by default, in not already set in cookies
     if (localStorage.getItem(id) == null)
@@ -9,7 +9,7 @@ function addAutomationButton(name, id, add_separator = false)
     button_class = (localStorage.getItem(id) == "true") ? "btn-success" : "btn-danger";
     button_text = (localStorage.getItem(id) == "true") ? "On" : "Off";
 
-    button_div = document.getElementById('automation_button_div')
+    button_div = document.getElementById(parent_div)
 
     if (add_separator)
     {
@@ -26,30 +26,52 @@ function addAutomationButton(name, id, add_separator = false)
     button_div.innerHTML += new_button;
 }
 
+var previousTown = "";
+
 var node = document.createElement('div');
-node.classList.add('card');
-node.classList.add('mb-3');
 node.style.position = "absolute";
 node.style.top = "50px";
 node.style.right = "10px";
 node.style.textAlign = "right"
-node.setAttribute('id', 'autoClickContainer');
+node.setAttribute('id', 'automationContainer');
 document.body.appendChild(node);
 
-node.innerHTML = '<div id="clickBody" style="background-color:#444444; border-radius:5px; padding:5px 0px 10px 0px; border:solid #AAAAAA 1px;">'
+node.innerHTML = '<div id="automationButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; border:solid #AAAAAA 1px;">'
                +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
                +         '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">'
                +     '</div>'
                +     '<div id="automation_button_div">'
                +     '</div>'
+               + '</div>'
+               + '<div id="gymFightButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:25px; border:solid #AAAAAA 1px;">'
+               +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
+               +         '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
+               +         '&nbsp;Gym fight&nbsp;'
+               +         '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">'
+               +     '</div>'
+               +     '<div id="gym_fight_button_div" style="text-align:center;">'
+               +     '</div>'
                + '</div>';
 
+// Hide the gym fight menu by default and disable auto fight
+localStorage.setItem('gymFightEnabled', false);
+document.getElementById("gymFightButtons").hidden = true;
+
+// Main menu buttons
 addAutomationButton("AutoClick", "autoClickEnabled");
 addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
 addAutomationButton("Mining", "autoMiningEnabled");
 addAutomationButton("Farming", "autoFarmingEnabled", true);
 addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 addAutomationButton("Notification", "automationNotificationsEnabled", true);
+
+// Gym fight buttons
+addAutomationButton("AutoFight", "gymFightEnabled", false, "gym_fight_button_div", true);
+
+// Add gym selector div
+var node = document.createElement('div');
+node.setAttribute('id', 'automationGymSelector');
+document.getElementById("gym_fight_button_div").appendChild(node);
 
 function ToggleAutomation(id)
 {
@@ -82,6 +104,65 @@ function sendAutomationNotif(message_to_display)
                             timeout: 3000,
                         });
     }
+}
+
+/*****************************\
+        AUTO GYM
+\*****************************/
+function autoGymFights()
+{
+    var autoClickerLoop = setInterval(function ()
+    {
+        // We are currently fighting, do do anything
+        if (App.game.gameState == GameConstants.GameState.gym)
+        {
+            return;
+        }
+
+        // Check if we are in a town
+        if (App.game.gameState == GameConstants.GameState.town)
+        {
+            // List available gyms
+            gymList = player.town().content.filter(x => GymList[x.town] && GymList[x.town])
+                                           .filter(x => x.isUnlocked());
+
+            if (gymList.length > 0)
+            {
+                // If so, display the automation menu (if not already visible)
+                if (document.getElementById("gymFightButtons").hidden || (previousTown != player.town().name))
+                {
+                    // Build the new drop-down list
+                    available_gym_list = '<select class="custom-select" name="selectedAutomationGym" id="selectedAutomationGym" style="width: calc(100% - 10px); margin-top: 3px;">';
+
+                    gymList.forEach(g => available_gym_list += '<option value="' + g.town + '">' + g.leaderName + '</option>');
+
+                    available_gym_list += '</select>';
+
+                    document.getElementById("automationGymSelector").innerHTML = available_gym_list;
+
+                    // Reset button status
+                    if (localStorage.getItem('gymFightEnabled') == "true")
+                    {
+                        ToggleAutomation('gymFightEnabled');
+                    }
+                    previousTown = player.town().name;
+
+                    // Make it visible
+                    document.getElementById("gymFightButtons").hidden = false;
+                }
+
+                if (localStorage.getItem('gymFightEnabled') == "true")
+                {
+                    selectedValue = document.getElementById("selectedAutomationGym").value;
+                    GymList[selectedValue].protectedOnclick();
+                }
+                return;
+            }
+        }
+
+        // Else hide the menu
+        document.getElementById("gymFightButtons").hidden = true;
+    }, 50); // Runs every game tick
 }
 
 /*****************************\
@@ -376,6 +457,7 @@ function waitForLoad(){
             loopMine();
             autoClicker();
             autoFarm();
+            autoGymFights();
         }
     }, 200);
 }
