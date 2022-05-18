@@ -46,8 +46,9 @@ node.innerHTML = '<div id="clickBody" style="background-color:#444444; border-ra
 
 addAutomationButton("AutoClick", "autoClickEnabled");
 addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
-addAutomationButton("Farming", "autoFarmingEnabled");
 addAutomationButton("Mining", "autoMiningEnabled");
+addAutomationButton("Farming", "autoFarmingEnabled", true);
+addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 addAutomationButton("Notification", "automationNotificationsEnabled", true);
 
 function ToggleAutomation(id)
@@ -327,12 +328,36 @@ function autoFarm()
             if (ready_to_harvest_count > 0)
             {
                 App.game.farming.harvestAll();
-                App.game.farming.plantAll(FarmController.selectedBerry());
 
-                berry_name = Object.values(BerryType)[FarmController.selectedBerry()]
-                berry_image = '<img src="assets/images/items/berry/' + berry_name + '.png" data-bind="attr:{ src: FarmController.getBerryImage($data) }, css: {\'berryLocked\': false }" height="28px">'
+                if (localStorage.getItem('autoMutationFarmingEnabled') == "true")
+                {
+                    // Hard-coded strategy, this should be adapted based on unlock slots
+                    berry1_type = BerryType.Cheri;
+                    berry1_name = Object.values(BerryType)[berry1_type];
+                    berry1_image = '<img src="assets/images/items/berry/' + berry1_name + '.png" height="28px">';
+                    berry2_type = BerryType.Leppa;
+                    berry2_name = Object.values(BerryType)[berry2_type];
+                    berry2_image = '<img src="assets/images/items/berry/' + berry2_name + '.png" height="28px">';
 
-                sendAutomationNotif("Harvested " + ready_to_harvest_count.toString() + " berries<br>Planted back some " + berry_name + " " + berry_image)
+                    App.game.farming.plant(6, berry1_type, true);
+                    App.game.farming.plant(12, berry2_type, true);
+                    App.game.farming.plant(18, berry1_type, true);
+                    App.game.farming.plant(21, berry1_type, true);
+
+                    sendAutomationNotif("Harvested " + ready_to_harvest_count.toString() + " berries<br>Looking for mutation wih " + berry1_name + " " + berry1_image + " and " + berry2_name + " " + berry2_image);
+                }
+                else
+                {
+                    if (ready_to_harvest_count > 0)
+                    {
+                        App.game.farming.plantAll(FarmController.selectedBerry());
+
+                        berry_name = Object.values(BerryType)[FarmController.selectedBerry()];
+                        berry_image = '<img src="assets/images/items/berry/' + berry_name + '.png" height="28px">';
+
+                        sendAutomationNotif("Harvested " + ready_to_harvest_count.toString() + " berries<br>Planted back some " + berry_name + " " + berry_image);
+                    }
+                }
             }
         }
   }, 10000); // Every 10 seconds
