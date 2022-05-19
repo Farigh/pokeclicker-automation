@@ -235,7 +235,7 @@ function loopEggs()
             // Try to use eggs first
             try_use_egg_func = function (type)
             {
-                while (App.game.breeding.canBreedPokemon() && player.itemList[type.name]() && type.checkCanUse())
+                while (App.game.breeding.hasFreeEggSlot() && player.itemList[type.name]() && type.checkCanUse())
                 {
                     type.use();
                     sendAutomationNotif("Added a " + type.displayName + " to the Hatchery!");
@@ -252,7 +252,7 @@ function loopEggs()
             // Then try to use fossils
             try_use_fossil_func = function (type)
             {
-                while (App.game.breeding.canBreedPokemon() && (type.amount() > 0))
+                while (App.game.breeding.hasFreeEggSlot() && (type.amount() > 0))
                 {
                     // Hatching a fossil is performed by selling it
                     Underground.sellMineItem(type.id);
@@ -262,14 +262,14 @@ function loopEggs()
 
             currently_held_fossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
             i = 0;
-            while (App.game.breeding.canBreedPokemon() && (i < currently_held_fossils.length))
+            while (App.game.breeding.hasFreeEggSlot() && (i < currently_held_fossils.length))
             {
                 try_use_fossil_func(currently_held_fossils[i]);
                 i++;
             }
 
             // Now add lvl 100 pokemons to empty slots if we can
-            if (App.game.breeding.canBreedPokemon())
+            if (App.game.breeding.hasFreeEggSlot())
             {
                 // Filter the sorted list of Pokemon based on the parameters set in the Hatchery screen
                 let filteredEggList = App.game.party.caughtPokemon.filter(
@@ -351,8 +351,9 @@ function loopEggs()
                                          return 0;
                                      });
 
+                // Do not had pokemons to the queue as it reduces the overall attack
                 i = 0;
-                while ((i < filteredEggList.length) && App.game.breeding.canBreedPokemon())
+                while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
                 {
                     App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
                     sendAutomationNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
@@ -381,7 +382,7 @@ function loopMine() {
 
             if (mining_appened)
             {
-                sendAutomationNotif("Performed mining, energy left: " + App.game.underground.energy.toString() + "!");
+                sendAutomationNotif("Performed mining, energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
             }
         }
     }, 10000); // Every 10 seconds
@@ -413,10 +414,10 @@ function autoFarm()
                 if (localStorage.getItem('autoMutationFarmingEnabled') == "true")
                 {
                     // Hard-coded strategy, this should be adapted based on unlock slots
-                    berry1_type = BerryType.Cheri;
+                    berry1_type = BerryType.Rawst;
                     berry1_name = Object.values(BerryType)[berry1_type];
                     berry1_image = '<img src="assets/images/items/berry/' + berry1_name + '.png" height="28px">';
-                    berry2_type = BerryType.Leppa;
+                    berry2_type = BerryType.Oran;
                     berry2_name = Object.values(BerryType)[berry2_type];
                     berry2_image = '<img src="assets/images/items/berry/' + berry2_name + '.png" height="28px">';
 
