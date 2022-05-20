@@ -153,8 +153,13 @@ function autoDungeonFights()
                 }
             }
 
+            maxIndex = (DungeonRunner.map.board().length - 1);
+            isEvenRaw = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
+            isLastTileOfTheRaw = (isEvenRaw && (playerCurrentPosition.x == maxIndex))
+                              || (!isEvenRaw && (playerCurrentPosition.x == 0));
+
             // Detect board ending and move to the boss if it's the case
-            if ((playerCurrentPosition.y) == 0 && (playerCurrentPosition.x == 0))
+            if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
             {
                 dungeonCompleted = true;
                 DungeonRunner.map.moveToTile(dungeonBossPosition);
@@ -162,7 +167,7 @@ function autoDungeonFights()
             }
 
             // Go full left at the beginning of the map
-            if (playerCurrentPosition.y == (DungeonRunner.map.board().length - 1))
+            if (playerCurrentPosition.y == maxIndex)
             {
                 if ((playerCurrentPosition.x != 0)
                     && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
@@ -172,11 +177,8 @@ function autoDungeonFights()
                 }
             }
 
-            isEvenRaw = (((DungeonRunner.map.board().length - 1) - playerCurrentPosition.y) % 2) == 0;
-
             // Move up once a raw has been fully visited
-            if ((isEvenRaw && playerCurrentPosition.x == (DungeonRunner.map.board().length - 1))
-                || (!isEvenRaw && playerCurrentPosition.x == 0))
+            if (isLastTileOfTheRaw)
             {
                 DungeonRunner.map.moveUp();
                 return;
@@ -229,7 +231,7 @@ function autoDungeonFights()
             return;
         }
 
-        // Else hide the menu
+        // Else hide the menu, if we're not in the dungeon
         if (App.game.gameState !== GameConstants.GameState.dungeon)
         {
             document.getElementById("dungeonFightButtons").hidden = true;
@@ -509,10 +511,13 @@ function loopEggs()
 function loopMine() {
     var bombLoop = setInterval(function ()
     {
-        mining_appened = false;
         if (localStorage.getItem('autoMiningEnabled') == "true")
         {
-            while (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
+            mining_appened = false;
+
+            // Mine using bombs until the board is completed or the energy is depleted
+            while ((Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
+                   && (Mine.itemsFound() < Mine.itemsBuried()))
             {
                 mining_appened = true;
                 Mine.bomb();
@@ -552,10 +557,10 @@ function autoFarm()
                 if (localStorage.getItem('autoMutationFarmingEnabled') == "true")
                 {
                     // Hard-coded strategy, this should be adapted based on unlock slots
-                    berry1_type = BerryType.Rawst;
+                    berry1_type = BerryType.Sitrus;
                     berry1_name = Object.values(BerryType)[berry1_type];
                     berry1_image = '<img src="assets/images/items/berry/' + berry1_name + '.png" height="28px">';
-                    berry2_type = BerryType.Oran;
+                    berry2_type = BerryType.Aspear;
                     berry2_name = Object.values(BerryType)[berry2_type];
                     berry2_image = '<img src="assets/images/items/berry/' + berry2_name + '.png" height="28px">';
 
