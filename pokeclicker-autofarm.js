@@ -508,27 +508,45 @@ function loopEggs()
        AUTO UNDERGROUND
 \*****************************/
 
-function loopMine() {
+function isMiningPossible()
+{
+    return (localStorage.getItem('autoMiningEnabled') == "true")
+        && (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
+        && (Mine.itemsFound() < Mine.itemsBuried());
+}
+
+function startMining()
+{
+    var performedMiningCount = 0;
     var bombLoop = setInterval(function ()
     {
-        if (localStorage.getItem('autoMiningEnabled') == "true")
+        if (isMiningPossible())
         {
-            mining_appened = false;
-
             // Mine using bombs until the board is completed or the energy is depleted
-            while ((Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
-                   && (Mine.itemsFound() < Mine.itemsBuried()))
-            {
-                mining_appened = true;
-                Mine.bomb();
-            }
-
-            if (mining_appened)
-            {
-                sendAutomationNotif("Performed mining, energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
-            }
+            Mine.bomb();
+            performedMiningCount++;
         }
-    }, 10000); // Every 10 seconds
+        else
+        {
+            if (performedMiningCount > 0)
+            {
+                sendAutomationNotif("Performed mining " + performedMiningCount.toString() + " times,"
+                                  + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
+            }
+            clearInterval(bombLoop);
+        }
+    }, 500); // Runs every 0.5s
+}
+
+function loopMine()
+{
+    var bombCheckLoop = setInterval(function ()
+    {
+        if (isMiningPossible())
+        {
+            startMining();
+        }
+    }, 10000); // Check every 10 seconds
 }
 
 
