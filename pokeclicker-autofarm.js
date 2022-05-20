@@ -27,11 +27,14 @@ function addAutomationButton(name, id, add_separator = false, parent_div = "auto
 }
 
 var previousTown = "";
+var dungeonCompleted = false;
+var dungeonBossPosition;
 
 var node = document.createElement('div');
 node.style.position = "absolute";
 node.style.top = "50px";
 node.style.right = "10px";
+node.style.width = "145px";
 node.style.textAlign = "right"
 node.setAttribute('id', 'automationContainer');
 document.body.appendChild(node);
@@ -51,10 +54,19 @@ node.innerHTML = '<div id="automationButtons" style="background-color:#444444; c
                +     '</div>'
                +     '<div id="gym_fight_button_div" style="text-align:center;">'
                +     '</div>'
+               + '</div>'
+               + '<div id="dungeonFightButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:25px; border:solid #AAAAAA 1px;">'
+               +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
+               +         '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
+               +         '&nbsp;Dungeon fight&nbsp;'
+               +         '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">'
+               +     '</div>'
+               +     '<div id="dungeon_fight_button_div">'
+               +     '</div>'
                + '</div>';
 
-// Hide the gym fight menu by default and disable auto fight
-localStorage.setItem('gymFightEnabled', false);
+// Hide the gym and dungeon fight menus by default and disable auto fight
+document.getElementById("dungeonFightButtons").hidden = true;
 document.getElementById("gymFightButtons").hidden = true;
 
 // Main menu buttons
@@ -74,6 +86,9 @@ addAutomationButton("AutoFight", "gymFightEnabled", false, "gym_fight_button_div
 var node = document.createElement('div');
 node.setAttribute('id', 'automationGymSelector');
 document.getElementById("gym_fight_button_div").appendChild(node);
+
+// Dungeon fight button
+addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeon_fight_button_div", true);
 
 function ToggleAutomation(id)
 {
@@ -109,20 +124,134 @@ function sendAutomationNotif(message_to_display)
 }
 
 /*****************************\
-        AUTO GYM
+         AUTO DUNGEON
+\*****************************/
+function autoDungeonFights()
+{
+    var autoClickerLoop = setInterval(function ()
+    {
+        if ((App.game.gameState === GameConstants.GameState.dungeon)
+            && (localStorage.getItem('dungeonFightEnabled') == "true"))
+        {
+            // Let any fight finish before moving
+            if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
+            {
+                return;
+            }
+
+            playerCurrentPosition = DungeonRunner.map.playerPosition();
+
+            if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
+            {
+                // Persist the boss position, to go back to it once the board has been cleared
+                dungeonBossPosition = playerCurrentPosition;
+
+                if (dungeonCompleted)
+                {
+                    DungeonRunner.startBossFight();
+                    return
+                }
+            }
+
+            // Detect board ending and move to the boss if it's the case
+            if ((playerCurrentPosition.y) == 0 && (playerCurrentPosition.x == 0))
+            {
+                dungeonCompleted = true;
+                DungeonRunner.map.moveToTile(dungeonBossPosition);
+                return
+            }
+
+            // Go full left at the beginning of the map
+            if (playerCurrentPosition.y == (DungeonRunner.map.board().length - 1))
+            {
+                if ((playerCurrentPosition.x != 0)
+                    && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
+                {
+                    DungeonRunner.map.moveLeft();
+                    return;
+                }
+            }
+
+            isEvenRaw = (((DungeonRunner.map.board().length - 1) - playerCurrentPosition.y) % 2) == 0;
+
+            // Move up once a raw has been fully visited
+            if ((isEvenRaw && playerCurrentPosition.x == (DungeonRunner.map.board().length - 1))
+                || (!isEvenRaw && playerCurrentPosition.x == 0))
+            {
+                DungeonRunner.map.moveUp();
+                return;
+            }
+
+            // Move right on even raws, left otherwise
+            if (isEvenRaw)
+            {
+                DungeonRunner.map.moveRight();
+            }
+            else
+            {
+                DungeonRunner.map.moveLeft();
+            }
+
+            return;
+        }
+
+        // Check if we are in a town (dungeons are attached to town)
+        if (App.game.gameState === GameConstants.GameState.town
+            && player.town().dungeon)
+        {
+            // Display the automation menu (if not already visible)
+            if (document.getElementById("dungeonFightButtons").hidden || (previousTown != player.town().name))
+            {
+                // Reset button status
+                if (localStorage.getItem('dungeonFightEnabled') == "true")
+                {
+                    ToggleAutomation('dungeonFightEnabled');
+                }
+                previousTown = player.town().name;
+
+                // Make it visible
+                document.getElementById("dungeonFightButtons").hidden = false;
+            }
+
+            if (localStorage.getItem('dungeonFightEnabled') == "true")
+            {
+                if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost)
+                {
+                    dungeonCompleted = false;
+                    DungeonRunner.initializeDungeon(player.town().dungeon);
+                }
+                else
+                {
+                    ToggleAutomation('dungeonFightEnabled');
+                }
+            }
+
+            return;
+        }
+
+        // Else hide the menu
+        if (App.game.gameState !== GameConstants.GameState.dungeon)
+        {
+            document.getElementById("dungeonFightButtons").hidden = true;
+        }
+    }, 50); // Runs every game tick
+}
+
+/*****************************\
+           AUTO GYM
 \*****************************/
 function autoGymFights()
 {
     var autoClickerLoop = setInterval(function ()
     {
         // We are currently fighting, do do anything
-        if (App.game.gameState == GameConstants.GameState.gym)
+        if (App.game.gameState === GameConstants.GameState.gym)
         {
             return;
         }
 
         // Check if we are in a town
-        if (App.game.gameState == GameConstants.GameState.town)
+        if (App.game.gameState === GameConstants.GameState.town)
         {
             // List available gyms
             gymList = player.town().content.filter(x => GymList[x.town] && GymList[x.town])
@@ -202,8 +331,9 @@ function autoClicker()
                 {
                     DungeonRunner.openChest();
                 }
-                else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss
-                         && !DungeonRunner.fightingBoss())
+                else if ((DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
+                         && !DungeonRunner.fightingBoss()
+                         && (localStorage.getItem('dungeonFightEnabled') != "true"))
                 {
                     DungeonRunner.startBossFight();
                 }
@@ -220,7 +350,7 @@ function autoClicker()
 
 
 /*****************************\
-        AUTO HATCHERY
+         AUTO HATCHERY
 \*****************************/
 
 // Based on : https://github.com/ivanlay/pokeclicker-automator/blob/main/auto_hatchery.js
@@ -398,7 +528,7 @@ function loopMine() {
 
 
 /*****************************\
-        AUTO FARMING
+         AUTO FARMING
 \*****************************/
 
 function autoFarm()
@@ -467,6 +597,7 @@ function waitForLoad(){
             autoClicker();
             autoFarm();
             autoGymFights();
+            autoDungeonFights();
         }
     }, 200);
 }
