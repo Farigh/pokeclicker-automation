@@ -73,6 +73,15 @@ class Automation
                            +     '<div id="automationButtonDiv">'
                            +     '</div>'
                            + '</div>'
+                           + '<div id="automationInfo" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:5px; border:solid #AAAAAA 1px;">'
+                           +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
+                           +         '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
+                           +         '&nbsp;Information&nbsp;'
+                           +         '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">'
+                           +     '</div>'
+                           +     '<div id="roamingRouteInfo" style="text-align: center;">'
+                           +     '</div>'
+                           + '</div>'
                            + '<div id="gymFightButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:25px; border:solid #AAAAAA 1px;">'
                            +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
                            +         '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
@@ -96,6 +105,9 @@ class Automation
             document.getElementById("dungeonFightButtons").hidden = true;
             document.getElementById("gymFightButtons").hidden = true;
 
+            // Initialize roaming route info
+            Automation.Menu.Info.start();
+
             // Main menu buttons
             Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
             Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
@@ -116,6 +128,32 @@ class Automation
 
             // Dungeon fight button
             Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeonFightButtonDiv", true);
+        }
+
+        static Info = class AutomationInfo
+        {
+            static start()
+            {
+                // Set the initial value
+                Automation.Menu.Info.__refreshRoamingRouteInfo();
+
+                // Program an update every hour
+                // The roaming date changes every 8h, so it's safe to refresh every hours
+                let now = new Date();
+                let oneHour = 60 * 60 * 1000; // 1 hour in msec
+                let delay = oneHour - ((now.getMinutes() * 60 + now.getSeconds()) * 1000);
+
+                setTimeout(function()
+                {
+                    setInterval(Automation.Menu.Info.__refreshRoamingRouteInfo, oneHour);
+                }, delay);
+            }
+
+            static __refreshRoamingRouteInfo()
+            {
+                let infoDiv = document.getElementById("roamingRouteInfo")
+                infoDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
+            }
         }
 
         static __addAutomationButton(name, id, addSeparator = false, parentDiv = "automationButtonDiv", hidden = false)
