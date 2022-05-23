@@ -18,11 +18,14 @@ class Automation
                 Automation.Menu.build();
 
                 Automation.Click.start();
-                Automation.Gym.start();
-                Automation.Dungeon.start();
+                Automation.Underground.start();
                 Automation.Hatchery.start();
                 Automation.Farm.start();
-                Automation.Underground.start();
+                Automation.Gym.start();
+                Automation.Dungeon.start();
+
+                // Add a notification button to the automation menu
+                Automation.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, 'color:#2ecc71;font-weight:900;');
@@ -62,82 +65,49 @@ class Automation
             node.style.top = "50px";
             node.style.right = "10px";
             node.style.width = "145px";
-            node.style.textAlign = "right"
+            node.style.textAlign = "right";
             node.setAttribute('id', 'automationContainer');
             document.body.appendChild(node);
 
-            node.innerHTML = '<div id="automationButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; border:solid #AAAAAA 1px;">'
-                           +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
-                           +         '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">'
-                           +     '</div>'
-                           +     '<div id="automationButtonDiv">'
-                           +     '</div>'
-                           + '</div>'
-                           + '<div id="automationInfo" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:5px; border:solid #AAAAAA 1px;">'
-                           +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
-                           +         '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
-                           +         '&nbsp;Information&nbsp;'
-                           +         '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">'
-                           +     '</div>'
-                           +     '<div id="roamingRouteInfo" style="text-align: center;">'
-                           +     '</div>'
-                           +     '<div id="availableEvolutionInfo" style="text-align: center; border-top:solid #AAAAAA 1px; margin-top:10px; padding-top:5px;">'
-                           +     '</div>'
-                           + '</div>'
-                           + '<div id="gymFightButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:25px; border:solid #AAAAAA 1px;">'
-                           +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
-                           +         '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
-                           +         '&nbsp;Gym fight&nbsp;'
-                           +         '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">'
-                           +     '</div>'
-                           +     '<div id="gymFightButtonDiv" style="text-align:center;">'
-                           +     '</div>'
-                           + '</div>'
-                           + '<div id="dungeonFightButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:25px; border:solid #AAAAAA 1px;">'
-                           +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
-                           +         '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
-                           +         '&nbsp;Dungeon fight&nbsp;'
-                           +         '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">'
-                           +     '</div>'
-                           +     '<div id="dungeonFightButtonDiv">'
-                           +     '</div>'
-                           + '</div>';
+            let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
+            Automation.Menu.__addCategory("automationButtons", automationTitle);
 
-            // Hide the gym and dungeon fight menus by default and disable auto fight
-            document.getElementById("dungeonFightButtons").hidden = true;
-            document.getElementById("gymFightButtons").hidden = true;
-
-            // Initialize roaming route info
+            // Initialize info
             Automation.Menu.Info.start();
-
-            // Main menu buttons
-            Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
-            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
-            Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", true);
-            Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
-            Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
-            Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", true);
-            Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
-            Automation.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
-
-            // Gym fight buttons
-            Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", false, "gymFightButtonDiv", true);
-
-            // Add gym selector div
-            node = document.createElement('div');
-            node.setAttribute('id', 'automationGymSelector');
-            document.getElementById("gymFightButtonDiv").appendChild(node);
-
-            // Dungeon fight button
-            Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeonFightButtonDiv", true);
         }
 
         static Info = class AutomationInfo
         {
             static start()
             {
+                Automation.Menu.Info.__buildMenu();
                 Automation.Menu.Info.__initializeRoamingRouteInfo();
                 Automation.Menu.Info.__initializeEvolutionInfo();
+            }
+
+
+            static __buildMenu()
+            {
+                // Hide the gym and dungeon fight menus by default and disable auto fight
+                let infoTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
+                              +     '&nbsp;Information&nbsp;'
+                              + '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">';
+                let infoDiv = Automation.Menu.__addCategory("automationInfo", infoTitle);
+
+                // Add roaming info div
+                let node = document.createElement('div');
+                node.setAttribute('id', 'roamingRouteInfo');
+                node.style.textAlign = "center";
+                infoDiv.appendChild(node);
+
+                // Add available evolution div
+                node = document.createElement('div');
+                node.setAttribute('id', 'availableEvolutionInfo');
+                node.style.textAlign = "center";
+                node.style.borderTop = "solid #AAAAAA 1px";
+                node.style.marginTop = "10px";
+                node.style.paddingTop = "10px";
+                infoDiv.appendChild(node);
             }
 
             static __initializeRoamingRouteInfo()
@@ -173,7 +143,7 @@ class Automation
 
                 if (!infoDiv.hidden)
                 {
-                    infoDiv.innerHTML = "Stone evolution:<br>";
+                    infoDiv.innerHTML = "Possible evolution:<br>";
 
                     evoStones.forEach((stone) => infoDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
                                                                     + ' onclick="javascript: Automation.Menu.Info.__goToStoneMenu(\'' + stone + '\');">');
@@ -196,7 +166,7 @@ class Automation
                 menuTabs[1].firstElementChild.classList.remove('active');
                 menuTabs[2].firstElementChild.classList.remove('active');
 
-                // Switch to the selectec stone
+                // Switch to the selected stone
                 ItemHandler.stoneSelected(stone);
                 ItemHandler.pokemonSelected('');
             }
@@ -215,7 +185,35 @@ class Automation
             }
         }
 
-        static __addAutomationButton(name, id, addSeparator = false, parentDiv = "automationButtonDiv", hidden = false)
+        static __addCategory(categoyName, title)
+        {
+            let mainNode = document.getElementById("automationContainer");
+
+            let newNode = document.createElement("div");
+            newNode.setAttribute('id', categoyName);
+
+            newNode.style.backgroundColor = "#444444";
+            newNode.style.color = "#eeeeee";
+            newNode.style.borderRadius = "5px";
+            newNode.style.paddingTop = "5px";
+            newNode.style.paddingBottom = "10px";
+            newNode.style.borderColor = "#aaaaaa";
+            newNode.style.borderStyle = "solid";
+            newNode.style.borderWidth = "1px";
+            newNode.style.marginTop = "5px";
+
+            newNode.innerHTML = '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
+                              +     title
+                              + '</div>'
+                              + '<div id="' + categoyName + 'Div">'
+                              + '</div>';
+
+            mainNode.appendChild(newNode);
+
+            return newNode;
+        }
+
+        static __addAutomationButton(name, id, addSeparator = false, parentDiv = "automationButtonsDiv", hidden = false)
         {
             // Enable automation by default, in not already set in cookies
             if (localStorage.getItem(id) == null)
@@ -235,7 +233,7 @@ class Automation
 
             let newButton = '<div style="padding:0px 10px; line-height:24px;">'
                           + name + ' : <button id="' + id + '" class="btn ' + buttonClass + '" '
-                          + 'style="width: 30px; height: 20px; padding:0px; border: 0px;" '
+                          + 'style="width: 30px; height: 20px; padding:0px; border: 0px; border-radius:4px;" '
                           + 'onClick="javascript:Automation.Menu.__toggleAutomation(\'' + id + '\')"'
                           + 'type="button">' + buttonText + '</button><br>'
                           + '</div>';
@@ -246,7 +244,7 @@ class Automation
         static __toggleAutomation(id)
         {
             let button = document.getElementById(id);
-            let newStatus = !(localStorage.getItem(button.id) == "true");
+            let newStatus = !(localStorage.getItem(id) == "true");
             if (newStatus)
             {
                 button.classList.remove('btn-danger');
@@ -268,6 +266,9 @@ class Automation
     {
         static start()
         {
+            // Add the related button to the automation menu
+            Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
+
             var autoClickerLoop = setInterval(function ()
             {
                 if (localStorage.getItem('autoClickEnabled') == "true")
@@ -316,6 +317,8 @@ class Automation
 
         static start()
         {
+            Automation.Dungeon.__buildMenu();
+
             var autoClickerLoop = setInterval(function ()
             {
                 if ((App.game.gameState === GameConstants.GameState.dungeon)
@@ -426,6 +429,19 @@ class Automation
                 }
             }, 50); // Runs every game tick
         }
+
+        static __buildMenu()
+        {
+            // Hide the gym and dungeon fight menus by default and disable auto fight
+            let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
+                             +     '&nbsp;Dungeon fight&nbsp;'
+                             + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
+            let dungeonDiv = Automation.Menu.__addCategory("dungeonFightButtons", dungeonTitle);
+            dungeonDiv.hidden = true;
+
+            // Add an on/off button
+            Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeonFightButtonsDiv", true);
+        }
     }
 
     /************************/
@@ -436,6 +452,8 @@ class Automation
     {
         static start()
         {
+            Automation.Gym.__buildMenu();
+
             var autoGymLoop = setInterval(function ()
             {
                 // We are currently fighting, do do anything
@@ -497,12 +515,36 @@ class Automation
                 }
             }, 50); // Runs every game tick
         }
+
+        static __buildMenu()
+        {
+            // Hide the gym and dungeon fight menus by default and disable auto fight
+            let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
+                         +     '&nbsp;Gym fight&nbsp;'
+                         + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
+            let gymDiv = Automation.Menu.__addCategory("gymFightButtons", gymTitle);
+            gymDiv.hidden = true;
+
+            // Add an on/off button
+            Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", false, "gymFightButtonsDiv", true);
+
+            // Add gym selector div
+            let node = document.createElement('div');
+            node.setAttribute('id', 'automationGymSelector');
+            node.style.textAlign = "center";
+            document.getElementById("gymFightButtonsDiv").appendChild(node);
+        }
     }
 
     static Hatchery = class AutomationHatchery
     {
         static start()
         {
+            // Add the related buttons to the automation menu
+            Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", true);
+            Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
+            Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
+
             var eggLoop = setInterval(function ()
             {
                 if (localStorage.getItem('hatcheryAutomationEnabled') == "true")
@@ -613,6 +655,10 @@ class Automation
     {
         static start()
         {
+            // Add the related buttons to the automation menu
+            Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", true);
+            Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
+
             var autoFarmingLoop = setInterval(function ()
             {
                 if (localStorage.getItem('autoFarmingEnabled') == "true")
@@ -707,6 +753,9 @@ class Automation
     {
         static start()
         {
+            // Add the related button to the automation menu
+            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
+
             var bombCheckLoop = setInterval(function ()
             {
                 if (Automation.Underground.__isMiningPossible())
