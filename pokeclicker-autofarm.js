@@ -81,6 +81,8 @@ class Automation
                            +     '</div>'
                            +     '<div id="roamingRouteInfo" style="text-align: center;">'
                            +     '</div>'
+                           +     '<div id="availableEvolutionInfo" style="text-align: center; border-top:solid #AAAAAA 1px; margin-top:10px; padding-top:5px;">'
+                           +     '</div>'
                            + '</div>'
                            + '<div id="gymFightButtons" style="background-color:#444444; color: #eeeeee; border-radius:5px; padding:5px 0px 10px 0px; margin-top:25px; border:solid #AAAAAA 1px;">'
                            +     '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
@@ -134,25 +136,82 @@ class Automation
         {
             static start()
             {
+                Automation.Menu.Info.__initializeRoamingRouteInfo();
+                Automation.Menu.Info.__initializeEvolutionInfo();
+            }
+
+            static __initializeRoamingRouteInfo()
+            {
                 // Set the initial value
                 Automation.Menu.Info.__refreshRoamingRouteInfo();
 
-                // Program an update every hour
-                // The roaming date changes every 8h, so it's safe to refresh every hours
-                let now = new Date();
-                let oneHour = 60 * 60 * 1000; // 1 hour in msec
-                let delay = oneHour - ((now.getMinutes() * 60 + now.getSeconds()) * 1000);
-
-                setTimeout(function()
-                {
-                    setInterval(Automation.Menu.Info.__refreshRoamingRouteInfo, oneHour);
-                }, delay);
+                setInterval(Automation.Menu.Info.__refreshRoamingRouteInfo, 1000); // Refresh every 1s (changes every 8h, but the player might change map)
             }
 
             static __refreshRoamingRouteInfo()
             {
-                let infoDiv = document.getElementById("roamingRouteInfo")
+                let infoDiv = document.getElementById("roamingRouteInfo");
                 infoDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
+            }
+
+            static __initializeEvolutionInfo()
+            {
+                // Set the initial value
+                Automation.Menu.Info.__refreshEvolutionInfo();
+
+                setInterval(Automation.Menu.Info.__refreshEvolutionInfo, 1000); // Refresh every 1s
+            }
+
+            static __refreshEvolutionInfo()
+            {
+                let infoDiv = document.getElementById("availableEvolutionInfo");
+
+                let evoStones = Object.keys(GameConstants.StoneType).filter(
+                    stone => isNaN(stone) && stone !== 'None' && Automation.Menu.Info.__hasStoneEvolutionCandidate(stone));
+
+                infoDiv.hidden = (evoStones.length == 0);
+
+                if (!infoDiv.hidden)
+                {
+                    infoDiv.innerHTML = "Stone evolution:<br>";
+
+                    evoStones.forEach((stone) => infoDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
+                                                                    + ' onclick="javascript: Automation.Menu.Info.__goToStoneMenu(\'' + stone + '\');">');
+                }
+            }
+
+            static __goToStoneMenu(stone)
+            {
+                // Display the menu
+                $('#showItemsModal').modal('show');
+
+                // Switch tab if needed
+                $('#evoStones').addClass('active');
+                $('#itemBag').removeClass('active')
+                $('#keyItems').removeClass('active');
+
+                // Could not find a better way, unfortunately
+                let menuTabs = $('#evoStones')[0].parentElement.parentElement.firstElementChild.children;
+                menuTabs[0].firstElementChild.classList.add('active');
+                menuTabs[1].firstElementChild.classList.remove('active');
+                menuTabs[2].firstElementChild.classList.remove('active');
+
+                // Switch to the selectec stone
+                ItemHandler.stoneSelected(stone);
+                ItemHandler.pokemonSelected('');
+            }
+
+            static __hasStoneEvolutionCandidate(stone)
+            {
+                var hasCandidate = false;
+
+                PokemonHelper.getPokemonsWithEvolution(GameConstants.StoneType[stone]).forEach(
+                    (pokemon) =>
+                    {
+                        hasCandidate |= (PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone])[0] == 0);
+                    });
+
+                return hasCandidate;
             }
         }
 
