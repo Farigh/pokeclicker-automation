@@ -1,8 +1,8 @@
 class Automation
 {
-    /************************/
-    /*   PUBLIC INTERFACE   */
-    /************************/
+    /**************************/
+    /*    PUBLIC INTERFACE    */
+    /**************************/
     static start()
     {
         var timer = setInterval(function()
@@ -33,9 +33,9 @@ class Automation
         }, 200); // Try to instanciate every 0.2s
     }
 
-    /************************/
-    /*  PRIVATE  INTERFACE  */
-    /************************/
+    /**************************/
+    /*   PRIVATE  INTERFACE   */
+    /**************************/
     static __sendNotif(message)
     {
         if (localStorage.getItem('automationNotificationsEnabled') == "true")
@@ -52,9 +52,9 @@ class Automation
 
     static __previousTown = "";
 
-    /************************/
-    /*   AUTOMATION  MENU   */
-    /************************/
+    /**************************/
+    /*    AUTOMATION  MENU    */
+    /**************************/
 
     static Menu = class AutomationMenu
     {
@@ -221,8 +221,8 @@ class Automation
                 localStorage.setItem(id, true)
             }
 
-            let buttonClass = (localStorage.getItem(id) == "true") ? "btn-success" : "btn-danger";
-            let buttonText = (localStorage.getItem(id) == "true") ? "On" : "Off";
+            let buttonClass = (localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger";
+            let buttonText = (localStorage.getItem(id) === "true") ? "On" : "Off";
 
             let buttonDiv = document.getElementById(parentDiv)
 
@@ -306,9 +306,9 @@ class Automation
         }
     }
 
-    /************************/
-    /*  DUNGEON AUTOMATION  */
-    /************************/
+    /**************************/
+    /*   DUNGEON AUTOMATION   */
+    /**************************/
 
     static Dungeon = class AutomationDungeon
     {
@@ -444,9 +444,9 @@ class Automation
         }
     }
 
-    /************************/
-    /*    GYM AUTOMATION    */
-    /************************/
+    /**************************/
+    /*     GYM AUTOMATION     */
+    /**************************/
 
     static Gym = class AutomationGym
     {
@@ -466,7 +466,8 @@ class Automation
                 if (App.game.gameState === GameConstants.GameState.town)
                 {
                     // If we are in the same town as previous cycle
-                    if (Automation.__previousTown === player.town().name)
+                    if ((Automation.__previousTown === player.town().name)
+                        && (!document.getElementById("gymFightButtons").hidden))
                     {
                         if (localStorage.getItem('gymFightEnabled') == "true")
                         {
@@ -536,12 +537,23 @@ class Automation
         }
     }
 
+    /**************************/
+    /*  HATCHERY  AUTOMATION  */
+    /**************************/
+
     static Hatchery = class AutomationHatchery
     {
         static start()
         {
+            // Disable no-shiny mode by default
+            if (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") == null)
+            {
+                localStorage.setItem("notShinyFirstHatcheryAutomationEnabled", false);
+            }
+
             // Add the related buttons to the automation menu
             Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", true);
+            Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
 
@@ -550,7 +562,7 @@ class Automation
                 if (localStorage.getItem('hatcheryAutomationEnabled') == "true")
                 {
                     // Attempt to hatch each egg. If the egg is at 100% it will succeed
-                    [0, 1, 2, 3].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
+                    [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
                     // Try to use eggs first, if enabled
                     if (localStorage.getItem('eggsHatcheryAutomationEnabled') == "true")
@@ -612,17 +624,33 @@ class Automation
                     // Now add lvl 100 pokemons to empty slots if we can
                     if (App.game.breeding.hasFreeEggSlot())
                     {
-                        // Sort list by breeding efficiency
+                        // Get breedable pokemon list
                         let filteredEggList = App.game.party.caughtPokemon.filter(
-                            (partyPokemon) =>
+                            (pokemon) =>
                             {
-                                // Only consider breedable Pokemon
-                                return !partyPokemon.breeding && (partyPokemon.level == 100);
+                                // Only consider breedable Pokemon (ie. not breeding and lvl 100)
+                                return !pokemon.breeding && (pokemon.level == 100);
                             });
+
+                        let notShinyFirst = (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === "true");
+
+                        // Sort list by breeding efficiency
                         filteredEggList.sort((a, b) =>
                                              {
                                                  let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
                                                  let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
+
+                                                 if (notShinyFirst)
+                                                 {
+                                                     if (a.shiny && !bValue.shiny)
+                                                     {
+                                                         return 1;
+                                                     }
+                                                     if (!a.shiny && bValue.shiny)
+                                                     {
+                                                         return -1;
+                                                     }
+                                                 }
 
                                                  if (aValue < bValue)
                                                  {
@@ -650,6 +678,10 @@ class Automation
             }, 1000); // Runs every seconds
         }
     }
+
+    /**************************/
+    /*    FARM  AUTOMATION    */
+    /**************************/
 
     static Farm = class AutomationFarm
     {
@@ -717,15 +749,7 @@ class Automation
 
         static __mangoAguavIapapa(berryType)
         {
-            App.game.farming.plant(2, berryType, true);
-            App.game.farming.plant(3, berryType, true);
-            App.game.farming.plant(5, berryType, true);
-            App.game.farming.plant(10, berryType, true);
-            App.game.farming.plant(12, berryType, true);
-            App.game.farming.plant(14, berryType, true);
-            App.game.farming.plant(19, berryType, true);
-            App.game.farming.plant(21, berryType, true);
-            App.game.farming.plant(22, berryType, true);
+            [2, 3, 5, 10, 12, 14, 19, 21, 21].forEach((index) => App.game.farming.plant(index, berryType, true));
 
             let berryName = Object.values(BerryType)[berryType];
             let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
@@ -748,6 +772,10 @@ class Automation
             Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries. Looking for mutation...");
         }
     }
+
+    /**************************/
+    /*    MINE  AUTOMATION    */
+    /**************************/
 
     static Underground = class AutomationUnderground
     {
