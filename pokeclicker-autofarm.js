@@ -72,81 +72,80 @@ class Automation
             let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
             Automation.Menu.__addCategory("automationButtons", automationTitle);
 
-            // Initialize info
-            Automation.Menu.Info.start();
+            // Initialize trivia
+            Automation.Menu.Trivia.start();
         }
 
-        static Info = class AutomationInfo
+        static Trivia = class AutomationTrivia
         {
             static start()
             {
-                Automation.Menu.Info.__buildMenu();
-                Automation.Menu.Info.__initializeRoamingRouteInfo();
-                Automation.Menu.Info.__initializeEvolutionInfo();
+                Automation.Menu.Trivia.__buildMenu();
+                Automation.Menu.Trivia.__initializeRoamingRouteTrivia();
+                Automation.Menu.Trivia.__initializeEvolutionTrivia();
             }
-
 
             static __buildMenu()
             {
                 // Hide the gym and dungeon fight menus by default and disable auto fight
-                let infoTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
-                              +     '&nbsp;Information&nbsp;'
-                              + '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">';
-                let infoDiv = Automation.Menu.__addCategory("automationInfo", infoTitle);
+                let triviaTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
+                                +     '&nbsp;Trivia&nbsp;'
+                                + '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">';
+                let triviaDiv = Automation.Menu.__addCategory("automationTrivia", triviaTitle);
 
-                // Add roaming info div
+                // Add roaming route div
                 let node = document.createElement("div");
-                node.setAttribute("id", "roamingRouteInfo");
+                node.setAttribute("id", "roamingRouteTrivia");
                 node.style.textAlign = "center";
-                infoDiv.appendChild(node);
+                triviaDiv.appendChild(node);
 
                 // Add available evolution div
                 node = document.createElement("div");
-                node.setAttribute("id", "availableEvolutionInfo");
+                node.setAttribute("id", "availableEvolutionTrivia");
                 node.style.textAlign = "center";
                 node.style.borderTop = "solid #AAAAAA 1px";
                 node.style.marginTop = "10px";
                 node.style.paddingTop = "10px";
-                infoDiv.appendChild(node);
+                triviaDiv.appendChild(node);
             }
 
-            static __initializeRoamingRouteInfo()
+            static __initializeRoamingRouteTrivia()
             {
                 // Set the initial value
-                Automation.Menu.Info.__refreshRoamingRouteInfo();
+                Automation.Menu.Trivia.__refreshRoamingRouteTrivia();
 
-                setInterval(Automation.Menu.Info.__refreshRoamingRouteInfo, 1000); // Refresh every 1s (changes every 8h, but the player might change map)
+                setInterval(Automation.Menu.Trivia.__refreshRoamingRouteTrivia, 1000); // Refresh every 1s (changes every 8h, but the player might change map)
             }
 
-            static __refreshRoamingRouteInfo()
+            static __refreshRoamingRouteTrivia()
             {
-                let infoDiv = document.getElementById("roamingRouteInfo");
-                infoDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
+                let triviaDiv = document.getElementById("roamingRouteTrivia");
+                triviaDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
             }
 
-            static __initializeEvolutionInfo()
+            static __initializeEvolutionTrivia()
             {
                 // Set the initial value
-                Automation.Menu.Info.__refreshEvolutionInfo();
+                Automation.Menu.Trivia.__refreshEvolutionTrivia();
 
-                setInterval(Automation.Menu.Info.__refreshEvolutionInfo, 1000); // Refresh every 1s
+                setInterval(Automation.Menu.Trivia.__refreshEvolutionTrivia, 1000); // Refresh every 1s
             }
 
-            static __refreshEvolutionInfo()
+            static __refreshEvolutionTrivia()
             {
-                let infoDiv = document.getElementById("availableEvolutionInfo");
+                let triviaDiv = document.getElementById("availableEvolutionTrivia");
 
                 let evoStones = Object.keys(GameConstants.StoneType).filter(
-                    stone => isNaN(stone) && stone !== "None" && Automation.Menu.Info.__hasStoneEvolutionCandidate(stone));
+                    stone => isNaN(stone) && stone !== "None" && Automation.Menu.Trivia.__hasStoneEvolutionCandidate(stone));
 
-                infoDiv.hidden = (evoStones.length == 0);
+                triviaDiv.hidden = (evoStones.length == 0);
 
-                if (!infoDiv.hidden)
+                if (!triviaDiv.hidden)
                 {
-                    infoDiv.innerHTML = "Possible evolution:<br>";
+                    triviaDiv.innerHTML = "Possible evolution:<br>";
 
-                    evoStones.forEach((stone) => infoDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
-                                                                    + ' onclick="javascript: Automation.Menu.Info.__goToStoneMenu(\'' + stone + '\');">');
+                    evoStones.forEach((stone) => triviaDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
+                                                                      + ' onclick="javascript: Automation.Menu.Trivia.__goToStoneMenu(\'' + stone + '\');">');
                 }
             }
 
