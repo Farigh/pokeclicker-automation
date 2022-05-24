@@ -342,12 +342,33 @@ class Automation
         }
     }
 
+    /**************************/
+    /*    CLICK AUTOMATION    */
+    /**************************/
+
     static Click = class AutomationClick
     {
         static start()
         {
+            Automation.Click.__buildRouteMaxHealthMap();
+
             // Add the related button to the automation menu
             Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
+            Automation.Menu.__addAutomationButton("Best route", "bestRouteClickEnabled");
+
+            // Disable best route by default
+            if (localStorage.getItem("bestRouteClickEnabled") == null)
+            {
+                localStorage.setItem("bestRouteClickEnabled", false);
+            }
+
+            var bestRouteLoop = setInterval(function ()
+            {
+                if (localStorage.getItem("bestRouteClickEnabled") === "true")
+                {
+                    Automation.Click.__goToBestRoute();
+                }
+            }, 10000); // Refresh every 10s
 
             var autoClickerLoop = setInterval(function ()
             {
@@ -383,6 +404,102 @@ class Automation
                     }
                 }
             }, 50); // The app hard-caps click attacks at 50
+        }
+
+        // Map of Map [ region => [ route => maxHp ]]
+        static __routeMaxHealthMap = new Map();
+
+        static __bestRouteRegion = null;
+        static __bestRoute = null;
+        static __nextBestRoute = null;
+
+        static __buildRouteMaxHealthMap()
+        {
+            Routes.regionRoutes.forEach((route) =>
+                {
+                    if (route.region >= Automation.Click.__routeMaxHealthMap.size)
+                    {
+                        Automation.Click.__routeMaxHealthMap.set(route.region, new Map());
+                    }
+
+                    let routeMaxHealth = Automation.Click.__getRouteMaxHealth(route);
+                    Automation.Click.__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
+                });
+        }
+
+        static __goToBestRoute()
+        {
+            let playerClickAttack = App.game.party.calculateClickAttack();
+
+            let didRegionChange = (Automation.Click.__bestRouteRegion !== player.region);
+            let needsNewRoad = didRegionChange
+                            || ((Automation.Click.__nextBestRoute !== Automation.Click.__bestRoute)
+                                && (Automation.Click.__routeMaxHealthMap.get(player.region).get(Automation.Click.__nextBestRoute) < playerClickAttack));
+
+            // Don't refresh if we already are on the best road
+            if ((Automation.Click.__bestRoute === player.route()) && !needsNewRoad)
+            {
+                return;
+            }
+
+            if (needsNewRoad)
+            {
+                Automation.Click.__bestRouteRegion = player.region;
+
+                let regionRoutes = Routes.getRoutesByRegion(player.region);
+
+                // If no routes are below the user attack, juste choose the 1st one
+                Automation.Click.__bestRoute = regionRoutes[0].number;
+                Automation.Click.__nextBestRoute = Automation.Click.__bestRoute;
+
+                // Fortunately routes are sorted by attack
+                regionRoutes.every((route) =>
+                    {
+                        if (Automation.Click.__routeMaxHealthMap.get(player.region).get(route.number) < playerClickAttack)
+                        {
+                            Automation.Click.__bestRoute = route.number;
+
+                            return true;
+                        }
+
+                        Automation.Click.__nextBestRoute = route.number;
+                        return false;
+                    });
+            }
+
+            if (Automation.Click.__bestRoute !== player.route())
+            {
+                MapHelper.moveToRoute(Automation.Click.__bestRoute, player.region);
+            }
+        }
+
+        static __getRouteMaxHealth(route)
+        {
+            let routeMaxHealth = 0;
+            RouteHelper.getAvailablePokemonList(route.number, route.region).forEach((pokemanName) =>
+                {
+                    routeMaxHealth = Math.max(routeMaxHealth, Automation.Click.__getPokemonMaxHealth(route, pokemanName));
+                });
+
+            return routeMaxHealth;
+        }
+
+        static __getPokemonMaxHealth(route, pokemonName)
+        {
+            // Based on https://github.com/pokeclicker/pokeclicker/blob/b5807ae2b8b14431e267d90563ae8944272e1679/src/scripts/pokemons/PokemonFactory.ts#L33
+            let basePokemon = PokemonHelper.getPokemonByName(pokemonName);
+
+            let getRouteAverageHp = function()
+            {
+                let poke = [...new Set(Object.values(Routes.getRoute(route.region, route.number).pokemon).flat().map(p => p.pokemon ?? p).flat())];
+                let total = poke.map(p => pokemonMap[p].base.hitpoints).reduce((s, a) => s + a, 0);
+                return total / poke.length;
+            };
+
+            let routeAvgHp = getRouteAverageHp();
+            let routeHp = PokemonFactory.routeHealth(route.number, route.region);
+
+            return Math.round((routeHp - (routeHp / 10)) + (routeHp / 10 / routeAvgHp * basePokemon.hitpoints));
         }
     }
 
@@ -869,7 +986,7 @@ class Automation
         static start()
         {
             // Add the related button to the automation menu
-            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
+            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", true);
 
             var bombCheckLoop = setInterval(function ()
             {
