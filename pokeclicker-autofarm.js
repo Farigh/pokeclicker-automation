@@ -13,7 +13,7 @@ class Automation
                 clearInterval(timer);
 
                 // Log automation start
-                console.log(`[${GameConstants.formatDate(new Date())}] %cStarting automation..`, 'color:#8e44ad;font-weight:900;');
+                console.log(`[${GameConstants.formatDate(new Date())}] %cStarting automation..`, "color:#8e44ad;font-weight:900;");
 
                 Automation.Menu.build();
 
@@ -28,7 +28,7 @@ class Automation
                 Automation.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
 
                 // Log automation startup completion
-                console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, 'color:#2ecc71;font-weight:900;');
+                console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");
             }
         }, 200); // Try to instanciate every 0.2s
     }
@@ -38,10 +38,10 @@ class Automation
     /**************************/
     static __sendNotif(message)
     {
-        if (localStorage.getItem('automationNotificationsEnabled') == "true")
+        if (localStorage.getItem("automationNotificationsEnabled") == "true")
         {
             Notifier.notify({
-                                title: 'Automation',
+                                title: "Automation",
                                 message: message,
                                 type: NotificationConstants.NotificationOption.primary,
                                 timeout: 3000,
@@ -60,13 +60,13 @@ class Automation
     {
         static build()
         {
-            let node = document.createElement('div');
+            let node = document.createElement("div");
             node.style.position = "absolute";
             node.style.top = "50px";
             node.style.right = "10px";
             node.style.width = "145px";
             node.style.textAlign = "right";
-            node.setAttribute('id', 'automationContainer');
+            node.setAttribute("id", "automationContainer");
             document.body.appendChild(node);
 
             let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
@@ -95,14 +95,14 @@ class Automation
                 let infoDiv = Automation.Menu.__addCategory("automationInfo", infoTitle);
 
                 // Add roaming info div
-                let node = document.createElement('div');
-                node.setAttribute('id', 'roamingRouteInfo');
+                let node = document.createElement("div");
+                node.setAttribute("id", "roamingRouteInfo");
                 node.style.textAlign = "center";
                 infoDiv.appendChild(node);
 
                 // Add available evolution div
-                node = document.createElement('div');
-                node.setAttribute('id', 'availableEvolutionInfo');
+                node = document.createElement("div");
+                node.setAttribute("id", "availableEvolutionInfo");
                 node.style.textAlign = "center";
                 node.style.borderTop = "solid #AAAAAA 1px";
                 node.style.marginTop = "10px";
@@ -137,7 +137,7 @@ class Automation
                 let infoDiv = document.getElementById("availableEvolutionInfo");
 
                 let evoStones = Object.keys(GameConstants.StoneType).filter(
-                    stone => isNaN(stone) && stone !== 'None' && Automation.Menu.Info.__hasStoneEvolutionCandidate(stone));
+                    stone => isNaN(stone) && stone !== "None" && Automation.Menu.Info.__hasStoneEvolutionCandidate(stone));
 
                 infoDiv.hidden = (evoStones.length == 0);
 
@@ -153,22 +153,22 @@ class Automation
             static __goToStoneMenu(stone)
             {
                 // Display the menu
-                $('#showItemsModal').modal('show');
+                $("#showItemsModal").modal("show");
 
                 // Switch tab if needed
-                $('#evoStones').addClass('active');
-                $('#itemBag').removeClass('active')
-                $('#keyItems').removeClass('active');
+                $("#evoStones").addClass("active");
+                $("#itemBag").removeClass("active")
+                $("#keyItems").removeClass("active");
 
                 // Could not find a better way, unfortunately
-                let menuTabs = $('#evoStones')[0].parentElement.parentElement.firstElementChild.children;
-                menuTabs[0].firstElementChild.classList.add('active');
-                menuTabs[1].firstElementChild.classList.remove('active');
-                menuTabs[2].firstElementChild.classList.remove('active');
+                let menuTabs = $("#evoStones")[0].parentElement.parentElement.firstElementChild.children;
+                menuTabs[0].firstElementChild.classList.add("active");
+                menuTabs[1].firstElementChild.classList.remove("active");
+                menuTabs[2].firstElementChild.classList.remove("active");
 
                 // Switch to the selected stone
                 ItemHandler.stoneSelected(stone);
-                ItemHandler.pokemonSelected('');
+                ItemHandler.pokemonSelected("");
             }
 
             static __hasStoneEvolutionCandidate(stone)
@@ -190,7 +190,7 @@ class Automation
             let mainNode = document.getElementById("automationContainer");
 
             let newNode = document.createElement("div");
-            newNode.setAttribute('id', categoyName);
+            newNode.setAttribute("id", categoyName);
 
             newNode.style.backgroundColor = "#444444";
             newNode.style.color = "#eeeeee";
@@ -247,15 +247,15 @@ class Automation
             let newStatus = !(localStorage.getItem(id) == "true");
             if (newStatus)
             {
-                button.classList.remove('btn-danger');
-                button.classList.add('btn-success');
-                button.innerText = 'On';
+                button.classList.remove("btn-danger");
+                button.classList.add("btn-success");
+                button.innerText = "On";
             }
             else
             {
-                button.classList.remove('btn-success');
-                button.classList.add('btn-danger');
-                button.innerText = 'Off';
+                button.classList.remove("btn-success");
+                button.classList.add("btn-danger");
+                button.innerText = "Off";
             }
 
             localStorage.setItem(button.id, newStatus);
@@ -271,7 +271,7 @@ class Automation
 
             var autoClickerLoop = setInterval(function ()
             {
-                if (localStorage.getItem('autoClickEnabled') == "true")
+                if (localStorage.getItem("autoClickEnabled") == "true")
                 {
                     // Click while in a normal battle
                     if (App.game.gameState == GameConstants.GameState.fighting)
@@ -296,7 +296,7 @@ class Automation
                         }
                         else if ((DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
                                  && !DungeonRunner.fightingBoss()
-                                 && (localStorage.getItem('dungeonFightEnabled') != "true"))
+                                 && (localStorage.getItem("dungeonFightEnabled") != "true"))
                         {
                             DungeonRunner.startBossFight();
                         }
@@ -322,7 +322,7 @@ class Automation
             var autoClickerLoop = setInterval(function ()
             {
                 if ((App.game.gameState === GameConstants.GameState.dungeon)
-                    && (localStorage.getItem('dungeonFightEnabled') == "true"))
+                    && (localStorage.getItem("dungeonFightEnabled") == "true"))
                 {
                     // Let any fight finish before moving
                     if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
@@ -396,9 +396,9 @@ class Automation
                     if (document.getElementById("dungeonFightButtons").hidden || (Automation.__previousTown != player.town().name))
                     {
                         // Reset button status
-                        if (localStorage.getItem('dungeonFightEnabled') == "true")
+                        if (localStorage.getItem("dungeonFightEnabled") == "true")
                         {
-                            Automation.Menu.__toggleAutomation('dungeonFightEnabled');
+                            Automation.Menu.__toggleAutomation("dungeonFightEnabled");
                         }
                         Automation.__previousTown = player.town().name;
 
@@ -406,7 +406,7 @@ class Automation
                         document.getElementById("dungeonFightButtons").hidden = false;
                     }
 
-                    if (localStorage.getItem('dungeonFightEnabled') == "true")
+                    if (localStorage.getItem("dungeonFightEnabled") == "true")
                     {
                         if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost)
                         {
@@ -415,7 +415,7 @@ class Automation
                         }
                         else
                         {
-                            Automation.Menu.__toggleAutomation('dungeonFightEnabled');
+                            Automation.Menu.__toggleAutomation("dungeonFightEnabled");
                         }
                     }
 
@@ -469,7 +469,7 @@ class Automation
                     if ((Automation.__previousTown === player.town().name)
                         && (!document.getElementById("gymFightButtons").hidden))
                     {
-                        if (localStorage.getItem('gymFightEnabled') == "true")
+                        if (localStorage.getItem("gymFightEnabled") == "true")
                         {
                             GymList[document.getElementById("selectedAutomationGym").value].protectedOnclick();
                         }
@@ -493,9 +493,9 @@ class Automation
 
                         Automation.__previousTown = player.town().name;
 
-                        if (localStorage.getItem('gymFightEnabled') == "true")
+                        if (localStorage.getItem("gymFightEnabled") == "true")
                         {
-                            Automation.Menu.__toggleAutomation('gymFightEnabled');
+                            Automation.Menu.__toggleAutomation("gymFightEnabled");
                         }
 
                         // Make it visible
@@ -509,9 +509,9 @@ class Automation
                 {
                     document.getElementById("gymFightButtons").hidden = true;
                     Automation.__previousTown = "";
-                    if (localStorage.getItem('gymFightEnabled') == "true")
+                    if (localStorage.getItem("gymFightEnabled") == "true")
                     {
-                        Automation.Menu.__toggleAutomation('gymFightEnabled');
+                        Automation.Menu.__toggleAutomation("gymFightEnabled");
                     }
                 }
             }, 50); // Runs every game tick
@@ -530,8 +530,8 @@ class Automation
             Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", false, "gymFightButtonsDiv", true);
 
             // Add gym selector div
-            let node = document.createElement('div');
-            node.setAttribute('id', 'automationGymSelector');
+            let node = document.createElement("div");
+            node.setAttribute("id", "automationGymSelector");
             node.style.textAlign = "center";
             document.getElementById("gymFightButtonsDiv").appendChild(node);
         }
@@ -559,13 +559,13 @@ class Automation
 
             var eggLoop = setInterval(function ()
             {
-                if (localStorage.getItem('hatcheryAutomationEnabled') == "true")
+                if (localStorage.getItem("hatcheryAutomationEnabled") == "true")
                 {
                     // Attempt to hatch each egg. If the egg is at 100% it will succeed
                     [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
                     // Try to use eggs first, if enabled
-                    if (localStorage.getItem('eggsHatcheryAutomationEnabled') == "true")
+                    if (localStorage.getItem("eggsHatcheryAutomationEnabled") == "true")
                     {
                         let tryToHatchEgg = function (type)
                         {
@@ -594,7 +594,7 @@ class Automation
                     }
 
                     // Then try to use fossils, if enabled
-                    if (localStorage.getItem('fossilHatcheryAutomationEnabled') == "true")
+                    if (localStorage.getItem("fossilHatcheryAutomationEnabled") == "true")
                     {
                         let tryToHatchFossil = function (type)
                         {
@@ -693,7 +693,7 @@ class Automation
 
             var autoFarmingLoop = setInterval(function ()
             {
-                if (localStorage.getItem('autoFarmingEnabled') == "true")
+                if (localStorage.getItem("autoFarmingEnabled") == "true")
                 {
                     Automation.Farm.__readyToHarvestCount = 0;
                     // Check if any berry is ready to harvest
@@ -707,7 +707,7 @@ class Automation
                     {
                         App.game.farming.harvestAll();
 
-                        if (localStorage.getItem('autoMutationFarmingEnabled') == "true")
+                        if (localStorage.getItem("autoMutationFarmingEnabled") == "true")
                         {
                             // Automation.Farm.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
                             // Automation.Farm.__lumBerryFarm();
@@ -797,7 +797,7 @@ class Automation
 
         static __isMiningPossible()
         {
-            return ((localStorage.getItem('autoMiningEnabled') === "true")
+            return ((localStorage.getItem("autoMiningEnabled") === "true")
                     && (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
                     && (Mine.itemsFound() < Mine.itemsBuried()));
         }
