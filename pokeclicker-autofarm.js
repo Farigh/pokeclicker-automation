@@ -50,8 +50,8 @@ class Automation
     }
 
 
-    static __previousTown = "";
-    static __previousRegion = "";
+    static __previousTown = null;
+    static __previousRegion = null;
 
     /**************************/
     /*    AUTOMATION  MENU    */
@@ -87,7 +87,7 @@ class Automation
                 Automation.Menu.Trivia.__initializeEvolutionTrivia();
             }
 
-            static __displayedRoamingRoute = "";
+            static __displayedRoamingRoute = null;
 
             static __buildMenu()
             {
@@ -159,7 +159,7 @@ class Automation
 
                     filteredList.forEach(([townName, town]) =>
                         {
-                            let type = (town instanceof DungeonTown) ? "⚔" : "🏫";
+                            let type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
 
                             locationList += '<option value="' + townName + '">' + type + ' ' + townName + '</option>';
                         });
@@ -705,7 +705,7 @@ class Automation
                 if (!document.getElementById("gymFightButtons").hidden)
                 {
                     document.getElementById("gymFightButtons").hidden = true;
-                    Automation.__previousTown = "";
+                    Automation.__previousTown = null;
                     if (localStorage.getItem("gymFightEnabled") == "true")
                     {
                         Automation.Menu.__toggleAutomation("gymFightEnabled");
@@ -840,33 +840,33 @@ class Automation
 
                         // Sort list by breeding efficiency
                         filteredEggList.sort((a, b) =>
-                                             {
-                                                 let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
-                                                 let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
+                            {
+                                if (notShinyFirst)
+                                {
+                                    if (a.shiny && !b.shiny)
+                                    {
+                                        return 1;
+                                    }
+                                    if (!a.shiny && b.shiny)
+                                    {
+                                        return -1;
+                                    }
+                                }
 
-                                                 if (notShinyFirst)
-                                                 {
-                                                     if (a.shiny && !bValue.shiny)
-                                                     {
-                                                         return 1;
-                                                     }
-                                                     if (!a.shiny && bValue.shiny)
-                                                     {
-                                                         return -1;
-                                                     }
-                                                 }
+                                let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
+                                let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
 
-                                                 if (aValue < bValue)
-                                                 {
-                                                     return 1;
-                                                 }
-                                                 if (aValue > bValue)
-                                                 {
-                                                     return -1;
-                                                 }
+                                if (aValue < bValue)
+                                {
+                                    return 1;
+                                }
+                                if (aValue > bValue)
+                                {
+                                    return -1;
+                                }
 
-                                                 return 0;
-                                             });
+                                return 0;
+                            });
 
                         // Do not add pokemons to the queue as it reduces the overall attack
                         // (this will also allow the player to add pokemons, eggs or fossils manually)
