@@ -51,6 +51,7 @@ class Automation
 
 
     static __previousTown = "";
+    static __previousRegion = "";
 
     /**************************/
     /*    AUTOMATION  MENU    */
@@ -81,9 +82,12 @@ class Automation
             static start()
             {
                 Automation.Menu.Trivia.__buildMenu();
+                Automation.Menu.Trivia.__initializeGotoLocationTrivia();
                 Automation.Menu.Trivia.__initializeRoamingRouteTrivia();
                 Automation.Menu.Trivia.__initializeEvolutionTrivia();
             }
+
+            static __displayedRoamingRoute = "";
 
             static __buildMenu()
             {
@@ -107,6 +111,78 @@ class Automation
                 node.style.marginTop = "10px";
                 node.style.paddingTop = "10px";
                 triviaDiv.appendChild(node);
+
+                // Add roaming route div
+                node = document.createElement("div");
+                node.setAttribute("id", "gotoLocationTrivia");
+                node.style.textAlign = "center";
+                node.style.borderTop = "solid #AAAAAA 1px";
+                node.style.marginTop = "10px";
+                node.style.paddingTop = "10px";
+                triviaDiv.appendChild(node);
+            }
+
+            static __initializeGotoLocationTrivia()
+            {
+                // Set the initial value
+                Automation.Menu.Trivia.__refreshGotoLocationTrivia();
+
+                setInterval(Automation.Menu.Trivia.__refreshGotoLocationTrivia, 1000); // Refresh every 1s
+            }
+
+            static __refreshGotoLocationTrivia()
+            {
+                // Only consider town from the current region, that are unlocked
+                let filteredList = Object.entries(TownList).filter(([townName, town]) => (town.region === player.region) && town.isUnlocked());
+
+                if (Automation.__previousRegion !== player.region
+                    || (document.getElementById("gotoSelectedLocation").childNodes.length != filteredList.length))
+                {
+                    // Sort the list alphabetically
+                    filteredList.sort(([townNameA, townA], [townNameB, townB]) =>
+                                      {
+                                          if (townNameA > townNameB)
+                                          {
+                                              return 1;
+                                          }
+                                          if (townNameA < townNameB)
+                                          {
+                                              return -1;
+                                          }
+
+                                          return 0;
+                                      });
+
+                    // Build the new drop-down list
+                    let locationList = '<select class="custom-select" name="gotoSelectedLocation" id="gotoSelectedLocation"'
+                                     + ' style="width: calc(100% - 10px); margin-top: 3px; padding-left: 2px;">';
+
+                    filteredList.forEach(([townName, town]) =>
+                        {
+                            let type = (town instanceof DungeonTown) ? "⚔" : "🏫";
+
+                            locationList += '<option value="' + townName + '">' + type + ' ' + townName + '</option>';
+                        });
+
+                    locationList += '</select>';
+
+                    // Build the button
+                    let goButton = '<button id="moveToLocationButton" class="btn btn-primary" '
+                                 + 'style="width: 30px; height: 20px; padding:0px; border: 0px; border-radius:4px; display:inline-block; position:relative; bottom:1px;" '
+                                 + 'onClick="javascript:Automation.Menu.Trivia.__MoveToLocation()"'
+                                 + 'type="button">Go</button>';
+
+                    let triviaDiv = document.getElementById("gotoLocationTrivia");
+                    triviaDiv.innerHTML = goButton + "&nbsp;to:<br>" + locationList;
+
+                    Automation.__previousRegion = player.region;
+                }
+            }
+
+            static __MoveToLocation()
+            {
+                let selectedDestination = document.getElementById("gotoSelectedLocation").value;
+                MapHelper.moveToTown(selectedDestination);
             }
 
             static __initializeRoamingRouteTrivia()
@@ -119,8 +195,13 @@ class Automation
 
             static __refreshRoamingRouteTrivia()
             {
-                let triviaDiv = document.getElementById("roamingRouteTrivia");
-                triviaDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
+                let currentRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
+                if (Automation.Menu.__displayedRoamingRoute !== currentRoamingRoute)
+                {
+                    let triviaDiv = document.getElementById("roamingRouteTrivia");
+                    triviaDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
+                    Automation.Menu.__displayedRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
+                }
             }
 
             static __initializeEvolutionTrivia()
