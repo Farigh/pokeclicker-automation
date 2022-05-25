@@ -87,6 +87,7 @@ class Automation
             }
 
             static __displayedRoamingRoute = null;
+            static __currentLocationListSize = 0;
 
             static __buildMenu()
             {
@@ -111,14 +112,44 @@ class Automation
                 node.style.paddingTop = "10px";
                 triviaDiv.appendChild(node);
 
-                // Add roaming route div
-                node = document.createElement("div");
-                node.setAttribute("id", "gotoLocationTrivia");
-                node.style.textAlign = "center";
-                node.style.borderTop = "solid #AAAAAA 1px";
-                node.style.marginTop = "10px";
-                node.style.paddingTop = "10px";
-                triviaDiv.appendChild(node);
+                // Add go to location div
+                let gotoLocationDiv = document.createElement("div");
+                gotoLocationDiv.setAttribute("id", "gotoLocationTrivia");
+                gotoLocationDiv.style.textAlign = "center";
+                gotoLocationDiv.style.borderTop = "solid #AAAAAA 1px";
+                gotoLocationDiv.style.marginTop = "10px";
+                gotoLocationDiv.style.paddingTop = "10px";
+                triviaDiv.appendChild(gotoLocationDiv);
+
+                // Add go to location button
+                let gotoButton = document.createElement("button");
+                gotoButton.textContent = "Go";
+                gotoButton.id = "moveToLocationButton";
+                gotoButton.onclick = Automation.Menu.Trivia.__moveToLocation;
+                gotoButton.classList.add("btn");
+                gotoButton.classList.add("btn-primary");
+                gotoButton.style.width = "30px";
+                gotoButton.style.height = "20px";
+                gotoButton.style.padding = "0px";
+                gotoButton.style.borderRadius = "4px";
+                gotoButton.style.position = "relative";
+                gotoButton.style.bottom = "1px";
+                gotoLocationDiv.appendChild(gotoButton);
+
+                // Add the text next to the button
+                let gotoText = document.createElement("span");
+                gotoText.textContent = " to:";
+                gotoLocationDiv.appendChild(gotoText);
+
+                // Add go to location drop-down list
+                let gotoList = document.createElement("select");
+                gotoList.className = "custom-select";
+                gotoList.name = "gotoSelectedLocation";
+                gotoList.id = gotoList.name;
+                gotoList.style.width = "calc(100% - 10px)";
+                gotoList.style.marginTop = "3px";
+                gotoList.style.paddingLeft = "2px";
+                gotoLocationDiv.appendChild(gotoList);
             }
 
             static __initializeGotoLocationTrivia()
@@ -131,12 +162,38 @@ class Automation
 
             static __refreshGotoLocationTrivia()
             {
-                // Only consider town from the current region, that are unlocked
-                let filteredList = Object.entries(TownList).filter(([townName, town]) => (town.region === player.region) && town.isUnlocked());
+                let button = document.getElementById("moveToLocationButton");
 
-                if (Automation.__previousRegion !== player.region
-                    || (document.getElementById("gotoSelectedLocation").childNodes.length != filteredList.length))
+                // Disable the button if a dungeon is in progress
+                if (App.game.gameState === GameConstants.GameState.dungeon)
                 {
+                    if (!button.disabled)
+                    {
+                        button.disabled = true;
+                        button.classList.remove("btn-primary");
+                        button.classList.add("btn-secondary");
+                    }
+                    return;
+                }
+                else if (!button.disabled)
+                {
+                    button.disabled = false;
+                    button.classList.add("btn-primary");
+                    button.classList.remove("btn-secondary");
+                }
+
+                let gotoList = document.getElementById("gotoSelectedLocation");
+
+                let filteredList = Object.entries(TownList).filter(([townName, town]) => (town.region === player.region));
+                let unlockedTownCount = filteredList.reduce((count, [townName, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
+
+                // Clear the list if the player changed region
+                if (Automation.__previousRegion !== player.region)
+                {
+                    // Drop all elements and rebuild the list
+                    gotoList.innerHTML = "";
+
+
                     // Sort the list alphabetically
                     filteredList.sort(([townNameA, townA], [townNameB, townB]) =>
                                       {
@@ -152,34 +209,59 @@ class Automation
                                           return 0;
                                       });
 
+                    let selectedItemSet = false;
                     // Build the new drop-down list
-                    let locationList = '<select class="custom-select" name="gotoSelectedLocation" id="gotoSelectedLocation"'
-                                     + ' style="width: calc(100% - 10px); margin-top: 3px; padding-left: 2px;">';
-
                     filteredList.forEach(([townName, town]) =>
                         {
-                            let type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
+                            const type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
 
-                            locationList += '<option value="' + townName + '">' + type + ' ' + townName + '</option>';
+                            let opt = document.createElement("option");
+                            opt.value = townName;
+                            opt.id = townName;
+                            opt.innerHTML = type + ' ' + townName;
+
+                            // Don't show the option if it's not been unlocked yet
+                            if (!town.isUnlocked())
+                            {
+                                opt.style.display = "none";
+                            }
+                            else if (!selectedItemSet)
+                            {
+                                opt.selected = true;
+                                selectedItemSet = true;
+                            }
+
+                            gotoList.options.add(opt);
                         });
 
-                    locationList += '</select>';
-
-                    // Build the button
-                    let goButton = '<button id="moveToLocationButton" class="btn btn-primary" '
-                                 + 'style="width: 30px; height: 20px; padding:0px; border: 0px; border-radius:4px; display:inline-block; position:relative; bottom:1px;" '
-                                 + 'onClick="javascript:Automation.Menu.Trivia.__MoveToLocation()"'
-                                 + 'type="button">Go</button>';
-
-                    let triviaDiv = document.getElementById("gotoLocationTrivia");
-                    triviaDiv.innerHTML = goButton + "&nbsp;to:<br>" + locationList;
-
                     Automation.__previousRegion = player.region;
+
+                    Automation.Menu.Trivia.__currentLocationListSize = unlockedTownCount;
+                }
+                else if (Automation.Menu.Trivia.__currentLocationListSize != unlockedTownCount)
+                {
+                    filteredList.forEach(([townName, town]) =>
+                        {
+                            if (town.isUnlocked())
+                            {
+                                let opt = gotoList.options.namedItem(townName);
+                                if (opt.style.display === "none")
+                                {
+                                    opt.style.display = "block";
+                                }
+                            }
+                        });
                 }
             }
 
-            static __MoveToLocation()
+            static __moveToLocation()
             {
+                // Forbid travel if a dungeon is in progress (it breaks the game)
+                if (App.game.gameState === GameConstants.GameState.dungeon)
+                {
+                    return;
+                }
+
                 let selectedDestination = document.getElementById("gotoSelectedLocation").value;
                 MapHelper.moveToTown(selectedDestination);
             }
@@ -292,12 +374,17 @@ class Automation
             return newNode;
         }
 
-        static __addAutomationButton(name, id, addSeparator = false, parentDiv = "automationButtonsDiv", hidden = false)
+        static __addAutomationButton(name, id, addSeparator = false, parentDiv = "automationButtonsDiv", forceDisabled = false)
         {
             // Enable automation by default, in not already set in cookies
             if (localStorage.getItem(id) == null)
             {
                 localStorage.setItem(id, true)
+            }
+
+            if (forceDisabled)
+            {
+                localStorage.setItem(id, false);
             }
 
             let buttonClass = (localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger";
@@ -430,9 +517,10 @@ class Automation
 
         static __goToBestRoute()
         {
-            // Disable best route if any other auto-farm is enabled, and exit
+            // Disable best route if any other auto-farm is enabled, or a dungeon is in progress, and exit
             if ((localStorage.getItem("dungeonFightEnabled") == "true")
-                || (localStorage.getItem("gymFightEnabled") == "true"))
+                || (localStorage.getItem("gymFightEnabled") == "true")
+                || (App.game.gameState === GameConstants.GameState.dungeon))
             {
                 if (localStorage.getItem("bestRouteClickEnabled") == "true")
                 {
@@ -625,9 +713,14 @@ class Automation
                     return;
                 }
 
-                // Check if we are in a town (dungeons are attached to town)
+                // Only display the menu if:
+                //    - The player is in a town (dungeons are attached to town)
+                //    - The player has bought the dungeon ticket
+                //    - The player has enought dungeon token
                 if (App.game.gameState === GameConstants.GameState.town
-                    && player.town().dungeon)
+                    && player.town().dungeon
+                    && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
+                    && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
                 {
                     // Display the automation menu (if not already visible)
                     if (document.getElementById("dungeonFightButtons").hidden || (Automation.Dungeon.__previousTown != player.town().name))
@@ -645,15 +738,8 @@ class Automation
 
                     if (localStorage.getItem("dungeonFightEnabled") == "true")
                     {
-                        if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost)
-                        {
-                            Automation.Dungeon.__isCompleted = false;
-                            DungeonRunner.initializeDungeon(player.town().dungeon);
-                        }
-                        else
-                        {
-                            Automation.Menu.__toggleAutomation("dungeonFightEnabled");
-                        }
+                        Automation.Dungeon.__isCompleted = false;
+                        DungeonRunner.initializeDungeon(player.town().dungeon);
                     }
                 }
                 // Else hide the menu, if we're not in the dungeon
@@ -792,7 +878,7 @@ class Automation
                         let opt = document.createElement("option");
                         opt.value = g.town;
                         opt.id = g.town;
-                        opt.text = g.leaderName;
+                        opt.innerHTML = g.leaderName;
                         selectElem.options.add(opt);
                     }
                 });
