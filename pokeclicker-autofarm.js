@@ -915,7 +915,8 @@ class Automation
                         {
                             // Automation.Farm.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
                             // Automation.Farm.__lumBerryFarm();
-                            Automation.Farm.__mangoAguavIapapa(BerryType.Pecha);
+                            // Automation.Farm.__singleBerryFarm(BerryType.Pecha);
+                            Automation.Farm.__fourBerryFarm(BerryType.Mago, BerryType.Magost, BerryType.Nabab, BerryType.Watmel);
                         }
                         else
                         {
@@ -934,6 +935,17 @@ class Automation
 
         static __readyToHarvestCount = 0;
 
+        static __singleBerryFarm(berryType)
+        {
+            [2, 3, 5, 10, 12, 14, 19, 21, 21].forEach((index) => App.game.farming.plant(index, berryType, true));
+
+            let berryName = Object.values(BerryType)[berryType];
+            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
+
+            Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries<br>"
+                                 + "Looking for mutation wih " + berryName + " " + berryImage);
+        }
+
         static __twoBerriesMutation(berry1Type, berry2Type)
         {
             // Hard-coded strategy, this should be adapted based on unlock slots
@@ -951,9 +963,12 @@ class Automation
                                  + "Looking for mutation wih " + berry1Name + " " + berry1Image + " and " + berry2Name + " " + berry2Image);
         }
 
-        static __mangoAguavIapapa(berryType)
+        static __fourBerryFarm(berryType1, berryType2, berryType3, berryType4)
         {
-            [2, 3, 5, 10, 12, 14, 19, 21, 21].forEach((index) => App.game.farming.plant(index, berryType, true));
+            [0, 4, 17].forEach((index) => App.game.farming.plant(index, berryType1, true));
+            [2, 15, 19].forEach((index) => App.game.farming.plant(index, berryType2, true));
+            [5, 9, 22].forEach((index) => App.game.farming.plant(index, berryType3, true));
+            [7, 20, 24].forEach((index) => App.game.farming.plant(index, berryType4, true));
 
             let berryName = Object.values(BerryType)[berryType];
             let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
