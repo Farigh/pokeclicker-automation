@@ -390,15 +390,17 @@ class Automation
                         {
                             DungeonBattle.clickAttack();
                         }
-                        else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
+                        else if (localStorage.getItem("dungeonFightEnabled") != "true")
                         {
-                            DungeonRunner.openChest();
-                        }
-                        else if ((DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
-                                 && !DungeonRunner.fightingBoss()
-                                 && (localStorage.getItem("dungeonFightEnabled") != "true"))
-                        {
-                            DungeonRunner.startBossFight();
+                            if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
+                            {
+                                DungeonRunner.openChest();
+                            }
+                            else if ((DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
+                                     && !DungeonRunner.fightingBoss())
+                            {
+                                DungeonRunner.startBossFight();
+                            }
                         }
                     }
                 }
@@ -521,7 +523,8 @@ class Automation
     static Dungeon = class AutomationDungeon
     {
         static __isCompleted = false;
-        static __bossPosition;
+        static __bossPosition = null;
+        static __chestPositions = [];
         static __previousTown = null;
 
         static start()
@@ -539,6 +542,19 @@ class Automation
                         return;
                     }
 
+                    if (Automation.Dungeon.__isCompleted)
+                    {
+                        if (Automation.Dungeon.__chestPositions.length > 0)
+                        {
+                            let chestLocation = Automation.Dungeon.__chestPositions.pop();
+                            DungeonRunner.map.moveToTile(chestLocation);
+                        }
+                        else
+                        {
+                            DungeonRunner.map.moveToTile(Automation.Dungeon.__bossPosition);
+                        }
+                    }
+
                     let playerCurrentPosition = DungeonRunner.map.playerPosition();
 
                     if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
@@ -549,7 +565,20 @@ class Automation
                         if (Automation.Dungeon.__isCompleted)
                         {
                             DungeonRunner.startBossFight();
-                            return
+                            Automation.Dungeon.__resetSavedStates();
+                            return;
+                        }
+                    }
+                    else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
+                    {
+                        if (Automation.Dungeon.__isCompleted)
+                        {
+                            DungeonRunner.openChest();
+                            return;
+                        }
+                        else
+                        {
+                            Automation.Dungeon.__chestPositions.push(playerCurrentPosition);
                         }
                     }
 
@@ -562,8 +591,7 @@ class Automation
                     if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
                     {
                         Automation.Dungeon.__isCompleted = true;
-                        DungeonRunner.map.moveToTile(Automation.Dungeon.__bossPosition);
-                        return
+                        return;
                     }
 
                     // Go full left at the beginning of the map
@@ -627,15 +655,13 @@ class Automation
                             Automation.Menu.__toggleAutomation("dungeonFightEnabled");
                         }
                     }
-
-                    return;
                 }
-
                 // Else hide the menu, if we're not in the dungeon
-                if (App.game.gameState !== GameConstants.GameState.dungeon)
+                else if (App.game.gameState !== GameConstants.GameState.dungeon)
                 {
                     document.getElementById("dungeonFightButtons").hidden = true;
                     Automation.Dungeon.__previousTown = null;
+                    Automation.Dungeon.__resetSavedStates();
                     if (localStorage.getItem("dungeonFightEnabled") == "true")
                     {
                         Automation.Menu.__toggleAutomation("dungeonFightEnabled");
@@ -655,6 +681,13 @@ class Automation
 
             // Add an on/off button
             Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeonFightButtonsDiv", true);
+        }
+
+        static __resetSavedStates()
+        {
+            Automation.Dungeon.__bossPosition = null;
+            Automation.Dungeon.__chestPositions = [];
+            Automation.Dungeon.__isCompleted = false;
         }
     }
 
