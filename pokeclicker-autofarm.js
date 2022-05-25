@@ -50,7 +50,6 @@ class Automation
     }
 
 
-    static __previousTown = null;
     static __previousRegion = null;
 
     /**************************/
@@ -429,6 +428,18 @@ class Automation
 
         static __goToBestRoute()
         {
+            // Disable best route if any other auto-farm is enabled, and exit
+            if ((localStorage.getItem("dungeonFightEnabled") == "true")
+                || (localStorage.getItem("gymFightEnabled") == "true"))
+            {
+                if (localStorage.getItem("bestRouteClickEnabled") == "true")
+                {
+                    Automation.Menu.__toggleAutomation("bestRouteClickEnabled");
+                }
+
+                return;
+            }
+
             let playerClickAttack = App.game.party.calculateClickAttack();
 
             let didRegionChange = (Automation.Click.__bestRouteRegion !== player.region);
@@ -511,6 +522,7 @@ class Automation
     {
         static __isCompleted = false;
         static __bossPosition;
+        static __previousTown = null;
 
         static start()
         {
@@ -590,14 +602,14 @@ class Automation
                     && player.town().dungeon)
                 {
                     // Display the automation menu (if not already visible)
-                    if (document.getElementById("dungeonFightButtons").hidden || (Automation.__previousTown != player.town().name))
+                    if (document.getElementById("dungeonFightButtons").hidden || (Automation.Dungeon.__previousTown != player.town().name))
                     {
                         // Reset button status
                         if (localStorage.getItem("dungeonFightEnabled") == "true")
                         {
                             Automation.Menu.__toggleAutomation("dungeonFightEnabled");
                         }
-                        Automation.__previousTown = player.town().name;
+                        Automation.Dungeon.__previousTown = player.town().name;
 
                         // Make it visible
                         document.getElementById("dungeonFightButtons").hidden = false;
@@ -623,6 +635,11 @@ class Automation
                 if (App.game.gameState !== GameConstants.GameState.dungeon)
                 {
                     document.getElementById("dungeonFightButtons").hidden = true;
+                    Automation.Dungeon.__previousTown = null;
+                    if (localStorage.getItem("dungeonFightEnabled") == "true")
+                    {
+                        Automation.Menu.__toggleAutomation("dungeonFightEnabled");
+                    }
                 }
             }, 50); // Runs every game tick
         }
@@ -647,6 +664,8 @@ class Automation
 
     static Gym = class AutomationGym
     {
+        static __previousTown = null;
+
         static start()
         {
             Automation.Gym.__buildMenu();
@@ -662,10 +681,18 @@ class Automation
                 // Check if we are in a town
                 if (App.game.gameState === GameConstants.GameState.town)
                 {
+                    // List available gyms
+                    let gymList = player.town().content.filter(x => GymList[x.town] && x.isUnlocked());
+
                     // If we are in the same town as previous cycle
-                    if ((Automation.__previousTown === player.town().name)
+                    if ((Automation.Gym.__previousTown === player.town().name)
                         && (!document.getElementById("gymFightButtons").hidden))
                     {
+                        if (gymList.length !== document.getElementById("selectedAutomationGym").length)
+                        {
+                            Automation.Gym.__updateGymList(gymList, false);
+                        }
+
                         if (localStorage.getItem("gymFightEnabled") == "true")
                         {
                             GymList[document.getElementById("selectedAutomationGym").value].protectedOnclick();
@@ -673,22 +700,11 @@ class Automation
                         return;
                     }
 
-                    // List available gyms
-                    let gymList = player.town().content.filter(x => GymList[x.town] && GymList[x.town])
-                                                       .filter(x => x.isUnlocked());
+                    Automation.Gym.__previousTown = player.town().name;
 
                     if (gymList.length > 0)
                     {
-                        // Build the new drop-down list
-                        let availableGymList = '<select class="custom-select" name="selectedAutomationGym" id="selectedAutomationGym" style="width: calc(100% - 10px); margin-top: 3px;">';
-
-                        gymList.forEach(g => availableGymList += '<option value="' + g.town + '">' + g.leaderName + '</option>');
-
-                        availableGymList += '</select>';
-
-                        document.getElementById("automationGymSelector").innerHTML = availableGymList;
-
-                        Automation.__previousTown = player.town().name;
+                        Automation.Gym.__updateGymList(gymList, true);
 
                         if (localStorage.getItem("gymFightEnabled") == "true")
                         {
@@ -705,13 +721,48 @@ class Automation
                 if (!document.getElementById("gymFightButtons").hidden)
                 {
                     document.getElementById("gymFightButtons").hidden = true;
-                    Automation.__previousTown = null;
+                    Automation.Gym.__previousTown = null;
                     if (localStorage.getItem("gymFightEnabled") == "true")
                     {
                         Automation.Menu.__toggleAutomation("gymFightEnabled");
                     }
                 }
             }, 50); // Runs every game tick
+        }
+
+        static __updateGymList(gymList, rebuild)
+        {
+            let selectElem;
+            if (rebuild)
+            {
+                // Build the new drop-down list
+                selectElem = document.createElement("select");
+
+                selectElem.className = "custom-select";
+                selectElem.name = "selectedAutomationGym";
+                selectElem.id = selectElem.name;
+                selectElem.style.width = "calc(100% - 10px)";
+                selectElem.style.marginTop = "3px";
+
+                document.getElementById("automationGymSelector").innerHTML = "";
+                document.getElementById("automationGymSelector").appendChild(selectElem);
+            }
+            else
+            {
+                selectElem = document.getElementById("selectedAutomationGym");
+            }
+
+            gymList.forEach(g =>
+                {
+                    if (!selectElem.options.namedItem(g.town))
+                    {
+                        let opt = document.createElement("option");
+                        opt.value = g.town;
+                        opt.id = g.town;
+                        opt.text = g.leaderName;
+                        selectElem.options.add(opt);
+                    }
+                });
         }
 
         static __buildMenu()
