@@ -193,7 +193,6 @@ class Automation
                     // Drop all elements and rebuild the list
                     gotoList.innerHTML = "";
 
-
                     // Sort the list alphabetically
                     filteredList.sort(([townNameA, townA], [townNameB, townB]) =>
                                       {
@@ -784,6 +783,7 @@ class Automation
     static Gym = class AutomationGym
     {
         static __previousTown = null;
+        static __currentGymListSize = 0;
 
         static start()
         {
@@ -801,19 +801,26 @@ class Automation
                 if (App.game.gameState === GameConstants.GameState.town)
                 {
                     // List available gyms
-                    let gymList = player.town().content.filter(x => GymList[x.town] && x.isUnlocked());
+                    let gymList = player.town().content.filter(x => GymList[x.town]);
+                    let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
 
                     // If we are in the same town as previous cycle
                     if ((Automation.Gym.__previousTown === player.town().name)
                         && (!document.getElementById("gymFightButtons").hidden))
                     {
-                        if (gymList.length !== document.getElementById("selectedAutomationGym").length)
+                        if (Automation.Gym.__currentGymListSize !== unlockedGymCount)
                         {
-                            Automation.Gym.__updateGymList(gymList, false);
+                            Automation.Gym.__updateGymList(gymList, unlockedGymCount, false);
                         }
 
                         if (localStorage.getItem("gymFightEnabled") == "true")
                         {
+                            if (document.getElementById("selectedAutomationGym").selectedIndex < 0)
+                            {
+                                Automation.Menu.__toggleAutomation("gymFightEnabled");
+                                return;
+                            }
+
                             GymList[document.getElementById("selectedAutomationGym").value].protectedOnclick();
                         }
                         return;
@@ -823,7 +830,7 @@ class Automation
 
                     if (gymList.length > 0)
                     {
-                        Automation.Gym.__updateGymList(gymList, true);
+                        Automation.Gym.__updateGymList(gymList, unlockedGymCount, true);
 
                         if (localStorage.getItem("gymFightEnabled") == "true")
                         {
@@ -849,39 +856,58 @@ class Automation
             }, 50); // Runs every game tick
         }
 
-        static __updateGymList(gymList, rebuild)
+        static __updateGymList(gymList, unlockedGymCount, rebuild)
         {
-            let selectElem;
+            let selectElem = document.getElementById("selectedAutomationGym");
+
             if (rebuild)
             {
-                // Build the new drop-down list
-                selectElem = document.createElement("select");
+                // Drop all elements and rebuild the list
+                selectElem.innerHTML = "";
 
-                selectElem.className = "custom-select";
-                selectElem.name = "selectedAutomationGym";
-                selectElem.id = selectElem.name;
-                selectElem.style.width = "calc(100% - 10px)";
-                selectElem.style.marginTop = "3px";
+                let selectedItemSet = false;
+                gymList.forEach(gym =>
+                    {
+                        let opt = document.createElement("option");
+                        opt.value = gym.town;
+                        opt.id = gym.town;
+                        opt.innerHTML = gym.leaderName;
 
-                document.getElementById("automationGymSelector").innerHTML = "";
-                document.getElementById("automationGymSelector").appendChild(selectElem);
+                        // Don't show the option if it's not been unlocked yet
+                        if (!gym.isUnlocked())
+                        {
+                            opt.style.display = "none";
+                        }
+                        else if (!selectedItemSet)
+                        {
+                            opt.selected = true;
+                            selectedItemSet = true;
+                        }
+
+                        selectElem.options.add(opt);
+                    });
             }
             else
             {
-                selectElem = document.getElementById("selectedAutomationGym");
+                gymList.forEach(gym =>
+                    {
+                        if (gym.isUnlocked())
+                        {
+                            let opt = selectElem.options.namedItem(gym.town);
+                            if (opt.style.display === "none")
+                            {
+                                opt.style.display = "block";
+                            }
+                        }
+                    });
             }
 
-            gymList.forEach(g =>
-                {
-                    if (!selectElem.options.namedItem(g.town))
-                    {
-                        let opt = document.createElement("option");
-                        opt.value = g.town;
-                        opt.id = g.town;
-                        opt.innerHTML = g.leaderName;
-                        selectElem.options.add(opt);
-                    }
-                });
+            if (unlockedGymCount == 0)
+            {
+                document.getElementById("selectedAutomationGym").selectedIndex = -1;
+            }
+
+            Automation.Gym.__currentGymListSize = unlockedGymCount;
         }
 
         static __buildMenu()
@@ -896,11 +922,15 @@ class Automation
             // Add an on/off button
             Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", false, "gymFightButtonsDiv", true);
 
-            // Add gym selector div
-            let node = document.createElement("div");
-            node.setAttribute("id", "automationGymSelector");
-            node.style.textAlign = "center";
-            document.getElementById("gymFightButtonsDiv").appendChild(node);
+            // Add gym selector drop-down list
+            let selectElem = document.createElement("select");
+            selectElem.className = "custom-select";
+            selectElem.name = "selectedAutomationGym";
+            selectElem.id = selectElem.name;
+            selectElem.style.width = "calc(100% - 10px)";
+            selectElem.style.marginTop = "3px";
+            selectElem.style.marginRight = "5px";
+            document.getElementById("gymFightButtonsDiv").appendChild(selectElem);
         }
     }
 
