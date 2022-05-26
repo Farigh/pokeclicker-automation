@@ -1039,65 +1039,13 @@ class Automation
                 // Try to use eggs first, if enabled
                 if (localStorage.getItem("eggsHatcheryAutomationEnabled") == "true")
                 {
-                    let tryToHatchEgg = function (type)
-                    {
-                        // Use an egg only if:
-                        //   - a slot is available
-                        //   - the player has one
-                        //   - a new pokemon can be caught that way
-                        //   - the item actually can be used
-                        while (App.game.breeding.hasFreeEggSlot()
-                               && player.itemList[type.name]()
-                               && !type.getCaughtStatus()
-                               && type.checkCanUse())
-                        {
-                            type.use();
-                            Automation.__sendNotif("Added a " + type.displayName + " to the Hatchery!");
-                        }
-                    };
-
-                    tryToHatchEgg(ItemList.Fire_egg);
-                    tryToHatchEgg(ItemList.Water_egg);
-                    tryToHatchEgg(ItemList.Grass_egg);
-                    tryToHatchEgg(ItemList.Fighting_egg);
-                    tryToHatchEgg(ItemList.Electric_egg);
-                    tryToHatchEgg(ItemList.Dragon_egg);
-                    tryToHatchEgg(ItemList.Mystery_egg);
+                    this.__addEggsToHatchery();
                 }
 
                 // Then try to use fossils, if enabled
                 if (localStorage.getItem("fossilHatcheryAutomationEnabled") == "true")
                 {
-                    let tryToHatchFossil = function (type)
-                    {
-                        let associatedPokemon = GameConstants.FossilToPokemon[type.name];
-                        let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon))
-
-                        // Use an egg only if:
-                        //   - a slot is available
-                        //   - the player has one
-                        //   - the corresponding pokemon is from an unlocked region
-                        //   - the pokemon associated to the fossil is not already held by the player
-                        //   - the fossil is not already in hatchery
-                        if (App.game.breeding.hasFreeEggSlot()
-                            && (type.amount() > 0)
-                            && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
-                            && !hasPokemon
-                            && ![3, 2, 1, 0].some((index) => (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
-                        {
-                            // Hatching a fossil is performed by selling it
-                            Underground.sellMineItem(type.id);
-                            Automation.__sendNotif("Added a " + type.name + " to the Hatchery!");
-                        }
-                    };
-
-                    let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
-                    let i = 0;
-                    while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
-                    {
-                        tryToHatchFossil(currentlyHeldFossils[i]);
-                        i++;
-                    }
+                    this.__addFossilsToHatchery();
                 }
 
                 // Now add lvl 100 pokemons to empty slots if we can
@@ -1153,6 +1101,61 @@ class Automation
                         i++;
                     }
                 }
+            }
+        }
+
+        static __addEggsToHatchery()
+        {
+            let eggList = Object.keys(GameConstants.EggItemType).filter(eggType => isNaN(eggType) && player._itemList[eggType]());
+
+            eggList.forEach(eggTypeName =>
+                {
+                    let eggType = ItemList[eggTypeName];
+                    // Use an egg only if:
+                    //   - a slot is available
+                    //   - the player has one
+                    //   - a new pokemon can be caught that way
+                    //   - the item actually can be used
+                    if (App.game.breeding.hasFreeEggSlot()
+                        && player.itemList[eggType.name]()
+                        && !eggType.getCaughtStatus()
+                        && eggType.checkCanUse())
+                    {
+                        eggType.use();
+                        Automation.__sendNotif("Added a " + eggType.displayName + " to the Hatchery!");
+                    }
+                }, this);
+        }
+
+        static __addFossilsToHatchery()
+        {
+            let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
+            let i = 0;
+            while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
+            {
+                let type = currentlyHeldFossils[i];
+
+                let associatedPokemon = GameConstants.FossilToPokemon[type.name];
+                let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon))
+
+                // Use an egg only if:
+                //   - a slot is available
+                //   - the player has one
+                //   - the corresponding pokemon is from an unlocked region
+                //   - the pokemon associated to the fossil is not already held by the player
+                //   - the fossil is not already in hatchery
+                if (App.game.breeding.hasFreeEggSlot()
+                    && (type.amount() > 0)
+                    && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
+                    && !hasPokemon
+                    && ![3, 2, 1, 0].some((index) => (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
+                {
+                    // Hatching a fossil is performed by selling it
+                    Underground.sellMineItem(type.id);
+                    Automation.__sendNotif("Added a " + type.name + " to the Hatchery!");
+                }
+
+                i++;
             }
         }
     }
