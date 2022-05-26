@@ -49,6 +49,11 @@ class Automation
         }
     }
 
+    static __isInInstanceState()
+    {
+        return (App.game.gameState === GameConstants.GameState.dungeon)
+            || (App.game.gameState === GameConstants.GameState.battleFrontier);
+    }
 
     static __previousRegion = null;
 
@@ -164,8 +169,8 @@ class Automation
             {
                 let button = document.getElementById("moveToLocationButton");
 
-                // Disable the button if a dungeon is in progress
-                if (App.game.gameState === GameConstants.GameState.dungeon)
+                // Disable the button if the player is in an instance
+                if (Automation.__isInInstanceState())
                 {
                     if (!button.disabled)
                     {
@@ -255,8 +260,8 @@ class Automation
 
             static __moveToLocation()
             {
-                // Forbid travel if a dungeon is in progress (it breaks the game)
-                if (App.game.gameState === GameConstants.GameState.dungeon)
+                // Forbid travel if an instance is in progress (it breaks the game)
+                if (Automation.__isInInstanceState())
                 {
                     return;
                 }
@@ -516,10 +521,10 @@ class Automation
 
         static __goToBestRoute()
         {
-            // Disable best route if any other auto-farm is enabled, or a dungeon is in progress, and exit
+            // Disable best route if any other auto-farm is enabled, or an instance is in progress, and exit
             if ((localStorage.getItem("dungeonFightEnabled") == "true")
                 || (localStorage.getItem("gymFightEnabled") == "true")
-                || (App.game.gameState === GameConstants.GameState.dungeon))
+                || Automation.__isInInstanceState())
             {
                 if (localStorage.getItem("bestRouteClickEnabled") == "true")
                 {
