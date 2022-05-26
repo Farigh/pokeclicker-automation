@@ -796,8 +796,17 @@ class Automation
 
                 if (localStorage.getItem("dungeonFightEnabled") == "true")
                 {
-                    this.__isCompleted = false;
-                    DungeonRunner.initializeDungeon(player.town().dungeon);
+                    // Reset button status if the pokedex is full for this dungeon, and it has been ask for
+                    if ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
+                        && DungeonRunner.dungeonCompleted(player.town().dungeon, false))
+                    {
+                        Automation.Menu.__toggleAutomation("dungeonFightEnabled");
+                    }
+                    else
+                    {
+                        this.__isCompleted = false;
+                        DungeonRunner.initializeDungeon(player.town().dungeon);
+                    }
                 }
             }
             // Else hide the menu, if we're not in the dungeon
@@ -824,6 +833,9 @@ class Automation
 
             // Add an on/off button
             Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeonFightButtonsDiv", true);
+
+            // Add an on/off button to stop after pokedex completion
+            Automation.Menu.__addAutomationButton("PokedexOnly", "stopDungeonAtPokedexCompletion", false, "dungeonFightButtonsDiv");
         }
 
         static __resetSavedStates()
