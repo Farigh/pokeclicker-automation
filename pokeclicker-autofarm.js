@@ -71,6 +71,7 @@ class Automation
             node.style.right = "10px";
             node.style.width = "145px";
             node.style.textAlign = "right";
+            node.style.lineHeight = "24px";
             node.setAttribute("id", "automationContainer");
             document.body.appendChild(node);
 
@@ -108,22 +109,38 @@ class Automation
                 node.style.textAlign = "center";
                 triviaDiv.appendChild(node);
 
+                this.__addAvailableEvolutionContent(triviaDiv);
+
+                Automation.Menu.__addSeparator(triviaDiv);
+                this.__addGotoLocationContent(triviaDiv);
+            }
+
+            static __addAvailableEvolutionContent(triviaDiv)
+            {
                 // Add available evolution div
-                node = document.createElement("div");
-                node.setAttribute("id", "availableEvolutionTrivia");
-                node.style.textAlign = "center";
-                node.style.borderTop = "solid #AAAAAA 1px";
-                node.style.marginTop = "10px";
-                node.style.paddingTop = "10px";
-                triviaDiv.appendChild(node);
+                let containerDiv = document.createElement("div");
+                containerDiv.setAttribute("id", "availableEvolutionTrivia");
+                containerDiv.style.textAlign = "center";
+                triviaDiv.appendChild(containerDiv);
+
+                Automation.Menu.__addSeparator(containerDiv);
+
+                let evolutionLabel = document.createElement("span");
+                evolutionLabel.textContent = "Possible evolution:";
+                containerDiv.appendChild(evolutionLabel);
+
+                let evolutionStoneListContainer = document.createElement("div");
+                evolutionStoneListContainer.id = "availableEvolutionTriviaContent";
+                containerDiv.appendChild(evolutionStoneListContainer);
+            }
+
+            static __addGotoLocationContent(triviaDiv)
+            {
 
                 // Add go to location div
                 let gotoLocationDiv = document.createElement("div");
                 gotoLocationDiv.setAttribute("id", "gotoLocationTrivia");
                 gotoLocationDiv.style.textAlign = "center";
-                gotoLocationDiv.style.borderTop = "solid #AAAAAA 1px";
-                gotoLocationDiv.style.marginTop = "10px";
-                gotoLocationDiv.style.paddingTop = "10px";
                 triviaDiv.appendChild(gotoLocationDiv);
 
                 // Add go to location button
@@ -308,10 +325,11 @@ class Automation
 
                 if (!triviaDiv.hidden)
                 {
-                    triviaDiv.innerHTML = "Possible evolution:<br>";
+                    let contentDiv = document.getElementById("availableEvolutionTriviaContent");
+                    contentDiv.innerHTML = "";
 
-                    evoStones.forEach((stone) => triviaDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
-                                                                      + ' onclick="javascript: Automation.Menu.Trivia.__goToStoneMenu(\'' + stone + '\');">');
+                    evoStones.forEach((stone) => contentDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
+                                                                       + ' onclick="javascript: Automation.Menu.Trivia.__goToStoneMenu(\'' + stone + '\');">');
                 }
             }
 
@@ -355,25 +373,29 @@ class Automation
             let mainNode = document.getElementById("automationContainer");
 
             let newNode = document.createElement("div");
-            newNode.setAttribute("id", categoyName);
-
+            newNode.id = categoyName;
             newNode.style.backgroundColor = "#444444";
             newNode.style.color = "#eeeeee";
             newNode.style.borderRadius = "5px";
             newNode.style.paddingTop = "5px";
-            newNode.style.paddingBottom = "10px";
+            newNode.style.paddingBottom = "7px";
             newNode.style.borderColor = "#aaaaaa";
             newNode.style.borderStyle = "solid";
             newNode.style.borderWidth = "1px";
             newNode.style.marginTop = "5px";
-
-            newNode.innerHTML = '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin-bottom:10px; padding-bottom:5px;">'
-                              +     title
-                              + '</div>'
-                              + '<div id="' + categoyName + 'Div">'
-                              + '</div>';
-
             mainNode.appendChild(newNode);
+
+            let titleDiv = document.createElement("div");
+            titleDiv.innerHTML = title;
+            titleDiv.style.textAlign = "center";
+            titleDiv.style.borderBottom = "solid #AAAAAA 1px";
+            titleDiv.style.marginBottom = "5px";
+            titleDiv.style.paddingBottom = "5px";
+            newNode.appendChild(titleDiv);
+
+            let contentDiv = document.createElement("div");
+            contentDiv.id = categoyName + "Div";
+            newNode.appendChild(contentDiv);
 
             return newNode;
         }
@@ -391,24 +413,33 @@ class Automation
                 localStorage.setItem(id, false);
             }
 
-            let buttonClass = (localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger";
-            let buttonText = (localStorage.getItem(id) === "true") ? "On" : "Off";
-
             let buttonDiv = document.getElementById(parentDiv)
 
             if (addSeparator)
             {
-                buttonDiv.innerHTML += '<div style="text-align:center; border-bottom:solid #AAAAAA 1px; margin:10px 0px; padding-bottom:5px;"></div>'
+                this.__addSeparator(buttonDiv);
             }
 
-            let newButton = '<div style="padding:0px 10px; line-height:24px;">'
-                          + name + ' : <button id="' + id + '" class="btn ' + buttonClass + '" '
-                          + 'style="width: 30px; height: 20px; padding:0px; border: 0px; border-radius:4px;" '
-                          + 'onClick="javascript:Automation.Menu.__toggleAutomation(\'' + id + '\')"'
-                          + 'type="button">' + buttonText + '</button><br>'
-                          + '</div>';
+            let buttonContainer = document.createElement("div");
+            buttonContainer.style.paddingLeft = "10px";
+            buttonContainer.style.paddingRight = "10px";
+            buttonDiv.appendChild(buttonContainer);
 
-            buttonDiv.innerHTML += newButton;
+            let buttonLabel = document.createElement("span");
+            buttonLabel.textContent = name + " : ";
+            buttonContainer.appendChild(buttonLabel);
+
+            let buttonElem = document.createElement("span");
+            buttonElem.id = id;
+            buttonElem.textContent = (localStorage.getItem(id) === "true") ? "On" : "Off";
+            buttonElem.classList.add("btn");
+            buttonElem.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
+            buttonElem.style.width = "30px";
+            buttonElem.style.height = "20px";
+            buttonElem.style.padding = "0px";
+            buttonElem.style.borderRadius = "4px";
+            buttonElem.onclick = function() { Automation.Menu.__toggleAutomation(id) };
+            buttonContainer.appendChild(buttonElem);
         }
 
         static __toggleAutomation(id)
@@ -429,6 +460,15 @@ class Automation
             }
 
             localStorage.setItem(button.id, newStatus);
+        }
+
+        static __addSeparator(parentNode)
+        {
+            let separatorDiv = document.createElement("div");
+            separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
+            separatorDiv.style.marginBottom = "5px";
+            separatorDiv.style.marginTop = "7px";
+            parentNode.appendChild(separatorDiv);
         }
     }
 
