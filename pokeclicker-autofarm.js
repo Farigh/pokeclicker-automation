@@ -55,6 +55,14 @@ class Automation
             || (App.game.gameState === GameConstants.GameState.battleFrontier);
     }
 
+    static __areArrayEquals(a, b)
+    {
+      return Array.isArray(a)
+          && Array.isArray(b)
+          && (a.length === b.length)
+          && a.every((val, index) => val === b[index]);
+    }
+
     static __previousRegion = null;
 
     /**************************/
@@ -94,6 +102,7 @@ class Automation
 
             static __displayedRoamingRoute = null;
             static __currentLocationListSize = 0;
+            static __lastEvoStone = null;
 
             static __buildMenu()
             {
@@ -323,13 +332,15 @@ class Automation
 
                 triviaDiv.hidden = (evoStones.length == 0);
 
-                if (!triviaDiv.hidden)
+                if (!triviaDiv.hidden && !Automation.__areArrayEquals(this.__lastEvoStone, evoStones))
                 {
                     let contentDiv = document.getElementById("availableEvolutionTriviaContent");
                     contentDiv.innerHTML = "";
 
                     evoStones.forEach((stone) => contentDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
                                                                        + ' onclick="javascript: Automation.Menu.Trivia.__goToStoneMenu(\'' + stone + '\');">');
+
+                    this.__lastEvoStone = evoStones;
                 }
             }
 
@@ -359,10 +370,8 @@ class Automation
                 var hasCandidate = false;
 
                 PokemonHelper.getPokemonsWithEvolution(GameConstants.StoneType[stone]).forEach(
-                    (pokemon) =>
-                    {
-                        hasCandidate |= (PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone])[0] == 0);
-                    });
+                    (pokemon) => (PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone]).forEach(
+                                 status => hasCandidate |= status == 0)));
 
                 return hasCandidate;
             }
