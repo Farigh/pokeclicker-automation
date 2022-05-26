@@ -15,22 +15,22 @@ class Automation
                 // Log automation start
                 console.log(`[${GameConstants.formatDate(new Date())}] %cStarting automation..`, "color:#8e44ad;font-weight:900;");
 
-                Automation.Menu.build();
+                this.Menu.build();
 
-                Automation.Click.start();
-                Automation.Underground.start();
-                Automation.Hatchery.start();
-                Automation.Farm.start();
-                Automation.Gym.start();
-                Automation.Dungeon.start();
+                this.Click.start();
+                this.Underground.start();
+                this.Hatchery.start();
+                this.Farm.start();
+                this.Gym.start();
+                this.Dungeon.start();
 
                 // Add a notification button to the automation menu
-                Automation.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
+                this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");
             }
-        }, 200); // Try to instanciate every 0.2s
+        }.bind(this), 200); // Try to instanciate every 0.2s
     }
 
     /**************************/
@@ -75,20 +75,20 @@ class Automation
             document.body.appendChild(node);
 
             let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
-            Automation.Menu.__addCategory("automationButtons", automationTitle);
+            this.__addCategory("automationButtons", automationTitle);
 
             // Initialize trivia
-            Automation.Menu.Trivia.start();
+            this.Trivia.start();
         }
 
         static Trivia = class AutomationTrivia
         {
             static start()
             {
-                Automation.Menu.Trivia.__buildMenu();
-                Automation.Menu.Trivia.__initializeGotoLocationTrivia();
-                Automation.Menu.Trivia.__initializeRoamingRouteTrivia();
-                Automation.Menu.Trivia.__initializeEvolutionTrivia();
+                this.__buildMenu();
+                this.__initializeGotoLocationTrivia();
+                this.__initializeRoamingRouteTrivia();
+                this.__initializeEvolutionTrivia();
             }
 
             static __displayedRoamingRoute = null;
@@ -130,7 +130,7 @@ class Automation
                 let gotoButton = document.createElement("button");
                 gotoButton.textContent = "Go";
                 gotoButton.id = "moveToLocationButton";
-                gotoButton.onclick = Automation.Menu.Trivia.__moveToLocation;
+                gotoButton.onclick = this.__moveToLocation;
                 gotoButton.classList.add("btn");
                 gotoButton.classList.add("btn-primary");
                 gotoButton.style.width = "30px";
@@ -160,9 +160,9 @@ class Automation
             static __initializeGotoLocationTrivia()
             {
                 // Set the initial value
-                Automation.Menu.Trivia.__refreshGotoLocationTrivia();
+                this.__refreshGotoLocationTrivia();
 
-                setInterval(Automation.Menu.Trivia.__refreshGotoLocationTrivia, 1000); // Refresh every 1s
+                setInterval(this.__refreshGotoLocationTrivia.bind(this), 1000); // Refresh every 1s
             }
 
             static __refreshGotoLocationTrivia()
@@ -180,7 +180,7 @@ class Automation
                     }
                     return;
                 }
-                else if (!button.disabled)
+                else if (button.disabled)
                 {
                     button.disabled = false;
                     button.classList.add("btn-primary");
@@ -240,9 +240,9 @@ class Automation
 
                     Automation.__previousRegion = player.region;
 
-                    Automation.Menu.Trivia.__currentLocationListSize = unlockedTownCount;
+                    this.__currentLocationListSize = unlockedTownCount;
                 }
-                else if (Automation.Menu.Trivia.__currentLocationListSize != unlockedTownCount)
+                else if (this.__currentLocationListSize != unlockedTownCount)
                 {
                     filteredList.forEach(([townName, town]) =>
                         {
@@ -273,28 +273,28 @@ class Automation
             static __initializeRoamingRouteTrivia()
             {
                 // Set the initial value
-                Automation.Menu.Trivia.__refreshRoamingRouteTrivia();
+                this.__refreshRoamingRouteTrivia();
 
-                setInterval(Automation.Menu.Trivia.__refreshRoamingRouteTrivia, 1000); // Refresh every 1s (changes every 8h, but the player might change map)
+                setInterval(this.__refreshRoamingRouteTrivia.bind(this), 1000); // Refresh every 1s (changes every 8h, but the player might change map)
             }
 
             static __refreshRoamingRouteTrivia()
             {
                 let currentRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
-                if (Automation.Menu.__displayedRoamingRoute !== currentRoamingRoute)
+                if (this.__displayedRoamingRoute !== currentRoamingRoute)
                 {
+                    this.__displayedRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
                     let triviaDiv = document.getElementById("roamingRouteTrivia");
-                    triviaDiv.innerHTML = "Roaming: Route " + RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number.toString();
-                    Automation.Menu.__displayedRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
+                    triviaDiv.innerHTML = "Roaming: Route " + this.__displayedRoamingRoute.toString();
                 }
             }
 
             static __initializeEvolutionTrivia()
             {
                 // Set the initial value
-                Automation.Menu.Trivia.__refreshEvolutionTrivia();
+                this.__refreshEvolutionTrivia();
 
-                setInterval(Automation.Menu.Trivia.__refreshEvolutionTrivia, 1000); // Refresh every 1s
+                setInterval(this.__refreshEvolutionTrivia.bind(this), 1000); // Refresh every 1s
             }
 
             static __refreshEvolutionTrivia()
@@ -302,7 +302,7 @@ class Automation
                 let triviaDiv = document.getElementById("availableEvolutionTrivia");
 
                 let evoStones = Object.keys(GameConstants.StoneType).filter(
-                    stone => isNaN(stone) && stone !== "None" && Automation.Menu.Trivia.__hasStoneEvolutionCandidate(stone));
+                    stone => isNaN(stone) && stone !== "None" && this.__hasStoneEvolutionCandidate(stone));
 
                 triviaDiv.hidden = (evoStones.length == 0);
 
@@ -440,7 +440,7 @@ class Automation
     {
         static start()
         {
-            Automation.Click.__buildRouteMaxHealthMap();
+            this.__buildRouteMaxHealthMap();
 
             // Add the related button to the automation menu
             Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
@@ -452,15 +452,17 @@ class Automation
                 localStorage.setItem("bestRouteClickEnabled", false);
             }
 
-            var bestRouteLoop = setInterval(function ()
+            // Set best route refresh loop
+            setInterval(function ()
             {
                 if (localStorage.getItem("bestRouteClickEnabled") === "true")
                 {
-                    Automation.Click.__goToBestRoute();
+                    this.__goToBestRoute();
                 }
-            }, 10000); // Refresh every 10s
+            }.bind(this), 10000); // Refresh every 10s
 
-            var autoClickerLoop = setInterval(function ()
+            // Set auto-click loop
+            setInterval(function ()
             {
                 if (localStorage.getItem("autoClickEnabled") == "true")
                 {
@@ -495,7 +497,7 @@ class Automation
                         }
                     }
                 }
-            }, 50); // The app hard-caps click attacks at 50
+            }.bind(this), 50); // The app hard-caps click attacks at 50
         }
 
         // Map of Map [ region => [ route => maxHp ]]
@@ -509,14 +511,14 @@ class Automation
         {
             Routes.regionRoutes.forEach((route) =>
                 {
-                    if (route.region >= Automation.Click.__routeMaxHealthMap.size)
+                    if (route.region >= this.__routeMaxHealthMap.size)
                     {
-                        Automation.Click.__routeMaxHealthMap.set(route.region, new Map());
+                        this.__routeMaxHealthMap.set(route.region, new Map());
                     }
 
-                    let routeMaxHealth = Automation.Click.__getRouteMaxHealth(route);
-                    Automation.Click.__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
-                });
+                    let routeMaxHealth = this.__getRouteMaxHealth(route);
+                    this.__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
+                }, this);
         }
 
         static __goToBestRoute()
@@ -536,26 +538,26 @@ class Automation
 
             let playerClickAttack = App.game.party.calculateClickAttack();
 
-            let didRegionChange = (Automation.Click.__bestRouteRegion !== player.region);
+            let didRegionChange = (this.__bestRouteRegion !== player.region);
             let needsNewRoad = didRegionChange
-                            || ((Automation.Click.__nextBestRoute !== Automation.Click.__bestRoute)
-                                && (Automation.Click.__routeMaxHealthMap.get(player.region).get(Automation.Click.__nextBestRoute) < playerClickAttack));
+                            || ((this.__nextBestRoute !== this.__bestRoute)
+                                && (this.__routeMaxHealthMap.get(player.region).get(this.__nextBestRoute) < playerClickAttack));
 
             // Don't refresh if we already are on the best road
-            if ((Automation.Click.__bestRoute === player.route()) && !needsNewRoad)
+            if ((this.__bestRoute === player.route()) && !needsNewRoad)
             {
                 return;
             }
 
             if (needsNewRoad)
             {
-                Automation.Click.__bestRouteRegion = player.region;
+                this.__bestRouteRegion = player.region;
 
                 let regionRoutes = Routes.getRoutesByRegion(player.region);
 
                 // If no routes are below the user attack, juste choose the 1st one
-                Automation.Click.__bestRoute = regionRoutes[0].number;
-                Automation.Click.__nextBestRoute = Automation.Click.__bestRoute;
+                this.__bestRoute = regionRoutes[0].number;
+                this.__nextBestRoute = this.__bestRoute;
 
                 // Fortunately routes are sorted by attack
                 regionRoutes.every((route) =>
@@ -572,9 +574,9 @@ class Automation
                     });
             }
 
-            if (Automation.Click.__bestRoute !== player.route())
+            if (this.__bestRoute !== player.route())
             {
-                MapHelper.moveToRoute(Automation.Click.__bestRoute, player.region);
+                MapHelper.moveToRoute(this.__bestRoute, player.region);
             }
         }
 
@@ -583,8 +585,8 @@ class Automation
             let routeMaxHealth = 0;
             RouteHelper.getAvailablePokemonList(route.number, route.region).forEach((pokemanName) =>
                 {
-                    routeMaxHealth = Math.max(routeMaxHealth, Automation.Click.__getPokemonMaxHealth(route, pokemanName));
-                });
+                    routeMaxHealth = Math.max(routeMaxHealth, this.__getPokemonMaxHealth(route, pokemanName));
+                }, this);
 
             return routeMaxHealth;
         }
@@ -621,143 +623,145 @@ class Automation
 
         static start()
         {
-            Automation.Dungeon.__buildMenu();
+            this.__buildMenu();
 
-            var autoClickerLoop = setInterval(function ()
+            setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
+        }
+
+        static __mainLoop()
+        {
+            if ((App.game.gameState === GameConstants.GameState.dungeon)
+                && (localStorage.getItem("dungeonFightEnabled") == "true"))
             {
-                if ((App.game.gameState === GameConstants.GameState.dungeon)
-                    && (localStorage.getItem("dungeonFightEnabled") == "true"))
+                // Let any fight finish before moving
+                if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
                 {
-                    // Let any fight finish before moving
-                    if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
-                    {
-                        return;
-                    }
-
-                    if (Automation.Dungeon.__isCompleted)
-                    {
-                        if (Automation.Dungeon.__chestPositions.length > 0)
-                        {
-                            let chestLocation = Automation.Dungeon.__chestPositions.pop();
-                            DungeonRunner.map.moveToTile(chestLocation);
-                        }
-                        else
-                        {
-                            DungeonRunner.map.moveToTile(Automation.Dungeon.__bossPosition);
-                        }
-                    }
-
-                    let playerCurrentPosition = DungeonRunner.map.playerPosition();
-
-                    if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
-                    {
-                        // Persist the boss position, to go back to it once the board has been cleared
-                        Automation.Dungeon.__bossPosition = playerCurrentPosition;
-
-                        if (Automation.Dungeon.__isCompleted)
-                        {
-                            DungeonRunner.startBossFight();
-                            Automation.Dungeon.__resetSavedStates();
-                            return;
-                        }
-                    }
-                    else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
-                    {
-                        if (Automation.Dungeon.__isCompleted)
-                        {
-                            DungeonRunner.openChest();
-                            return;
-                        }
-                        else
-                        {
-                            Automation.Dungeon.__chestPositions.push(playerCurrentPosition);
-                        }
-                    }
-
-                    let maxIndex = (DungeonRunner.map.board().length - 1);
-                    let isEvenRaw = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
-                    let isLastTileOfTheRaw = (isEvenRaw && (playerCurrentPosition.x == maxIndex))
-                                          || (!isEvenRaw && (playerCurrentPosition.x == 0));
-
-                    // Detect board ending and move to the boss if it's the case
-                    if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
-                    {
-                        Automation.Dungeon.__isCompleted = true;
-                        return;
-                    }
-
-                    // Go full left at the beginning of the map
-                    if (playerCurrentPosition.y == maxIndex)
-                    {
-                        if ((playerCurrentPosition.x != 0)
-                            && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
-                        {
-                            DungeonRunner.map.moveLeft();
-                            return;
-                        }
-                    }
-
-                    // Move up once a raw has been fully visited
-                    if (isLastTileOfTheRaw)
-                    {
-                        DungeonRunner.map.moveUp();
-                        return;
-                    }
-
-                    // Move right on even raws, left otherwise
-                    if (isEvenRaw)
-                    {
-                        DungeonRunner.map.moveRight();
-                    }
-                    else
-                    {
-                        DungeonRunner.map.moveLeft();
-                    }
-
                     return;
                 }
 
-                // Only display the menu if:
-                //    - The player is in a town (dungeons are attached to town)
-                //    - The player has bought the dungeon ticket
-                //    - The player has enought dungeon token
-                if (App.game.gameState === GameConstants.GameState.town
-                    && player.town().dungeon
-                    && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
-                    && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
+                if (this.__isCompleted)
                 {
-                    // Display the automation menu (if not already visible)
-                    if (document.getElementById("dungeonFightButtons").hidden || (Automation.Dungeon.__previousTown != player.town().name))
+                    if (this.__chestPositions.length > 0)
                     {
-                        // Reset button status
-                        if (localStorage.getItem("dungeonFightEnabled") == "true")
-                        {
-                            Automation.Menu.__toggleAutomation("dungeonFightEnabled");
-                        }
-                        Automation.Dungeon.__previousTown = player.town().name;
-
-                        // Make it visible
-                        document.getElementById("dungeonFightButtons").hidden = false;
+                        let chestLocation = this.__chestPositions.pop();
+                        DungeonRunner.map.moveToTile(chestLocation);
                     }
-
-                    if (localStorage.getItem("dungeonFightEnabled") == "true")
+                    else
                     {
-                        Automation.Dungeon.__isCompleted = false;
-                        DungeonRunner.initializeDungeon(player.town().dungeon);
+                        DungeonRunner.map.moveToTile(this.__bossPosition);
                     }
                 }
-                // Else hide the menu, if we're not in the dungeon
-                else if (App.game.gameState !== GameConstants.GameState.dungeon)
+
+                let playerCurrentPosition = DungeonRunner.map.playerPosition();
+
+                if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
                 {
-                    document.getElementById("dungeonFightButtons").hidden = true;
-                    Automation.Dungeon.__previousTown = null;
-                    Automation.Dungeon.__resetSavedStates();
+                    // Persist the boss position, to go back to it once the board has been cleared
+                    this.__bossPosition = playerCurrentPosition;
+
+                    if (this.__isCompleted)
+                    {
+                        DungeonRunner.startBossFight();
+                        this.__resetSavedStates();
+                        return;
+                    }
+                }
+                else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
+                {
+                    if (this.__isCompleted)
+                    {
+                        DungeonRunner.openChest();
+                        return;
+                    }
+                    else
+                    {
+                        this.__chestPositions.push(playerCurrentPosition);
+                    }
+                }
+
+                let maxIndex = (DungeonRunner.map.board().length - 1);
+                let isEvenRaw = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
+                let isLastTileOfTheRaw = (isEvenRaw && (playerCurrentPosition.x == maxIndex))
+                                      || (!isEvenRaw && (playerCurrentPosition.x == 0));
+
+                // Detect board ending and move to the boss if it's the case
+                if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
+                {
+                    this.__isCompleted = true;
+                    return;
+                }
+
+                // Go full left at the beginning of the map
+                if (playerCurrentPosition.y == maxIndex)
+                {
+                    if ((playerCurrentPosition.x != 0)
+                        && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
+                    {
+                        DungeonRunner.map.moveLeft();
+                        return;
+                    }
+                }
+
+                // Move up once a raw has been fully visited
+                if (isLastTileOfTheRaw)
+                {
+                    DungeonRunner.map.moveUp();
+                    return;
+                }
+
+                // Move right on even raws, left otherwise
+                if (isEvenRaw)
+                {
+                    DungeonRunner.map.moveRight();
+                }
+                else
+                {
+                    DungeonRunner.map.moveLeft();
+                }
+
+                return;
+            }
+
+            // Only display the menu if:
+            //    - The player is in a town (dungeons are attached to town)
+            //    - The player has bought the dungeon ticket
+            //    - The player has enought dungeon token
+            if (App.game.gameState === GameConstants.GameState.town
+                && player.town().dungeon
+                && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
+                && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
+            {
+                // Display the automation menu (if not already visible)
+                if (document.getElementById("dungeonFightButtons").hidden || (this.__previousTown != player.town().name))
+                {
+                    // Reset button status
                     if (localStorage.getItem("dungeonFightEnabled") == "true")
                     {
                         Automation.Menu.__toggleAutomation("dungeonFightEnabled");
                     }
+                    this.__previousTown = player.town().name;
+
+                    // Make it visible
+                    document.getElementById("dungeonFightButtons").hidden = false;
                 }
-            }, 50); // Runs every game tick
+
+                if (localStorage.getItem("dungeonFightEnabled") == "true")
+                {
+                    this.__isCompleted = false;
+                    DungeonRunner.initializeDungeon(player.town().dungeon);
+                }
+            }
+            // Else hide the menu, if we're not in the dungeon
+            else if (App.game.gameState !== GameConstants.GameState.dungeon)
+            {
+                document.getElementById("dungeonFightButtons").hidden = true;
+                this.__previousTown = null;
+                this.__resetSavedStates();
+                if (localStorage.getItem("dungeonFightEnabled") == "true")
+                {
+                    Automation.Menu.__toggleAutomation("dungeonFightEnabled");
+                }
+            }
         }
 
         static __buildMenu()
@@ -775,9 +779,9 @@ class Automation
 
         static __resetSavedStates()
         {
-            Automation.Dungeon.__bossPosition = null;
-            Automation.Dungeon.__chestPositions = [];
-            Automation.Dungeon.__isCompleted = false;
+            this.__bossPosition = null;
+            this.__chestPositions = [];
+            this.__isCompleted = false;
         }
     }
 
@@ -792,73 +796,75 @@ class Automation
 
         static start()
         {
-            Automation.Gym.__buildMenu();
+            this.__buildMenu();
 
-            var autoGymLoop = setInterval(function ()
+            setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
+        }
+
+        static __mainLoop()
+        {
+            // We are currently fighting, do do anything
+            if (App.game.gameState === GameConstants.GameState.gym)
             {
-                // We are currently fighting, do do anything
-                if (App.game.gameState === GameConstants.GameState.gym)
+                return;
+            }
+
+            // Check if we are in a town
+            if (App.game.gameState === GameConstants.GameState.town)
+            {
+                // List available gyms
+                let gymList = player.town().content.filter(x => GymList[x.town]);
+                let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
+
+                // If we are in the same town as previous cycle
+                if ((this.__previousTown === player.town().name)
+                    && (!document.getElementById("gymFightButtons").hidden))
                 {
+                    if (this.__currentGymListSize !== unlockedGymCount)
+                    {
+                        this.__updateGymList(gymList, unlockedGymCount, false);
+                    }
+
+                    if (localStorage.getItem("gymFightEnabled") == "true")
+                    {
+                        if (document.getElementById("selectedAutomationGym").selectedIndex < 0)
+                        {
+                            Automation.Menu.__toggleAutomation("gymFightEnabled");
+                            return;
+                        }
+
+                        GymList[document.getElementById("selectedAutomationGym").value].protectedOnclick();
+                    }
                     return;
                 }
 
-                // Check if we are in a town
-                if (App.game.gameState === GameConstants.GameState.town)
+                this.__previousTown = player.town().name;
+
+                if (gymList.length > 0)
                 {
-                    // List available gyms
-                    let gymList = player.town().content.filter(x => GymList[x.town]);
-                    let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
+                    this.__updateGymList(gymList, unlockedGymCount, true);
 
-                    // If we are in the same town as previous cycle
-                    if ((Automation.Gym.__previousTown === player.town().name)
-                        && (!document.getElementById("gymFightButtons").hidden))
-                    {
-                        if (Automation.Gym.__currentGymListSize !== unlockedGymCount)
-                        {
-                            Automation.Gym.__updateGymList(gymList, unlockedGymCount, false);
-                        }
-
-                        if (localStorage.getItem("gymFightEnabled") == "true")
-                        {
-                            if (document.getElementById("selectedAutomationGym").selectedIndex < 0)
-                            {
-                                Automation.Menu.__toggleAutomation("gymFightEnabled");
-                                return;
-                            }
-
-                            GymList[document.getElementById("selectedAutomationGym").value].protectedOnclick();
-                        }
-                        return;
-                    }
-
-                    Automation.Gym.__previousTown = player.town().name;
-
-                    if (gymList.length > 0)
-                    {
-                        Automation.Gym.__updateGymList(gymList, unlockedGymCount, true);
-
-                        if (localStorage.getItem("gymFightEnabled") == "true")
-                        {
-                            Automation.Menu.__toggleAutomation("gymFightEnabled");
-                        }
-
-                        // Make it visible
-                        document.getElementById("gymFightButtons").hidden = false;
-                        return;
-                    }
-                }
-
-                // Else hide the menu and disable the button, if needed
-                if (!document.getElementById("gymFightButtons").hidden)
-                {
-                    document.getElementById("gymFightButtons").hidden = true;
-                    Automation.Gym.__previousTown = null;
                     if (localStorage.getItem("gymFightEnabled") == "true")
                     {
                         Automation.Menu.__toggleAutomation("gymFightEnabled");
                     }
+
+                    // Make it visible
+                    document.getElementById("gymFightButtons").hidden = false;
+                    return;
                 }
-            }, 50); // Runs every game tick
+            }
+
+            // Else hide the menu and disable the button, if needed
+            if (!document.getElementById("gymFightButtons").hidden)
+            {
+                document.getElementById("gymFightButtons").hidden = true;
+                this.__previousTown = null;
+                if (localStorage.getItem("gymFightEnabled") == "true")
+                {
+                    Automation.Menu.__toggleAutomation("gymFightEnabled");
+                }
+            }
         }
 
         static __updateGymList(gymList, unlockedGymCount, rebuild)
@@ -912,7 +918,7 @@ class Automation
                 document.getElementById("selectedAutomationGym").selectedIndex = -1;
             }
 
-            Automation.Gym.__currentGymListSize = unlockedGymCount;
+            this.__currentGymListSize = unlockedGymCount;
         }
 
         static __buildMenu()
@@ -959,132 +965,134 @@ class Automation
             Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
 
-            var eggLoop = setInterval(function ()
+            setInterval(this.__mainLoop.bind(this), 1000); // Runs every seconds
+        }
+
+        static __mainLoop()
+        {
+            if (localStorage.getItem("hatcheryAutomationEnabled") == "true")
             {
-                if (localStorage.getItem("hatcheryAutomationEnabled") == "true")
+                // Attempt to hatch each egg. If the egg is at 100% it will succeed
+                [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
+
+                // Try to use eggs first, if enabled
+                if (localStorage.getItem("eggsHatcheryAutomationEnabled") == "true")
                 {
-                    // Attempt to hatch each egg. If the egg is at 100% it will succeed
-                    [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
-
-                    // Try to use eggs first, if enabled
-                    if (localStorage.getItem("eggsHatcheryAutomationEnabled") == "true")
+                    let tryToHatchEgg = function (type)
                     {
-                        let tryToHatchEgg = function (type)
+                        // Use an egg only if:
+                        //   - a slot is available
+                        //   - the player has one
+                        //   - a new pokemon can be caught that way
+                        //   - the item actually can be used
+                        while (App.game.breeding.hasFreeEggSlot()
+                               && player.itemList[type.name]()
+                               && !type.getCaughtStatus()
+                               && type.checkCanUse())
                         {
-                            // Use an egg only if:
-                            //   - a slot is available
-                            //   - the player has one
-                            //   - a new pokemon can be caught that way
-                            //   - the item actually can be used
-                            while (App.game.breeding.hasFreeEggSlot()
-                                   && player.itemList[type.name]()
-                                   && !type.getCaughtStatus()
-                                   && type.checkCanUse())
-                            {
-                                type.use();
-                                Automation.__sendNotif("Added a " + type.displayName + " to the Hatchery!");
-                            }
-                        };
-
-                        tryToHatchEgg(ItemList.Fire_egg);
-                        tryToHatchEgg(ItemList.Water_egg);
-                        tryToHatchEgg(ItemList.Grass_egg);
-                        tryToHatchEgg(ItemList.Fighting_egg);
-                        tryToHatchEgg(ItemList.Electric_egg);
-                        tryToHatchEgg(ItemList.Dragon_egg);
-                        tryToHatchEgg(ItemList.Mystery_egg);
-                    }
-
-                    // Then try to use fossils, if enabled
-                    if (localStorage.getItem("fossilHatcheryAutomationEnabled") == "true")
-                    {
-                        let tryToHatchFossil = function (type)
-                        {
-                            let associatedPokemon = GameConstants.FossilToPokemon[type.name];
-                            let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon))
-
-                            // Use an egg only if:
-                            //   - a slot is available
-                            //   - the player has one
-                            //   - the corresponding pokemon is from an unlocked region
-                            //   - the pokemon associated to the fossil is not already held by the player
-                            //   - the fossil is not already in hatchery
-                            if (App.game.breeding.hasFreeEggSlot()
-                                && (type.amount() > 0)
-                                && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
-                                && !hasPokemon
-                                && ![3, 2, 1, 0].some((index) => (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
-                            {
-                                // Hatching a fossil is performed by selling it
-                                Underground.sellMineItem(type.id);
-                                Automation.__sendNotif("Added a " + type.name + " to the Hatchery!");
-                            }
-                        };
-
-                        let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
-                        let i = 0;
-                        while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
-                        {
-                            tryToHatchFossil(currentlyHeldFossils[i]);
-                            i++;
+                            type.use();
+                            Automation.__sendNotif("Added a " + type.displayName + " to the Hatchery!");
                         }
-                    }
+                    };
 
-                    // Now add lvl 100 pokemons to empty slots if we can
-                    if (App.game.breeding.hasFreeEggSlot())
+                    tryToHatchEgg(ItemList.Fire_egg);
+                    tryToHatchEgg(ItemList.Water_egg);
+                    tryToHatchEgg(ItemList.Grass_egg);
+                    tryToHatchEgg(ItemList.Fighting_egg);
+                    tryToHatchEgg(ItemList.Electric_egg);
+                    tryToHatchEgg(ItemList.Dragon_egg);
+                    tryToHatchEgg(ItemList.Mystery_egg);
+                }
+
+                // Then try to use fossils, if enabled
+                if (localStorage.getItem("fossilHatcheryAutomationEnabled") == "true")
+                {
+                    let tryToHatchFossil = function (type)
                     {
-                        // Get breedable pokemon list
-                        let filteredEggList = App.game.party.caughtPokemon.filter(
-                            (pokemon) =>
+                        let associatedPokemon = GameConstants.FossilToPokemon[type.name];
+                        let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon))
+
+                        // Use an egg only if:
+                        //   - a slot is available
+                        //   - the player has one
+                        //   - the corresponding pokemon is from an unlocked region
+                        //   - the pokemon associated to the fossil is not already held by the player
+                        //   - the fossil is not already in hatchery
+                        if (App.game.breeding.hasFreeEggSlot()
+                            && (type.amount() > 0)
+                            && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
+                            && !hasPokemon
+                            && ![3, 2, 1, 0].some((index) => (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
+                        {
+                            // Hatching a fossil is performed by selling it
+                            Underground.sellMineItem(type.id);
+                            Automation.__sendNotif("Added a " + type.name + " to the Hatchery!");
+                        }
+                    };
+
+                    let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
+                    let i = 0;
+                    while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
+                    {
+                        tryToHatchFossil(currentlyHeldFossils[i]);
+                        i++;
+                    }
+                }
+
+                // Now add lvl 100 pokemons to empty slots if we can
+                if (App.game.breeding.hasFreeEggSlot())
+                {
+                    // Get breedable pokemon list
+                    let filteredEggList = App.game.party.caughtPokemon.filter(
+                        (pokemon) =>
+                        {
+                            // Only consider breedable Pokemon (ie. not breeding and lvl 100)
+                            return !pokemon.breeding && (pokemon.level == 100);
+                        });
+
+                    let notShinyFirst = (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === "true");
+
+                    // Sort list by breeding efficiency
+                    filteredEggList.sort((a, b) =>
+                        {
+                            if (notShinyFirst)
                             {
-                                // Only consider breedable Pokemon (ie. not breeding and lvl 100)
-                                return !pokemon.breeding && (pokemon.level == 100);
-                            });
-
-                        let notShinyFirst = (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === "true");
-
-                        // Sort list by breeding efficiency
-                        filteredEggList.sort((a, b) =>
-                            {
-                                if (notShinyFirst)
-                                {
-                                    if (a.shiny && !b.shiny)
-                                    {
-                                        return 1;
-                                    }
-                                    if (!a.shiny && b.shiny)
-                                    {
-                                        return -1;
-                                    }
-                                }
-
-                                let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
-                                let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
-
-                                if (aValue < bValue)
+                                if (a.shiny && !b.shiny)
                                 {
                                     return 1;
                                 }
-                                if (aValue > bValue)
+                                if (!a.shiny && b.shiny)
                                 {
                                     return -1;
                                 }
+                            }
 
-                                return 0;
-                            });
+                            let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
+                            let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
 
-                        // Do not add pokemons to the queue as it reduces the overall attack
-                        // (this will also allow the player to add pokemons, eggs or fossils manually)
-                        var i = 0;
-                        while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
-                        {
-                            App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
-                            Automation.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
-                            i++;
-                        }
+                            if (aValue < bValue)
+                            {
+                                return 1;
+                            }
+                            if (aValue > bValue)
+                            {
+                                return -1;
+                            }
+
+                            return 0;
+                        });
+
+                    // Do not add pokemons to the queue as it reduces the overall attack
+                    // (this will also allow the player to add pokemons, eggs or fossils manually)
+                    var i = 0;
+                    while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
+                    {
+                        App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
+                        Automation.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
+                        i++;
                     }
                 }
-            }, 1000); // Runs every seconds
+            }
         }
     }
 
@@ -1100,42 +1108,44 @@ class Automation
             Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", true);
             Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 
-            var autoFarmingLoop = setInterval(function ()
+            setInterval(this.__mainLoop.bind(this), 10000); // Every 10 seconds
+        }
+
+        static __mainLoop()
+        {
+            if (localStorage.getItem("autoFarmingEnabled") == "true")
             {
-                if (localStorage.getItem("autoFarmingEnabled") == "true")
+                this.__readyToHarvestCount = 0;
+                // Check if any berry is ready to harvest
+                App.game.farming.plotList.forEach((plot, index) =>
                 {
-                    Automation.Farm.__readyToHarvestCount = 0;
-                    // Check if any berry is ready to harvest
-                    App.game.farming.plotList.forEach((plot, index) =>
+                    if (plot.berry === BerryType.None || plot.stage() != PlotStage.Berry) return;
+                    this.__readyToHarvestCount++;
+                }, this);
+
+                if (this.__readyToHarvestCount > 0)
+                {
+                    App.game.farming.harvestAll();
+
+                    if (localStorage.getItem("autoMutationFarmingEnabled") == "true")
                     {
-                        if (plot.berry === BerryType.None || plot.stage() != PlotStage.Berry) return;
-                        Automation.Farm.__readyToHarvestCount++;
-                    });
-
-                    if (Automation.Farm.__readyToHarvestCount > 0)
+                        // this.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
+                        // this.__lumBerryFarm();
+                        // this.__singleBerryFarm(BerryType.Pecha);
+                        this.__fourBerryFarm(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel);
+                    }
+                    else
                     {
-                        App.game.farming.harvestAll();
+                        App.game.farming.plantAll(FarmController.selectedBerry());
 
-                        if (localStorage.getItem("autoMutationFarmingEnabled") == "true")
-                        {
-                            // Automation.Farm.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
-                            // Automation.Farm.__lumBerryFarm();
-                            // Automation.Farm.__singleBerryFarm(BerryType.Pecha);
-                            Automation.Farm.__fourBerryFarm(BerryType.Mago, BerryType.Magost, BerryType.Nabab, BerryType.Watmel);
-                        }
-                        else
-                        {
-                            App.game.farming.plantAll(FarmController.selectedBerry());
+                        let berryName = Object.values(BerryType)[FarmController.selectedBerry()];
+                        let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
 
-                            let berryName = Object.values(BerryType)[FarmController.selectedBerry()];
-                            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
-
-                            Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries<br>"
-                                                 + "Planted back some " + berryName + " " + berryImage);
-                        }
+                        Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
+                                             + "Planted back some " + berryName + " " + berryImage);
                     }
                 }
-            }, 10000); // Every 10 seconds
+            }
         }
 
         static __readyToHarvestCount = 0;
@@ -1147,7 +1157,7 @@ class Automation
             let berryName = Object.values(BerryType)[berryType];
             let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
 
-            Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries<br>"
+            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
                                  + "Looking for mutation wih " + berryName + " " + berryImage);
         }
 
@@ -1164,7 +1174,7 @@ class Automation
             App.game.farming.plant(18, berry1Type, true);
             App.game.farming.plant(21, berry1Type, true);
 
-            Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries<br>"
+            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
                                  + "Looking for mutation wih " + berry1Name + " " + berry1Image + " and " + berry2Name + " " + berry2Image);
         }
 
@@ -1175,11 +1185,8 @@ class Automation
             [5, 9, 22].forEach((index) => App.game.farming.plant(index, berryType3, true));
             [7, 20, 24].forEach((index) => App.game.farming.plant(index, berryType4, true));
 
-            let berryName = Object.values(BerryType)[berryType];
-            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
-
-            Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries<br>"
-                                 + "Looking for mutation wih " + berryName + " " + berryImage);
+            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
+                                 + "Looking for mutation wih four berries");
         }
 
         static __lumBerryFarm()
@@ -1193,7 +1200,7 @@ class Automation
             App.game.farming.plant(17, BerryType.Oran, true);
             App.game.farming.plant(18, BerryType.Sitrus, true);
 
-            Automation.__sendNotif("Harvested " + Automation.Farm.__readyToHarvestCount.toString() + " berries. Looking for mutation...");
+            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries. Looking for mutation...");
         }
     }
 
@@ -1208,13 +1215,13 @@ class Automation
             // Add the related button to the automation menu
             Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", true);
 
-            var bombCheckLoop = setInterval(function ()
+            setInterval(function ()
             {
-                if (Automation.Underground.__isMiningPossible())
+                if (this.__isMiningPossible())
                 {
-                    Automation.Underground.__startMining();
+                    this.__startMining();
                 }
-            }, 10000); // Check every 10 seconds
+            }.bind(this), 10000); // Check every 10 seconds
         }
 
         static __miningCount = 0;
@@ -1228,22 +1235,22 @@ class Automation
 
         static __startMining()
         {
-            var bombLoop = setInterval(function ()
+            var bombingLoop = setInterval(function()
             {
-                if (Automation.Underground.__isMiningPossible())
+                if (this.__isMiningPossible())
                 {
                     // Mine using bombs until the board is completed or the energy is depleted
                     Mine.bomb();
-                    Automation.Underground.__miningCount++;
+                    this.__miningCount++;
                 }
                 else
                 {
-                    Automation.__sendNotif("Performed mining " + Automation.Underground.__miningCount.toString() + " times,"
+                    Automation.__sendNotif("Performed mining " + this.__miningCount.toString() + " times,"
                                          + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
-                    clearInterval(bombLoop);
-                    Automation.Underground.__miningCount = 0;
+                    clearInterval(bombingLoop);
+                    this.__miningCount = 0;
                 }
-            }, 500); // Runs every 0.5s
+            }.bind(this), 500); // Runs every 0.5s
         }
     }
 }
