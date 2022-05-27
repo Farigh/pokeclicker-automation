@@ -1536,6 +1536,10 @@ class Automation
             {
                 this.__workOnDefeatGymQuest(quest);
             }
+            else if (quest instanceof DefeatPokemonsQuest)
+            {
+                this.__workOnDefeatPokemonsQuest(quest);
+            }
             else if (quest instanceof UsePokeballQuest)
             {
                 this.__workOnUsePokeballQuest(quest.pokeball, true);
@@ -1579,6 +1583,8 @@ class Automation
                 return;
             }
 
+            this.__selectBallToCatch(GameConstants.Pokeball.None);
+
             // Move to dungeon if needed
             if ((player.route() != 0) || quest.dungeon !== player.town().name)
             {
@@ -1612,6 +1618,18 @@ class Automation
             {
                 Automation.Menu.__toggleAutomation("gymFightEnabled");
             }
+        }
+
+        static __workOnDefeatPokemonsQuest(quest)
+        {
+            this.__selectBallToCatch(GameConstants.Pokeball.None);
+
+            if ((player.region != quest.region)
+                || (player.route() != quest.route))
+            {
+                MapHelper.moveToRoute(quest.route, quest.region);
+            }
+            this.__selectOwkItems(this.OakItemSetup.PokemonExp);
         }
 
         static __workOnUsePokeballQuest(ballType, enforceType = false)
