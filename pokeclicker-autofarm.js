@@ -1235,6 +1235,7 @@ class Automation
             if (localStorage.getItem("autoFarmingEnabled") === "true")
             {
                 this.__harvestAsEfficientAsPossible();
+                this.__tryToUnlockNewStops();
 
                 if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
                 {
@@ -1268,6 +1269,17 @@ class Automation
                 function () { this.__twoBerriesMutation(BerryType.Oran, BerryType.Rawst); }.bind(this);
             this.__berryToStrategyMap[BerryType.Pinap] =
                 function () { this.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear); }.bind(this);
+        }
+
+        static __tryToUnlockNewStops()
+        {
+            App.game.farming.plotList.forEach((plot, index) =>
+                {
+                    if (!plot.isUnlocked)
+                    {
+                        FarmController.plotClick(index);
+                    }
+                }, this);
         }
 
         static __harvestAsEfficientAsPossible()
