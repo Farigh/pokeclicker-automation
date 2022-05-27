@@ -1177,94 +1177,155 @@ class Automation
 
         static __mainLoop()
         {
-            if (localStorage.getItem("autoFarmingEnabled") == "true")
+            if (localStorage.getItem("autoFarmingEnabled") === "true")
             {
-                this.__readyToHarvestCount = 0;
-                // Check if any berry is ready to harvest
-                App.game.farming.plotList.forEach((plot, index) =>
+                this.__harvestAsSoonAsPossible();
+
+                if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
                 {
-                    if (plot.berry === BerryType.None || plot.stage() != PlotStage.Berry) return;
-                    this.__readyToHarvestCount++;
-                }, this);
-
-                if (this.__readyToHarvestCount > 0)
+                    // this.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
+                    // this.__lumBerryFarm();
+                    // this.__singleBerryFarm(BerryType.Pecha);
+                    this.__fourBerryFarm(BerryType.Roseli);
+                }
+                else
                 {
-                    App.game.farming.harvestAll();
-
-                    if (localStorage.getItem("autoMutationFarmingEnabled") == "true")
-                    {
-                        // this.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
-                        // this.__lumBerryFarm();
-                        // this.__singleBerryFarm(BerryType.Pecha);
-                        this.__fourBerryFarm(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel);
-                    }
-                    else
-                    {
-                        App.game.farming.plantAll(FarmController.selectedBerry());
-
-                        let berryName = Object.values(BerryType)[FarmController.selectedBerry()];
-                        let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
-
-                        Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
-                                             + "Planted back some " + berryName + " " + berryImage);
-                    }
+                    this.__plantAllBerries();
                 }
             }
         }
 
-        static __readyToHarvestCount = 0;
+        static __harvestCount = 0;
+        static __freeSlotCount = 0;
+        static __plantedBerryCount = 0;
+
+        static __harvestAsSoonAsPossible()
+        {
+            this.__harvestCount = 0;
+            this.__freeSlotCount = 0;
+            this.__plantedBerryCount = 0;
+
+            // Mutations can only occur while the berry is fully ripe, so we need to collect them the later possible
+            App.game.farming.plotList.forEach((plot, index) =>
+            {
+                if (plot.isEmpty())
+                {
+                    if (plot.isUnlocked)
+                    {
+                        this.__freeSlotCount++;
+                    }
+                    return;
+                }
+
+                if (plot.stage() != PlotStage.Berry)
+                {
+                    return;
+                }
+
+                if ((localStorage.getItem("autoMutationFarmingEnabled") === "false")
+                    || ((plot.berryData.growthTime[4] - plot.age) < 15))
+                {
+                    App.game.farming.harvest(index);
+                    this.__harvestCount++;
+                    this.__freeSlotCount++;
+                }
+            }, this);
+        }
+
+        static __plantAllBerries()
+        {
+            if (this.__freeSlotCount > 0)
+            {
+                App.game.farming.plantAll(FarmController.selectedBerry());
+
+                this.__plantedBerryCount = this.__freeSlotCount;
+
+                let berryName = Object.values(BerryType)[FarmController.selectedBerry()];
+                let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
+                this.__sendNotif("Planted back some " + berryName + " " + berryImage);
+            }
+        }
 
         static __singleBerryFarm(berryType)
         {
-            [2, 3, 5, 10, 12, 14, 19, 21, 21].forEach((index) => App.game.farming.plant(index, berryType, true));
+            [2, 3, 5, 10, 12, 14, 19, 21, 21].forEach((index) => this.__tryPlantBerryAtIndex(index, berryType), this);
 
             let berryName = Object.values(BerryType)[berryType];
             let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
 
-            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
-                                 + "Looking for mutation wih " + berryName + " " + berryImage);
+            this.__sendNotif("Looking for mutation wih " + berryName + " " + berryImage);
         }
 
         static __twoBerriesMutation(berry1Type, berry2Type)
         {
-            // Hard-coded strategy, this should be adapted based on unlock slots
+            // Hard-coded strategy for 9 available slots, this should be adapted based on unlock slots
+            this.__tryPlantBerryAtIndex(6, berry1Type);
+            this.__tryPlantBerryAtIndex(12, berry2Type);
+            this.__tryPlantBerryAtIndex(18, berry1Type);
+            this.__tryPlantBerryAtIndex(21, berry1Type);
+
             let berry1Name = Object.values(BerryType)[berry1Type];
             let berry1Image = '<img src="assets/images/items/berry/' + berry1Name + '.png" height="28px">';
             let berry2Name = Object.values(BerryType)[berry2Type];
             let berry2Image = '<img src="assets/images/items/berry/' + berry2Name + '.png" height="28px">';
-
-            App.game.farming.plant(6, berry1Type, true);
-            App.game.farming.plant(12, berry2Type, true);
-            App.game.farming.plant(18, berry1Type, true);
-            App.game.farming.plant(21, berry1Type, true);
-
-            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
-                                 + "Looking for mutation wih " + berry1Name + " " + berry1Image + " and " + berry2Name + " " + berry2Image);
+            this.__sendNotif("Looking for mutation wih " + berry1Name + " " + berry1Image + " and " + berry2Name + " " + berry2Image);
         }
 
-        static __fourBerryFarm(berryType1, berryType2, berryType3, berryType4)
+        static __fourBerryFarm(lookingForBerryType)
         {
-            [0, 4, 17].forEach((index) => App.game.farming.plant(index, berryType1, true));
-            [2, 15, 19].forEach((index) => App.game.farming.plant(index, berryType2, true));
-            [5, 9, 22].forEach((index) => App.game.farming.plant(index, berryType3, true));
-            [7, 20, 24].forEach((index) => App.game.farming.plant(index, berryType4, true));
+            let neededBerries = [];
 
-            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries<br>"
-                                 + "Looking for mutation wih four berries");
+            if (lookingForBerryType === BerryType.Roseli)
+            {
+                neededBerries = [ BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel ];
+            }
+            else
+            {
+                Automation.__sendNotif("ERROR: No strategy for berry " + lookingForBerryType.toString());
+                return;
+            }
+
+            [0, 4, 17].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[0]), this);
+            [2, 15, 19].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[1]), this);
+            [5, 9, 22].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[2]), this);
+            [7, 20, 24].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[3]), this);
+
+            let berryName = Object.values(BerryType)[lookingForBerryType];
+            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
+            this.__sendNotif("Looking for mutation resulting in " + berryName + " " + berryImage);
         }
 
         static __lumBerryFarm()
         {
-            App.game.farming.plant(6, BerryType.Cheri, true);
-            App.game.farming.plant(7, BerryType.Chesto, true);
-            App.game.farming.plant(8, BerryType.Pecha, true);
-            App.game.farming.plant(11, BerryType.Rawst, true);
-            App.game.farming.plant(13, BerryType.Aspear, true);
-            App.game.farming.plant(16, BerryType.Leppa, true);
-            App.game.farming.plant(17, BerryType.Oran, true);
-            App.game.farming.plant(18, BerryType.Sitrus, true);
+            this.__tryPlantBerryAtIndex(6, BerryType.Cheri);
+            this.__tryPlantBerryAtIndex(7, BerryType.Chesto);
+            this.__tryPlantBerryAtIndex(8, BerryType.Pecha);
+            this.__tryPlantBerryAtIndex(11, BerryType.Rawst);
+            this.__tryPlantBerryAtIndex(13, BerryType.Aspear);
+            this.__tryPlantBerryAtIndex(16, BerryType.Leppa);
+            this.__tryPlantBerryAtIndex(17, BerryType.Oran);
+            this.__tryPlantBerryAtIndex(18, BerryType.Sitrus);
 
-            Automation.__sendNotif("Harvested " + this.__readyToHarvestCount.toString() + " berries. Looking for mutation...");
+            this.__sendNotif("Looking for mutation...");
+        }
+
+        static __tryPlantBerryAtIndex(index, berryType)
+        {
+            if (App.game.farming.plotList[index].isUnlocked
+                && App.game.farming.plotList[index].isEmpty()
+                && App.game.farming.hasBerry(berryType))
+            {
+                App.game.farming.plant(index, berryType, true);
+                this.__plantedBerryCount++;
+            }
+        }
+
+        static __sendNotif(details)
+        {
+            if (this.__plantedBerryCount > 0)
+            {
+                Automation.__sendNotif("Harvested " + this.__harvestCount.toString() + " berries<br>" + details);
+            }
         }
     }
 
