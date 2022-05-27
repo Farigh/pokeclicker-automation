@@ -671,6 +671,7 @@ class Automation
         static __bossPosition = null;
         static __chestPositions = [];
         static __previousTown = null;
+        static __stopRequested = false;
 
         static start()
         {
@@ -798,9 +799,12 @@ class Automation
 
                 if (localStorage.getItem("dungeonFightEnabled") == "true")
                 {
-                    // Reset button status if the pokedex is full for this dungeon, and it has been ask for
-                    if ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
-                        && DungeonRunner.dungeonCompleted(player.town().dungeon, false))
+                    // Reset button status if either:
+                    //    - it was requested by another module
+                    //    - the pokedex is full for this dungeon, and it has been ask for
+                    if (this.__stopRequested
+                        || ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
+                            && DungeonRunner.dungeonCompleted(player.town().dungeon, false)))
                     {
                         Automation.Menu.__toggleAutomation("dungeonFightEnabled");
                     }
@@ -1498,6 +1502,14 @@ class Automation
 
         static __workOnQuest()
         {
+            // Already fighting, nothing to do for now
+            if (Automation.__isInInstanceState())
+            {
+                Automation.Dungeon.__stopRequested = true;
+                return;
+            }
+            Automation.Dungeon.__stopRequested = false;
+
             let currentQuests = App.game.quests.currentQuests();
             if (currentQuests.length == 0)
             {
@@ -1515,6 +1527,10 @@ class Automation
             else if (quest instanceof CapturePokemonTypesQuest)
             {
                 this.__workOnCapturePokemonTypesQuest(quest);
+            }
+            else if (quest instanceof DefeatDungeonQuest)
+            {
+                this.__workOnDefeatDungeonQuest(quest);
             }
             else if (quest instanceof DefeatGymQuest)
             {
@@ -1551,6 +1567,37 @@ class Automation
             if (hasBalls && (player.route() !== bestRoute))
             {
                 MapHelper.moveToRoute(bestRoute, 0);
+            }
+        }
+
+        static __workOnDefeatDungeonQuest(quest)
+        {
+            // If we don't have enought tokens, go farm some
+            if (TownList[quest.dungeon].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
+            {
+                this.__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);
+                return;
+            }
+
+            // Move to dungeon if needed
+            if ((player.route() != 0) || quest.dungeon !== player.town().name)
+            {
+                MapHelper.moveToTown(quest.dungeon);
+
+                // Let a tick to the menu to show up
+                return;
+            }
+
+            // Disable pokedex stop
+            if (localStorage.getItem("stopDungeonAtPokedexCompletion") === "true")
+            {
+                Automation.Menu.__toggleAutomation("stopDungeonAtPokedexCompletion");
+            }
+
+            // Enable auto dungeon fight
+            if (localStorage.getItem("dungeonFightEnabled") === "false")
+            {
+                Automation.Menu.__toggleAutomation("dungeonFightEnabled");
             }
         }
 
