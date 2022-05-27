@@ -1174,25 +1174,71 @@ class Automation
     {
         static start()
         {
+            this.__buildBerryCallbackMap();
+            this.__buildMenu();
+
+            setInterval(this.__mainLoop.bind(this), 10000); // Every 10 seconds
+        }
+
+        static __buildMenu()
+        {
             // Add the related buttons to the automation menu
             Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", true);
             Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 
-            setInterval(this.__mainLoop.bind(this), 10000); // Every 10 seconds
+            // Add the available mutation list
+            let selectElem = document.createElement("select");
+            selectElem.className = "custom-select";
+            selectElem.name = "selectedMutationBerry";
+            selectElem.id = selectElem.name;
+            selectElem.style.width = "calc(100% - 10px)";
+            selectElem.style.marginTop = "3px";
+            selectElem.style.marginRight = "5px";
+            document.getElementById("automationButtonsDiv").appendChild(selectElem);
+
+            // Get values to put as options
+            let availableOptions = [];
+            for (let key in Automation.Farm.__berryToStrategyMap)
+            {
+                availableOptions.push([key, BerryType[key]]);
+            }
+
+            // Sort the options alphabetically
+            availableOptions.sort(([keyA, valueA], [keyB, valueB]) =>
+                                      {
+                                          if (valueA > valueB)
+                                          {
+                                              return 1;
+                                          }
+                                          if (valueA < valueB)
+                                          {
+                                              return -1;
+                                          }
+
+                                          return 0;
+                                      });
+
+            // Build the options
+            availableOptions.forEach(([key, value]) =>
+                {
+                    let opt = document.createElement("option");
+                    opt.value = key;
+                    opt.id = key;
+                    opt.innerHTML = value;
+
+                    selectElem.options.add(opt);
+                });
         }
 
         static __mainLoop()
         {
             if (localStorage.getItem("autoFarmingEnabled") === "true")
             {
-                this.__harvestAsSoonAsPossible();
+                this.__harvestAsEfficientAsPossible();
 
                 if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
                 {
-                    // this.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear);
-                    // this.__lumBerryFarm();
-                    // this.__singleBerryFarm(BerryType.Pecha);
-                    this.__fourBerryFarm(BerryType.Roseli);
+                    this.__performBerryMutationStrategy();
                 }
                 else
                 {
@@ -1201,11 +1247,30 @@ class Automation
             }
         }
 
+        static __berryToStrategyMap = new Object();
+
         static __harvestCount = 0;
         static __freeSlotCount = 0;
         static __plantedBerryCount = 0;
 
-        static __harvestAsSoonAsPossible()
+        static __buildBerryCallbackMap()
+        {
+            // 2nd gen with 2 1st gen berries
+            this.__berryToStrategyMap[BerryType.Persim] =
+                function () { this.__twoBerriesMutation(BerryType.Pecha, BerryType.Oran); }.bind(this);
+            this.__berryToStrategyMap[BerryType.Razz] =
+                function () { this.__twoBerriesMutation(BerryType.Leppa, BerryType.Cheri); }.bind(this);
+            this.__berryToStrategyMap[BerryType.Bluk] =
+                function () { this.__twoBerriesMutation(BerryType.Leppa, BerryType.Chesto); }.bind(this);
+            this.__berryToStrategyMap[BerryType.Nanab] =
+                function () { this.__twoBerriesMutation(BerryType.Aspear, BerryType.Pecha); }.bind(this);
+            this.__berryToStrategyMap[BerryType.Wepear] =
+                function () { this.__twoBerriesMutation(BerryType.Oran, BerryType.Rawst); }.bind(this);
+            this.__berryToStrategyMap[BerryType.Pinap] =
+                function () { this.__twoBerriesMutation(BerryType.Sitrus, BerryType.Aspear); }.bind(this);
+        }
+
+        static __harvestAsEfficientAsPossible()
         {
             this.__harvestCount = 0;
             this.__freeSlotCount = 0;
@@ -1238,6 +1303,17 @@ class Automation
             }, this);
         }
 
+        static __performBerryMutationStrategy()
+        {
+            let berryType = document.getElementById("selectedMutationBerry").value;
+            Automation.Farm.__berryToStrategyMap[berryType]();
+
+            let berryName = BerryType[berryType];
+            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
+
+            this.__sendNotif("Looking for " + berryName + " " + berryImage + " mutation");
+        }
+
         static __plantAllBerries()
         {
             if (this.__freeSlotCount > 0)
@@ -1255,26 +1331,51 @@ class Automation
         static __singleBerryFarm(berryType)
         {
             [2, 3, 5, 10, 12, 14, 19, 21, 21].forEach((index) => this.__tryPlantBerryAtIndex(index, berryType), this);
-
-            let berryName = Object.values(BerryType)[berryType];
-            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
-
-            this.__sendNotif("Looking for mutation wih " + berryName + " " + berryImage);
         }
 
         static __twoBerriesMutation(berry1Type, berry2Type)
         {
-            // Hard-coded strategy for 9 available slots, this should be adapted based on unlock slots
-            this.__tryPlantBerryAtIndex(6, berry1Type);
-            this.__tryPlantBerryAtIndex(12, berry2Type);
-            this.__tryPlantBerryAtIndex(18, berry1Type);
-            this.__tryPlantBerryAtIndex(21, berry1Type);
-
-            let berry1Name = Object.values(BerryType)[berry1Type];
-            let berry1Image = '<img src="assets/images/items/berry/' + berry1Name + '.png" height="28px">';
-            let berry2Name = Object.values(BerryType)[berry2Type];
-            let berry2Image = '<img src="assets/images/items/berry/' + berry2Name + '.png" height="28px">';
-            this.__sendNotif("Looking for mutation wih " + berry1Name + " " + berry1Image + " and " + berry2Name + " " + berry2Image);
+            if (App.game.farming.plotList[2].isUnlocked)
+            {
+                if (App.game.farming.plotList[10].isUnlocked
+                    && App.game.farming.plotList[14].isUnlocked
+                    && App.game.farming.plotList[22].isUnlocked)
+                {
+                    // This represents the following strategy
+                    //  |x|x|1|x|x|
+                    //  |x| | | |x|
+                    //  |1| |2| |1|
+                    //  |x| | | |x|
+                    //  |x|x|1|x|x|
+                    this.__tryPlantBerryAtIndex(12, berry2Type);
+                    [2, 10, 14, 22].forEach((index) => this.__tryPlantBerryAtIndex(index, berry1Type), this);
+                }
+                else
+                {
+                    // This represents the following strategy
+                    //  |x|x|1|x|x|
+                    //  |x| | | |x|
+                    //  |x| |2| |x|
+                    //  |x| |1| |x|
+                    //  |x|x|x|x|x|
+                    this.__tryPlantBerryAtIndex(2, berry1Type);
+                    this.__tryPlantBerryAtIndex(12, berry2Type);
+                    this.__tryPlantBerryAtIndex(17, berry1Type);
+                }
+            }
+            else
+            {
+                // This represents the following strategy
+                //  |x|x|x|x|x|
+                //  |x| |1| |x|
+                //  |x|2| |2|x|
+                //  |x| |1| |x|
+                //  |x|x|x|x|x|
+                this.__tryPlantBerryAtIndex(7, berry1Type);
+                this.__tryPlantBerryAtIndex(11, berry2Type);
+                this.__tryPlantBerryAtIndex(13, berry2Type);
+                this.__tryPlantBerryAtIndex(17, berry1Type);
+            }
         }
 
         static __fourBerryFarm(lookingForBerryType)
@@ -1295,10 +1396,6 @@ class Automation
             [2, 15, 19].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[1]), this);
             [5, 9, 22].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[2]), this);
             [7, 20, 24].forEach((index) => this.__tryPlantBerryAtIndex(index, neededBerries[3]), this);
-
-            let berryName = Object.values(BerryType)[lookingForBerryType];
-            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
-            this.__sendNotif("Looking for mutation resulting in " + berryName + " " + berryImage);
         }
 
         static __lumBerryFarm()
@@ -1311,8 +1408,6 @@ class Automation
             this.__tryPlantBerryAtIndex(16, BerryType.Leppa);
             this.__tryPlantBerryAtIndex(17, BerryType.Oran);
             this.__tryPlantBerryAtIndex(18, BerryType.Sitrus);
-
-            this.__sendNotif("Looking for mutation...");
         }
 
         static __tryPlantBerryAtIndex(index, berryType)
