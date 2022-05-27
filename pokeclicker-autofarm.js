@@ -23,6 +23,7 @@ class Automation
                 this.Farm.start();
                 this.Gym.start();
                 this.Dungeon.start();
+                this.Items.start();
 
                 // Add a notification button to the automation menu
                 this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
@@ -1376,6 +1377,45 @@ class Automation
                     this.__miningCount = 0;
                 }
             }.bind(this), 500); // Runs every 0.5s
+        }
+    }
+
+    /**************************/
+    /*    ITEM  AUTOMATION    */
+    /**************************/
+
+    static Items = class AutomationItems
+    {
+        static start()
+        {
+            // Add the related button to the automation menu
+            Automation.Menu.__addAutomationButton("Oak Upgrade", "autoOakUpgradeEnabled", true);
+
+            setInterval(this.__mainLoop.bind(this), 10000); // Check every 10 seconds
+        }
+
+        static __mainLoop()
+        {
+            if (localStorage.getItem("autoOakUpgradeEnabled") === "false")
+            {
+                return;
+            }
+
+            App.game.oakItems.itemList.forEach(item =>
+            {
+                if (!item.isUnlocked()
+                    || item.isMaxLevel()
+                    || !item.hasEnoughExp())
+                {
+                    return;
+                }
+
+                let itemCost = item.calculateCost();
+                if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
+                {
+                    item.buy();
+                }
+            });
         }
     }
 }
