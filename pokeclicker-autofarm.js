@@ -1540,6 +1540,10 @@ class Automation
             {
                 this.__workOnDefeatPokemonsQuest(quest);
             }
+            else if (quest instanceof UseOakItemQuest)
+            {
+                this.__workOnUseOakItemQuest(quest);
+            }
             else if (quest instanceof UsePokeballQuest)
             {
                 this.__workOnUsePokeballQuest(quest.pokeball, true);
@@ -1630,6 +1634,25 @@ class Automation
                 MapHelper.moveToRoute(quest.route, quest.region);
             }
             this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+        }
+
+        static __workOnUseOakItemQuest(quest)
+        {
+            if (quest.item == OakItemType.Magic_Ball)
+            {
+                this.__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);
+            }
+            else
+            {
+                // Select the right oak item
+                let customOakLoadout = this.OakItemSetup.PokemonExp;
+                customOakLoadout[0] = quest.item;
+                this.__selectOwkItems(customOakLoadout);
+
+                // Go kill some pokemon
+                this.__selectBallToCatch(GameConstants.Pokeball.None);
+                Automation.Click.__goToBestRoute();
+            }
         }
 
         static __workOnUsePokeballQuest(ballType, enforceType = false)
