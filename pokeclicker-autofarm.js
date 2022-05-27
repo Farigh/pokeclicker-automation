@@ -1613,14 +1613,30 @@ class Automation
 
         static __workOnDefeatGymQuest(quest)
         {
-            // Move to the associated gym if needed
-            if ((player.route() != 0) || quest.gymTown !== player.town().name)
+            let townToGoTo = quest.gymTown;
+
+            // If a ligue champion is the target, the gymTown points to the champion instead of the town
+            if (!TownList[townToGoTo])
             {
-                MapHelper.moveToTown(quest.gymTown);
+                townToGoTo = GymList[townToGoTo].parent.name;
+            }
+
+            // Move to the associated gym if needed
+            if ((player.route() != 0) || (townToGoTo !== player.town().name))
+            {
+                MapHelper.moveToTown(townToGoTo);
             }
             else if (localStorage.getItem("gymFightEnabled") === "false")
             {
                 Automation.Menu.__toggleAutomation("gymFightEnabled");
+            }
+            else
+            {
+                // Select the right gym to fight
+                if (document.getElementById("selectedAutomationGym").value != quest.gymTown)
+                {
+                    document.getElementById("selectedAutomationGym").value = quest.gymTown;
+                }
             }
         }
 
