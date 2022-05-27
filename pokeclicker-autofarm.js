@@ -243,7 +243,8 @@ class Automation
 
                     let selectedItemSet = false;
                     // Build the new drop-down list
-                    filteredList.forEach(([townName, town]) =>
+                    filteredList.forEach(
+                        ([townName, town]) =>
                         {
                             const type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
 
@@ -272,7 +273,8 @@ class Automation
                 }
                 else if (this.__currentLocationListSize != unlockedTownCount)
                 {
-                    filteredList.forEach(([townName, town]) =>
+                    filteredList.forEach(
+                        ([townName, town]) =>
                         {
                             if (town.isUnlocked())
                             {
@@ -330,7 +332,7 @@ class Automation
                 let triviaDiv = document.getElementById("availableEvolutionTrivia");
 
                 let evoStones = Object.keys(GameConstants.StoneType).filter(
-                    stone => isNaN(stone) && stone !== "None" && this.__hasStoneEvolutionCandidate(stone));
+                    (stone) => isNaN(stone) && stone !== "None" && this.__hasStoneEvolutionCandidate(stone));
 
                 triviaDiv.hidden = (evoStones.length == 0);
 
@@ -373,7 +375,7 @@ class Automation
 
                 PokemonHelper.getPokemonsWithEvolution(GameConstants.StoneType[stone]).forEach(
                     (pokemon) => (PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone]).forEach(
-                                 status => hasCandidate |= status == 0)));
+                                      (status) => hasCandidate |= status == 0)));
 
                 return hasCandidate;
             }
@@ -560,7 +562,8 @@ class Automation
 
         static __buildRouteMaxHealthMap()
         {
-            Routes.regionRoutes.forEach((route) =>
+            Routes.regionRoutes.forEach(
+                (route) =>
                 {
                     if (route.region >= this.__routeMaxHealthMap.size)
                     {
@@ -611,7 +614,8 @@ class Automation
                 this.__nextBestRoute = this.__bestRoute;
 
                 // Fortunately routes are sorted by attack
-                regionRoutes.every((route) =>
+                regionRoutes.every(
+                    (route) =>
                     {
                         if (Automation.Click.__routeMaxHealthMap.get(player.region).get(route.number) < playerClickAttack)
                         {
@@ -634,7 +638,8 @@ class Automation
         static __getRouteMaxHealth(route)
         {
             let routeMaxHealth = 0;
-            RouteHelper.getAvailablePokemonList(route.number, route.region).forEach((pokemanName) =>
+            RouteHelper.getAvailablePokemonList(route.number, route.region).forEach(
+                (pokemanName) =>
                 {
                     routeMaxHealth = Math.max(routeMaxHealth, this.__getPokemonMaxHealth(route, pokemanName));
                 }, this);
@@ -880,7 +885,7 @@ class Automation
             if (App.game.gameState === GameConstants.GameState.town)
             {
                 // List available gyms
-                let gymList = player.town().content.filter(x => GymList[x.town]);
+                let gymList = player.town().content.filter((x) => GymList[x.town]);
                 let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
 
                 // If we are in the same town as previous cycle
@@ -944,7 +949,8 @@ class Automation
                 selectElem.innerHTML = "";
 
                 let selectedItemSet = false;
-                gymList.forEach(gym =>
+                gymList.forEach(
+                    (gym) =>
                     {
                         let opt = document.createElement("option");
                         opt.value = gym.town;
@@ -967,7 +973,8 @@ class Automation
             }
             else
             {
-                gymList.forEach(gym =>
+                gymList.forEach(
+                    (gym) =>
                     {
                         if (gym.isUnlocked())
                         {
@@ -1112,9 +1119,10 @@ class Automation
 
         static __addEggsToHatchery()
         {
-            let eggList = Object.keys(GameConstants.EggItemType).filter(eggType => isNaN(eggType) && player._itemList[eggType]());
+            let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player._itemList[eggType]());
 
-            eggList.forEach(eggTypeName =>
+            eggList.forEach(
+                (eggTypeName) =>
                 {
                     let eggType = ItemList[eggTypeName];
                     // Use an egg only if:
@@ -1135,7 +1143,7 @@ class Automation
 
         static __addFossilsToHatchery()
         {
-            let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter(f => f ? f.amount() : false);
+            let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter((f) => f ? f.amount() : false);
             let i = 0;
             while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
             {
@@ -1219,7 +1227,8 @@ class Automation
                                       });
 
             // Build the options
-            availableOptions.forEach(([key, value]) =>
+            availableOptions.forEach(
+                ([key, value]) =>
                 {
                     let opt = document.createElement("option");
                     opt.value = key;
@@ -1273,7 +1282,8 @@ class Automation
 
         static __tryToUnlockNewStops()
         {
-            App.game.farming.plotList.forEach((plot, index) =>
+            App.game.farming.plotList.forEach(
+                (plot, index) =>
                 {
                     if (!plot.isUnlocked)
                     {
@@ -1289,30 +1299,31 @@ class Automation
             this.__plantedBerryCount = 0;
 
             // Mutations can only occur while the berry is fully ripe, so we need to collect them the later possible
-            App.game.farming.plotList.forEach((plot, index) =>
-            {
-                if (plot.isEmpty())
+            App.game.farming.plotList.forEach(
+                (plot, index) =>
                 {
-                    if (plot.isUnlocked)
+                    if (plot.isEmpty())
                     {
+                        if (plot.isUnlocked)
+                        {
+                            this.__freeSlotCount++;
+                        }
+                        return;
+                    }
+
+                    if (plot.stage() != PlotStage.Berry)
+                    {
+                        return;
+                    }
+
+                    if ((localStorage.getItem("autoMutationFarmingEnabled") === "false")
+                        || ((plot.berryData.growthTime[4] - plot.age) < 15))
+                    {
+                        App.game.farming.harvest(index);
+                        this.__harvestCount++;
                         this.__freeSlotCount++;
                     }
-                    return;
-                }
-
-                if (plot.stage() != PlotStage.Berry)
-                {
-                    return;
-                }
-
-                if ((localStorage.getItem("autoMutationFarmingEnabled") === "false")
-                    || ((plot.berryData.growthTime[4] - plot.age) < 15))
-                {
-                    App.game.farming.harvest(index);
-                    this.__harvestCount++;
-                    this.__freeSlotCount++;
-                }
-            }, this);
+                }, this);
         }
 
         static __performBerryMutationStrategy()
@@ -1513,21 +1524,22 @@ class Automation
                 return;
             }
 
-            App.game.oakItems.itemList.forEach(item =>
-            {
-                if (!item.isUnlocked()
-                    || item.isMaxLevel()
-                    || !item.hasEnoughExp())
+            App.game.oakItems.itemList.forEach(
+                (item) =>
                 {
-                    return;
-                }
+                    if (!item.isUnlocked()
+                        || item.isMaxLevel()
+                        || !item.hasEnoughExp())
+                    {
+                        return;
+                    }
 
-                let itemCost = item.calculateCost();
-                if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
-                {
-                    item.buy();
-                }
-            });
+                    let itemCost = item.calculateCost();
+                    if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
+                    {
+                        item.buy();
+                    }
+                });
         }
     }
 
@@ -1580,13 +1592,14 @@ class Automation
 
         static __claimCompletedQuests()
         {
-            App.game.quests.questList().forEach((quest, index) =>
-            {
-                if (quest.isCompleted() && !quest.claimed())
+            App.game.quests.questList().forEach(
+                (quest, index) =>
                 {
-                    App.game.quests.claimQuest(index);
-                }
-            });
+                    if (quest.isCompleted() && !quest.claimed())
+                    {
+                        App.game.quests.claimQuest(index);
+                    }
+                });
         }
 
         static __selectNewQuests()
@@ -1596,15 +1609,16 @@ class Automation
                 return;
             }
 
-            App.game.quests.questList().forEach((quest, index) =>
-            {
-                if (App.game.quests.canStartNewQuest()
-                    && !App.game.quests.questList()[index].isCompleted()
-                    && !App.game.quests.questList()[index].inProgress())
+            App.game.quests.questList().forEach(
+                (quest, index) =>
                 {
-                    App.game.quests.beginQuest(index);
-                }
-            });
+                    if (App.game.quests.canStartNewQuest()
+                        && !App.game.quests.questList()[index].isCompleted()
+                        && !App.game.quests.questList()[index].inProgress())
+                    {
+                        App.game.quests.beginQuest(index);
+                    }
+                });
         }
 
         static __workOnQuest()
@@ -1799,7 +1813,8 @@ class Automation
             let bestRouteCount = 0;
 
             // Fortunately routes are sorted by attack
-            regionRoutes.every((route) =>
+            regionRoutes.every(
+                (route) =>
                 {
                     if (!route.isUnlocked())
                     {
@@ -1809,15 +1824,16 @@ class Automation
                     let pokemons = RouteHelper.getAvailablePokemonList(route.number, candidateRegion);
 
                     let currentRouteCount = 0;
-                    pokemons.forEach(pokemon =>
-                    {
-                        let pokemonData = pokemonMap[pokemon];
-
-                        if (pokemonData.type.includes(pokemonType))
+                    pokemons.forEach(
+                        (pokemon) =>
                         {
-                            currentRouteCount++;
-                        }
-                    });
+                            let pokemonData = pokemonMap[pokemon];
+
+                            if (pokemonData.type.includes(pokemonType))
+                            {
+                                currentRouteCount++;
+                            }
+                        });
 
                     if (currentRouteCount > bestRouteCount)
                     {
@@ -1874,7 +1890,7 @@ class Automation
         {
             let possibleEquipedItem = 0;
             let expectedLoadout = loadoutCandidates.filter(
-                item =>
+                (item) =>
                 {
                     if (App.game.oakItems.itemList[item].isUnlocked())
                     {
@@ -1890,7 +1906,7 @@ class Automation
 
             App.game.oakItems.deactivateAll();
             expectedLoadout.forEach(
-                item =>
+                (item) =>
                 {
                     App.game.oakItems.activate(item);
                 });
@@ -1904,7 +1920,8 @@ class Automation
             let bestRoute = 0;
 
             // Fortunately routes are sorted by attack
-            regionRoutes.every((route) =>
+            regionRoutes.every(
+                (route) =>
                 {
                     if (route.isUnlocked())
                     {
