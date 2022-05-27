@@ -24,6 +24,7 @@ class Automation
                 this.Gym.start();
                 this.Dungeon.start();
                 this.Items.start();
+                this.Quest.start();
 
                 // Add a notification button to the automation menu
                 this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
@@ -1416,6 +1417,309 @@ class Automation
                     item.buy();
                 }
             });
+        }
+    }
+
+    /**************************/
+    /*    QUEST AUTOMATION    */
+    /**************************/
+
+    static Quest = class AutomationQuest
+    {
+        static start()
+        {
+            // Add the related button to the automation menu
+            Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", true);
+
+            setInterval(this.__questLoop.bind(this), 1000); // Check every second
+        }
+
+        static OakItemSetup = class AutomationOakItemSetup
+        {
+            static PokemonCatch = [
+                                      OakItemType.Magic_Ball,
+                                      OakItemType.Shiny_Charm,
+                                      OakItemType.Poison_Barb
+                                  ];
+            static PokemonExp = [
+                                    OakItemType.Poison_Barb,
+                                    OakItemType.Amulet_Coin,
+                                    OakItemType.Blaze_Cassette
+                                ];
+        }
+
+        static __questLoop()
+        {
+            if (localStorage.getItem("autoQuestEnabled") === "false")
+            {
+                return;
+            }
+
+            // Disable best route if needed
+            if (localStorage.getItem("bestRouteClickEnabled") === "true")
+            {
+                Automation.Menu.__toggleAutomation("bestRouteClickEnabled");
+            }
+
+            this.__claimCompletedQuests();
+            this.__selectNewQuests();
+
+            this.__workOnQuest();
+        }
+
+        static __claimCompletedQuests()
+        {
+            App.game.quests.questList().forEach((quest, index) =>
+            {
+                if (quest.isCompleted() && !quest.claimed())
+                {
+                    App.game.quests.claimQuest(index);
+                }
+            });
+        }
+
+        static __selectNewQuests()
+        {
+            if (!App.game.quests.canStartNewQuest())
+            {
+                return;
+            }
+
+            App.game.quests.questList().forEach((quest, index) =>
+            {
+                if (App.game.quests.canStartNewQuest()
+                    && !App.game.quests.questList()[index].isCompleted()
+                    && !App.game.quests.questList()[index].inProgress())
+                {
+                    App.game.quests.beginQuest(index);
+                }
+            });
+        }
+
+        static __workOnQuest()
+        {
+            let currentQuests = App.game.quests.currentQuests();
+            if (currentQuests.length == 0)
+            {
+                return;
+            }
+
+            let quest = currentQuests[0];
+
+            // Defeat gym quest
+            if ((quest instanceof CapturePokemonsQuest)
+                || (quest instanceof GainTokensQuest))
+            {
+                this.__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);
+            }
+            else if (quest instanceof CapturePokemonTypesQuest)
+            {
+                this.__workOnCapturePokemonTypesQuest(quest);
+            }
+            else if (quest instanceof DefeatGymQuest)
+            {
+                this.__workOnDefeatGymQuest(quest);
+            }
+            else if (quest instanceof UsePokeballQuest)
+            {
+                this.__workOnUsePokeballQuest(quest.pokeball, true);
+            }
+            else // Other type of quest don't need much
+            {
+                // Buy some ball to be prepared
+                if (quest instanceof CatchShiniesQuest)
+                {
+                    this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
+                }
+
+                // Disable catching pokemons if enabled, and go to the best farming route
+                this.__selectBallToCatch(GameConstants.Pokeball.None);
+                this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+
+                Automation.Click.__goToBestRoute();
+            }
+        }
+
+        static __workOnCapturePokemonTypesQuest(quest)
+        {
+            let bestRoute = this.__findBestRouteForFarmingType(quest.type);
+
+            // Add a pokeball to the Caught type and set the PokemonCatch setup
+            let hasBalls = this.__selectBallToCatch(GameConstants.Pokeball.Ultraball);
+            this.__selectOwkItems(this.OakItemSetup.PokemonCatch);
+
+            if (hasBalls && (player.route() !== bestRoute))
+            {
+                MapHelper.moveToRoute(bestRoute, 0);
+            }
+        }
+
+        static __workOnDefeatGymQuest(quest)
+        {
+            // Move to the associated gym if needed
+            if ((player.route() != 0) || quest.gymTown !== player.town().name)
+            {
+                MapHelper.moveToTown(quest.gymTown);
+            }
+            else if (localStorage.getItem("gymFightEnabled") === "false")
+            {
+                Automation.Menu.__toggleAutomation("gymFightEnabled");
+            }
+        }
+
+        static __workOnUsePokeballQuest(ballType, enforceType = false)
+        {
+            let hasBalls = this.__selectBallToCatch(ballType, enforceType);
+            this.__selectOwkItems(this.OakItemSetup.PokemonCatch);
+
+            if (hasBalls)
+            {
+                // Go to the highest route, for higher quest point income
+                this.__goToHighestRoute();
+            }
+        }
+
+        static __findBestRouteForFarmingType(pokemonType)
+        {
+            let candidateRegion = 0;
+            let regionRoutes = Routes.getRoutesByRegion(candidateRegion);
+
+            let bestRoute = 0;
+            let bestRouteCount = 0;
+
+            // Fortunately routes are sorted by attack
+            regionRoutes.every((route) =>
+                {
+                    if (!route.isUnlocked())
+                    {
+                        return false;
+                    }
+
+                    let pokemons = RouteHelper.getAvailablePokemonList(route.number, candidateRegion);
+
+                    let currentRouteCount = 0;
+                    pokemons.forEach(pokemon =>
+                    {
+                        let pokemonData = pokemonMap[pokemon];
+
+                        if (pokemonData.type.includes(pokemonType))
+                        {
+                            currentRouteCount++;
+                        }
+                    });
+
+                    if (currentRouteCount > bestRouteCount)
+                    {
+                        bestRoute = route.number;
+                        bestRouteCount = currentRouteCount;
+                    }
+
+                    return true;
+                }, this);
+
+            return bestRoute;
+        }
+
+        static __selectBallToCatch(ballTypeToUse, enforceType = false)
+        {
+            App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
+            if (ballTypeToUse === GameConstants.Pokeball.None)
+            {
+                return;
+            }
+
+            // Make sure to always have some balls to catch pokemons
+            this.__tryBuyBallIfUnderThreshold(ballTypeToUse, 10);
+
+            if (App.game.pokeballs.getBallQuantity(ballTypeToUse) === 0)
+            {
+                let hasAnyPokeball = false;
+                if (!enforceType && (ballTypeToUse <= GameConstants.Pokeball.Ultraball))
+                {
+                    // Look if we can find a ball
+                    for (let i = ballTypeToUse; i >= 0; i--)
+                    {
+                        if (App.game.pokeballs.pokeballs[i].quantity() > 0)
+                        {
+                            hasAnyPokeball = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasAnyPokeball)
+                {
+                    // No more balls, go farm to buy some
+                    App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
+                    Automation.Click.__goToBestRoute();
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        static __selectOwkItems(loadoutCandidates)
+        {
+            let possibleEquipedItem = 0;
+            let expectedLoadout = loadoutCandidates.filter(
+                item =>
+                {
+                    if (App.game.oakItems.itemList[item].isUnlocked())
+                    {
+                        if (possibleEquipedItem < App.game.oakItems.maxActiveCount())
+                        {
+                            possibleEquipedItem++;
+                            return true;
+                        }
+                        return false;
+                    }
+                    return false;
+                });
+
+            App.game.oakItems.deactivateAll();
+            expectedLoadout.forEach(
+                item =>
+                {
+                    App.game.oakItems.activate(item);
+                });
+        }
+
+        static __goToHighestRoute()
+        {
+            let candidateRegion = player.highestRegion();
+            let regionRoutes = Routes.getRoutesByRegion(candidateRegion);
+
+            let bestRoute = 0;
+
+            // Fortunately routes are sorted by attack
+            regionRoutes.every((route) =>
+                {
+                    if (route.isUnlocked())
+                    {
+                        bestRoute = route.number;
+                        return true;
+                    }
+                    return false;
+                }, this);
+
+            if (player.route() !== bestRoute)
+            {
+                MapHelper.moveToRoute(bestRoute, 0);
+            }
+        }
+
+        static __tryBuyBallIfUnderThreshold(ballType, amount)
+        {
+            // Try to buy some if the quantity is low, and we can afford it
+            if (App.game.pokeballs.getBallQuantity(ballType) < amount)
+            {
+                let ballItem = ItemList[GameConstants.Pokeball[ballType]];
+                if (ballItem.totalPrice(amount) < App.game.wallet.currencies[ballItem.currency]())
+                {
+                    ballItem.buy(amount);
+                }
+            }
         }
     }
 }
