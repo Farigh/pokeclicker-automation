@@ -54,7 +54,9 @@ class Automation
     static __isInInstanceState()
     {
         return (App.game.gameState === GameConstants.GameState.dungeon)
-            || (App.game.gameState === GameConstants.GameState.battleFrontier);
+            || (App.game.gameState === GameConstants.GameState.battleFrontier)
+            || (App.game.gameState === GameConstants.GameState.temporaryBattle)
+            || (App.game.gameState === GameConstants.GameState.safari);
     }
 
     static __areArrayEquals(a, b)
@@ -592,8 +594,13 @@ class Automation
 
             let playerClickAttack = App.game.party.calculateClickAttack();
 
-            let didRegionChange = (this.__bestRouteRegion !== player.region);
-            let needsNewRoad = didRegionChange
+            // We need to find a new road if:
+            //    - The region changed (as we get the best road in the current region)
+            //    - The player attack decreased (this can happen if the poison bard item was unequiped)
+            //    - We are currently on the highest route of the map
+            //    - The next best route is still over-powered
+            let needsNewRoad = (this.__bestRouteRegion !== player.region)
+                            || (this.__routeMaxHealthMap.get(player.region).get(this.__bestRoute) > playerClickAttack)
                             || ((this.__nextBestRoute !== this.__bestRoute)
                                 && (this.__routeMaxHealthMap.get(player.region).get(this.__nextBestRoute) < playerClickAttack));
 
@@ -1810,7 +1817,12 @@ class Automation
             {
                 // Select the right oak item
                 let customOakLoadout = this.OakItemSetup.PokemonExp;
-                customOakLoadout[0] = quest.item;
+
+                if (!customOakLoadout.includes(quest.item))
+                {
+                    // Prepend the item if it's not part of the default loadout
+                    customOakLoadout.unshift(quest.item);
+                }
                 this.__selectOwkItems(customOakLoadout);
 
                 // Go kill some pokemon
@@ -1837,7 +1849,7 @@ class Automation
             let regionRoutes = Routes.getRoutesByRegion(candidateRegion);
 
             let bestRoute = 0;
-            let bestRouteCount = 0;
+            let bestRouteRate = 0;
 
             // Fortunately routes are sorted by attack
             regionRoutes.every(
@@ -1862,10 +1874,12 @@ class Automation
                             }
                         });
 
-                    if (currentRouteCount > bestRouteCount)
+                    let currentRouteRate = currentRouteCount / pokemons.length;
+
+                    if (currentRouteRate > bestRouteRate)
                     {
                         bestRoute = route.number;
-                        bestRouteCount = currentRouteCount;
+                        bestRouteRate = currentRouteRate;
                     }
 
                     return true;
