@@ -1679,11 +1679,25 @@ class Automation
                 if (quest instanceof CatchShiniesQuest)
                 {
                     this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
+                    this.__selectOwkItems(this.OakItemSetup.PokemonCatch);
+                }
+                else
+                {
+                    this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+                }
+
+                if (quest instanceof HarvestBerriesQuest)
+                {
+                    this.__enableFarmingForBerryType(quest.berryType);
+                }
+                else if (quest instanceof GainFarmPointsQuest)
+                {
+                    let bestBerry = this.__getMostSuitableBerryForQuest(quest);
+                    this.__enableFarmingForBerryType(bestBerry);
                 }
 
                 // Disable catching pokemons if enabled, and go to the best farming route
                 this.__selectBallToCatch(GameConstants.Pokeball.None);
-                this.__selectOwkItems(this.OakItemSetup.PokemonExp);
 
                 Automation.Click.__goToBestRoute();
             }
@@ -1948,6 +1962,54 @@ class Automation
             {
                 MapHelper.moveToRoute(bestRoute, 0);
             }
+        }
+
+        static __enableFarmingForBerryType(berryType)
+        {
+            // Select the berry type to farm
+            FarmController.selectedBerry(berryType);
+
+            // Disable mutation farming
+            if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
+            {
+                Automation.Menu.__toggleAutomation("autoMutationFarmingEnabled");
+            }
+
+            // Enable farming
+            if (localStorage.getItem("autoFarmingEnabled") === "false")
+            {
+                Automation.Menu.__toggleAutomation("autoFarmingEnabled");
+            }
+        }
+
+        static __getMostSuitableBerryForQuest(quest)
+        {
+            let bestTime = Number.MAX_SAFE_INTEGER;
+            let bestBerry = 0;
+
+            App.game.farming.unlockedBerries.forEach(
+                (isUnlocked, index) =>
+                {
+                    if (!isUnlocked())
+                    {
+                        return;
+                    }
+
+                    let berryData = App.game.farming.berryData[index];
+                    let time = berryData.growthTime[3];
+                    if (berryData.farmValue < quest.amount)
+                    {
+                        time = (time * Math.ceil(quest.amount / berryData.farmValue));
+                    }
+
+                    if (time < bestTime)
+                    {
+                        bestTime = time;
+                        bestBerry = index;
+                    }
+                });
+
+            return bestBerry;
         }
 
         static __tryBuyBallIfUnderThreshold(ballType, amount)
