@@ -1661,6 +1661,10 @@ class Automation
             {
                 this.__workOnDefeatPokemonsQuest(quest);
             }
+            else if (quest instanceof GainGemsQuest)
+            {
+                this.__workOnGainGemsQuest(quest);
+            }
             else if (quest instanceof UseOakItemQuest)
             {
                 this.__workOnUseOakItemQuest(quest);
@@ -1771,6 +1775,15 @@ class Automation
                 MapHelper.moveToRoute(quest.route, quest.region);
             }
             this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+        }
+
+        static __workOnGainGemsQuest(quest)
+        {
+            this.__selectBallToCatch(GameConstants.Pokeball.None);
+            this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+
+            let bestRoute = this.__findBestRouteForFarmingType(quest.type);
+            MapHelper.moveToRoute(bestRoute, 0);
         }
 
         static __workOnUseOakItemQuest(quest)
