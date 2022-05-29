@@ -41,6 +41,39 @@ class Automation
 
     static Utils = class AutomationUils
     {
+        static Route = class AutomationRouteUils
+        {
+            static __moveToRoute(route, region)
+            {
+                // Don't move if the game would not allow it
+                if (Automation.Utils.__isInInstanceState()
+                    || (region > player.highestRegion())
+                    || ((player.region == player.highestRegion())
+                        && !TownList[GameConstants.DockTowns[player.region]].isUnlocked()))
+                {
+                    return;
+                }
+
+                MapHelper.moveToRoute(route, region);
+            }
+
+            static __moveToTown(townName)
+            {
+                let town = TownList[townName];
+
+                // Don't move if the game would not allow it
+                if (Automation.Utils.__isInInstanceState()
+                    || (town.region > player.highestRegion())
+                    || ((player.region == player.highestRegion())
+                        && !TownList[GameConstants.DockTowns[player.region]].isUnlocked()))
+                {
+                    return;
+                }
+
+                MapHelper.moveToTown(townName);
+            }
+        }
+
         static __sendNotif(message)
         {
             if (localStorage.getItem("automationNotificationsEnabled") == "true")
@@ -295,14 +328,8 @@ class Automation
 
             static __moveToLocation()
             {
-                // Forbid travel if an instance is in progress (it breaks the game)
-                if (Automation.Utils.__isInInstanceState())
-                {
-                    return;
-                }
-
                 let selectedDestination = document.getElementById("gotoSelectedLocation").value;
-                MapHelper.moveToTown(selectedDestination);
+                Automation.Utils.Route.__moveToTown(selectedDestination);
             }
 
             static __initializeRoamingRouteTrivia()
@@ -641,7 +668,7 @@ class Automation
 
             if (this.__bestRoute !== player.route())
             {
-                MapHelper.moveToRoute(this.__bestRoute, player.region);
+                Automation.Utils.Route.__moveToRoute(this.__bestRoute, player.region);
             }
         }
 
@@ -1763,7 +1790,7 @@ class Automation
 
             if (hasBalls && (player.route() !== bestRoute))
             {
-                MapHelper.moveToRoute(bestRoute, 0);
+                Automation.Utils.Route.__moveToRoute(bestRoute, 0);
             }
         }
 
@@ -1781,7 +1808,7 @@ class Automation
             // Move to dungeon if needed
             if ((player.route() != 0) || quest.dungeon !== player.town().name)
             {
-                MapHelper.moveToTown(quest.dungeon);
+                Automation.Utils.Route.__moveToTown(quest.dungeon);
 
                 // Let a tick to the menu to show up
                 return;
@@ -1813,7 +1840,7 @@ class Automation
             // Move to the associated gym if needed
             if ((player.route() != 0) || (townToGoTo !== player.town().name))
             {
-                MapHelper.moveToTown(townToGoTo);
+                Automation.Utils.Route.__moveToTown(townToGoTo);
             }
             else if (localStorage.getItem("gymFightEnabled") === "false")
             {
@@ -1836,7 +1863,7 @@ class Automation
             if ((player.region != quest.region)
                 || (player.route() != quest.route))
             {
-                MapHelper.moveToRoute(quest.route, quest.region);
+                Automation.Utils.Route.__moveToRoute(quest.route, quest.region);
             }
             this.__selectOwkItems(this.OakItemSetup.PokemonExp);
         }
@@ -1847,7 +1874,7 @@ class Automation
             this.__selectOwkItems(this.OakItemSetup.PokemonExp);
 
             let bestRoute = this.__findBestRouteForFarmingType(quest.type);
-            MapHelper.moveToRoute(bestRoute, 0);
+            Automation.Utils.Route.__moveToRoute(bestRoute, 0);
         }
 
         static __workOnUseOakItemQuest(quest)
@@ -2017,7 +2044,7 @@ class Automation
 
             if (player.route() !== bestRoute)
             {
-                MapHelper.moveToRoute(bestRoute, 0);
+                Automation.Utils.Route.__moveToRoute(bestRoute, 0);
             }
         }
 
