@@ -586,13 +586,20 @@ class Automation
             let buttonElem = Automation.Menu.__createButtonElement(id);
             buttonElem.textContent = (localStorage.getItem(id) === "true") ? "On" : "Off";
             buttonElem.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
-            buttonElem.onclick = function() { Automation.Menu.__toggleAutomation(id) };
+            buttonElem.onclick = function() { Automation.Menu.__toggleButton(id) };
             buttonContainer.appendChild(buttonElem);
+
+            return buttonElem;
         }
 
-        static __toggleAutomation(id)
+        static __toggleButton(id)
         {
             let button = document.getElementById(id);
+            if (button.disabled)
+            {
+                return;
+            }
+
             let newStatus = !(localStorage.getItem(id) == "true");
             if (newStatus)
             {
@@ -608,6 +615,16 @@ class Automation
             }
 
             localStorage.setItem(button.id, newStatus);
+        }
+
+        static __forceAutomationState(id, enable)
+        {
+            let isEnabled = (localStorage.getItem(id) === "true");
+
+            if (isEnabled !== enable)
+            {
+                document.getElementById(id).click();
+            }
         }
 
         static __addSeparator(parentNode = document.getElementById("automationButtonsDiv"))
@@ -660,11 +677,18 @@ class Automation
 
     static Click = class AutomationClick
     {
+        static __autoClickLoop = null;
+        static __bestRouteLoop = null;
+
         static start()
         {
-            // Add the related button to the automation menu
-            Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
-            Automation.Menu.__addAutomationButton("Best route", "bestRouteClickEnabled");
+            // Add auto click button
+            let autoClickButton = Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
+            autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
+            this.__toggleAutoClick();
+
+            // Add best route button
+            let bestRouteButton = Automation.Menu.__addAutomationButton("Best route", "bestRouteClickEnabled");
 
             // Disable best route by default
             if (localStorage.getItem("bestRouteClickEnabled") == null)
@@ -672,52 +696,84 @@ class Automation
                 localStorage.setItem("bestRouteClickEnabled", false);
             }
 
-            // Set best route refresh loop
-            setInterval(function ()
-            {
-                if (localStorage.getItem("bestRouteClickEnabled") === "true")
-                {
-                    this.__goToBestRoute();
-                }
-            }.bind(this), 10000); // Refresh every 10s
+            // Toogle best route loop on click
+            bestRouteButton.addEventListener("click", this.__toggleBestRoute.bind(this), false);
 
-            // Set auto-click loop
-            setInterval(function ()
+        }
+
+        static __toggleAutoClick(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
             {
-                if (localStorage.getItem("autoClickEnabled") == "true")
+                enable = (localStorage.getItem("autoClickEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoClickLoop === null)
                 {
-                    // Click while in a normal battle
-                    if (App.game.gameState == GameConstants.GameState.fighting)
-                    {
-                        Battle.clickAttack();
-                    }
-                    // Click while in a gym battle
-                    else if (App.game.gameState === GameConstants.GameState.gym)
-                    {
-                        GymBattle.clickAttack();
-                    }
-                    // Click while in a dungeon - will also interact with non-battle tiles (e.g. chests)
-                    else if (App.game.gameState === GameConstants.GameState.dungeon)
-                    {
-                        if (DungeonRunner.fighting() && !DungeonBattle.catching())
-                        {
-                            DungeonBattle.clickAttack();
-                        }
-                        else if (localStorage.getItem("dungeonFightEnabled") != "true")
-                        {
-                            if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
-                            {
-                                DungeonRunner.openChest();
-                            }
-                            else if ((DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
-                                     && !DungeonRunner.fightingBoss())
-                            {
-                                DungeonRunner.startBossFight();
-                            }
-                        }
-                    }
+                    // Set auto-click loop
+                    this.__autoClickLoop = setInterval(this.__autoClick.bind(this), 50); // The app hard-caps click attacks at 50
                 }
-            }.bind(this), 50); // The app hard-caps click attacks at 50
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoClickLoop);
+                this.__autoClickLoop = null;
+            }
+        }
+
+        static __toggleBestRoute(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("bestRouteClickEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__bestRouteLoop === null)
+                {
+                    // Set best route refresh loop
+                    this.__bestRouteLoop = setInterval(this.__goToBestRoute.bind(this), 10000); // Refresh every 10s
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__bestRouteLoop);
+                this.__bestRouteLoop = null;
+            }
+        }
+
+        static __autoClick()
+        {
+            // Click while in a normal battle
+            if (App.game.gameState == GameConstants.GameState.fighting)
+            {
+                if (!Battle.catching())
+                {
+                    Battle.clickAttack();
+                }
+            }
+            // Click while in a gym battle
+            else if (App.game.gameState === GameConstants.GameState.gym)
+            {
+                GymBattle.clickAttack();
+            }
+            // Click while in a dungeon battle
+            else if (App.game.gameState === GameConstants.GameState.dungeon)
+            {
+                if (DungeonRunner.fighting() && !DungeonBattle.catching())
+                {
+                    DungeonBattle.clickAttack();
+                }
+            }
         }
 
         static __goToBestRoute()
@@ -727,10 +783,7 @@ class Automation
                 || (localStorage.getItem("gymFightEnabled") == "true")
                 || Automation.Utils.__isInInstanceState())
             {
-                if (localStorage.getItem("bestRouteClickEnabled") == "true")
-                {
-                    Automation.Menu.__toggleAutomation("bestRouteClickEnabled");
-                }
+                Automation.Menu.__forceAutomationState("bestRouteClickEnabled", false);
 
                 return;
             }
@@ -745,6 +798,8 @@ class Automation
 
     static Dungeon = class AutomationDungeon
     {
+        static __autoDungeonLoop = null;
+
         static __isCompleted = false;
         static __bossPosition = null;
         static __chestPositions = [];
@@ -753,15 +808,81 @@ class Automation
 
         static start()
         {
-            this.__buildMenu();
+            // Hide the gym and dungeon fight menus by default and disable auto fight
+            let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
+                             +     '&nbsp;Dungeon fight&nbsp;'
+                             + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
+            let dungeonDiv = Automation.Menu.__addCategory("dungeonFightButtons", dungeonTitle);
+            dungeonDiv.hidden = true;
 
-            setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
+            // Add an on/off button
+            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", "dungeonFightButtonsDiv", true);
+            autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
+
+            // Disable by default
+            this.__toggleDungeonFight(false);
+
+            // Add an on/off button to stop after pokedex completion
+            Automation.Menu.__addAutomationButton("PokedexOnly", "stopDungeonAtPokedexCompletion", "dungeonFightButtonsDiv");
+
+            // Set the div visibility watcher
+            setInterval(this.__updateDivVisibility.bind(this), 1000); // Refresh every 1s
+        }
+
+        static __toggleDungeonFight(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("dungeonFightEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoDungeonLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoDungeonLoop = setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoDungeonLoop);
+                this.__autoDungeonLoop = null;
+            }
         }
 
         static __mainLoop()
         {
-            if ((App.game.gameState === GameConstants.GameState.dungeon)
-                && (localStorage.getItem("dungeonFightEnabled") == "true"))
+            // Only initialize dungeon if:
+            //    - The player is in a town (dungeons are attached to town)
+            //    - The player has bought the dungeon ticket
+            //    - The player has enought dungeon token
+            if (App.game.gameState === GameConstants.GameState.town
+                && (player.town() instanceof DungeonTown)
+                && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
+                && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
+            {
+                this.__previousTown = player.town().name;
+
+                // Reset button status if either:
+                //    - it was requested by another module
+                //    - the pokedex is full for this dungeon, and it has been ask for
+                if (this.__stopRequested
+                    || ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
+                        && DungeonRunner.dungeonCompleted(player.town().dungeon, false)))
+                {
+                    Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
+                }
+                else
+                {
+                    this.__isCompleted = false;
+                    DungeonRunner.initializeDungeon(player.town().dungeon);
+                }
+            }
+            else if (App.game.gameState === GameConstants.GameState.dungeon)
             {
                 // Let any fight finish before moving
                 if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
@@ -851,79 +972,21 @@ class Automation
 
                 return;
             }
-
-            // Only display the menu if:
-            //    - The player is in a town (dungeons are attached to town)
-            //    - The player has bought the dungeon ticket
-            //    - The player has enought dungeon token
-            if (App.game.gameState === GameConstants.GameState.town
-                && player.town().dungeon
-                && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
-                && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
-            {
-                // Display the automation menu (if not already visible)
-                if (document.getElementById("dungeonFightButtons").hidden || (this.__previousTown != player.town().name))
-                {
-                    // Reset button status
-                    if (localStorage.getItem("dungeonFightEnabled") == "true")
-                    {
-                        Automation.Menu.__toggleAutomation("dungeonFightEnabled");
-                    }
-                    if (localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
-                    {
-                        Automation.Menu.__toggleAutomation("stopDungeonAtPokedexCompletion");
-                    }
-                    this.__previousTown = player.town().name;
-
-                    // Make it visible
-                    document.getElementById("dungeonFightButtons").hidden = false;
-                }
-
-                if (localStorage.getItem("dungeonFightEnabled") == "true")
-                {
-                    // Reset button status if either:
-                    //    - it was requested by another module
-                    //    - the pokedex is full for this dungeon, and it has been ask for
-                    if (this.__stopRequested
-                        || ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
-                            && DungeonRunner.dungeonCompleted(player.town().dungeon, false)))
-                    {
-                        Automation.Menu.__toggleAutomation("dungeonFightEnabled");
-                    }
-                    else
-                    {
-                        this.__isCompleted = false;
-                        DungeonRunner.initializeDungeon(player.town().dungeon);
-                    }
-                }
-            }
             // Else hide the menu, if we're not in the dungeon
-            else if (App.game.gameState !== GameConstants.GameState.dungeon)
+            else
             {
-                document.getElementById("dungeonFightButtons").hidden = true;
                 this.__previousTown = null;
                 this.__resetSavedStates();
-                if (localStorage.getItem("dungeonFightEnabled") == "true")
-                {
-                    Automation.Menu.__toggleAutomation("dungeonFightEnabled");
-                }
+                Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
             }
         }
 
-        static __buildMenu()
+        static __updateDivVisibility()
         {
-            // Hide the gym and dungeon fight menus by default and disable auto fight
-            let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
-                             +     '&nbsp;Dungeon fight&nbsp;'
-                             + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-            let dungeonDiv = Automation.Menu.__addCategory("dungeonFightButtons", dungeonTitle);
-            dungeonDiv.hidden = true;
-
-            // Add an on/off button
-            Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", "dungeonFightButtonsDiv", true);
-
-            // Add an on/off button to stop after pokedex completion
-            Automation.Menu.__addAutomationButton("PokedexOnly", "stopDungeonAtPokedexCompletion", "dungeonFightButtonsDiv");
+            let dungeonDiv = document.getElementById("dungeonFightButtons");
+            dungeonDiv.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
+                                  || ((App.game.gameState === GameConstants.GameState.town)
+                                      && (player.town() instanceof DungeonTown)));
         }
 
         static __resetSavedStates()
@@ -940,18 +1003,70 @@ class Automation
 
     static Gym = class AutomationGym
     {
+        static __autoGymLoop = null;
+
         static __previousTown = null;
         static __currentGymListSize = 0;
 
         static start()
         {
-            this.__buildMenu();
+            // Hide the gym and dungeon fight menus by default and disable auto fight
+            let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
+                         +     '&nbsp;Gym fight&nbsp;'
+                         + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
+            let gymDiv = Automation.Menu.__addCategory("gymFightButtons", gymTitle);
+            gymDiv.hidden = true;
 
-            setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
+            // Add an on/off button
+            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", "gymFightButtonsDiv", true);
+            autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
+
+            // Disable by default
+            this.__toggleGymFight(false);
+
+            // Add gym selector drop-down list
+            let selectElem = Automation.Menu.__createDropDownList("selectedAutomationGym");
+            selectElem.style.marginRight = "5px";
+            document.getElementById("gymFightButtonsDiv").appendChild(selectElem);
+
+            // Set the div visibility and content watcher
+            setInterval(this.__updateDivVisibilityAndContent.bind(this), 1000); // Refresh every 1s
+        }
+
+        static __toggleGymFight(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("gymFightEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoGymLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoGymLoop = setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoGymLoop);
+                this.__autoGymLoop = null;
+            }
         }
 
         static __mainLoop()
         {
+            // Kill the loop if the menu is not visible anymore
+            if (document.getElementById("gymFightButtons").hidden)
+            {
+                this.__toggleGymFight(false);
+                return;
+            }
+
             // We are currently fighting, do do anything
             if (App.game.gameState === GameConstants.GameState.gym)
             {
@@ -961,58 +1076,53 @@ class Automation
             // Check if we are in a town
             if (App.game.gameState === GameConstants.GameState.town)
             {
+                let selectedGym = GymList[document.getElementById("selectedAutomationGym").value];
+
+                if ((document.getElementById("selectedAutomationGym").selectedIndex < 0)
+                    || (selectedGym.parent.name !== player.town().name))
+                {
+                    Automation.Menu.__forceAutomationState("gymFightEnabled", false);
+                    return;
+                }
+
+                selectedGym.protectedOnclick();
+            }
+        }
+
+        static __updateDivVisibilityAndContent()
+        {
+            // Check if we are in a town
+            if (App.game.gameState === GameConstants.GameState.town)
+            {
                 // List available gyms
                 let gymList = player.town().content.filter((x) => GymList[x.town]);
                 let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
 
                 // If we are in the same town as previous cycle
-                if ((this.__previousTown === player.town().name)
-                    && (!document.getElementById("gymFightButtons").hidden))
+                if (this.__previousTown === player.town().name)
                 {
                     if (this.__currentGymListSize !== unlockedGymCount)
                     {
                         this.__updateGymList(gymList, unlockedGymCount, false);
                     }
-
-                    if (localStorage.getItem("gymFightEnabled") == "true")
-                    {
-                        if (document.getElementById("selectedAutomationGym").selectedIndex < 0)
-                        {
-                            Automation.Menu.__toggleAutomation("gymFightEnabled");
-                            return;
-                        }
-
-                        GymList[document.getElementById("selectedAutomationGym").value].protectedOnclick();
-                    }
-                    return;
                 }
-
-                this.__previousTown = player.town().name;
-
-                if (gymList.length > 0)
+                else
                 {
-                    this.__updateGymList(gymList, unlockedGymCount, true);
+                    this.__previousTown = player.town().name;
 
-                    if (localStorage.getItem("gymFightEnabled") == "true")
+                    if (gymList.length > 0)
                     {
-                        Automation.Menu.__toggleAutomation("gymFightEnabled");
-                    }
+                        this.__updateGymList(gymList, unlockedGymCount, true);
 
-                    // Make it visible
-                    document.getElementById("gymFightButtons").hidden = false;
-                    return;
+                        Automation.Menu.__forceAutomationState("gymFightEnabled", false);
+                    }
                 }
+
+                document.getElementById("gymFightButtons").hidden = (unlockedGymCount == 0);
             }
-
-            // Else hide the menu and disable the button, if needed
-            if (!document.getElementById("gymFightButtons").hidden)
+            else
             {
-                document.getElementById("gymFightButtons").hidden = true;
-                this.__previousTown = null;
-                if (localStorage.getItem("gymFightEnabled") == "true")
-                {
-                    Automation.Menu.__toggleAutomation("gymFightEnabled");
-                }
+                document.getElementById("gymFightButtons").hidden = (App.game.gameState !== GameConstants.GameState.gym);
             }
         }
 
@@ -1071,24 +1181,6 @@ class Automation
 
             this.__currentGymListSize = unlockedGymCount;
         }
-
-        static __buildMenu()
-        {
-            // Hide the gym and dungeon fight menus by default and disable auto fight
-            let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
-                         +     '&nbsp;Gym fight&nbsp;'
-                         + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-            let gymDiv = Automation.Menu.__addCategory("gymFightButtons", gymTitle);
-            gymDiv.hidden = true;
-
-            // Add an on/off button
-            Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", "gymFightButtonsDiv", true);
-
-            // Add gym selector drop-down list
-            let selectElem = Automation.Menu.__createDropDownList("selectedAutomationGym");
-            selectElem.style.marginRight = "5px";
-            document.getElementById("gymFightButtonsDiv").appendChild(selectElem);
-        }
     }
 
     /**************************/
@@ -1097,6 +1189,8 @@ class Automation
 
     static Hatchery = class AutomationHatchery
     {
+        static __autoHatcheryLoop = null;
+
         static start()
         {
             // Disable no-shiny mode by default
@@ -1107,85 +1201,108 @@ class Automation
 
             // Add the related buttons to the automation menu
             Automation.Menu.__addSeparator();
-            Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
+            let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
+            autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
+            this.__toggleAutoHatchery();
+
             Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
+        }
 
-            setInterval(this.__mainLoop.bind(this), 1000); // Runs every seconds
+        static __toggleAutoHatchery(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("hatcheryAutomationEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoHatcheryLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoHatcheryLoop = setInterval(this.__mainLoop.bind(this), 1000); // Runs every second
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoHatcheryLoop);
+                this.__autoHatcheryLoop = null;
+            }
         }
 
         static __mainLoop()
         {
-            if (localStorage.getItem("hatcheryAutomationEnabled") == "true")
+            // Attempt to hatch each egg. If the egg is at 100% it will succeed
+            [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
+
+            // Try to use eggs first, if enabled
+            if (localStorage.getItem("eggsHatcheryAutomationEnabled") === "true")
             {
-                // Attempt to hatch each egg. If the egg is at 100% it will succeed
-                [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
+                this.__addEggsToHatchery();
+            }
 
-                // Try to use eggs first, if enabled
-                if (localStorage.getItem("eggsHatcheryAutomationEnabled") == "true")
-                {
-                    this.__addEggsToHatchery();
-                }
+            // Then try to use fossils, if enabled
+            if (localStorage.getItem("fossilHatcheryAutomationEnabled") === "true")
+            {
+                this.__addFossilsToHatchery();
+            }
 
-                // Then try to use fossils, if enabled
-                if (localStorage.getItem("fossilHatcheryAutomationEnabled") == "true")
-                {
-                    this.__addFossilsToHatchery();
-                }
+            // Now add lvl 100 pokemons to empty slots if we can
+            if (App.game.breeding.hasFreeEggSlot())
+            {
+                // Get breedable pokemon list
+                let filteredEggList = App.game.party.caughtPokemon.filter(
+                    (pokemon) =>
+                    {
+                        // Only consider breedable Pokemon (ie. not breeding and lvl 100)
+                        return !pokemon.breeding && (pokemon.level == 100);
+                    });
 
-                // Now add lvl 100 pokemons to empty slots if we can
-                if (App.game.breeding.hasFreeEggSlot())
-                {
-                    // Get breedable pokemon list
-                    let filteredEggList = App.game.party.caughtPokemon.filter(
-                        (pokemon) =>
+                let notShinyFirst = (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === "true");
+
+                // Sort list by breeding efficiency
+                filteredEggList.sort((a, b) =>
+                    {
+                        if (notShinyFirst)
                         {
-                            // Only consider breedable Pokemon (ie. not breeding and lvl 100)
-                            return !pokemon.breeding && (pokemon.level == 100);
-                        });
-
-                    let notShinyFirst = (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === "true");
-
-                    // Sort list by breeding efficiency
-                    filteredEggList.sort((a, b) =>
-                        {
-                            if (notShinyFirst)
-                            {
-                                if (a.shiny && !b.shiny)
-                                {
-                                    return 1;
-                                }
-                                if (!a.shiny && b.shiny)
-                                {
-                                    return -1;
-                                }
-                            }
-
-                            let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
-                            let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
-
-                            if (aValue < bValue)
+                            if (a.shiny && !b.shiny)
                             {
                                 return 1;
                             }
-                            if (aValue > bValue)
+                            if (!a.shiny && b.shiny)
                             {
                                 return -1;
                             }
+                        }
 
-                            return 0;
-                        });
+                        let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
+                        let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
 
-                    // Do not add pokemons to the queue as it reduces the overall attack
-                    // (this will also allow the player to add pokemons, eggs or fossils manually)
-                    var i = 0;
-                    while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
-                    {
-                        App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
-                        Automation.Utils.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
-                        i++;
-                    }
+                        if (aValue < bValue)
+                        {
+                            return 1;
+                        }
+                        if (aValue > bValue)
+                        {
+                            return -1;
+                        }
+
+                        return 0;
+                    });
+
+                // Do not add pokemons to the queue as it reduces the overall attack
+                // (this will also allow the player to add pokemons, eggs or fossils manually)
+                var i = 0;
+                while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
+                {
+                    App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
+                    Automation.Utils.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
+                    i++;
                 }
             }
         }
@@ -1253,19 +1370,28 @@ class Automation
 
     static Farm = class AutomationFarm
     {
+        static __farmingLoop = null;
+
+        static __berryToStrategyMap = new Object();
+
+        static __harvestCount = 0;
+        static __freeSlotCount = 0;
+        static __plantedBerryCount = 0;
+
         static start()
         {
             this.__buildBerryCallbackMap();
             this.__buildMenu();
-
-            setInterval(this.__mainLoop.bind(this), 10000); // Every 10 seconds
         }
 
         static __buildMenu()
         {
             // Add the related buttons to the automation menu
             Automation.Menu.__addSeparator();
-            Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled");
+            let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled");
+            autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
+            this.__toggleAutoFarming();
+
             Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 
             // Add the available mutation list
@@ -1308,29 +1434,45 @@ class Automation
                 });
         }
 
-        static __mainLoop()
+        static __toggleAutoFarming(enable)
         {
-            if (localStorage.getItem("autoFarmingEnabled") === "true")
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
             {
-                this.__harvestAsEfficientAsPossible();
-                this.__tryToUnlockNewStops();
+                enable = (localStorage.getItem("autoFarmingEnabled") === "true");
+            }
 
-                if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__farmingLoop === null)
                 {
-                    this.__performBerryMutationStrategy();
+                    // Set auto-click loop
+                    this.__farmingLoop = setInterval(this.__mainLoop.bind(this), 10000); // Runs every 10 seconds
                 }
-                else
-                {
-                    this.__plantAllBerries();
-                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__farmingLoop);
+                this.__farmingLoop = null;
             }
         }
 
-        static __berryToStrategyMap = new Object();
+        static __mainLoop()
+        {
+            this.__harvestAsEfficientAsPossible();
+            this.__tryToUnlockNewStops();
 
-        static __harvestCount = 0;
-        static __freeSlotCount = 0;
-        static __plantedBerryCount = 0;
+            if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
+            {
+                this.__performBerryMutationStrategy();
+            }
+            else
+            {
+                this.__plantAllBerries();
+            }
+        }
 
         static __buildBerryCallbackMap()
         {
@@ -1528,46 +1670,72 @@ class Automation
 
     static Underground = class AutomationUnderground
     {
+        static __autoMiningLoop = null;
+
+        static __miningCount = 0;
+
         static start()
         {
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
-            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
-
-            setInterval(function ()
-            {
-                if (this.__isMiningPossible())
-                {
-                    this.__startMining();
-                }
-            }.bind(this), 10000); // Check every 10 seconds
+            let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
+            miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
+            this.__toggleAutoMining();
         }
 
-        static __miningCount = 0;
+        static __toggleAutoMining(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("autoMiningEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoMiningLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoMiningLoop = setInterval(this.__startMining.bind(this), 1000); // Runs every 10 seconds
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoMiningLoop);
+                this.__autoMiningLoop = null;
+            }
+        }
 
         static __isMiningPossible()
         {
-            return ((localStorage.getItem("autoMiningEnabled") === "true")
-                    && (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
+            return ((Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
                     && (Mine.itemsFound() < Mine.itemsBuried()));
         }
 
         static __startMining()
         {
+            if (!this.__isMiningPossible())
+            {
+                return;
+            }
+
+            this.__miningCount = 0;
             var bombingLoop = setInterval(function()
             {
-                if (this.__isMiningPossible())
-                {
-                    // Mine using bombs until the board is completed or the energy is depleted
-                    Mine.bomb();
-                    this.__miningCount++;
-                }
-                else
+                if (!this.__isMiningPossible()
+                    || (this.__autoMiningLoop === null))
                 {
                     Automation.Utils.__sendNotif("Performed mining " + this.__miningCount.toString() + " times,"
                                          + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
                     clearInterval(bombingLoop);
-                    this.__miningCount = 0;
+                }
+                else
+                {
+                    // Mine using bombs until the board is completed or the energy is depleted
+                    Mine.bomb();
+                    this.__miningCount++;
                 }
             }.bind(this), 500); // Runs every 0.5s
         }
@@ -1579,22 +1747,44 @@ class Automation
 
     static Items = class AutomationItems
     {
+        static __autoOakUpgradeLoop = null;
+
         static start()
         {
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
-            Automation.Menu.__addAutomationButton("Oak Upgrade", "autoOakUpgradeEnabled");
+            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Upgrade", "autoOakUpgradeEnabled");
+            oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
+            this.__toggleAutoOakUpgrade();
+        }
 
-            setInterval(this.__mainLoop.bind(this), 10000); // Check every 10 seconds
+        static __toggleAutoOakUpgrade(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("autoOakUpgradeEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoOakUpgradeLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoOakUpgradeLoop = setInterval(this.__mainLoop.bind(this), 10000); // Runs every 10 seconds
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoOakUpgradeLoop);
+                this.__autoOakUpgradeLoop = null;
+            }
         }
 
         static __mainLoop()
         {
-            if (localStorage.getItem("autoOakUpgradeEnabled") === "false")
-            {
-                return;
-            }
-
             App.game.oakItems.itemList.forEach(
                 (item) =>
                 {
@@ -1620,13 +1810,40 @@ class Automation
 
     static Quest = class AutomationQuest
     {
+        static __autoQuestLoop = null;
+
         static start()
         {
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
-            Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled");
+            let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled");
+            questButton.addEventListener("click", this.__toggleAutoQuest.bind(this), false);
+            this.__toggleAutoQuest();
+        }
 
-            setInterval(this.__questLoop.bind(this), 1000); // Check every second
+        static __toggleAutoQuest(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("autoQuestEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoQuestLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoQuestLoop = setInterval(this.__questLoop.bind(this), 1000); // Runs every second
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoQuestLoop);
+                this.__autoQuestLoop = null;
+            }
         }
 
         static OakItemSetup = class AutomationOakItemSetup
@@ -1651,10 +1868,7 @@ class Automation
             }
 
             // Disable best route if needed
-            if (localStorage.getItem("bestRouteClickEnabled") === "true")
-            {
-                Automation.Menu.__toggleAutomation("bestRouteClickEnabled");
-            }
+            Automation.Menu.__forceAutomationState("bestRouteClickEnabled", false);
 
             this.__claimCompletedQuests();
             this.__selectNewQuests();
@@ -1850,16 +2064,10 @@ class Automation
             }
 
             // Disable pokedex stop
-            if (localStorage.getItem("stopDungeonAtPokedexCompletion") === "true")
-            {
-                Automation.Menu.__toggleAutomation("stopDungeonAtPokedexCompletion");
-            }
+            Automation.Menu.__forceAutomationState("stopDungeonAtPokedexCompletion", false);
 
             // Enable auto dungeon fight
-            if (localStorage.getItem("dungeonFightEnabled") === "false")
-            {
-                Automation.Menu.__toggleAutomation("dungeonFightEnabled");
-            }
+            Automation.Menu.__forceAutomationState("dungeonFightEnabled", true);
         }
 
         static __workOnDefeatGymQuest(quest)
@@ -1879,7 +2087,7 @@ class Automation
             }
             else if (localStorage.getItem("gymFightEnabled") === "false")
             {
-                Automation.Menu.__toggleAutomation("gymFightEnabled");
+                Automation.Menu.__forceAutomationState("gymFightEnabled", true);
             }
             else
             {
@@ -2089,16 +2297,10 @@ class Automation
             FarmController.selectedBerry(berryType);
 
             // Disable mutation farming
-            if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
-            {
-                Automation.Menu.__toggleAutomation("autoMutationFarmingEnabled");
-            }
+            Automation.Menu.__forceAutomationState("autoMutationFarmingEnabled", false);
 
             // Enable farming
-            if (localStorage.getItem("autoFarmingEnabled") === "false")
-            {
-                Automation.Menu.__toggleAutomation("autoFarmingEnabled");
-            }
+            Automation.Menu.__forceAutomationState("autoFarmingEnabled", true);
         }
 
         static __getMostSuitableBerryForQuest(quest)
