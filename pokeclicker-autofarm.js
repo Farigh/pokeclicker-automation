@@ -29,7 +29,8 @@ class Automation
                 this.Quest.start();
 
                 // Add a notification button to the automation menu
-                this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", true);
+                Automation.Menu.__addSeparator();
+                this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled");
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");
@@ -568,7 +569,7 @@ class Automation
             return newNode;
         }
 
-        static __addAutomationButton(name, id, addSeparator = false, parentDiv = "automationButtonsDiv", forceDisabled = false)
+        static __addAutomationButton(name, id, parentId = "automationButtonsDiv", forceDisabled = false)
         {
             // Enable automation by default, in not already set in cookies
             if (localStorage.getItem(id) == null)
@@ -581,17 +582,12 @@ class Automation
                 localStorage.setItem(id, false);
             }
 
-            let buttonDiv = document.getElementById(parentDiv)
-
-            if (addSeparator)
-            {
-                this.__addSeparator(buttonDiv);
-            }
+            let buttonDiv = document.getElementById(parentId)
 
             let buttonContainer = document.createElement("div");
             buttonContainer.style.paddingLeft = "10px";
             buttonContainer.style.paddingRight = "10px";
-            buttonDiv.appendChild(buttonContainer);
+            document.getElementById(parentId).appendChild(buttonContainer);
 
             let buttonLabel = document.createElement("span");
             buttonLabel.textContent = name + " : ";
@@ -630,7 +626,7 @@ class Automation
             localStorage.setItem(button.id, newStatus);
         }
 
-        static __addSeparator(parentNode)
+        static __addSeparator(parentNode = document.getElementById("automationButtonsDiv"))
         {
             let separatorDiv = document.createElement("div");
             separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
@@ -906,10 +902,10 @@ class Automation
             dungeonDiv.hidden = true;
 
             // Add an on/off button
-            Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", false, "dungeonFightButtonsDiv", true);
+            Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", "dungeonFightButtonsDiv", true);
 
             // Add an on/off button to stop after pokedex completion
-            Automation.Menu.__addAutomationButton("PokedexOnly", "stopDungeonAtPokedexCompletion", false, "dungeonFightButtonsDiv");
+            Automation.Menu.__addAutomationButton("PokedexOnly", "stopDungeonAtPokedexCompletion", "dungeonFightButtonsDiv");
         }
 
         static __resetSavedStates()
@@ -1068,7 +1064,7 @@ class Automation
             gymDiv.hidden = true;
 
             // Add an on/off button
-            Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", false, "gymFightButtonsDiv", true);
+            Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", "gymFightButtonsDiv", true);
 
             // Add gym selector drop-down list
             let selectElem = document.createElement("select");
@@ -1097,7 +1093,8 @@ class Automation
             }
 
             // Add the related buttons to the automation menu
-            Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", true);
+            Automation.Menu.__addSeparator();
+            Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
             Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
@@ -1254,7 +1251,8 @@ class Automation
         static __buildMenu()
         {
             // Add the related buttons to the automation menu
-            Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", true);
+            Automation.Menu.__addSeparator();
+            Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled");
             Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 
             // Add the available mutation list
@@ -1525,7 +1523,8 @@ class Automation
         static start()
         {
             // Add the related button to the automation menu
-            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", true);
+            Automation.Menu.__addSeparator();
+            Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
 
             setInterval(function ()
             {
@@ -1575,7 +1574,8 @@ class Automation
         static start()
         {
             // Add the related button to the automation menu
-            Automation.Menu.__addAutomationButton("Oak Upgrade", "autoOakUpgradeEnabled", true);
+            Automation.Menu.__addSeparator();
+            Automation.Menu.__addAutomationButton("Oak Upgrade", "autoOakUpgradeEnabled");
 
             setInterval(this.__mainLoop.bind(this), 10000); // Check every 10 seconds
         }
@@ -1615,7 +1615,8 @@ class Automation
         static start()
         {
             // Add the related button to the automation menu
-            Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", true);
+            Automation.Menu.__addSeparator();
+            Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled");
 
             setInterval(this.__questLoop.bind(this), 1000); // Check every second
         }
