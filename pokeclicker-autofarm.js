@@ -1595,6 +1595,7 @@ class Automation
             this.__selectNewQuests();
 
             this.__workOnQuest();
+            this.__workOnBackgroundQuests();
         }
 
         static __claimCompletedQuests()
@@ -1616,14 +1617,22 @@ class Automation
                 return;
             }
 
-            App.game.quests.questList().forEach(
+            let availableQuests = App.game.quests.questList().filter(
                 (quest, index) =>
                 {
-                    if (App.game.quests.canStartNewQuest()
-                        && !App.game.quests.questList()[index].isCompleted()
-                        && !App.game.quests.questList()[index].inProgress())
+                    return (!App.game.quests.questList()[index].isCompleted()
+                            && !App.game.quests.questList()[index].inProgress());
+                });
+
+            // Sort quest to group the same type together
+            availableQuests.sort(this.__sortQuestByPriority, this);
+
+            availableQuests.forEach(
+                (quest, index) =>
+                {
+                    if (App.game.quests.canStartNewQuest())
                     {
-                        App.game.quests.beginQuest(index);
+                        quest.begin();
                     }
                 });
         }
@@ -1643,6 +1652,21 @@ class Automation
             {
                 return;
             }
+
+            // Sort quest to work on the most relevent one
+            currentQuests.sort(this.__sortQuestByPriority, this);
+
+            // Filter the quests that do not need specific action
+            currentQuests = currentQuests.filter(
+                (quest) =>
+                {
+                    return !((quest instanceof CatchShiniesQuest)
+                             || (quest instanceof GainMoneyQuest)
+                             || (quest instanceof GainFarmPointsQuest)
+                             || (quest instanceof HarvestBerriesQuest)
+                             || (quest instanceof MineItemsQuest)
+                             || (quest instanceof MineLayersQuest));
+                });
 
             let quest = currentQuests[0];
 
@@ -1693,21 +1717,37 @@ class Automation
                     this.__selectOwkItems(this.OakItemSetup.PokemonExp);
                 }
 
-                if (quest instanceof HarvestBerriesQuest)
-                {
-                    this.__enableFarmingForBerryType(quest.berryType);
-                }
-                else if (quest instanceof GainFarmPointsQuest)
-                {
-                    let bestBerry = this.__getMostSuitableBerryForQuest(quest);
-                    this.__enableFarmingForBerryType(bestBerry);
-                }
-
                 // Disable catching pokemons if enabled, and go to the best farming route
                 this.__selectBallToCatch(GameConstants.Pokeball.None);
 
                 Automation.Click.__goToBestRoute();
             }
+        }
+
+        static __workOnBackgroundQuests()
+        {
+            let currentQuests = App.game.quests.currentQuests();
+
+            let isFarmingSpecificBerry = false;
+
+            // Filter the quests that do not need specific action
+            currentQuests.forEach(
+                (quest) =>
+                {
+                    if (quest instanceof HarvestBerriesQuest)
+                    {
+                        this.__enableFarmingForBerryType(quest.berryType);
+                        isFarmingSpecificBerry = true;
+                    }
+                    else if ((quest instanceof GainFarmPointsQuest)
+                             && !isFarmingSpecificBerry)
+                    {
+                        let bestBerry = this.__getMostSuitableBerryForQuest(quest);
+                        this.__enableFarmingForBerryType(bestBerry);
+                    }
+
+                    // TODO: handle mining here as well
+                });
         }
 
         static __workOnCapturePokemonTypesQuest(quest)
@@ -2037,6 +2077,74 @@ class Automation
                     ballItem.buy(amount);
                 }
             }
+        }
+
+        static __sortQuestByPriority(a, b)
+        {
+            // Select pokemon catching related quests (starting with the shiny one)
+            if (a instanceof CatchShiniesQuest) return -1;
+            if (b instanceof CatchShiniesQuest) return 1;
+
+            if (a instanceof CapturePokemonTypesQuest) return -1;
+            if (b instanceof CapturePokemonTypesQuest) return 1;
+
+            if ((a instanceof CapturePokemonsQuest)
+                || (a instanceof UsePokeballQuest)
+                || (a instanceof GainTokensQuest))
+            {
+                return -1;
+            }
+            if ((b instanceof CapturePokemonsQuest)
+                || (b instanceof UsePokeballQuest)
+                || (b instanceof GainTokensQuest))
+            {
+                return 1;
+            }
+
+            // Then quests related to defeating pokemon
+            // (starting with the oak item one, since it can be related to catching)
+            if (a instanceof UseOakItemQuest) return -1;
+            if (b instanceof UseOakItemQuest) return 1;
+
+            if (a instanceof GainGemsQuest) return -1;
+            if (b instanceof GainGemsQuest) return 1;
+
+            if ((a instanceof DefeatDungeonQuest)
+                || (a instanceof DefeatGymQuest)
+                || (a instanceof DefeatPokemonsQuest))
+            {
+                return -1;
+            }
+            if ((b instanceof DefeatDungeonQuest)
+                || (b instanceof DefeatGymQuest)
+                || (b instanceof DefeatPokemonsQuest))
+            {
+                return 1;
+            }
+
+            // Then the gain pokedollar one
+            if (a instanceof GainMoneyQuest) return -1;
+            if (b instanceof GainMoneyQuest) return 1;
+
+            // Then the egg hatching one
+            if (a instanceof HatchEggsQuest) return -1;
+            if (b instanceof HatchEggsQuest) return 1;
+
+            // Then the harvest one
+            if (a instanceof HarvestBerriesQuest) return -1;
+            if (b instanceof HarvestBerriesQuest) return 1;
+
+            if (a instanceof GainFarmPointsQuest) return -1;
+            if (b instanceof GainFarmPointsQuest) return 1;
+
+            // Finally the underground ones
+            if (a instanceof MineItemsQuest) return -1;
+            if (b instanceof MineItemsQuest) return 1;
+            if (a instanceof MineLayersQuest) return -1;
+            if (b instanceof MineLayersQuest) return 1;
+
+            // Don't sort other quests
+            return 0;
         }
     }
 }
