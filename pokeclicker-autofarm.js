@@ -243,6 +243,9 @@ class Automation
             node.style.width = "145px";
             node.style.textAlign = "right";
             node.style.lineHeight = "24px";
+            node.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
+            node.style.fontSize = ".875rem";
+            node.style.fontWeight = "400";
             node.setAttribute("id", "automationContainer");
             document.body.appendChild(node);
 
@@ -317,18 +320,10 @@ class Automation
                 triviaDiv.appendChild(gotoLocationDiv);
 
                 // Add go to location button
-                let gotoButton = document.createElement("button");
+                let gotoButton = Automation.Menu.__createButtonElement("moveToLocationButton");
                 gotoButton.textContent = "Go";
-                gotoButton.id = "moveToLocationButton";
-                gotoButton.onclick = this.__moveToLocation;
-                gotoButton.classList.add("btn");
                 gotoButton.classList.add("btn-primary");
-                gotoButton.style.width = "30px";
-                gotoButton.style.height = "20px";
-                gotoButton.style.padding = "0px";
-                gotoButton.style.borderRadius = "4px";
-                gotoButton.style.position = "relative";
-                gotoButton.style.bottom = "1px";
+                gotoButton.onclick = this.__moveToLocation;
                 gotoLocationDiv.appendChild(gotoButton);
 
                 // Add the text next to the button
@@ -337,14 +332,9 @@ class Automation
                 gotoLocationDiv.appendChild(gotoText);
 
                 // Add go to location drop-down list
-                let gotoList = document.createElement("select");
-                gotoList.className = "custom-select";
-                gotoList.name = "gotoSelectedLocation";
-                gotoList.id = gotoList.name;
-                gotoList.style.width = "calc(100% - 10px)";
-                gotoList.style.marginTop = "3px";
-                gotoList.style.paddingLeft = "2px";
-                gotoLocationDiv.appendChild(gotoList);
+                let selectElem = Automation.Menu.__createDropDownList("gotoSelectedLocation");
+                selectElem.style.paddingLeft = "2px";
+                gotoLocationDiv.appendChild(selectElem);
             }
 
             static __initializeGotoLocationTrivia()
@@ -537,12 +527,12 @@ class Automation
             }
         }
 
-        static __addCategory(categoyName, title)
+        static __addCategory(categoryName, title)
         {
             let mainNode = document.getElementById("automationContainer");
 
             let newNode = document.createElement("div");
-            newNode.id = categoyName;
+            newNode.id = categoryName;
             newNode.style.backgroundColor = "#444444";
             newNode.style.color = "#eeeeee";
             newNode.style.borderRadius = "5px";
@@ -563,7 +553,7 @@ class Automation
             newNode.appendChild(titleDiv);
 
             let contentDiv = document.createElement("div");
-            contentDiv.id = categoyName + "Div";
+            contentDiv.id = categoryName + "Div";
             newNode.appendChild(contentDiv);
 
             return newNode;
@@ -593,15 +583,9 @@ class Automation
             buttonLabel.textContent = name + " : ";
             buttonContainer.appendChild(buttonLabel);
 
-            let buttonElem = document.createElement("span");
-            buttonElem.id = id;
+            let buttonElem = Automation.Menu.__createButtonElement(id);
             buttonElem.textContent = (localStorage.getItem(id) === "true") ? "On" : "Off";
-            buttonElem.classList.add("btn");
             buttonElem.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
-            buttonElem.style.width = "30px";
-            buttonElem.style.height = "20px";
-            buttonElem.style.padding = "0px";
-            buttonElem.style.borderRadius = "4px";
             buttonElem.onclick = function() { Automation.Menu.__toggleAutomation(id) };
             buttonContainer.appendChild(buttonElem);
         }
@@ -631,8 +615,42 @@ class Automation
             let separatorDiv = document.createElement("div");
             separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
             separatorDiv.style.marginBottom = "5px";
-            separatorDiv.style.marginTop = "7px";
+            separatorDiv.style.marginTop = "6px";
             parentNode.appendChild(separatorDiv);
+        }
+
+        static __createDropDownList(name)
+        {
+            let newSelect = document.createElement("select");
+            newSelect.className = "custom-select";
+            newSelect.name = name;
+            newSelect.id = name;
+            newSelect.style.width = "calc(100% - 10px)";
+            newSelect.style.borderRadius = "4px";
+            newSelect.style.marginTop = "3px";
+
+            return newSelect;
+        }
+
+        static __createButtonElement(id)
+        {
+            // Create as a span to avoid the glowing effect on click
+            let newButton = document.createElement("span");
+            newButton.id = id;
+            newButton.classList.add("btn");
+            newButton.style.width = "30px";
+            newButton.style.height = "20px";
+            newButton.style.padding = "0px";
+            newButton.style.borderRadius = "4px";
+            newButton.style.position = "relative";
+            newButton.style.bottom = "1px";
+            newButton.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
+            newButton.style.fontSize = ".875rem";
+            newButton.style.fontWeight = "400";
+            newButton.style.lineHeight = "20px";
+            newButton.style.verticalAlign = "middle";
+
+            return newButton;
         }
     }
 
@@ -1067,12 +1085,7 @@ class Automation
             Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", "gymFightButtonsDiv", true);
 
             // Add gym selector drop-down list
-            let selectElem = document.createElement("select");
-            selectElem.className = "custom-select";
-            selectElem.name = "selectedAutomationGym";
-            selectElem.id = selectElem.name;
-            selectElem.style.width = "calc(100% - 10px)";
-            selectElem.style.marginTop = "3px";
+            let selectElem = Automation.Menu.__createDropDownList("selectedAutomationGym");
             selectElem.style.marginRight = "5px";
             document.getElementById("gymFightButtonsDiv").appendChild(selectElem);
         }
@@ -1256,12 +1269,7 @@ class Automation
             Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
 
             // Add the available mutation list
-            let selectElem = document.createElement("select");
-            selectElem.className = "custom-select";
-            selectElem.name = "selectedMutationBerry";
-            selectElem.id = selectElem.name;
-            selectElem.style.width = "calc(100% - 10px)";
-            selectElem.style.marginTop = "3px";
+            let selectElem = Automation.Menu.__createDropDownList("selectedMutationBerry");
             selectElem.style.marginRight = "5px";
             document.getElementById("automationButtonsDiv").appendChild(selectElem);
 
