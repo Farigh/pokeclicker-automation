@@ -36,38 +36,40 @@ class Automation
     }
 
     /**************************/
-    /*   PRIVATE  INTERFACE   */
+    /*    AUTOMATION UTILS    */
     /**************************/
-    static __sendNotif(message)
+
+    static Utils = class AutomationUils
     {
-        if (localStorage.getItem("automationNotificationsEnabled") == "true")
+        static __sendNotif(message)
         {
-            Notifier.notify({
-                                title: "Automation",
-                                message: message,
-                                type: NotificationConstants.NotificationOption.primary,
-                                timeout: 3000,
-                            });
+            if (localStorage.getItem("automationNotificationsEnabled") == "true")
+            {
+                Notifier.notify({
+                                    title: "Automation",
+                                    message: message,
+                                    type: NotificationConstants.NotificationOption.primary,
+                                    timeout: 3000,
+                                });
+            }
+        }
+
+        static __isInInstanceState()
+        {
+            return (App.game.gameState === GameConstants.GameState.dungeon)
+                || (App.game.gameState === GameConstants.GameState.battleFrontier)
+                || (App.game.gameState === GameConstants.GameState.temporaryBattle)
+                || (App.game.gameState === GameConstants.GameState.safari);
+        }
+
+        static __areArrayEquals(a, b)
+        {
+            return Array.isArray(a)
+                && Array.isArray(b)
+                && (a.length === b.length)
+                && a.every((val, index) => val === b[index]);
         }
     }
-
-    static __isInInstanceState()
-    {
-        return (App.game.gameState === GameConstants.GameState.dungeon)
-            || (App.game.gameState === GameConstants.GameState.battleFrontier)
-            || (App.game.gameState === GameConstants.GameState.temporaryBattle)
-            || (App.game.gameState === GameConstants.GameState.safari);
-    }
-
-    static __areArrayEquals(a, b)
-    {
-      return Array.isArray(a)
-          && Array.isArray(b)
-          && (a.length === b.length)
-          && a.every((val, index) => val === b[index]);
-    }
-
-    static __previousRegion = null;
 
     /**************************/
     /*    AUTOMATION  MENU    */
@@ -104,6 +106,7 @@ class Automation
                 this.__initializeEvolutionTrivia();
             }
 
+            static __previousRegion = null;
             static __displayedRoamingRoute = null;
             static __currentLocationListSize = 0;
             static __lastEvoStone = null;
@@ -200,7 +203,7 @@ class Automation
                 let button = document.getElementById("moveToLocationButton");
 
                 // Disable the button if the player is in an instance
-                if (Automation.__isInInstanceState())
+                if (Automation.Utils.__isInInstanceState())
                 {
                     if (!button.disabled)
                     {
@@ -223,7 +226,7 @@ class Automation
                 let unlockedTownCount = filteredList.reduce((count, [townName, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
 
                 // Clear the list if the player changed region
-                if (Automation.__previousRegion !== player.region)
+                if (this.__previousRegion !== player.region)
                 {
                     // Drop all elements and rebuild the list
                     gotoList.innerHTML = "";
@@ -269,7 +272,7 @@ class Automation
                             gotoList.options.add(opt);
                         });
 
-                    Automation.__previousRegion = player.region;
+                    this.__previousRegion = player.region;
 
                     this.__currentLocationListSize = unlockedTownCount;
                 }
@@ -293,7 +296,7 @@ class Automation
             static __moveToLocation()
             {
                 // Forbid travel if an instance is in progress (it breaks the game)
-                if (Automation.__isInInstanceState())
+                if (Automation.Utils.__isInInstanceState())
                 {
                     return;
                 }
@@ -338,7 +341,7 @@ class Automation
 
                 triviaDiv.hidden = (evoStones.length == 0);
 
-                if (!triviaDiv.hidden && !Automation.__areArrayEquals(this.__lastEvoStone, evoStones))
+                if (!triviaDiv.hidden && !Automation.Utils.__areArrayEquals(this.__lastEvoStone, evoStones))
                 {
                     let contentDiv = document.getElementById("availableEvolutionTriviaContent");
                     contentDiv.innerHTML = "";
@@ -582,7 +585,7 @@ class Automation
             // Disable best route if any other auto-farm is enabled, or an instance is in progress, and exit
             if ((localStorage.getItem("dungeonFightEnabled") == "true")
                 || (localStorage.getItem("gymFightEnabled") == "true")
-                || Automation.__isInInstanceState())
+                || Automation.Utils.__isInInstanceState())
             {
                 if (localStorage.getItem("bestRouteClickEnabled") == "true")
                 {
@@ -1117,7 +1120,7 @@ class Automation
                     while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
                     {
                         App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
-                        Automation.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
+                        Automation.Utils.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!");
                         i++;
                     }
                 }
@@ -1143,7 +1146,7 @@ class Automation
                         && eggType.checkCanUse())
                     {
                         eggType.use();
-                        Automation.__sendNotif("Added a " + eggType.displayName + " to the Hatchery!");
+                        Automation.Utils.__sendNotif("Added a " + eggType.displayName + " to the Hatchery!");
                     }
                 }, this);
         }
@@ -1173,7 +1176,7 @@ class Automation
                 {
                     // Hatching a fossil is performed by selling it
                     Underground.sellMineItem(type.id);
-                    Automation.__sendNotif("Added a " + type.name + " to the Hatchery!");
+                    Automation.Utils.__sendNotif("Added a " + type.name + " to the Hatchery!");
                 }
 
                 i++;
@@ -1418,7 +1421,7 @@ class Automation
             }
             else
             {
-                Automation.__sendNotif("ERROR: No strategy for berry " + lookingForBerryType.toString());
+                Automation.Utils.__sendNotif("ERROR: No strategy for berry " + lookingForBerryType.toString());
                 return;
             }
 
@@ -1455,7 +1458,7 @@ class Automation
         {
             if (this.__plantedBerryCount > 0)
             {
-                Automation.__sendNotif("Harvested " + this.__harvestCount.toString() + " berries<br>" + details);
+                Automation.Utils.__sendNotif("Harvested " + this.__harvestCount.toString() + " berries<br>" + details);
             }
         }
     }
@@ -1501,7 +1504,7 @@ class Automation
                 }
                 else
                 {
-                    Automation.__sendNotif("Performed mining " + this.__miningCount.toString() + " times,"
+                    Automation.Utils.__sendNotif("Performed mining " + this.__miningCount.toString() + " times,"
                                          + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
                     clearInterval(bombingLoop);
                     this.__miningCount = 0;
@@ -1640,7 +1643,7 @@ class Automation
         static __workOnQuest()
         {
             // Already fighting, nothing to do for now
-            if (Automation.__isInInstanceState())
+            if (Automation.Utils.__isInInstanceState())
             {
                 Automation.Dungeon.__stopRequested = true;
                 return;
