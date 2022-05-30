@@ -1728,7 +1728,7 @@ class Automation
                     || (this.__autoMiningLoop === null))
                 {
                     Automation.Utils.__sendNotif("Performed mining " + this.__miningCount.toString() + " times,"
-                                         + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
+                                               + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
                     clearInterval(bombingLoop);
                 }
                 else
@@ -1866,6 +1866,9 @@ class Automation
             {
                 return;
             }
+
+            // Make sure to always have some balls to catch pokemons
+            this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
 
             // Disable best route if needed
             Automation.Menu.__forceAutomationState("bestRouteClickEnabled", false);
@@ -2203,11 +2206,27 @@ class Automation
 
         static __selectBallToCatch(ballTypeToUse, enforceType = false)
         {
-            App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
             if (ballTypeToUse === GameConstants.Pokeball.None)
             {
+                App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
                 return;
             }
+
+            if (!enforceType)
+            {
+                // Choose the optimal pokeball, base on the other quests
+                App.game.quests.currentQuests().forEach(
+                    (quest) =>
+                    {
+                        if (quest instanceof UsePokeballQuest)
+                        {
+                            ballTypeToUse = quest.pokeball;
+                            enforceType = true;
+                        }
+                    });
+            }
+
+            App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
 
             // Make sure to always have some balls to catch pokemons
             this.__tryBuyBallIfUnderThreshold(ballTypeToUse, 10);
@@ -2287,7 +2306,7 @@ class Automation
 
             if (player.route() !== bestRoute)
             {
-                Automation.Utils.Route.__moveToRoute(bestRoute, 0);
+                Automation.Utils.Route.__moveToRoute(bestRoute, candidateRegion);
             }
         }
 
