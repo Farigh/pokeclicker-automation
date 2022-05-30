@@ -2034,7 +2034,7 @@ class Automation
 
         static __workOnCapturePokemonTypesQuest(quest)
         {
-            let bestRoute = this.__findBestRouteForFarmingType(quest.type);
+            let { bestRoute, bestRouteRegion } = this.__findBestRouteForFarmingType(quest.type);
 
             // Add a pokeball to the Caught type and set the PokemonCatch setup
             let hasBalls = this.__selectBallToCatch(GameConstants.Pokeball.Ultraball);
@@ -2042,7 +2042,7 @@ class Automation
 
             if (hasBalls && (player.route() !== bestRoute))
             {
-                Automation.Utils.Route.__moveToRoute(bestRoute, 0);
+                Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
             }
         }
 
@@ -2119,8 +2119,8 @@ class Automation
             this.__selectBallToCatch(GameConstants.Pokeball.None);
             this.__selectOwkItems(this.OakItemSetup.PokemonExp);
 
-            let bestRoute = this.__findBestRouteForFarmingType(quest.type);
-            Automation.Utils.Route.__moveToRoute(bestRoute, 0);
+            let { bestRoute, bestRouteRegion } = this.__findBestRouteForFarmingType(quest.type);
+            Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
         }
 
         static __workOnUseOakItemQuest(quest)
@@ -2161,14 +2161,14 @@ class Automation
 
         static __findBestRouteForFarmingType(pokemonType)
         {
-            let candidateRegion = 0;
-            let regionRoutes = Routes.getRoutesByRegion(candidateRegion);
-
             let bestRoute = 0;
+            let bestRouteRegion = 0;
             let bestRouteRate = 0;
 
+            let playerClickAttack = App.game.party.calculateClickAttack();
+
             // Fortunately routes are sorted by attack
-            regionRoutes.every(
+            Routes.regionRoutes.every(
                 (route) =>
                 {
                     if (!route.isUnlocked())
@@ -2176,7 +2176,7 @@ class Automation
                         return false;
                     }
 
-                    let pokemons = RouteHelper.getAvailablePokemonList(route.number, candidateRegion);
+                    let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
 
                     let currentRouteCount = 0;
                     pokemons.forEach(
@@ -2192,16 +2192,24 @@ class Automation
 
                     let currentRouteRate = currentRouteCount / pokemons.length;
 
+                    let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    if (routeAvgHp > playerClickAttack)
+                    {
+                        let nbClickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
+                        currentRouteRate = currentRouteRate / nbClickToDefeat;
+                    }
+
                     if (currentRouteRate > bestRouteRate)
                     {
                         bestRoute = route.number;
+                        bestRouteRegion = route.region;
                         bestRouteRate = currentRouteRate;
                     }
 
                     return true;
                 }, this);
 
-            return bestRoute;
+            return { bestRoute, bestRouteRegion };
         }
 
         static __selectBallToCatch(ballTypeToUse, enforceType = false)
