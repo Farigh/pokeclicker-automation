@@ -669,6 +669,29 @@ class Automation
 
             return newButton;
         }
+
+        static __disableButton(id, disabled)
+        {
+            let button = document.getElementById(id);
+
+            if (button.disabled === disabled)
+            {
+                // Nothing to do
+                return;
+            }
+
+            button.disabled = disabled;
+            if (disabled)
+            {
+                button.classList.remove((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
+                button.classList.add("btn-secondary");
+            }
+            else
+            {
+                button.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
+                button.classList.remove("btn-secondary");
+            }
+        }
     }
 
     /**************************/
@@ -1371,6 +1394,7 @@ class Automation
     static Farm = class AutomationFarm
     {
         static __farmingLoop = null;
+        static __forceMutationOffAsked = false;
 
         static __berryToStrategyMap = new Object();
 
@@ -1464,7 +1488,8 @@ class Automation
             this.__harvestAsEfficientAsPossible();
             this.__tryToUnlockNewStops();
 
-            if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
+            if ((localStorage.getItem("autoMutationFarmingEnabled") === "true")
+                && !this.__forceMutationOffAsked)
             {
                 this.__performBerryMutationStrategy();
             }
@@ -1836,13 +1861,49 @@ class Automation
                 {
                     // Set auto-click loop
                     this.__autoQuestLoop = setInterval(this.__questLoop.bind(this), 1000); // Runs every second
+
+                    // Disable other modes button
+                    Automation.Menu.__disableButton("autoClickEnabled", true);
+                    Automation.Menu.__disableButton("bestRouteClickEnabled", true);
+                    Automation.Menu.__disableButton("hatcheryAutomationEnabled", true);
+                    Automation.Menu.__disableButton("autoFarmingEnabled", true);
+                    Automation.Menu.__disableButton("autoMutationFarmingEnabled", true);
+                    Automation.Menu.__disableButton("autoMiningEnabled", true);
+
+                    // Force enable other modes
+                    Automation.Click.__toggleAutoClick(true);
+                    Automation.Hatchery.__toggleAutoHatchery(true);
+                    Automation.Farm.__toggleAutoFarming(true);
+                    Automation.Farm.__forceMutationOffAsked = true;
+                    Automation.Underground.__toggleAutoMining(true);
+
+                    // Force disable best route mode
+                    Automation.Click.__toggleBestRoute(false);
+
+                    // Select cheri berry to avoid long riping time
+                    FarmController.selectedBerry(BerryType.Cheri);
                 }
             }
-            else
+            else if (this.__autoQuestLoop !== null)
             {
                 // Unregister the loop
                 clearInterval(this.__autoQuestLoop);
                 this.__autoQuestLoop = null;
+
+                // Reset other modes status
+                Automation.Click.__toggleAutoClick();
+                Automation.Hatchery.__toggleAutoHatchery();
+                Automation.Farm.__toggleAutoFarming();
+                Automation.Farm.__forceMutationOffAsked = false;
+                Automation.Underground.__toggleAutoMining();
+
+                // Re-enable other modes button
+                Automation.Menu.__disableButton("autoClickEnabled", false);
+                Automation.Menu.__disableButton("bestRouteClickEnabled", false);
+                Automation.Menu.__disableButton("hatcheryAutomationEnabled", false);
+                Automation.Menu.__disableButton("autoFarmingEnabled", false);
+                Automation.Menu.__disableButton("autoMutationFarmingEnabled", false);
+                Automation.Menu.__disableButton("autoMiningEnabled", false);
             }
         }
 
@@ -2322,12 +2383,6 @@ class Automation
         {
             // Select the berry type to farm
             FarmController.selectedBerry(berryType);
-
-            // Disable mutation farming
-            Automation.Menu.__forceAutomationState("autoMutationFarmingEnabled", false);
-
-            // Enable farming
-            Automation.Menu.__forceAutomationState("autoFarmingEnabled", true);
         }
 
         static __getMostSuitableBerryForQuest(quest)
