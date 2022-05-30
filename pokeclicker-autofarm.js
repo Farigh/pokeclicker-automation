@@ -1773,14 +1773,34 @@ class Automation
     static Items = class AutomationItems
     {
         static __autoOakUpgradeLoop = null;
+        static __autoGemUpgradeLoop = null;
 
         static start()
         {
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
-            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Upgrade", "autoOakUpgradeEnabled");
+            let titleDiv = document.createElement("div");
+            titleDiv.style.textAlign = "center";
+            titleDiv.style.marginBottom = "3px";
+            let titleSpan = document.createElement("span");
+            titleSpan.textContent = "Auto Upgrade";
+            titleSpan.style.borderRadius = "4px";
+            titleSpan.style.borderWidth = "1px";
+            titleSpan.style.borderColor = "#aaaaaa";
+            titleSpan.style.borderStyle = "solid";
+            titleSpan.style.display = "block";
+            titleSpan.style.marginLeft = "10px";
+            titleSpan.style.marginRight = "10px";
+            titleDiv.appendChild(titleSpan);
+            document.getElementById("automationButtonsDiv").appendChild(titleDiv);
+
+            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled");
             oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
             this.__toggleAutoOakUpgrade();
+
+            let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled");
+            gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
+            this.__toggleAutoGemUpgrade();
         }
 
         static __toggleAutoOakUpgrade(enable)
@@ -1797,7 +1817,7 @@ class Automation
                 if (this.__autoOakUpgradeLoop === null)
                 {
                     // Set auto-click loop
-                    this.__autoOakUpgradeLoop = setInterval(this.__mainLoop.bind(this), 10000); // Runs every 10 seconds
+                    this.__autoOakUpgradeLoop = setInterval(this.__oakItemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
                 }
             }
             else
@@ -1808,7 +1828,32 @@ class Automation
             }
         }
 
-        static __mainLoop()
+        static __toggleAutoGemUpgrade(enable)
+        {
+            // If we got the click event, use the button status
+            if ((enable !== true) && (enable !== false))
+            {
+                enable = (localStorage.getItem("autoGemUpgradeEnabled") === "true");
+            }
+
+            if (enable)
+            {
+                // Only set a loop if there is none active
+                if (this.__autoGemUpgradeLoop === null)
+                {
+                    // Set auto-click loop
+                    this.__autoGemUpgradeLoop = setInterval(this.__gemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
+                }
+            }
+            else
+            {
+                // Unregister the loop
+                clearInterval(this.__autoGemUpgradeLoop);
+                this.__autoGemUpgradeLoop = null;
+            }
+        }
+
+        static __oakItemUpgradeLoop()
         {
             App.game.oakItems.itemList.forEach(
                 (item) =>
@@ -1825,6 +1870,26 @@ class Automation
                     {
                         item.buy();
                     }
+                });
+        }
+
+        static __gemUpgradeLoop()
+        {
+            // Iterate over gem types
+            [...Array(Gems.nTypes).keys()].forEach(
+                (type) =>
+                {
+                    // Iterate over affinity (backward)
+                    [...Array(Gems.nEffects).keys()].reverse().forEach(
+                        (affinity) =>
+                        {
+                            if (App.game.gems.isValidUpgrade(type, affinity)
+                                && !App.game.gems.hasMaxUpgrade(type, affinity)
+                                && App.game.gems.canBuyGemUpgrade(type, affinity))
+                            {
+                                App.game.gems.buyGemUpgrade(type, affinity);
+                            }
+                        })
                 });
         }
     }
