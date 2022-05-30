@@ -1338,15 +1338,20 @@ class Automation
                 (eggTypeName) =>
                 {
                     let eggType = ItemList[eggTypeName];
+                    let pokemonType = PokemonType[eggTypeName.split('_')[0]];
                     // Use an egg only if:
                     //   - a slot is available
                     //   - the player has one
                     //   - a new pokemon can be caught that way
                     //   - the item actually can be used
+                    //   - no other egg of that type is breeding
                     if (App.game.breeding.hasFreeEggSlot()
                         && player.itemList[eggType.name]()
                         && !eggType.getCaughtStatus()
-                        && eggType.checkCanUse())
+                        && eggType.checkCanUse()
+                        && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
+                                                      && ((App.game.breeding.eggList[index]().pokemonType1 === pokemonType)
+                                                          || (App.game.breeding.eggList[index]().pokemonType2 === pokemonType))))
                     {
                         eggType.use();
                         Automation.Utils.__sendNotif("Added a " + eggType.displayName + " to the Hatchery!");
@@ -1375,7 +1380,8 @@ class Automation
                     && (type.amount() > 0)
                     && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
                     && !hasPokemon
-                    && ![3, 2, 1, 0].some((index) => (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
+                    && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
+                                                  && (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
                 {
                     // Hatching a fossil is performed by selling it
                     Underground.sellMineItem(type.id);
