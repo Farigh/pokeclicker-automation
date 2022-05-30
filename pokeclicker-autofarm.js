@@ -2687,21 +2687,29 @@ class Automation
             let bestTime = Number.MAX_SAFE_INTEGER;
             let bestBerry = 0;
 
+            let availableSlotCount = App.game.farming.plotList.filter((plot) => plot.isUnlocked).length;
+
             App.game.farming.unlockedBerries.forEach(
                 (isUnlocked, index) =>
                 {
+                    // Don't consider locked berries
                     if (!isUnlocked())
                     {
                         return;
                     }
 
                     let berryData = App.game.farming.berryData[index];
-                    let time = berryData.growthTime[3];
-                    if (berryData.farmValue < quest.amount)
+
+                    // Don't consider out-of-stock berries
+                    if (App.game.farming.berryList[index]() === 0)
                     {
-                        time = (time * Math.ceil(quest.amount / berryData.farmValue));
+                        return;
                     }
 
+                    let berryTime = (berryData.growthTime[3] * Math.ceil(quest.amount / availableSlotCount / berryData.farmValue));
+
+                    // The time can't go below the berry growth time
+                    let time = Math.max(berryData.growthTime[3], berryTime);
                     if (time < bestTime)
                     {
                         bestTime = time;
