@@ -2287,7 +2287,7 @@ class Automation
             if (hasBalls)
             {
                 // Go to the highest route, for higher quest point income
-                this.__goToHighestRoute();
+                this.__goToHighestDungeonTokenIncomeRoute(ballType);
             }
         }
 
@@ -2425,28 +2425,46 @@ class Automation
                 });
         }
 
-        static __goToHighestRoute()
+        static __goToHighestDungeonTokenIncomeRoute(ballTypeToUse)
         {
-            let candidateRegion = player.highestRegion();
-            let regionRoutes = Routes.getRoutesByRegion(candidateRegion);
-
             let bestRoute = 0;
+            let bestRouteRegion = 0;
+            let bestRouteIncome = 0;
+
+            let playerClickAttack = App.game.party.calculateClickAttack();
+            let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
             // Fortunately routes are sorted by attack
-            regionRoutes.every(
+            Routes.regionRoutes.every(
                 (route) =>
                 {
-                    if (route.isUnlocked())
+                    if (!route.isUnlocked())
+                    {
+                        return false;
+                    }
+
+                    let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
+
+                    let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    if (routeAvgHp > playerClickAttack)
+                    {
+                        let nbClickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
+                        routeIncome = routeIncome / (nbClickToDefeat + catchTimeTicks);
+                    }
+
+                    if (routeIncome > bestRouteIncome)
                     {
                         bestRoute = route.number;
-                        return true;
+                        bestRouteRegion = route.region;
+                        bestRouteIncome = routeIncome;
                     }
-                    return false;
+
+                    return true;
                 }, this);
 
             if (player.route() !== bestRoute)
             {
-                Automation.Utils.Route.__moveToRoute(bestRoute, candidateRegion);
+                Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
             }
         }
 
