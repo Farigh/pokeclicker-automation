@@ -600,7 +600,7 @@ class Automation
             return newNode;
         }
 
-        static __addAutomationButton(name, id, parentId = "automationButtonsDiv", forceDisabled = false)
+        static __addAutomationButton(label, id, parentId = "automationButtonsDiv", forceDisabled = false)
         {
             // Enable automation by default, in not already set in cookies
             if (localStorage.getItem(id) == null)
@@ -621,7 +621,13 @@ class Automation
             document.getElementById(parentId).appendChild(buttonContainer);
 
             let buttonLabel = document.createElement("span");
-            buttonLabel.textContent = name + " : ";
+
+            if (!label.endsWith(":"))
+            {
+                label += " :";
+            }
+
+            buttonLabel.innerHTML = label + " ";
             buttonContainer.appendChild(buttonLabel);
 
             let buttonElem = Automation.Menu.__createButtonElement(id);
@@ -2111,6 +2117,9 @@ class Automation
             let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled");
             questButton.addEventListener("click", this.__toggleAutoQuest.bind(this), false);
             this.__toggleAutoQuest();
+
+            let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
+            Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled");
         }
 
         static __toggleAutoQuest(enable)
@@ -2355,8 +2364,11 @@ class Automation
                         let bestBerry = this.__getMostSuitableBerryForQuest(quest);
                         this.__enableFarmingForBerryType(bestBerry);
                     }
-
-                    // TODO: handle mining here as well
+                    else if ((quest instanceof MineItemsQuest)
+                             || (quest instanceof MineLayersQuest))
+                    {
+                        this.__restoreUndergroundEnergyIfUnderThreshold(5);
+                    }
                 });
         }
 
@@ -2729,6 +2741,40 @@ class Automation
                 if (ballItem.totalPrice(amount) < App.game.wallet.currencies[ballItem.currency]())
                 {
                     ballItem.buy(amount);
+                }
+            }
+        }
+
+        static __restoreUndergroundEnergyIfUnderThreshold(amount)
+        {
+            // Only use Small Restore item if:
+            //    - It can be bought (ie. the Cinnabar Island store is unlocked)
+            //    - The user allowed it
+            if (!TownList["Cinnabar Island"].isUnlocked()
+                && (localStorage.getItem("autoUseSmallRestoreEnabled") === "true"))
+            {
+                return;
+            }
+
+            let currentEnergy = Math.floor(App.game.underground.energy);
+
+            if (currentEnergy < 20)
+            {
+                // Use the small restore since it's the one with best cost/value ratio
+                let smallRestoreCount = player.itemList[GameConstants.EnergyRestoreSize[0]]();
+                let item = ItemList[GameConstants.EnergyRestoreSize[0]];
+
+                if (smallRestoreCount < amount)
+                {
+                    if (item.totalPrice(amount) < App.game.wallet.currencies[item.currency]())
+                    {
+                        item.buy(amount);
+                        smallRestoreCount += 5;
+                    }
+                }
+                if (smallRestoreCount > 0)
+                {
+                    item.use();
                 }
             }
         }
