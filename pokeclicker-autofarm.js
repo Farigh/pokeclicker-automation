@@ -865,7 +865,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoDungeonLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-dungeon loop
                     this.__autoDungeonLoop = setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
                 }
             }
@@ -1069,7 +1069,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoGymLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-gym loop
                     this.__autoGymLoop = setInterval(this.__mainLoop.bind(this), 50); // Runs every game tick
                 }
             }
@@ -1246,7 +1246,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoHatcheryLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-hatchery loop
                     this.__autoHatcheryLoop = setInterval(this.__mainLoop.bind(this), 1000); // Runs every second
                 }
             }
@@ -1260,6 +1260,11 @@ class Automation
 
         static __mainLoop()
         {
+            if (!App.game.breeding.canAccess())
+            {
+                return;
+            }
+
             // Attempt to hatch each egg. If the egg is at 100% it will succeed
             [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
@@ -1477,7 +1482,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__farmingLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-farm loop
                     this.__farmingLoop = setInterval(this.__mainLoop.bind(this), 10000); // Runs every 10 seconds
                 }
             }
@@ -1491,6 +1496,11 @@ class Automation
 
         static __mainLoop()
         {
+            if (!App.game.farming.canAccess())
+            {
+                return;
+            }
+
             this.__harvestAsEfficientAsPossible();
             this.__tryToUnlockNewStops();
 
@@ -1703,7 +1713,8 @@ class Automation
     {
         static __autoMiningLoop = null;
 
-        static __miningCount = 0;
+        static __actionCount = 0;
+        static __foundItems = [];
 
         static start()
         {
@@ -1727,8 +1738,8 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoMiningLoop === null)
                 {
-                    // Set auto-click loop
-                    this.__autoMiningLoop = setInterval(this.__startMining.bind(this), 1000); // Runs every 10 seconds
+                    // Set auto-mine loop
+                    this.__autoMiningLoop = setInterval(this.__startMining.bind(this), 10000); // Runs every 10 seconds
                 }
             }
             else
@@ -1739,7 +1750,7 @@ class Automation
             }
         }
 
-        static __isMiningPossible()
+        static __isBombingPossible()
         {
             return ((Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
                     && (Mine.itemsFound() < Mine.itemsBuried()));
@@ -1747,28 +1758,162 @@ class Automation
 
         static __startMining()
         {
-            if (!this.__isMiningPossible())
+            if (!App.game.underground.canAccess()
+                || !this.__isBombingPossible())
             {
                 return;
             }
 
-            this.__miningCount = 0;
-            var bombingLoop = setInterval(function()
+            this.__actionCount = 0;
+            var miningLoop = setInterval(function()
             {
-                if (!this.__isMiningPossible()
-                    || (this.__autoMiningLoop === null))
+                let nothingElseToDo = true;
+
+                if (this.__autoMiningLoop !== null)
                 {
-                    Automation.Utils.__sendNotif("Performed mining " + this.__miningCount.toString() + " times,"
-                                               + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
-                    clearInterval(bombingLoop);
+                    let itemsState = this.__getItemsState();
+
+                    let areAllItemRevealed = true;
+                    itemsState.forEach(
+                        (item) =>
+                        {
+                            areAllItemRevealed &= item.revealed;
+                        });
+
+                    if (!areAllItemRevealed)
+                    {
+                        // Bombing is the best strategy until all items have at least one revealed spot
+                        if (this.__isBombingPossible())
+                        {
+                            // Mine using bombs until the board is completed or the energy is depleted
+                            Mine.bomb();
+                            this.__actionCount++;
+                            nothingElseToDo = false;
+                        }
+                    }
+                    else
+                    {
+                        this.__useTheBestItem(itemsState);
+                        nothingElseToDo = false;
+                    }
                 }
-                else
+
+                if (nothingElseToDo)
                 {
-                    // Mine using bombs until the board is completed or the energy is depleted
-                    Mine.bomb();
-                    this.__miningCount++;
+                    Automation.Utils.__sendNotif("Performed mining actions " + this.__actionCount.toString() + " times,"
+                                               + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
+                    clearInterval(miningLoop);
+                    return;
                 }
             }.bind(this), 500); // Runs every 0.5s
+        }
+
+        static __useTheBestItem(itemsState)
+        {
+            let nextTilesToMine = [];
+
+            itemsState.forEach(
+                (item) =>
+                {
+                    if (!item.completed)
+                    {
+                        nextTilesToMine = nextTilesToMine.concat(item.tiles);
+                    }
+                });
+
+            // Only consider unrevealed tiles
+            nextTilesToMine = nextTilesToMine.filter((tile) => !tile.revealed);
+
+            if (nextTilesToMine.length == 0)
+            {
+                return;
+            }
+
+            let { useHammer, useToolX, useToolY } = this.__considerHammerUse(nextTilesToMine);
+
+            if (useHammer)
+            {
+                Mine.hammer(useToolX, useToolY);
+            }
+            else
+            {
+                Mine.chisel(useToolX, useToolY);
+            }
+            this.__actionCount++;
+        }
+
+        static __considerHammerUse(nextTilesToMine)
+        {
+            let bestReachableTilesAmount = 0;
+            let bestReachableTileX = 0;
+            let bestReachableTileY = 0;
+
+            nextTilesToMine.forEach(
+                (tile) =>
+                {
+                    // Compute the best tile for hammer
+                    let reachableTilesAmount = 0;
+                    nextTilesToMine.forEach(
+                        (other) =>
+                        {
+                            // Consider tiles in th range of the hammer only
+                            if (!other.revealed
+                                && other.x <= (tile.x + 1)
+                                && other.x >= (tile.x - 1)
+                                && other.y <= (tile.y + 1)
+                                && other.y >= (tile.y - 1))
+                            {
+                                reachableTilesAmount++;
+                            }
+                        });
+
+                    if (reachableTilesAmount > bestReachableTilesAmount)
+                    {
+                        bestReachableTilesAmount = reachableTilesAmount;
+                        bestReachableTileX = tile.x;
+                        bestReachableTileY = tile.y;
+                    }
+                });
+
+            let useHammer = (bestReachableTilesAmount >= 3)
+            let useToolX = useHammer ? bestReachableTileX : nextTilesToMine[0].x;
+            let useToolY = useHammer ? bestReachableTileY : nextTilesToMine[0].y;
+            return { useHammer, useToolX, useToolY };
+        }
+
+        static __getItemsState()
+        {
+            let itemsState = new Map();
+
+            [...Array(Underground.sizeY).keys()].forEach(
+                (row) =>
+                {
+                    [...Array(Underground.sizeX).keys()].forEach(
+                        (column) =>
+                        {
+                            let content = Mine.rewardGrid[row][column];
+                            if (content !== 0)
+                            {
+                                if (!itemsState.has(content.value))
+                                {
+                                    itemsState.set(content.value,
+                                                   {
+                                                       id: content.value,
+                                                       completed: true,
+                                                       revealed: false,
+                                                       tiles: []
+                                                   });
+                                }
+
+                                let itemData = itemsState.get(content.value);
+                                itemData.completed &= content.revealed;
+                                itemData.revealed |= content.revealed;
+                                itemData.tiles.push({ x: row, y: column, revealed: content.revealed });
+                            }
+                        });
+                });
+
+            return itemsState;
         }
     }
 
@@ -1822,7 +1967,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoOakUpgradeLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-upgrade loop
                     this.__autoOakUpgradeLoop = setInterval(this.__oakItemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
                 }
             }
@@ -1847,7 +1992,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoGemUpgradeLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-upgrade loop
                     this.__autoGemUpgradeLoop = setInterval(this.__gemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
                 }
             }
@@ -1861,6 +2006,11 @@ class Automation
 
         static __oakItemUpgradeLoop()
         {
+            if (!App.game.oakItems.canAccess())
+            {
+                return;
+            }
+
             App.game.oakItems.itemList.forEach(
                 (item) =>
                 {
@@ -1881,6 +2031,11 @@ class Automation
 
         static __gemUpgradeLoop()
         {
+            if (!App.game.gems.canAccess())
+            {
+                return;
+            }
+
             // Iterate over gem types
             [...Array(Gems.nTypes).keys()].forEach(
                 (type) =>
@@ -1930,7 +2085,7 @@ class Automation
                 // Only set a loop if there is none active
                 if (this.__autoQuestLoop === null)
                 {
-                    // Set auto-click loop
+                    // Set auto-quest loop
                     this.__autoQuestLoop = setInterval(this.__questLoop.bind(this), 1000); // Runs every second
 
                     // Disable other modes button
@@ -1994,7 +2149,7 @@ class Automation
 
         static __questLoop()
         {
-            if (localStorage.getItem("autoQuestEnabled") === "false")
+            if (!App.game.quests.isDailyQuestsUnlocked())
             {
                 return;
             }
