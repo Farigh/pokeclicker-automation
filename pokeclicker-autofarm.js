@@ -68,10 +68,8 @@ class Automation
             static __moveToRoute(route, region)
             {
                 // Don't move if the game would not allow it
-                if (Automation.Utils.__isInInstanceState()
-                    || (region > player.highestRegion())
-                    || ((player.region == player.highestRegion())
-                        && !TownList[GameConstants.DockTowns[player.region]].isUnlocked()))
+                if (!this.__canMoveToRegion(region)
+                    || !MapHelper.accessToRoute(route, region))
                 {
                     return;
                 }
@@ -84,15 +82,33 @@ class Automation
                 let town = TownList[townName];
 
                 // Don't move if the game would not allow it
-                if (Automation.Utils.__isInInstanceState()
-                    || (town.region > player.highestRegion())
-                    || ((player.region == player.highestRegion())
-                        && !TownList[GameConstants.DockTowns[player.region]].isUnlocked()))
+                if (!this.__canMoveToRegion(town.region)
+                    || !town.isUnlocked())
                 {
                     return;
                 }
 
                 MapHelper.moveToTown(townName);
+            }
+
+            static __canMoveToRegion(region)
+            {
+                // Not possible move
+                if (Automation.Utils.__isInInstanceState()
+                    || (region > player.highestRegion())
+                    || (region < 0))
+                {
+                    return false;
+                }
+
+                // Highest region restricts the inter-region moves until the docks are unlocked
+                if ((player.region === player.highestRegion())
+                    && (region !== player.region))
+                {
+                    return TownList[GameConstants.DockTowns[player.region]].isUnlocked();
+                }
+
+                return true;
             }
 
             static __moveToBestRouteForExp()
@@ -128,13 +144,19 @@ class Automation
                     // If no routes are below the user attack, just choose the 1st one
                     this.__lastBestRoute = 0;
                     this.__lastBestRouteRegion = 0;
-                    this.__lastNextBestRoute = this.__lastBestRoute;
+                    this.__lastNextBestRoute = 0;
                     this.__lastNextBestRouteRegion = 0;
 
                     // Fortunately routes are sorted by region and by attack
                     Routes.regionRoutes.every(
                         (route) =>
                         {
+                            // Skip any route that we can't access
+                            if (!Automation.Utils.Route.__canMoveToRegion(route.region))
+                            {
+                                return true;
+                            }
+
                             if (this.__routeMaxHealthMap.get(route.region).get(route.number) < playerClickAttack)
                             {
                                 this.__lastBestRoute = route.number;
@@ -147,6 +169,16 @@ class Automation
                             this.__lastNextBestRouteRegion = route.region;
                             return false;
                         }, this);
+
+                    // This can happen if the player is in a new region and the docks are not unlocked yet
+                    if (this.__lastBestRoute == 0)
+                    {
+                        let regionRoutes = Routes.getRoutesByRegion(player.region);
+                        this.__lastBestRoute = regionRoutes[0].number;
+                        this.__lastBestRouteRegion = regionRoutes[0].region;
+                        this.__lastNextBestRoute = regionRoutes[1].number;
+                        this.__lastNextBestRouteRegion = regionRoutes[1].region;
+                    }
                 }
 
                 this.__moveToRoute(this.__lastBestRoute, this.__lastBestRouteRegion);
@@ -2463,6 +2495,12 @@ class Automation
                         return false;
                     }
 
+                    // Skip any route that we can't access
+                    if (!Automation.Utils.Route.__canMoveToRegion(route.region))
+                    {
+                        return true;
+                    }
+
                     let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
 
                     let currentRouteCount = 0;
@@ -2596,6 +2634,12 @@ class Automation
                     if (!route.isUnlocked())
                     {
                         return false;
+                    }
+
+                    // Skip any route that we can't access
+                    if (!Automation.Utils.Route.__canMoveToRegion(route.region))
+                    {
+                        return true;
                     }
 
                     let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
