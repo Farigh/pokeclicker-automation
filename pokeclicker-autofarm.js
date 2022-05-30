@@ -278,7 +278,7 @@ class Automation
             node.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
             node.style.fontSize = ".875rem";
             node.style.fontWeight = "400";
-            node.setAttribute("id", "automationContainer");
+            node.id = "automationContainer";
             document.body.appendChild(node);
 
             let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
@@ -312,14 +312,19 @@ class Automation
                 let triviaDiv = Automation.Menu.__addCategory("automationTrivia", triviaTitle);
 
                 // Add roaming route div
-                let node = document.createElement("div");
-                node.setAttribute("id", "roamingRouteTrivia");
-                node.style.textAlign = "center";
-                triviaDiv.appendChild(node);
+                let containerDiv = document.createElement("div");
+                containerDiv.id = "roamingRouteTriviaContainer";
+                triviaDiv.appendChild(containerDiv);
+
+                let contentNode = document.createElement("div");
+                contentNode.id = "roamingRouteTriviaText";
+                contentNode.style.textAlign = "center";
+                containerDiv.appendChild(contentNode);
+
+                Automation.Menu.__addSeparator(containerDiv);
 
                 this.__addAvailableEvolutionContent(triviaDiv);
 
-                Automation.Menu.__addSeparator(triviaDiv);
                 this.__addGotoLocationContent(triviaDiv);
             }
 
@@ -327,11 +332,9 @@ class Automation
             {
                 // Add available evolution div
                 let containerDiv = document.createElement("div");
-                containerDiv.setAttribute("id", "availableEvolutionTrivia");
+                containerDiv.id = "availableEvolutionTrivia";
                 containerDiv.style.textAlign = "center";
                 triviaDiv.appendChild(containerDiv);
-
-                Automation.Menu.__addSeparator(containerDiv);
 
                 let evolutionLabel = document.createElement("span");
                 evolutionLabel.textContent = "Possible evolution:";
@@ -340,6 +343,8 @@ class Automation
                 let evolutionStoneListContainer = document.createElement("div");
                 evolutionStoneListContainer.id = "availableEvolutionTriviaContent";
                 containerDiv.appendChild(evolutionStoneListContainer);
+
+                Automation.Menu.__addSeparator(containerDiv);
             }
 
             static __addGotoLocationContent(triviaDiv)
@@ -347,7 +352,7 @@ class Automation
 
                 // Add go to location div
                 let gotoLocationDiv = document.createElement("div");
-                gotoLocationDiv.setAttribute("id", "gotoLocationTrivia");
+                gotoLocationDiv.id = "gotoLocationTrivia";
                 gotoLocationDiv.style.textAlign = "center";
                 triviaDiv.appendChild(gotoLocationDiv);
 
@@ -488,12 +493,16 @@ class Automation
 
             static __refreshRoamingRouteTrivia()
             {
-                let currentRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
+                // Their can be no roamers at this time
+                let currentRoamingRoute = (RoamingPokemonList.getRegionalRoamers(player.region).length > 0)
+                                        ? RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number
+                                        : -1;
                 if (this.__displayedRoamingRoute !== currentRoamingRoute)
                 {
-                    this.__displayedRoamingRoute = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number;
-                    let triviaDiv = document.getElementById("roamingRouteTrivia");
-                    triviaDiv.innerHTML = "Roaming: Route " + this.__displayedRoamingRoute.toString();
+                    this.__displayedRoamingRoute = currentRoamingRoute;
+                    document.getElementById("roamingRouteTriviaText").textContent = "Roaming: Route " + this.__displayedRoamingRoute.toString();
+                    // Hide the roaming info if there is no roamers
+                    document.getElementById("roamingRouteTriviaContainer").hidden = (RoamingPokemonList.getRegionalRoamers(player.region).length === 0);
                 }
             }
 
