@@ -268,6 +268,8 @@ class Automation
 
     static Menu = class AutomationMenu
     {
+        static __automationButtonsDiv;
+
         static build()
         {
             this.__injectAutomationCss();
@@ -286,7 +288,7 @@ class Automation
             document.body.appendChild(node);
 
             let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
-            this.__addCategory("automationButtons", automationTitle);
+            this.__automationButtonsDiv = this.__addCategory("automationButtons", automationTitle);
 
             // Initialize trivia
             this.Trivia.start();
@@ -654,7 +656,7 @@ class Automation
             return contentDiv;
         }
 
-        static __addAutomationButton(label, id, tooltip = "", parentId = "automationButtonsDiv", forceDisabled = false)
+        static __addAutomationButton(label, id, tooltip = "", buttonDiv = this.__automationButtonsDiv, forceDisabled = false)
         {
             // Enable automation by default, in not already set in cookies
             if (localStorage.getItem(id) == null)
@@ -667,12 +669,10 @@ class Automation
                 localStorage.setItem(id, false);
             }
 
-            let buttonDiv = document.getElementById(parentId)
-
             let buttonContainer = document.createElement("div");
             buttonContainer.style.paddingLeft = "10px";
             buttonContainer.style.paddingRight = "10px";
-            document.getElementById(parentId).appendChild(buttonContainer);
+            buttonDiv.appendChild(buttonContainer);
 
             let buttonLabel = document.createElement("span");
 
@@ -735,7 +735,7 @@ class Automation
             }
         }
 
-        static __addSeparator(parentNode = document.getElementById("automationButtonsDiv"))
+        static __addSeparator(parentNode = this.__automationButtonsDiv)
         {
             let separatorDiv = document.createElement("div");
             separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
@@ -1028,7 +1028,7 @@ class Automation
                                    + Automation.Menu.__tooltipSeparator()
                                    + "Chests and the boss are ignored until all tiles are revealed\n"
                                    + "Chests are all picked right before fighting the boss";
-            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", autoDungeonTooltip, dungeonDiv.id, true);
+            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", autoDungeonTooltip, dungeonDiv, true);
             autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
 
             // Disable by default
@@ -1038,7 +1038,7 @@ class Automation
             let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
                                        + "once all pokemon are caugth in this dungeon";
             let buttonLabel = 'Stop on <img src="assets/images/pokeball/Pokeball.svg" height="17px"> :';
-            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv.id);
+            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv);
 
             // Set the div visibility watcher
             setInterval(this.__updateDivVisibility.bind(this), 500); // Refresh every 0.5s
@@ -1234,7 +1234,7 @@ class Automation
 
             // Add an on/off button
             let autoGymTooltip = "Automatically starts the selected gym fight";
-            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", autoGymTooltip, gymDiv.id, true);
+            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", autoGymTooltip, gymDiv, true);
             autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
 
             // Disable by default
@@ -1652,7 +1652,7 @@ class Automation
             // Add the available mutation list
             let selectElem = Automation.Menu.__createDropDownList("selectedMutationBerry");
             selectElem.style.marginRight = "5px";
-            document.getElementById("automationButtonsDiv").appendChild(selectElem);
+            Automation.Menu.__automationButtonsDiv.appendChild(selectElem);
 
             // Do not display this element until it's ready to publish
             selectElem.hidden = true;
@@ -2184,7 +2184,7 @@ class Automation
             titleSpan.style.marginLeft = "10px";
             titleSpan.style.marginRight = "10px";
             titleDiv.appendChild(titleSpan);
-            document.getElementById("automationButtonsDiv").appendChild(titleDiv);
+            Automation.Menu.__automationButtonsDiv.appendChild(titleDiv);
 
 
             let oakItemTooltip = "Automatically ugrades Oak items when possible"
