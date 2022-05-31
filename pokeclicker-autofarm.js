@@ -20,8 +20,8 @@ class Automation
                 this.Menu.build();
 
                 this.Click.start();
-                this.Underground.start();
                 this.Hatchery.start();
+                this.Underground.start();
                 this.Farm.start();
                 this.Gym.start();
                 this.Dungeon.start();
@@ -30,7 +30,9 @@ class Automation
 
                 // Add a notification button to the automation menu
                 Automation.Menu.__addSeparator();
-                this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled");
+
+                let notificationTooltip = "Enables automation-related notifications";
+                this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", notificationTooltip);
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");
@@ -268,6 +270,8 @@ class Automation
     {
         static build()
         {
+            this.__injectAutomationCss();
+
             let node = document.createElement("div");
             node.style.position = "absolute";
             node.style.top = "50px";
@@ -318,6 +322,8 @@ class Automation
 
                 let contentNode = document.createElement("div");
                 contentNode.id = "roamingRouteTriviaText";
+                contentNode.classList.add("hasAutomationTooltip");
+                contentNode.classList.add("centeredAutomationTooltip");
                 contentNode.style.textAlign = "center";
                 containerDiv.appendChild(contentNode);
 
@@ -337,6 +343,13 @@ class Automation
                 triviaDiv.appendChild(containerDiv);
 
                 let evolutionLabel = document.createElement("span");
+                evolutionLabel.classList.add("hasAutomationTooltip");
+                evolutionLabel.classList.add("centeredAutomationTooltip");
+                let tooltip = "Displays the available stone evolutions"
+                            + Automation.Menu.__tooltipSeparator()
+                            + "You can click on a stone to get to the according page\n"
+                            + "in your inventory directly";
+                evolutionLabel.setAttribute("automation-tooltip-text", tooltip);
                 evolutionLabel.textContent = "Possible evolution:";
                 containerDiv.appendChild(evolutionLabel);
 
@@ -349,24 +362,34 @@ class Automation
 
             static __addGotoLocationContent(triviaDiv)
             {
-
                 // Add go to location div
                 let gotoLocationDiv = document.createElement("div");
                 gotoLocationDiv.id = "gotoLocationTrivia";
                 gotoLocationDiv.style.textAlign = "center";
                 triviaDiv.appendChild(gotoLocationDiv);
 
+                // Add button and label div
+                let gotoContainer = document.createElement("div");
+                gotoContainer.classList.add("hasAutomationTooltip");
+                gotoContainer.classList.add("gotoAutomationTooltip");
+                let tooltip = "Goes to the selected location"
+                            + Automation.Menu.__tooltipSeparator()
+                            + "🏫-prefixed locations are towns\n"
+                            + "⚔-prefixed locations are dungeons";
+                gotoContainer.setAttribute("automation-tooltip-text", tooltip);
+                gotoLocationDiv.appendChild(gotoContainer);
+
                 // Add go to location button
                 let gotoButton = Automation.Menu.__createButtonElement("moveToLocationButton");
                 gotoButton.textContent = "Go";
                 gotoButton.classList.add("btn-primary");
                 gotoButton.onclick = this.__moveToLocation;
-                gotoLocationDiv.appendChild(gotoButton);
+                gotoContainer.appendChild(gotoButton);
 
                 // Add the text next to the button
                 let gotoText = document.createElement("span");
                 gotoText.textContent = " to:";
-                gotoLocationDiv.appendChild(gotoText);
+                gotoContainer.appendChild(gotoText);
 
                 // Add go to location drop-down list
                 let selectElem = Automation.Menu.__createDropDownList("gotoSelectedLocation");
@@ -494,8 +517,9 @@ class Automation
             static __refreshRoamingRouteTrivia()
             {
                 // Their can be no roamers at this time
+                let roamers = RoamingPokemonList.getRegionalRoamers(player.region);
                 let roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)();
-                let currentRoamingRoute = (RoamingPokemonList.getRegionalRoamers(player.region).length > 0)
+                let currentRoamingRoute = (roamers.length > 0)
                                         ? roamingRouteData.number
                                         : -1;
                 if (this.__displayedRoamingRoute !== currentRoamingRoute)
@@ -508,7 +532,26 @@ class Automation
                     {
                         routeName = routeName.substring(regionName.length + 1, routeName.length);
                     }
-                    document.getElementById("roamingRouteTriviaText").textContent = "Roamers: " + routeName.replace(/ /g, '\u00a0');
+
+                    let textElem = document.getElementById("roamingRouteTriviaText");
+                    textElem.textContent = "Roamers: " + routeName.replace(/ /g, '\u00a0');
+
+                    // Update the tooltip
+                    let tooltip = "The following pokemons are roaming this route:\n";
+                    roamers.forEach(
+                        (pokemon, index) =>
+                        {
+                            if (index !== 0)
+                            {
+                                let isLast = (index === (roamers.length - 1));
+                                tooltip += (isLast ? "" : ",")
+                                         + (((index % 3) === 0) ? "\n" : " ")
+                                         + (isLast ? "and " : "");
+                            }
+                            tooltip += pokemon.pokemon.name + " (#" + pokemon.pokemon.id + ")";
+                        });
+                    textElem.setAttribute("automation-tooltip-text", tooltip);
+
                     // Hide the roaming info if there is no roamers
                     document.getElementById("roamingRouteTriviaContainer").hidden = (RoamingPokemonList.getRegionalRoamers(player.region).length === 0);
                 }
@@ -608,7 +651,7 @@ class Automation
             return newNode;
         }
 
-        static __addAutomationButton(label, id, parentId = "automationButtonsDiv", forceDisabled = false)
+        static __addAutomationButton(label, id, tooltip = "", parentId = "automationButtonsDiv", forceDisabled = false)
         {
             // Enable automation by default, in not already set in cookies
             if (localStorage.getItem(id) == null)
@@ -642,6 +685,13 @@ class Automation
             buttonElem.textContent = (localStorage.getItem(id) === "true") ? "On" : "Off";
             buttonElem.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
             buttonElem.onclick = function() { Automation.Menu.__toggleButton(id) };
+
+            if (tooltip != "")
+            {
+                buttonContainer.classList.add("hasAutomationTooltip");
+                buttonContainer.setAttribute("automation-tooltip-text", tooltip);
+            }
+
             buttonContainer.appendChild(buttonElem);
 
             return buttonElem;
@@ -747,6 +797,66 @@ class Automation
                 button.classList.remove("btn-secondary");
             }
         }
+
+        static __injectAutomationCss()
+        {
+            const style = document.createElement('style');
+            style.textContent = `.hasAutomationTooltip
+                                 {
+                                     position: relative;
+                                 }
+                                 .hasAutomationTooltip:before {
+                                     content: attr(automation-tooltip-text);
+                                     white-space: pre;
+                                     line-height: normal;
+                                     position: absolute;
+                                     left: calc(100% + 5px);
+                                     transform: translateX(-100%);
+                                     top: calc(100% + 6px);
+                                     padding: 5px 10px;
+                                     border-radius: 5px;
+                                     background: #222222;
+                                     color: #eeeeee;
+                                     text-align: center;
+                                     opacity: 0;
+                                     z-index: 9;
+                                     pointer-events: none;
+                                 }
+                                 .hasAutomationTooltip:after
+                                 {
+                                     content: "";
+                                     position: absolute;
+                                     top: 100%;
+                                     margin-top:-4px;
+                                     left: calc(100% - 30px);
+                                     border: 5px solid #222222;
+                                     border-color: transparent transparent black transparent;
+                                     opacity: 0;
+                                     z-index: 9;
+                                     pointer-events: none;
+                                 }
+                                 .hasAutomationTooltip:hover:before, .hasAutomationTooltip:hover:after
+                                 {
+                                     transition-delay: 2s;
+  									 transition-duration:.3s;
+                                     transition-property: opacity;
+                                     opacity: 1;
+                                 }
+                                 .hasAutomationTooltip.centeredAutomationTooltip:after
+                                 {
+                                     left: calc(50%);
+                                 }
+                                 .hasAutomationTooltip.gotoAutomationTooltip:after
+                                 {
+                                     left: calc(100% - 85px);
+                                 }`;
+            document.head.append(style);
+        }
+
+        static __tooltipSeparator()
+        {
+            return "\n─────────\n";
+        }
     }
 
     /**************************/
@@ -760,19 +870,26 @@ class Automation
 
         static start()
         {
-            // Add auto click button
-            let autoClickButton = Automation.Menu.__addAutomationButton("AutoClick", "autoClickEnabled");
-            autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
-            this.__toggleAutoClick();
-
-            // Add best route button
-            let bestRouteButton = Automation.Menu.__addAutomationButton("Best route", "bestRouteClickEnabled");
-
             // Disable best route by default
             if (localStorage.getItem("bestRouteClickEnabled") == null)
             {
                 localStorage.setItem("bestRouteClickEnabled", false);
             }
+
+            // Add auto click button
+            let autoClickTooltip = "Attack clicks are performed every 50ms"
+                                 + Automation.Menu.__tooltipSeparator()
+                                 + "Applies to battle, gym and dungeon";
+            let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", "autoClickEnabled", autoClickTooltip);
+            autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
+            this.__toggleAutoClick();
+
+            // Add best route button
+            let bestRouteTooltip = "Automatically moves to the best route"
+                                 + Automation.Menu.__tooltipSeparator()
+                                 + "Such route is the highest unlocked one\n"
+                                 + "with HP lower than Click Attack";
+            let bestRouteButton = Automation.Menu.__addAutomationButton("Best route", "bestRouteClickEnabled", bestRouteTooltip);
 
             // Toogle best route loop on click
             bestRouteButton.addEventListener("click", this.__toggleBestRoute.bind(this), false);
@@ -894,15 +1011,21 @@ class Automation
             dungeonDiv.hidden = true;
 
             // Add an on/off button
-            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", "dungeonFightButtonsDiv", true);
+            let autoDungeonTooltip = "Automatically enters and completes the dungeon"
+                                   + Automation.Menu.__tooltipSeparator()
+                                   + "Chests and the boss are ignored until all tiles are revealed\n"
+                                   + "Chests are all picked right before fighting the boss";
+            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", autoDungeonTooltip, "dungeonFightButtonsDiv", true);
             autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
 
             // Disable by default
             this.__toggleDungeonFight(false);
 
             // Add an on/off button to stop after pokedex completion
+            let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
+                                       + "once all pokemon are caugth in this dungeon";
             let buttonLabel = 'Stop on <img src="assets/images/pokeball/Pokeball.svg" height="17px"> :';
-            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", "dungeonFightButtonsDiv");
+            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, "dungeonFightButtonsDiv");
 
             // Set the div visibility watcher
             setInterval(this.__updateDivVisibility.bind(this), 500); // Refresh every 0.5s
@@ -1097,7 +1220,8 @@ class Automation
             gymDiv.hidden = true;
 
             // Add an on/off button
-            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", "gymFightButtonsDiv", true);
+            let autoGymTooltip = "Automatically starts the selected gym fight";
+            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", autoGymTooltip, "gymFightButtonsDiv", true);
             autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
 
             // Disable by default
@@ -1285,13 +1409,30 @@ class Automation
 
             // Add the related buttons to the automation menu
             Automation.Menu.__addSeparator();
-            let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled");
+
+            let autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
+                                    + Automation.Menu.__tooltipSeparator()
+                                    + "The higher beeding efficiency pokemon are added first\n"
+                                    + "The queue is not used, as it would reduce the Pokemon Attack\n"
+                                    + "It also enables you to manually add pokemons to the queue\n"
+                                    + "The queued pokemon are hatched first";
+            let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", autoHatcheryTooltip);
             autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
             this.__toggleAutoHatchery();
 
-            Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled");
-            Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled");
-            Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled");
+            let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
+                             + Automation.Menu.__tooltipSeparator()
+                             + "This is useful to farm shinies you don't have yet";
+            Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled", shinyTooltip);
+            let fossilTooltip = "Add fossils to the hatchery as well"
+                              + Automation.Menu.__tooltipSeparator()
+                              + "Only fossils for which pokemon are not currently held are added";
+            Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled", fossilTooltip);
+            let eggTooltip = "Add eggs to the hatchery as well"
+                           + Automation.Menu.__tooltipSeparator()
+                           + "Only eggs for which some pokemon are not currently held are added\n"
+                           + "Only one egg of a given type is used at the same time";
+            Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled", eggTooltip);
         }
 
         static __toggleAutoHatchery(enable)
@@ -1484,11 +1625,16 @@ class Automation
         {
             // Add the related buttons to the automation menu
             Automation.Menu.__addSeparator();
-            let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled");
+            let autoFarmTooltip = "Automatically harvest and plant crops"
+                                + Automation.Menu.__tooltipSeparator()
+                                + "Crops are harvested as soon as they ripe\n"
+                                + "New crops are planted using the selected one in the farm menu";
+            let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", autoFarmTooltip);
             autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
             this.__toggleAutoFarming();
 
-            Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled");
+            let mutationTooltip = "⚠️This is still a work-in-progress, it will be refactored⚠️";
+            Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled", mutationTooltip);
 
             // Add the available mutation list
             let selectElem = Automation.Menu.__createDropDownList("selectedMutationBerry");
@@ -1781,7 +1927,14 @@ class Automation
         {
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
-            let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled");
+
+            let autoMiningTooltip = "Automatically mine in the Underground"
+                                  + Automation.Menu.__tooltipSeparator()
+                                  + "Bombs will be used until all items have at least one visible tile\n"
+                                  + "The hammer will then be used if more than 3 blocks\n"
+                                  + "can be destroyed on an item within its range\n"
+                                  + "The chisel will then be used to finish the remaining blocks\n";
+            let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", autoMiningTooltip);
             miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
             this.__toggleAutoMining();
         }
@@ -1989,6 +2142,12 @@ class Automation
 
         static start()
         {
+            // Disable Oak Items auto-upgrades by default
+            if (localStorage.getItem("autoOakUpgradeEnabled") == null)
+            {
+                localStorage.setItem("autoOakUpgradeEnabled", false);
+            }
+
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
             let titleDiv = document.createElement("div");
@@ -2006,11 +2165,16 @@ class Automation
             titleDiv.appendChild(titleSpan);
             document.getElementById("automationButtonsDiv").appendChild(titleDiv);
 
-            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled");
+
+            let oakItemTooltip = "Automatically ugrades Oak items when possible"
+                               + Automation.Menu.__tooltipSeparator()
+                               + "⚠️ This can be cost-heavy during early game";
+            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled", oakItemTooltip);
             oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
             this.__toggleAutoOakUpgrade();
 
-            let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled");
+            let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
+            let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled", gemsTooltip);
             gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
             this.__toggleAutoGemUpgrade();
         }
@@ -2128,12 +2292,27 @@ class Automation
         {
             // Add the related button to the automation menu
             Automation.Menu.__addSeparator();
-            let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled");
+
+            let autoQuestTooltip = "Automatically add and complete quests"
+                                 + Automation.Menu.__tooltipSeparator()
+                                 + "This mode fully automates quest completion\n"
+                                 + "It automatically equips Oak items and balls\n"
+                                 + "It automatically moves to the appropriate location\n"
+                                 + "It automatically attacks, starts gym and enters dungeons"
+                                 + Automation.Menu.__tooltipSeparator()
+                                 + "Most modes are disabled while this is enabled\n"
+                                 + "as it will take over control of those modes"
+                                 + Automation.Menu.__tooltipSeparator()
+                                 + "⚠️ You will hardly be able to manually play with this mode enabled";
+            let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", autoQuestTooltip);
             questButton.addEventListener("click", this.__toggleAutoQuest.bind(this), false);
             this.__toggleAutoQuest();
 
+            let smallRestoreTooltip = "Allows the AutoQuests mode to buy and use Small Restore items"
+                                    + Automation.Menu.__tooltipSeparator()
+                                    + "⚠️ This can be cost-heavy during early game";
             let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
-            Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled");
+            Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip);
         }
 
         static __toggleAutoQuest(enable)
