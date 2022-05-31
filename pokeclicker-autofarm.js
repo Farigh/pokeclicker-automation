@@ -636,19 +636,22 @@ class Automation
             newNode.style.marginTop = "5px";
             mainNode.appendChild(newNode);
 
+            let contentDivId = categoryName + "Div";
+
             let titleDiv = document.createElement("div");
             titleDiv.innerHTML = title;
             titleDiv.style.textAlign = "center";
-            titleDiv.style.borderBottom = "solid #AAAAAA 1px";
-            titleDiv.style.marginBottom = "5px";
-            titleDiv.style.paddingBottom = "5px";
+            titleDiv.onclick = function() { document.getElementById(contentDivId).classList.toggle('hide'); }.bind(contentDivId);
             newNode.appendChild(titleDiv);
 
             let contentDiv = document.createElement("div");
-            contentDiv.id = categoryName + "Div";
+            contentDiv.id = contentDivId;
+            contentDiv.classList.add("automationCategorie");
             newNode.appendChild(contentDiv);
 
-            return newNode;
+            Automation.Menu.__addSeparator(contentDiv);
+
+            return contentDiv;
         }
 
         static __addAutomationButton(label, id, tooltip = "", parentId = "automationButtonsDiv", forceDisabled = false)
@@ -849,6 +852,16 @@ class Automation
                                  .hasAutomationTooltip.gotoAutomationTooltip:after
                                  {
                                      left: calc(100% - 85px);
+                                 }
+                                 .automationCategorie
+                                 {
+                                     max-height: 500px;
+                                     display: block;
+                                 }
+                                 .automationCategorie.hide
+                                 {
+                                     max-height: 0px;
+                                     display: none;
                                  }`;
             document.head.append(style);
         }
@@ -1008,14 +1021,14 @@ class Automation
                              +     '&nbsp;Dungeon fight&nbsp;'
                              + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
             let dungeonDiv = Automation.Menu.__addCategory("dungeonFightButtons", dungeonTitle);
-            dungeonDiv.hidden = true;
+            dungeonDiv.parentElement.hidden = true;
 
             // Add an on/off button
             let autoDungeonTooltip = "Automatically enters and completes the dungeon"
                                    + Automation.Menu.__tooltipSeparator()
                                    + "Chests and the boss are ignored until all tiles are revealed\n"
                                    + "Chests are all picked right before fighting the boss";
-            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", autoDungeonTooltip, "dungeonFightButtonsDiv", true);
+            let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", autoDungeonTooltip, dungeonDiv.id, true);
             autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
 
             // Disable by default
@@ -1025,7 +1038,7 @@ class Automation
             let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
                                        + "once all pokemon are caugth in this dungeon";
             let buttonLabel = 'Stop on <img src="assets/images/pokeball/Pokeball.svg" height="17px"> :';
-            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, "dungeonFightButtonsDiv");
+            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv.id);
 
             // Set the div visibility watcher
             setInterval(this.__updateDivVisibility.bind(this), 500); // Refresh every 0.5s
@@ -1217,11 +1230,11 @@ class Automation
                          +     '&nbsp;Gym fight&nbsp;'
                          + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
             let gymDiv = Automation.Menu.__addCategory("gymFightButtons", gymTitle);
-            gymDiv.hidden = true;
+            gymDiv.parentElement.hidden = true;
 
             // Add an on/off button
             let autoGymTooltip = "Automatically starts the selected gym fight";
-            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", autoGymTooltip, "gymFightButtonsDiv", true);
+            let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", "gymFightEnabled", autoGymTooltip, gymDiv.id, true);
             autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
 
             // Disable by default
@@ -1230,7 +1243,7 @@ class Automation
             // Add gym selector drop-down list
             let selectElem = Automation.Menu.__createDropDownList("selectedAutomationGym");
             selectElem.style.marginRight = "5px";
-            document.getElementById("gymFightButtonsDiv").appendChild(selectElem);
+            gymDiv.appendChild(selectElem);
 
             // Set the div visibility and content watcher
             setInterval(this.__updateDivVisibilityAndContent.bind(this), 500); // Refresh every 0.5s
