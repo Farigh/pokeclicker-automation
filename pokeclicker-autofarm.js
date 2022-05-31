@@ -1647,12 +1647,20 @@ class Automation
             this.__toggleAutoFarming();
 
             let mutationTooltip = "⚠️This is still a work-in-progress, it will be refactored⚠️";
-            Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled", mutationTooltip);
+            let automationButton = Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled", mutationTooltip);
 
             // Add the available mutation list
             let selectElem = Automation.Menu.__createDropDownList("selectedMutationBerry");
             selectElem.style.marginRight = "5px";
             document.getElementById("automationButtonsDiv").appendChild(selectElem);
+
+            // Do not display this element until it's ready to publish
+            selectElem.hidden = true;
+            automationButton.parentElement.hidden = true;
+            if (localStorage.getItem("autoMutationFarmingEnabled") === "true")
+            {
+                localStorage.setItem("autoMutationFarmingEnabled", false);
+            }
 
             // Get values to put as options
             let availableOptions = [];
