@@ -1410,18 +1410,30 @@ class Automation
 
     static Hatchery = class AutomationHatchery
     {
+        static __hatcheryContainer = null;
+
         static __autoHatcheryLoop = null;
 
         static start()
         {
             // Disable no-shiny mode by default
-            if (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") == null)
+            if (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === null)
             {
                 localStorage.setItem("notShinyFirstHatcheryAutomationEnabled", false);
             }
 
             // Add the related buttons to the automation menu
-            Automation.Menu.__addSeparator();
+            this.__hatcheryContainer = document.createElement("div");
+            Automation.Menu.__automationButtonsDiv.appendChild(this.__hatcheryContainer);
+
+            Automation.Menu.__addSeparator(this.__hatcheryContainer);
+
+            // Only display the menu when the hatchery is unlocked
+            if (!App.game.breeding.canAccess())
+            {
+                this.__hatcheryContainer.hidden = true;
+                this.__setHatcheryUnlockWatcher();
+            }
 
             let autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
                                     + Automation.Menu.__tooltipSeparator()
@@ -1429,27 +1441,45 @@ class Automation
                                     + "The queue is not used, as it would reduce the Pokemon Attack\n"
                                     + "It also enables you to manually add pokemons to the queue\n"
                                     + "The queued pokemon are hatched first";
-            let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", autoHatcheryTooltip);
+            let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", autoHatcheryTooltip, this.__hatcheryContainer);
             autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
             this.__toggleAutoHatchery();
 
             let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
                              + Automation.Menu.__tooltipSeparator()
                              + "This is useful to farm shinies you don't have yet";
-            Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled", shinyTooltip);
+            Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled", shinyTooltip, this.__hatcheryContainer);
             let fossilTooltip = "Add fossils to the hatchery as well"
                               + Automation.Menu.__tooltipSeparator()
                               + "Only fossils for which pokemon are not currently held are added";
-            Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled", fossilTooltip);
+            Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled", fossilTooltip, this.__hatcheryContainer);
             let eggTooltip = "Add eggs to the hatchery as well"
                            + Automation.Menu.__tooltipSeparator()
                            + "Only eggs for which some pokemon are not currently held are added\n"
                            + "Only one egg of a given type is used at the same time";
-            Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled", eggTooltip);
+            Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled", eggTooltip, this.__hatcheryContainer);
+        }
+
+        static __setHatcheryUnlockWatcher()
+        {
+            let watcher = setInterval(function()
+            {
+                if (App.game.breeding.canAccess())
+                {
+                    clearInterval(watcher);
+                    this.__hatcheryContainer.hidden = false;
+                    this.__toggleAutoHatchery();
+                }
+            }.bind(this), 10000); // Check every 10 seconds
         }
 
         static __toggleAutoHatchery(enable)
         {
+            if (!App.game.breeding.canAccess())
+            {
+                return;
+            }
+
             // If we got the click event, use the button status
             if ((enable !== true) && (enable !== false))
             {
@@ -1475,11 +1505,6 @@ class Automation
 
         static __mainLoop()
         {
-            if (!App.game.breeding.canAccess())
-            {
-                return;
-            }
-
             // Attempt to hatch each egg. If the egg is at 100% it will succeed
             [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
@@ -1619,6 +1644,8 @@ class Automation
 
     static Farm = class AutomationFarm
     {
+        static __farmingContainer = null;
+
         static __farmingLoop = null;
         static __forceMutationOffAsked = false;
 
@@ -1637,22 +1664,33 @@ class Automation
         static __buildMenu()
         {
             // Add the related buttons to the automation menu
-            Automation.Menu.__addSeparator();
+            this.__farmingContainer = document.createElement("div");
+            Automation.Menu.__automationButtonsDiv.appendChild(this.__farmingContainer);
+
+            Automation.Menu.__addSeparator(this.__farmingContainer);
+
+            // Only display the menu when the farm is unlocked
+            if (!App.game.farming.canAccess())
+            {
+                this.__farmingContainer.hidden = true;
+                this.__setFarmingUnlockWatcher();
+            }
+
             let autoFarmTooltip = "Automatically harvest and plant crops"
                                 + Automation.Menu.__tooltipSeparator()
                                 + "Crops are harvested as soon as they ripe\n"
                                 + "New crops are planted using the selected one in the farm menu";
-            let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", autoFarmTooltip);
+            let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", autoFarmTooltip, this.__farmingContainer);
             autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
             this.__toggleAutoFarming();
 
             let mutationTooltip = "⚠️This is still a work-in-progress, it will be refactored⚠️";
-            let automationButton = Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled", mutationTooltip);
+            let automationButton = Automation.Menu.__addAutomationButton("Mutation", "autoMutationFarmingEnabled", mutationTooltip, this.__farmingContainer);
 
             // Add the available mutation list
             let selectElem = Automation.Menu.__createDropDownList("selectedMutationBerry");
             selectElem.style.marginRight = "5px";
-            Automation.Menu.__automationButtonsDiv.appendChild(selectElem);
+            this.__farmingContainer.appendChild(selectElem);
 
             // Do not display this element until it's ready to publish
             selectElem.hidden = true;
@@ -1697,8 +1735,26 @@ class Automation
                 });
         }
 
+        static __setFarmingUnlockWatcher()
+        {
+            let watcher = setInterval(function()
+            {
+                if (App.game.farming.canAccess())
+                {
+                    clearInterval(watcher);
+                    this.__farmingContainer.hidden = false;
+                    this.__toggleAutoFarming();
+                }
+            }.bind(this), 10000); // Check every 10 seconds
+        }
+
         static __toggleAutoFarming(enable)
         {
+            if (!App.game.farming.canAccess())
+            {
+                return;
+            }
+
             // If we got the click event, use the button status
             if ((enable !== true) && (enable !== false))
             {
@@ -1724,11 +1780,6 @@ class Automation
 
         static __mainLoop()
         {
-            if (!App.game.farming.canAccess())
-            {
-                return;
-            }
-
             this.__harvestAsEfficientAsPossible();
             this.__tryToUnlockNewStops();
 
@@ -1939,6 +1990,8 @@ class Automation
 
     static Underground = class AutomationUnderground
     {
+        static __undergroundContainer = null;
+
         static __autoMiningLoop = null;
 
         static __actionCount = 0;
@@ -1947,7 +2000,17 @@ class Automation
         static start()
         {
             // Add the related button to the automation menu
-            Automation.Menu.__addSeparator();
+            this.__undergroundContainer = document.createElement("div");
+            Automation.Menu.__automationButtonsDiv.appendChild(this.__undergroundContainer);
+
+            Automation.Menu.__addSeparator(this.__undergroundContainer);
+
+            // Only display the menu when the underground is unlocked
+            if (!App.game.underground.canAccess())
+            {
+                this.__undergroundContainer.hidden = true;
+                this.__setUndergroundUnlockWatcher();
+            }
 
             let autoMiningTooltip = "Automatically mine in the Underground"
                                   + Automation.Menu.__tooltipSeparator()
@@ -1955,13 +2018,31 @@ class Automation
                                   + "The hammer will then be used if more than 3 blocks\n"
                                   + "can be destroyed on an item within its range\n"
                                   + "The chisel will then be used to finish the remaining blocks\n";
-            let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", autoMiningTooltip);
+            let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", autoMiningTooltip, this.__undergroundContainer);
             miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
             this.__toggleAutoMining();
         }
 
+        static __setUndergroundUnlockWatcher()
+        {
+            let watcher = setInterval(function()
+            {
+                if (App.game.underground.canAccess())
+                {
+                    clearInterval(watcher);
+                    this.__undergroundContainer.hidden = false;
+                    this.__toggleAutoMining();
+                }
+            }.bind(this), 10000); // Check every 10 seconds
+        }
+
         static __toggleAutoMining(enable)
         {
+            if (!App.game.underground.canAccess())
+            {
+                return;
+            }
+
             // If we got the click event, use the button status
             if ((enable !== true) && (enable !== false))
             {
@@ -1993,8 +2074,7 @@ class Automation
 
         static __startMining()
         {
-            if (!App.game.underground.canAccess()
-                || !this.__isBombingPossible())
+            if (!this.__isBombingPossible())
             {
                 return;
             }
@@ -2158,6 +2238,10 @@ class Automation
 
     static Items = class AutomationItems
     {
+        static __upgradeContainer = null;
+        static __oakUpgradeContainer = null;
+        static __gemUpgradeContainer = null;
+
         static __autoOakUpgradeLoop = null;
         static __autoGemUpgradeLoop = null;
 
@@ -2170,7 +2254,12 @@ class Automation
             }
 
             // Add the related button to the automation menu
-            Automation.Menu.__addSeparator();
+            this.__upgradeContainer = document.createElement("div");
+            Automation.Menu.__automationButtonsDiv.appendChild(this.__upgradeContainer);
+
+            Automation.Menu.__addSeparator(this.__upgradeContainer);
+
+            /** Title **/
             let titleDiv = document.createElement("div");
             titleDiv.style.textAlign = "center";
             titleDiv.style.marginBottom = "3px";
@@ -2184,20 +2273,70 @@ class Automation
             titleSpan.style.marginLeft = "10px";
             titleSpan.style.marginRight = "10px";
             titleDiv.appendChild(titleSpan);
-            Automation.Menu.__automationButtonsDiv.appendChild(titleDiv);
+            this.__upgradeContainer.appendChild(titleDiv);
 
+            /** Oak items **/
+            this.__oakUpgradeContainer = document.createElement("div");
+            this.__upgradeContainer.appendChild(this.__oakUpgradeContainer);
+
+            // Only display the menu when the elements are unlocked
+            this.__oakUpgradeContainer.hidden = !App.game.oakItems.canAccess();
 
             let oakItemTooltip = "Automatically ugrades Oak items when possible"
                                + Automation.Menu.__tooltipSeparator()
                                + "⚠️ This can be cost-heavy during early game";
-            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled", oakItemTooltip);
+            let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled", oakItemTooltip, this.__oakUpgradeContainer);
             oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
             this.__toggleAutoOakUpgrade();
 
+            /** Gems **/
+            this.__gemUpgradeContainer = document.createElement("div");
+            this.__upgradeContainer.appendChild(this.__gemUpgradeContainer);
+
+            // Only display the menu when the elements are unlocked
+            this.__gemUpgradeContainer.hidden = !App.game.gems.canAccess();
+
             let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
-            let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled", gemsTooltip);
+            let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled", gemsTooltip, this.__gemUpgradeContainer);
             gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
             this.__toggleAutoGemUpgrade();
+
+            // If both are hidden, hide the whole menu
+            this.__upgradeContainer.hidden = this.__oakUpgradeContainer.hidden && this.__gemUpgradeContainer.hidden;
+
+            // Set the watcher to display the option once the mechanic has been unlocked
+            if (this.__oakUpgradeContainer.hidden
+                || this.__gemUpgradeContainer.hidden)
+            {
+                this.__setItemUpgradeUnlockWatcher();
+            }
+        }
+
+        static __setItemUpgradeUnlockWatcher()
+        {
+            let watcher = setInterval(function()
+            {
+                if (this.__oakUpgradeContainer.hidden
+                    && App.game.oakItems.canAccess())
+                {
+                    this.__oakUpgradeContainer.hidden = false;
+                    this.__toggleAutoOakUpgrade();
+                }
+
+                if (this.__gemUpgradeContainer.hidden
+                    && App.game.gems.canAccess())
+                {
+                    this.__gemUpgradeContainer.hidden = false;
+                    this.__toggleAutoGemUpgrade();
+                }
+
+                this.__upgradeContainer.hidden = this.__oakUpgradeContainer.hidden && this.__gemUpgradeContainer.hidden;
+
+                if (!this.__oakUpgradeContainer.hidden && !this.__gemUpgradeContainer.hidden)
+                {
+                    clearInterval(watcher);
+                }
+            }.bind(this), 10000); // Check every 10 seconds
         }
 
         static __toggleAutoOakUpgrade(enable)
@@ -2227,6 +2366,11 @@ class Automation
 
         static __toggleAutoGemUpgrade(enable)
         {
+            if (!App.game.gems.canAccess())
+            {
+                return;
+            }
+
             // If we got the click event, use the button status
             if ((enable !== true) && (enable !== false))
             {
@@ -2277,11 +2421,6 @@ class Automation
 
         static __gemUpgradeLoop()
         {
-            if (!App.game.gems.canAccess())
-            {
-                return;
-            }
-
             // Iterate over gem types
             [...Array(Gems.nTypes).keys()].forEach(
                 (type) =>
@@ -2307,12 +2446,30 @@ class Automation
 
     static Quest = class AutomationQuest
     {
+        static __questContainer = null;
+
         static __autoQuestLoop = null;
 
         static start()
         {
+            // Disable use/buy small restore mode by default
+            if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
+            {
+                localStorage.setItem("autoUseSmallRestoreEnabled", false);
+            }
+
             // Add the related button to the automation menu
-            Automation.Menu.__addSeparator();
+            this.__questContainer = document.createElement("div");
+            Automation.Menu.__automationButtonsDiv.appendChild(this.__questContainer);
+
+            Automation.Menu.__addSeparator(this.__questContainer);
+
+            // Only display the menu when the hatchery is unlocked
+            if (!App.game.quests.isDailyQuestsUnlocked())
+            {
+                this.__questContainer.hidden = true;
+                this.__setQuestUnlockWatcher();
+            }
 
             let autoQuestTooltip = "Automatically add and complete quests"
                                  + Automation.Menu.__tooltipSeparator()
@@ -2325,7 +2482,7 @@ class Automation
                                  + "as it will take over control of those modes"
                                  + Automation.Menu.__tooltipSeparator()
                                  + "⚠️ You will hardly be able to manually play with this mode enabled";
-            let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", autoQuestTooltip);
+            let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", autoQuestTooltip, this.__questContainer);
             questButton.addEventListener("click", this.__toggleAutoQuest.bind(this), false);
             this.__toggleAutoQuest();
 
@@ -2333,11 +2490,29 @@ class Automation
                                     + Automation.Menu.__tooltipSeparator()
                                     + "⚠️ This can be cost-heavy during early game";
             let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
-            Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip);
+            Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip, this.__questContainer);
+        }
+
+        static __setQuestUnlockWatcher()
+        {
+            let watcher = setInterval(function()
+            {
+                if (App.game.quests.isDailyQuestsUnlocked())
+                {
+                    clearInterval(watcher);
+                    this.__questContainer.hidden = false;
+                    this.__toggleAutoQuest();
+                }
+            }.bind(this), 10000); // Check every 10 seconds
         }
 
         static __toggleAutoQuest(enable)
         {
+            if (!App.game.quests.isDailyQuestsUnlocked())
+            {
+                return;
+            }
+
             // If we got the click event, use the button status
             if ((enable !== true) && (enable !== false))
             {
@@ -2416,11 +2591,6 @@ class Automation
 
         static __questLoop()
         {
-            if (!App.game.quests.isDailyQuestsUnlocked())
-            {
-                return;
-            }
-
             // Make sure to always have some balls to catch pokemons
             this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
 
