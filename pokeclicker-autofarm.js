@@ -494,13 +494,21 @@ class Automation
             static __refreshRoamingRouteTrivia()
             {
                 // Their can be no roamers at this time
+                let roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)();
                 let currentRoamingRoute = (RoamingPokemonList.getRegionalRoamers(player.region).length > 0)
-                                        ? RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)().number
+                                        ? roamingRouteData.number
                                         : -1;
                 if (this.__displayedRoamingRoute !== currentRoamingRoute)
                 {
                     this.__displayedRoamingRoute = currentRoamingRoute;
-                    document.getElementById("roamingRouteTriviaText").textContent = "Roaming: Route " + this.__displayedRoamingRoute.toString();
+                    let routeName = roamingRouteData.routeName;
+                    // Remove the region from the displayed name and insert non-breaking spaces
+                    let regionName = GameConstants.camelCaseToString(GameConstants.Region[player.region]);
+                    if (routeName.startsWith(regionName))
+                    {
+                        routeName = routeName.substring(regionName.length + 1, routeName.length);
+                    }
+                    document.getElementById("roamingRouteTriviaText").textContent = "Roamers: " + routeName.replace(/ /g, '\u00a0');
                     // Hide the roaming info if there is no roamers
                     document.getElementById("roamingRouteTriviaContainer").hidden = (RoamingPokemonList.getRegionalRoamers(player.region).length === 0);
                 }
@@ -893,10 +901,11 @@ class Automation
             this.__toggleDungeonFight(false);
 
             // Add an on/off button to stop after pokedex completion
-            Automation.Menu.__addAutomationButton("PokedexOnly", "stopDungeonAtPokedexCompletion", "dungeonFightButtonsDiv");
+            let buttonLabel = 'Stop on <img src="assets/images/pokeball/Pokeball.svg" height="17px"> :';
+            Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", "dungeonFightButtonsDiv");
 
             // Set the div visibility watcher
-            setInterval(this.__updateDivVisibility.bind(this), 1000); // Refresh every 1s
+            setInterval(this.__updateDivVisibility.bind(this), 500); // Refresh every 0.5s
         }
 
         static __toggleDungeonFight(enable)
@@ -1100,7 +1109,7 @@ class Automation
             document.getElementById("gymFightButtonsDiv").appendChild(selectElem);
 
             // Set the div visibility and content watcher
-            setInterval(this.__updateDivVisibilityAndContent.bind(this), 1000); // Refresh every 1s
+            setInterval(this.__updateDivVisibilityAndContent.bind(this), 500); // Refresh every 0.5s
         }
 
         static __toggleGymFight(enable)
@@ -1164,41 +1173,46 @@ class Automation
             // Check if we are in a town
             if (App.game.gameState === GameConstants.GameState.town)
             {
-                // List available gyms
-                let gymList = player.town().content.filter((x) => GymList[x.town]);
-                let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
-
                 // If we are in the same town as previous cycle
                 if (this.__previousTown === player.town().name)
                 {
-                    if (this.__currentGymListSize !== unlockedGymCount)
-                    {
-                        this.__updateGymList(gymList, unlockedGymCount, false);
-                    }
+                    this.__updateGymList(player.town().name, false);
                 }
                 else
                 {
                     this.__previousTown = player.town().name;
 
-                    if (gymList.length > 0)
+                    if (player.town().content.filter((x) => GymList[x.town]).length > 0)
                     {
-                        this.__updateGymList(gymList, unlockedGymCount, true);
+                        this.__updateGymList(player.town().name, true);
 
                         Automation.Menu.__forceAutomationState("gymFightEnabled", false);
                     }
                 }
 
-                document.getElementById("gymFightButtons").hidden = (unlockedGymCount == 0);
+                document.getElementById("gymFightButtons").hidden = (this.__currentGymListSize == 0);
+            }
+            else if (App.game.gameState === GameConstants.GameState.gym)
+            {
+                this.__updateGymList(this.__previousTown, false);
             }
             else
             {
-                document.getElementById("gymFightButtons").hidden = (App.game.gameState !== GameConstants.GameState.gym);
+                document.getElementById("gymFightButtons").hidden = true;
             }
         }
 
-        static __updateGymList(gymList, unlockedGymCount, rebuild)
+        static __updateGymList(townName, rebuild)
         {
             let selectElem = document.getElementById("selectedAutomationGym");
+            let gymList = TownList[townName].content.filter((x) => GymList[x.town]);
+            let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
+
+            if ((this.__currentGymListSize === unlockedGymCount)
+                && (this.__previousTown === townName))
+            {
+                return;
+            }
 
             if (rebuild)
             {
@@ -1244,7 +1258,7 @@ class Automation
                     });
             }
 
-            if (unlockedGymCount == 0)
+            if (unlockedGymCount === 0)
             {
                 document.getElementById("selectedAutomationGym").selectedIndex = -1;
             }
@@ -2180,6 +2194,9 @@ class Automation
                 Automation.Menu.__disableButton("autoFarmingEnabled", false);
                 Automation.Menu.__disableButton("autoMutationFarmingEnabled", false);
                 Automation.Menu.__disableButton("autoMiningEnabled", false);
+
+                // Remove the ball to catch
+                this.__selectBallToCatch(GameConstants.Pokeball.None);
             }
         }
 
