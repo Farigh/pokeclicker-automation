@@ -90,6 +90,14 @@ class Automation
                     return;
                 }
 
+                // Move the player to the region first, if needed
+                if (town.region != player.town().region)
+                {
+                    MapHelper.moveToTown(GameConstants.DockTowns[town.region]);
+                    player.region = town.region;
+                    player._subregion(0);
+                }
+
                 MapHelper.moveToTown(townName);
             }
 
@@ -1041,7 +1049,7 @@ class Automation
             Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv);
 
             // Set the div visibility watcher
-            setInterval(this.__updateDivVisibility.bind(this), 500); // Refresh every 0.5s
+            setInterval(this.__updateDivVisibility.bind(this), 200); // Refresh every 0.2s
         }
 
         static __toggleDungeonFight(enable)
@@ -1246,7 +1254,7 @@ class Automation
             gymDiv.appendChild(selectElem);
 
             // Set the div visibility and content watcher
-            setInterval(this.__updateDivVisibilityAndContent.bind(this), 500); // Refresh every 0.5s
+            setInterval(this.__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
         }
 
         static __toggleGymFight(enable)
@@ -1317,14 +1325,13 @@ class Automation
                 }
                 else
                 {
-                    this.__previousTown = player.town().name;
-
                     if (player.town().content.filter((x) => GymList[x.town]).length > 0)
                     {
                         this.__updateGymList(player.town().name, true);
 
                         Automation.Menu.__forceAutomationState("gymFightEnabled", false);
                     }
+                    this.__previousTown = player.town().name;
                 }
 
                 document.getElementById("gymFightButtons").hidden = (this.__currentGymListSize == 0);
