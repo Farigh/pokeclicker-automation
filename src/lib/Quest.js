@@ -171,6 +171,9 @@ class AutomationQuest
             Automation.Menu.__disableButton("autoMutationFarmingEnabled", false);
             Automation.Menu.__disableButton("autoMiningEnabled", false);
 
+            // Reset demands
+            Automation.Dungeon.__stopRequested = false;
+
             // Remove the ball to catch
             this.__selectBallToCatch(GameConstants.Pokeball.None);
         }

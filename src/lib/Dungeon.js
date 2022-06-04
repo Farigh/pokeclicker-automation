@@ -110,6 +110,7 @@ class AutomationDungeon
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, false)))
             {
                 Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
+                this.__stopRequested = false;
             }
             else
             {
