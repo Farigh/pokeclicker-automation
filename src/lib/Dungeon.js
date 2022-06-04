@@ -36,7 +36,7 @@ class AutomationDungeon
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
-                                   + "once all pokemon are caugth in this dungeon";
+                                   + "once all pokemon are caught in this dungeon";
         let buttonLabel = 'Stop on <img src="assets/images/pokeball/Pokeball.svg" height="17px"> :';
         Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv);
 
