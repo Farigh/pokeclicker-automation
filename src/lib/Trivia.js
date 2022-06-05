@@ -154,6 +154,7 @@ class AutomationTrivia
                 button.disabled = true;
                 button.classList.remove("btn-primary");
                 button.classList.add("btn-secondary");
+                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\nThe player can't move while in an instance (dungeon, safari, battle frontier...)" + Automation.Menu.__tooltipSeparator());
             }
             return;
         }
@@ -162,6 +163,7 @@ class AutomationTrivia
             button.disabled = false;
             button.classList.add("btn-primary");
             button.classList.remove("btn-secondary");
+            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
         }
 
         let gotoList = document.getElementById("gotoSelectedLocation");

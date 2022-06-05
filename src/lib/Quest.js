@@ -129,12 +129,13 @@ class AutomationQuest
                 this.__autoQuestLoop = setInterval(this.__questLoop.bind(this), 1000); // Runs every second
 
                 // Disable other modes button
-                Automation.Menu.__disableButton("autoClickEnabled", true);
-                Automation.Menu.__disableButton("bestRouteClickEnabled", true);
-                Automation.Menu.__disableButton("hatcheryAutomationEnabled", true);
-                Automation.Menu.__disableButton("autoFarmingEnabled", true);
-                Automation.Menu.__disableButton("autoMutationFarmingEnabled", true);
-                Automation.Menu.__disableButton("autoMiningEnabled", true);
+                let disableReason = "The 'AutoQuests' feature is enabled";
+                Automation.Menu.__disableButton("autoClickEnabled", true, disableReason);
+                Automation.Menu.__disableButton("bestRouteClickEnabled", true, disableReason);
+                Automation.Menu.__disableButton("hatcheryAutomationEnabled", true, disableReason);
+                Automation.Menu.__disableButton("autoFarmingEnabled", true, disableReason);
+                Automation.Menu.__disableButton("autoMutationFarmingEnabled", true, disableReason);
+                Automation.Menu.__disableButton("autoMiningEnabled", true, disableReason);
 
                 // Force enable other modes
                 Automation.Click.__toggleAutoClick(true);

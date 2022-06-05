@@ -257,10 +257,11 @@ class AutomationMenu
      *
      * @param id: The button id
      * @param newState: If set to True the button is disable, otherwise it's re-enabled
+     * @param reason: The reason to display in the tooltip for disabling the button
      *
      * @returns The created button element (It's the caller's responsibility to add it to the DOM at some point)
      */
-    static __disableButton(id, newState)
+    static __disableButton(id, newState, reason = "")
     {
         let button = document.getElementById(id);
 
@@ -275,11 +276,21 @@ class AutomationMenu
         {
             button.classList.remove((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
             button.classList.add("btn-secondary");
+
+            if (reason !== "")
+            {
+                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.__tooltipSeparator());
+            }
+            else
+            {
+                button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+            }
         }
         else
         {
             button.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
             button.classList.remove("btn-secondary");
+            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
         }
     }
 
@@ -288,12 +299,21 @@ class AutomationMenu
      */
     static __injectAutomationCss()
     {
+        /*
+         * The 'Disabled for the following reason' colored title was geneted using https://yoksel.github.io/url-encoder/
+         * With the following SVG code:
+         *    <svg xmlns='http://www.w3.org/2000/svg' width='207' height='20'>
+         *        <text x='0' y='17' style='fill: #f24444; font-weight: 600; font-size:.900rem;'>Disabled for the following reason:</text>
+         *    </svg>
+         */
+
         const style = document.createElement('style');
         style.textContent = `.hasAutomationTooltip
                              {
                                  position: relative;
                              }
-                             .hasAutomationTooltip:before {
+                             .hasAutomationTooltip:before
+                             {
                                  content: attr(automation-tooltip-text);
                                  white-space: pre;
                                  line-height: normal;
@@ -309,6 +329,12 @@ class AutomationMenu
                                  opacity: 0;
                                  z-index: 9;
                                  pointer-events: none;
+                             }
+                             .hasAutomationTooltip[automation-tooltip-disable-reason]:before
+                             {
+                                 content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='207' height='20'%3E%3Ctext x='0' y='17' style='fill:%23f24444; font-weight: 600; font-size:.900rem;'%3EDisabled for the following reason:%3C/text%3E%3C/svg%3E")
+                                          attr(automation-tooltip-disable-reason)
+                                          attr(automation-tooltip-text);
                              }
                              .hasAutomationTooltip:after
                              {

@@ -41,7 +41,7 @@ class AutomationDungeon
         Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv);
 
         // Set the div visibility watcher
-        setInterval(this.__updateDivVisibility.bind(this), 200); // Refresh every 0.2s
+        setInterval(this.__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
     }
 
     /**
@@ -218,17 +218,64 @@ class AutomationDungeon
     }
 
     /**
-     * @brief Toggle the 'Dungeon AutoFight' category visibility based on the game state
+     * @brief Toggle the 'Dungeon fight' category visibility based on the game state
+     *        Disables the 'AutoFight' button if the feature can't be used
      *
      * The category is only visible when a dungeon is actually available at the current position
      * (or if the player is already inside the dungeon)
+     *
+     * The 'AutoFight' button is disabled in the following cases:
+     *   - The player did not buy the Dungeon ticket yet
+     *   - The user enabled 'Stop on Pokedex' and all pokemon in the dungeon are already caught
+     *   - The player does not have enought dungeon token to enter
      */
-    static __updateDivVisibility()
+    static __updateDivVisibilityAndContent()
     {
         let dungeonDiv = document.getElementById("dungeonFightButtons");
         dungeonDiv.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
                               || ((App.game.gameState === GameConstants.GameState.town)
                                   && (player.town() instanceof DungeonTown)));
+
+        if (!dungeonDiv.hidden)
+        {
+            // Disable the AutoFight button if the requirements are not met
+            let disableNeeded = false;
+            let disableReason = "";
+
+            // The player might not have bought the dungeon ticket yet
+            if (!App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket))
+            {
+                disableNeeded = true;
+                disableReason = "You need to buy the Dungeon Ticket first";
+            }
+
+            // The 'stop on pokedex' feature might be enable and the pokedex already completed
+            if ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
+                && DungeonRunner.dungeonCompleted(player.town().dungeon, false))
+            {
+                disableNeeded = true;
+                disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
+                disableReason += "pokemons are already caught,\nand the option to stop in this case is enabled";
+            }
+
+            // The player does not have enough dugeon token
+            if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town().dungeon.tokenCost)
+            {
+                disableNeeded = true;
+
+                disableReason += (disableReason !== "") ? "\nAnd you " : "You ";
+                disableReason += "do not have enough Dungeon Token to enter";
+            }
+
+            if (disableNeeded)
+            {
+                Automation.Menu.__disableButton("dungeonFightEnabled", true, disableReason);
+            }
+            else
+            {
+                Automation.Menu.__disableButton("dungeonFightEnabled", false);
+            }
+        }
     }
 
     /**
