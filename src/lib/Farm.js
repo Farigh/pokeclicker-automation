@@ -271,6 +271,48 @@ class AutomationFarm
     }
 
     /**
+     * @brief Selects the optimum berry placement for mutation, with three different berry types
+     *
+     * @param berry1Type: The first berry type
+     * @param berry2Type: The second berry type
+     * @param berry3Type: The third berry type
+     */
+    static __plantThreeBerriesForMutation(berry1Type, berry2Type, berry3Type)
+    {
+        // This represents the following strategy
+        //  | |1| | |1|
+        //  |2|3| |2|3|
+        //  | | | | | |
+        //  | |1| | |1|
+        //  |2|3| |2|3|
+        [ 1, 4, 16, 19 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry1Type));
+        [ 5, 8, 20, 23 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry2Type));
+        [ 6, 9, 21, 24 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry3Type));
+    }
+
+    /**
+     * @brief Selects the optimum berry placement for surrounding berry mutation, with two different berry types
+     *
+     * @param triggerBerryType: The berry type that triggers the mutation
+     * @param mutatedBerryType: The berry type of the mutated berry
+     */
+    static __plantTwoBerriesForSurroundingMutation(triggerBerryType, mutatedBerryType)
+    {
+        // This represents the following strategy (triggerBerryType = x, mutatedBerryType = o)
+        //  |o|o|o|o|o|
+        //  |o|x|o|o|x|
+        //  |o|o|o|o|o|
+        //  |o|o|o|o|o|
+        //  |o|x|o|o|x|
+        App.game.farming.plotList.forEach(
+            (plot, index) =>
+            {
+                let berryType = [ 6, 9, 21, 24 ].includes(index) ? triggerBerryType : mutatedBerryType;
+                Automation.Farm.__tryPlantBerryAtIndex(index, berryType);
+            });
+    }
+
+    /**
      * @brief Tries to plant the given @p berryType in the selected @p index
      *
      * A berry can only be planted if:
@@ -299,6 +341,7 @@ class AutomationFarm
     {
         this.__addGen1UnlockStrategies();
         this.__addGen2UnlockStrategies();
+        this.__addGen3UnlockStrategies();
 
         this.__addUnneededBerriesStrategies();
     }
@@ -459,6 +502,140 @@ class AutomationFarm
         // Make sure to have at least 20 of each berry type before proceeding
         this.__addBerryRequirementBeforeFurtherUnlockStrategy(20, [ BerryType.Persim, BerryType.Razz, BerryType.Bluk, BerryType.Nanab, BerryType.Wepear, BerryType.Pinap,
                                                                     BerryType.Figy, BerryType.Wiki, BerryType.Mago, BerryType.Aguav, BerryType.Iapapa ]);
+    }
+
+    /**
+     * @brief Adds third generation berries unlock strategies to the internal list
+     */
+    static __addGen3UnlockStrategies()
+    {
+        /*********************************\
+        |*     Gen 3 berries unlocks     *|
+        \*********************************/
+
+        // #21 Unlock at least one Pomeg berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Pomeg, function()
+                                         {
+                                             [ 5, 8, 16, 19 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Iapapa));
+                                             [ 6, 9, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Mago));
+                                         });
+
+        // Unlock the slot requiring Pomeg
+        this.__addUnlockSlotStrategy(15, BerryType.Pomeg);
+
+        // #22 Unlock at least one Kelpsy berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Kelpsy, function()
+                                         {
+                                             [ 6, 8, 21, 23 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Persim));
+                                             [ 7, 10, 14, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Chesto));
+                                         });
+
+        // Unlock the slot requiring Kelpsy
+        this.__addUnlockSlotStrategy(0, BerryType.Kelpsy);
+
+        // #23 Unlock at least one Qualot berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Qualot, function()
+                                         {
+                                             [ 0, 8, 15, 18 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Pinap));
+                                             [ 6, 9, 19, 21 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Mago));
+                                         });
+
+        // Unlock the slot requiring Qualot
+        this.__addUnlockSlotStrategy(4, BerryType.Qualot);
+
+        // #24 Unlock at least one Hondew berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Hondew, function()
+                                         {
+                                             [ 1, 8, 15, 23 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Figy));
+                                             [ 3, 5, 17, 19 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Wiki));
+                                             [ 6, 9, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Aguav));
+                                         });
+
+        // Unlock the slot requiring Hondew
+        this.__addUnlockSlotStrategy(24, BerryType.Hondew);
+
+        // #25 Unlock at least one Grepa berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Grepa, function()
+                                         {
+                                             [ 0, 3, 15, 18 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Aguav));
+                                             [ 6, 9, 21, 24 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Figy));
+                                         });
+
+        // Unlock the slot requiring Grepa
+        this.__addUnlockSlotStrategy(20, BerryType.Grepa);
+
+        /////
+        ///// From here, all spots are available
+        /////
+
+        // #26 Unlock at least one Tamato berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Tamato, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForSurroundingMutation(BerryType.Pomeg, BerryType.Razz);
+                                         });
+
+        // #27 Unlock at least one Cornn berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Cornn, function()
+                                         {
+                                             Automation.Farm.__plantThreeBerriesForMutation(BerryType.Leppa, BerryType.Bluk, BerryType.Wiki);
+                                         });
+
+        // #28 Unlock at least one Magost berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Magost, function()
+                                         {
+                                             Automation.Farm.__plantThreeBerriesForMutation(BerryType.Pecha, BerryType.Nanab, BerryType.Mago);
+                                         });
+
+        // #29 Unlock at least one Rabuta berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Rabuta, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForSurroundingMutation(BerryType.Aguav, BerryType.Aspear);
+                                         });
+
+        // #30 Unlock at least one Nomel berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Nomel, function()
+                                         {
+                                             [ 6, 9, 21, 24 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Pinap));
+                                         });
+
+        // #31 Unlock at least one Spelon berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Spelon, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Tamato); });
+                                         });
+
+        // #32 Unlock at least one Pamtre berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Pamtre, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Cornn); });
+                                         });
+
+        // #33 Unlock at least one Watmel berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Watmel, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Magost); });
+                                         });
+
+        // #34 Unlock at least one Durin berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Durin, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Rabuta); });
+                                         });
+
+        // #35 Unlock at least one Belue berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Belue, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Nomel); });
+                                         });
+
+        /**********************************\
+        |*   Harvest some Gen 3 berries   *|
+        \**********************************/
+
+        // Make sure to have at least 24 of each berry type before proceeding
+        this.__addBerryRequirementBeforeFurtherUnlockStrategy(24, [ BerryType.Pomeg, BerryType.Kelpsy, BerryType.Qualot, BerryType.Hondew, BerryType.Grepa, BerryType.Tamato,
+                                                                    BerryType.Cornn, BerryType.Magost, BerryType.Rabuta, BerryType.Nomel, BerryType.Spelon, BerryType.Pamtre,
+                                                                    BerryType.Watmel, BerryType.Durin, BerryType.Belue ]);
     }
 
     /**
