@@ -94,7 +94,7 @@ class AutomationDungeon
         // Only initialize dungeon if:
         //    - The player is in a town (dungeons are attached to town)
         //    - The player has bought the dungeon ticket
-        //    - The player has enought dungeon token
+        //    - The player has enough dungeon token
         if (App.game.gameState === GameConstants.GameState.town
             && (player.town() instanceof DungeonTown)
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
@@ -227,7 +227,7 @@ class AutomationDungeon
      * The 'AutoFight' button is disabled in the following cases:
      *   - The player did not buy the Dungeon ticket yet
      *   - The user enabled 'Stop on Pokedex' and all pokemon in the dungeon are already caught
-     *   - The player does not have enought dungeon token to enter
+     *   - The player does not have enough dungeon token to enter
      */
     static __updateDivVisibilityAndContent()
     {

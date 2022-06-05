@@ -134,14 +134,14 @@ class AutomationQuest
                 Automation.Menu.__disableButton("bestRouteClickEnabled", true, disableReason);
                 Automation.Menu.__disableButton("hatcheryAutomationEnabled", true, disableReason);
                 Automation.Menu.__disableButton("autoFarmingEnabled", true, disableReason);
-                Automation.Menu.__disableButton("autoMutationFarmingEnabled", true, disableReason);
+                Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, disableReason);
                 Automation.Menu.__disableButton("autoMiningEnabled", true, disableReason);
 
                 // Force enable other modes
                 Automation.Click.__toggleAutoClick(true);
                 Automation.Hatchery.__toggleAutoHatchery(true);
                 Automation.Farm.__toggleAutoFarming(true);
-                Automation.Farm.__forceMutationOffAsked = true;
+                Automation.Farm.__forcePlantBerriesAsked = true;
                 Automation.Underground.__toggleAutoMining(true);
 
                 // Force disable best route mode
@@ -157,11 +157,14 @@ class AutomationQuest
             clearInterval(this.__autoQuestLoop);
             this.__autoQuestLoop = null;
 
+            // Reset demands
+            Automation.Farm.__forcePlantBerriesAsked = false;
+            Automation.Dungeon.__stopRequested = false;
+
             // Reset other modes status
             Automation.Click.__toggleAutoClick();
             Automation.Hatchery.__toggleAutoHatchery();
             Automation.Farm.__toggleAutoFarming();
-            Automation.Farm.__forceMutationOffAsked = false;
             Automation.Underground.__toggleAutoMining();
 
             // Re-enable other modes button
@@ -169,11 +172,8 @@ class AutomationQuest
             Automation.Menu.__disableButton("bestRouteClickEnabled", false);
             Automation.Menu.__disableButton("hatcheryAutomationEnabled", false);
             Automation.Menu.__disableButton("autoFarmingEnabled", false);
-            Automation.Menu.__disableButton("autoMutationFarmingEnabled", false);
+            Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
             Automation.Menu.__disableButton("autoMiningEnabled", false);
-
-            // Reset demands
-            Automation.Dungeon.__stopRequested = false;
 
             // Remove the ball to catch
             this.__selectBallToCatch(GameConstants.Pokeball.None);
@@ -408,7 +408,7 @@ class AutomationQuest
      */
     static __workOnDefeatDungeonQuest(quest)
     {
-        // If we don't have enought tokens, go farm some
+        // If we don't have enough tokens, go farm some
         if (TownList[quest.dungeon].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
         {
             this.__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);

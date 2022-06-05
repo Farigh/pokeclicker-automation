@@ -142,6 +142,7 @@
         }
         else
         {
+            Automation.Menu.__forceAutomationState("gymFightEnabled", false);
             document.getElementById("gymFightButtons").hidden = true;
         }
     }
