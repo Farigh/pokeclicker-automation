@@ -298,6 +298,9 @@ class AutomationFarm
     static __buildUnlockStrategySelection()
     {
         this.__addGen1UnlockStrategies();
+        this.__addGen2UnlockStrategies();
+
+        this.__addUnneededBerriesStrategies();
     }
 
     /**
@@ -339,6 +342,163 @@ class AutomationFarm
 
         // Make sure to have at least 20 of each berry type before proceeding
         this.__addBerryRequirementBeforeFurtherUnlockStrategy(20, [ BerryType.Cheri, BerryType.Chesto, BerryType.Pecha, BerryType.Rawst, BerryType.Aspear, BerryType.Leppa, BerryType.Oran, BerryType.Sitrus ]);
+    }
+
+    /**
+     * @brief Adds second generation berries unlock strategies to the internal list
+     */
+    static __addGen2UnlockStrategies()
+    {
+        /*********************************\
+        |*     Gen 2 berries unlocks     *|
+        \*********************************/
+
+        // #9 Unlock at least one Persim berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Persim, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Oran, BerryType.Pecha);
+                                         });
+
+        // Unlock the slot requiring Persim
+        this.__addUnlockSlotStrategy(2, BerryType.Persim);
+
+        // #10 Unlock at least one Razz berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Razz, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Leppa, BerryType.Cheri);
+                                         });
+
+        // Unlock the slot requiring Razz
+        this.__addUnlockSlotStrategy(14, BerryType.Razz);
+
+        // #11 Unlock at least one Bluk berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Bluk, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Leppa, BerryType.Chesto);
+                                         });
+
+        // Unlock the slot requiring Bluk
+        this.__addUnlockSlotStrategy(22, BerryType.Bluk);
+
+        // #12 Unlock at least one Nanab berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Nanab, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Aspear, BerryType.Pecha);
+                                         });
+
+        // Unlock the slot requiring Nanab
+        this.__addUnlockSlotStrategy(10, BerryType.Nanab);
+
+        // #13 Unlock at least one Wepear berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Wepear, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Oran, BerryType.Rawst);
+                                         });
+
+        // Unlock the slot requiring Wepear
+        this.__addUnlockSlotStrategy(3, BerryType.Wepear);
+
+        // #14 Unlock at least one Pinap berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Pinap, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Sitrus, BerryType.Aspear);
+                                         });
+
+        // Unlock the slot requiring Pinap
+        this.__addUnlockSlotStrategy(19, BerryType.Pinap);
+
+        // #15 Unlock at least one Figy berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Figy, function()
+                                         {
+                                             [ 2, 3, 6, 10, 14, 16, 18, 19, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Cheri));
+                                         });
+
+        // Unlock the slot requiring Figy
+        this.__addUnlockSlotStrategy(21, BerryType.Figy);
+
+        // #16 Unlock at least one Wiki berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Wiki, function()
+                                         {
+                                             [ 2, 3, 6, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Chesto));
+                                         });
+
+        // Unlock the slot requiring Wiki
+        this.__addUnlockSlotStrategy(5, BerryType.Wiki);
+
+        // #17 Unlock at least one Mago berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Mago, function()
+                                         {
+                                             [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Pecha));
+                                         });
+
+        // Unlock the slot requiring Mago
+        this.__addUnlockSlotStrategy(1, BerryType.Mago);
+
+        // #18 Unlock at least one Aguav berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Aguav, function()
+                                         {
+                                             [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Rawst));
+                                         });
+
+        // Unlock the slot requiring Aguav
+        this.__addUnlockSlotStrategy(9, BerryType.Aguav);
+
+        // #19 Unlock at least one Iapapa berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Iapapa, function()
+                                         {
+                                             [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Aspear));
+                                         });
+
+        // Unlock the slot requiring Iapapa
+        this.__addUnlockSlotStrategy(23, BerryType.Iapapa);
+
+        /**********************************\
+        |*   Harvest some Gen 2 berries   *|
+        \**********************************/
+
+        // Make sure to have at least 20 of each berry type before proceeding
+        this.__addBerryRequirementBeforeFurtherUnlockStrategy(20, [ BerryType.Persim, BerryType.Razz, BerryType.Bluk, BerryType.Nanab, BerryType.Wepear, BerryType.Pinap,
+                                                                    BerryType.Figy, BerryType.Wiki, BerryType.Mago, BerryType.Aguav, BerryType.Iapapa ]);
+    }
+
+    /**
+     * @brief Some berries are not needed to unlock other berries and can be pretty anoying to mutate.
+     *        This method add such berry farming strategy
+     */
+    static __addUnneededBerriesStrategies()
+    {
+        /*************\
+        |*   Gen 2   *|
+        \*************/
+
+        // #20 Unlock and gather at least 24 Lum berry through mutation
+        this.__unlockStrategySelection.push(
+            {
+                // Check if the berry is unlocked
+                isNeeded: function()
+                {
+                    // The lum berry only produces one berry when harvested
+                    // Try to get at least 20 of those through mutation
+                    return (!App.game.farming.unlockedBerries[BerryType.Lum]()
+                            || (App.game.farming.berryList[BerryType.Lum]() < 24));
+                },
+                harvestAsSoonAsPossible: false,
+                action: function()
+                    {
+                        // Always harvest the middle on as soon as possible
+                        [ 7, 17 ].forEach((index) => FarmController.plotClick(index));
+
+                        // Plant the needed berries
+                        [ 1, 21 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Oran));
+                        [ 2, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Leppa));
+                        [ 3, 23 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Aspear));
+                        [ 6, 16 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Sitrus));
+                        [ 8, 18 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Rawst));
+                        Automation.Farm.__tryPlantBerryAtIndex(11, BerryType.Pecha);
+                        Automation.Farm.__tryPlantBerryAtIndex(12, BerryType.Cheri);
+                        Automation.Farm.__tryPlantBerryAtIndex(13, BerryType.Chesto);
+                    }
+            });
     }
 
     /**
