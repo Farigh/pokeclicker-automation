@@ -280,13 +280,19 @@ class AutomationFarm
     {
         if (this.__freeSlotCount > 0)
         {
-            App.game.farming.plantAll(FarmController.selectedBerry());
+            let selectedBerryType = FarmController.selectedBerry();
+            let selectedBerryCount = App.game.farming.berryList[selectedBerryType]();
 
-            this.__plantedBerryCount = this.__freeSlotCount;
+            if (selectedBerryCount > 0)
+            {
+                App.game.farming.plantAll(selectedBerryType);
 
-            let berryName = Object.values(BerryType)[FarmController.selectedBerry()];
-            let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
-            this.__sendNotif("Planted back some " + berryName + " " + berryImage);
+                this.__plantedBerryCount = Math.min(this.__freeSlotCount, selectedBerryCount);
+
+                let berryName = BerryType[selectedBerryType];
+                let berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
+                this.__sendNotif("Planted some " + berryName + " " + berryImage);
+            }
         }
     }
 
