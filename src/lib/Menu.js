@@ -183,7 +183,18 @@ class AutomationMenu
 
         if (isEnabled !== newState)
         {
-            document.getElementById(id).click();
+            let button = document.getElementById(id);
+
+            // Re-enable the button so we can click on it, if needed
+            let disableState = button.disabled;
+            if (disableState)
+            {
+                button.disabled = false;
+            }
+
+            button.click();
+
+            button.disabled = disableState;
         }
     }
 
