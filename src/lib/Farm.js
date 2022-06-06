@@ -11,7 +11,7 @@ class AutomationFarm
     static __farmingLoop = null;
     static __forcePlantBerriesAsked = false;
 
-    // Collection of { isNeeded: function(), harvestAsSoonAsPossible: boolean, action: function() };
+    // Collection of { isNeeded: function(), harvestAsSoonAsPossible: boolean, oakItemToEquip: OakItemType, action: function() };
     static __unlockStrategySelection = [];
 
     static __harvestCount = 0;
@@ -134,11 +134,32 @@ class AutomationFarm
         if ((localStorage.getItem("autoUnlockFarmingEnabled") === "true")
             && !this.__forcePlantBerriesAsked)
         {
+            this.__equipOakItemIfNeeded();
             this.__internalStrategy.action();
         }
         else
         {
             this.__plantAllBerries();
+        }
+    }
+
+    static __equipOakItemIfNeeded()
+    {
+        if (this.__internalStrategy.oakItemToEquip === null)
+        {
+            return;
+        }
+
+        // Equip the right oak item if not already equiped
+        let customOakLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
+
+        if (!customOakLoadout.includes(this.__internalStrategy.oakItemToEquip.oakItemToEquip))
+        {
+            // Prepend the item if it's not part of the current loadout
+            customOakLoadout.unshift(this.__internalStrategy.oakItemToEquip.oakItemToEquip);
+
+            App.game.oakItems.deactivateAll();
+            customOakLoadout.forEach((item) => { App.game.oakItems.activate(item); });
         }
     }
 
@@ -230,7 +251,18 @@ class AutomationFarm
      */
     static __plantTwoBerriesForMutation(berry1Type, berry2Type)
     {
-        if (App.game.farming.plotList[2].isUnlocked)
+        if (App.game.farming.plotList.every((plot) => plot.isUnlocked))
+        {
+            // This represents the following strategy
+            //  |1| | |1| |
+            //  | |2| | |2|
+            //  | | | | | |
+            //  |1| | |1| |
+            //  | |2| | |2|
+            [ 0, 3, 15, 18 ].forEach((index) => this.__tryPlantBerryAtIndex(index, berry1Type), this);
+            [ 6, 9, 21, 24 ].forEach((index) => this.__tryPlantBerryAtIndex(index, berry2Type), this);
+        }
+        else if (App.game.farming.plotList[2].isUnlocked)
         {
             if (App.game.farming.plotList[10].isUnlocked
                 && App.game.farming.plotList[14].isUnlocked
@@ -291,6 +323,22 @@ class AutomationFarm
     }
 
     /**
+     * @brief Selects the optimum berry placement for mutation, with four different berry types
+     *
+     * @param berry1Type: The first berry type
+     * @param berry2Type: The second berry type
+     * @param berry3Type: The third berry type
+     * @param berry4Type: The fourth berry type
+     */
+    static __plantFourBerriesForMutation(berry1Type, berry2Type, berry3Type, berry4Type)
+    {
+        [ 0, 4, 17 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry1Type));
+        [ 2, 15, 19 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry2Type));
+        [ 5, 9, 22 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry3Type));
+        [ 7, 20, 24 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, berry4Type));
+    }
+
+    /**
      * @brief Selects the optimum berry placement for surrounding berry mutation, with two different berry types
      *
      * @param triggerBerryType: The berry type that triggers the mutation
@@ -342,6 +390,7 @@ class AutomationFarm
         this.__addGen1UnlockStrategies();
         this.__addGen2UnlockStrategies();
         this.__addGen3UnlockStrategies();
+        this.__addGen4UnlockStrategies();
 
         this.__addUnneededBerriesStrategies();
     }
@@ -639,6 +688,165 @@ class AutomationFarm
     }
 
     /**
+     * @brief Adds fourth generation berries unlock strategies to the internal list
+     */
+    static __addGen4UnlockStrategies()
+    {
+        /*********************************\
+        |*     Gen 4 berries unlocks     *|
+        \*********************************/
+
+        // #36 Unlock at least one Occa berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Occa, function()
+                                         {
+                                             Automation.Farm.__plantFourBerriesForMutation(BerryType.Tamato, BerryType.Figy, BerryType.Spelon, BerryType.Razz);
+                                         });
+
+        // #44 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
+        this.__addUnlockMutationStrategy(BerryType.Coba, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Wiki, BerryType.Aguav);
+                                         });
+
+        // #37 Unlock at least one Passho berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Passho, function()
+                                         {
+                                             Automation.Farm.__plantFourBerriesForMutation(BerryType.Oran, BerryType.Kelpsy, BerryType.Chesto, BerryType.Coba);
+                                         });
+
+        // #38 Unlock at least one Wacan berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Wacan, function()
+                                         {
+                                             Automation.Farm.__plantFourBerriesForMutation(BerryType.Iapapa, BerryType.Pinap, BerryType.Qualot, BerryType.Grepa);
+                                         });
+
+        // #39 Unlock at least one Rindo berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Rindo, function()
+                                         {
+                                             Automation.Farm.__plantTwoBerriesForMutation(BerryType.Figy, BerryType.Aguav);
+                                         });
+
+        // #40 Unlock at least one Yache berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Yache, function()
+                                         {
+                                             [ 0, 2, 4, 10, 12, 14, 20, 22, 24 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Passho));
+                                         });
+
+        // #45 Unlock at least one Payapa berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Payapa, function()
+                                         {
+                                             Automation.Farm.__plantFourBerriesForMutation(BerryType.Wiki, BerryType.Cornn, BerryType.Bluk, BerryType.Pamtre);
+                                         });
+
+        // #46 Unlock at least one Tanga berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Tanga, function()
+                                         {
+                                             App.game.farming.plotList.forEach(
+                                                 (plot, index) =>
+                                                 {
+                                                     if (![ 6, 9, 21, 24 ].includes(index))
+                                                     {
+                                                        Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Rindo);
+                                                     }
+                                                 });
+                                         });
+
+        // #48 Unlock at least one Kasib berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Kasib, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Cheri); });
+                                         });
+
+        // #49 Unlock at least one Haban berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Haban, function()
+                                         {
+                                             Automation.Farm.__plantFourBerriesForMutation(BerryType.Occa, BerryType.Passho, BerryType.Wacan, BerryType.Rindo);
+                                         });
+
+        // #50 Unlock at least one Colbur berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Colbur, function()
+                                         {
+                                             Automation.Farm.__plantThreeBerriesForMutation(BerryType.Rabuta, BerryType.Kasib, BerryType.Payapa);
+                                         });
+
+        // #53 Unlock at least one Roseli berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Roseli, function()
+                                         {
+                                             Automation.Farm.__plantFourBerriesForMutation(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel);
+                                         });
+
+        /////
+        // Perform mutations requiring Oak items lst to avoid any problem du to the player not having unlocked those
+
+        // #43 Unlock at least one Shuca berry through mutation (moved this far to avoid any problem, since it uses Oak items)
+        this.__addUnlockMutationStrategy(BerryType.Shuca, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Watmel); });
+                                         },
+                                         OakItemType.Sprinklotad);
+
+        // #47 Unlock at least one Charti berry through mutation (moved this far to avoid any problem, since it uses Oak items)
+        this.__addUnlockMutationStrategy(BerryType.Charti, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Cornn); });
+                                         },
+                                         OakItemType.Cell_Battery);
+
+        // #51 Unlock at least one Babiri berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Babiri, function()
+                                         {
+                                             [ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Shuca));
+                                             [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Charti));
+                                         });
+
+        // #41 Unlock at least one Chople berry through mutation (moved this far to avoid any problem, since it uses Oak items)
+        this.__addUnlockMutationStrategy(BerryType.Chople, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Spelon); });
+                                         },
+                                         OakItemType.Blaze_Cassette);
+
+        // The next mutation need to grow berries while others are riped, so we need to start on a empty farm
+        this.__unlockStrategySelection.push(
+            {
+                isNeeded: function()
+                    {
+                        return !App.game.farming.unlockedBerries[BerryType.Chilan]()
+                            && !App.game.farming.plotList.every(
+                                   (plot) =>
+                                   {
+                                       if ([ 6, 8, 16, 18 ].includes(index))
+                                       {
+                                           return (App.game.farming.plotList[index].berry === BerryType.Chople);
+                                       }
+                                       else
+                                       {
+                                           return plot.isEmpty();
+                                       }
+                                   });
+                    },
+                harvestAsSoonAsPossible: true,
+                oakItemToEquip: null,
+                action: function() {}
+            });
+
+        // #52 Unlock at least one Chilan berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Chilan, function()
+                                         {
+                                             // Nothing planted, plant the first batch
+                                             if (App.game.farming.plotList[6].isEmpty())
+                                             {
+                                                 [ 6, 8, 16, 18 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Chople));
+                                             }
+                                             // First batch ripped, plant the rest
+                                             else if (App.game.farming.plotList[6].age > App.game.farming.plotList[6].berryData.growthTime[3])
+                                             {
+                                                 App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Chople); });
+                                             }
+                                         });
+    }
+
+    /**
      * @brief Some berries are not needed to unlock other berries and can be pretty anoying to mutate.
      *        This method add such berry farming strategy
      */
@@ -660,6 +868,7 @@ class AutomationFarm
                             || (App.game.farming.berryList[BerryType.Lum]() < 24));
                 },
                 harvestAsSoonAsPossible: false,
+                oakItemToEquip: null,
                 action: function()
                     {
                         // Always harvest the middle on as soon as possible
@@ -676,6 +885,17 @@ class AutomationFarm
                         Automation.Farm.__tryPlantBerryAtIndex(13, BerryType.Chesto);
                     }
             });
+
+        /*************\
+        |*   Gen 4   *|
+        \*************/
+
+        // #42 Unlock at least one Kebia berry through mutation
+        this.__addUnlockMutationStrategy(BerryType.Kebia, function()
+                                         {
+                                             App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Pamtre); });
+                                         },
+                                         OakItemType.Poison_Barb);
     }
 
     /**
@@ -691,6 +911,7 @@ class AutomationFarm
                 // Check if the slot is unlocked
                 isNeeded: function() { return !App.game.farming.plotList[slotIndex].isUnlocked; },
                 harvestAsSoonAsPossible: true,
+                oakItemToEquip: null,
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -713,14 +934,16 @@ class AutomationFarm
      *
      * @param berryType: The type of berry to unlock
      * @param actionCallback: The action to perform if it's locked
+     * @param oakItemNeeded: The Oak item needed for the mutation to work
      */
-    static __addUnlockMutationStrategy(berryType, actionCallback)
+    static __addUnlockMutationStrategy(berryType, actionCallback, oakItemNeeded = null)
     {
         this.__unlockStrategySelection.push(
             {
                 // Check if the berry is unlocked
                 isNeeded: function() { return !App.game.farming.unlockedBerries[berryType](); },
                 harvestAsSoonAsPossible: false,
+                oakItemToEquip: oakItemNeeded,
                 action: actionCallback
             });
     }
@@ -741,6 +964,7 @@ class AutomationFarm
                     return !berriesToGather.every((berryType) => (App.game.farming.berryList[berryType]() >= berriesMinAmount));
                 },
                 harvestAsSoonAsPossible: true,
+                oakItemToEquip: null,
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -804,6 +1028,38 @@ class AutomationFarm
             Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, "No more automated unlock possible");
             return;
         }
+
+        this.__checkOakItemRequirement();
+    }
+
+    /**
+     * @brief If the new strategy requires an Oak item that the player does not have, turn off the feature and disable the button
+     */
+    static __checkOakItemRequirement()
+    {
+        if (this.__internalStrategy.oakItemToEquip === null)
+        {
+            return;
+        }
+
+        let oakItem = App.game.oakItems.itemList[this.__internalStrategy.oakItemToEquip];
+        if (oakItem.isUnlocked())
+        {
+            return;
+        }
+
+        Automation.Menu.__forceAutomationState("autoUnlockFarmingEnabled", false);
+        Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, "The '" + oakItem.displayName + "' Oak item is required for the next unlock");
+
+        // Set a watcher to re-enable the feature once the item is purchased
+        let watcher = setInterval(function()
+            {
+                if (App.game.oakItems.itemList[this.__internalStrategy.oakItemToEquip].isUnlocked())
+                {
+                    Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
+                    clearInterval(watcher);
+                }
+            }.bind(this), 5000); // Check every 5s
     }
 
     /**
