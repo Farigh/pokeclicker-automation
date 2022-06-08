@@ -343,7 +343,7 @@ class AutomationTrivia
             contentDiv.innerHTML = "";
 
             evoStones.forEach((stone) => contentDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
-                                                               + ' onclick="javascript: Automation.Menu.Trivia.__goToStoneMenu(\'' + stone + '\');">');
+                                                               + ' onclick="javascript: Automation.Trivia.__goToStoneMenu(\'' + stone + '\');">');
 
             this.__lastEvoStone = evoStones;
         }
