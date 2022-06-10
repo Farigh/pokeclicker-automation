@@ -39,6 +39,8 @@ class AutomationUnderground
                               + "The chisel will then be used to finish the remaining blocks\n";
         let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", autoMiningTooltip, this.__undergroundContainer);
         miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
+
+        // Restore previous session state
         this.__toggleAutoMining();
     }
 

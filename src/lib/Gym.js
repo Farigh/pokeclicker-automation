@@ -26,7 +26,7 @@
         autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
 
         // Disable by default
-        this.__toggleGymFight(false);
+        Automation.Menu.__forceAutomationState("gymFightEnabled", false);
 
         // Add gym selector drop-down list
         let selectElem = Automation.Menu.__createDropDownList("selectedAutomationGym");
@@ -81,7 +81,7 @@
         // Kill the loop if the menu is not visible anymore
         if (document.getElementById("gymFightButtons").hidden)
         {
-            this.__toggleGymFight(false);
+            Automation.Menu.__forceAutomationState("gymFightEnabled", false);
             return;
         }
 

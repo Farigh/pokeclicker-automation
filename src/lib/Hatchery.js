@@ -23,6 +23,14 @@ class AutomationHatchery
             localStorage.setItem("notShinyFirstHatcheryAutomationEnabled", false);
         }
 
+        this.__buildMenu();
+
+        // Restore previous session state
+        this.__toggleAutoHatchery();
+    }
+
+    static __buildMenu()
+    {
         // Add the related buttons to the automation menu
         this.__hatcheryContainer = document.createElement("div");
         Automation.Menu.__automationButtonsDiv.appendChild(this.__hatcheryContainer);
@@ -44,7 +52,6 @@ class AutomationHatchery
                                 + "The queued pokemon are hatched first";
         let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", autoHatcheryTooltip, this.__hatcheryContainer);
         autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
-        this.__toggleAutoHatchery();
 
         let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
                          + Automation.Menu.__tooltipSeparator()

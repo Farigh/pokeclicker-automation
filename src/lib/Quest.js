@@ -49,13 +49,15 @@ class AutomationQuest
                              + "⚠️ You will hardly be able to manually play with this mode enabled";
         let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", autoQuestTooltip, this.__questContainer);
         questButton.addEventListener("click", this.__toggleAutoQuest.bind(this), false);
-        this.__toggleAutoQuest();
 
         let smallRestoreTooltip = "Allows the AutoQuests mode to buy and use Small Restore items"
                                 + Automation.Menu.__tooltipSeparator()
                                 + "⚠️ This can be cost-heavy during early game";
         let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
         Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip, this.__questContainer);
+
+        // Restore previous session state
+        this.__toggleAutoQuest();
     }
 
     /**
@@ -137,18 +139,18 @@ class AutomationQuest
                 Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, disableReason);
                 Automation.Menu.__disableButton("autoMiningEnabled", true, disableReason);
 
+                // Select cheri berry to avoid long riping time
+                Automation.Farm.__forcePlantBerriesAsked = true;
+                FarmController.selectedBerry(BerryType.Cheri);
+
                 // Force enable other modes
                 Automation.Click.__toggleAutoClick(true);
                 Automation.Hatchery.__toggleAutoHatchery(true);
                 Automation.Farm.__toggleAutoFarming(true);
-                Automation.Farm.__forcePlantBerriesAsked = true;
                 Automation.Underground.__toggleAutoMining(true);
 
                 // Force disable best route mode
                 Automation.Click.__toggleBestRoute(false);
-
-                // Select cheri berry to avoid long riping time
-                FarmController.selectedBerry(BerryType.Cheri);
             }
         }
         else if (this.__autoQuestLoop !== null)

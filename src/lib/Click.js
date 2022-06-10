@@ -25,7 +25,6 @@ class AutomationClick
                              + "Applies to battle, gym and dungeon";
         let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", "autoClickEnabled", autoClickTooltip);
         autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
-        this.__toggleAutoClick();
 
         // Add best route button
         let bestRouteTooltip = "Automatically moves to the best route"
@@ -34,9 +33,11 @@ class AutomationClick
                              + "with HP lower than Click Attack";
         let bestRouteButton = Automation.Menu.__addAutomationButton("Best route", "bestRouteClickEnabled", bestRouteTooltip);
 
-        // Toogle best route loop on click
+        // Toggle best route loop on click
         bestRouteButton.addEventListener("click", this.__toggleBestRoute.bind(this), false);
 
+        // Restore previous session state
+        this.__toggleAutoClick();
     }
 
     /**

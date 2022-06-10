@@ -32,7 +32,7 @@ class AutomationDungeon
         autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
 
         // Disable by default
-        this.__toggleDungeonFight(false);
+        Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"

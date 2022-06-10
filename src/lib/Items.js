@@ -31,6 +31,15 @@ class AutomationItems
             localStorage.setItem("autoOakUpgradeEnabled", false);
         }
 
+        this.__buildMenu();
+
+        // Restore previous session state
+        this.__toggleAutoOakUpgrade();
+        this.__toggleAutoGemUpgrade();
+    }
+
+    static __buildMenu()
+    {
         // Add the related button to the automation menu
         this.__upgradeContainer = document.createElement("div");
         Automation.Menu.__automationButtonsDiv.appendChild(this.__upgradeContainer);
@@ -65,7 +74,6 @@ class AutomationItems
                            + "⚠️ This can be cost-heavy during early game";
         let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled", oakItemTooltip, this.__oakUpgradeContainer);
         oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
-        this.__toggleAutoOakUpgrade();
 
         /** Gems **/
         this.__gemUpgradeContainer = document.createElement("div");
@@ -77,7 +85,6 @@ class AutomationItems
         let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
         let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled", gemsTooltip, this.__gemUpgradeContainer);
         gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
-        this.__toggleAutoGemUpgrade();
 
         // If both are hidden, hide the whole menu
         this.__upgradeContainer.hidden = this.__oakUpgradeContainer.hidden && this.__gemUpgradeContainer.hidden;

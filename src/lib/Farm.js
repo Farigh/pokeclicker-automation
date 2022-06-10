@@ -53,11 +53,13 @@ class AutomationFarm
                             + "New crops are planted using the selected one in the farm menu";
         let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", autoFarmTooltip, this.__farmingContainer);
         autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
-        this.__toggleAutoFarming();
 
         let unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
         Automation.Menu.__addAutomationButton("Auto unlock", "autoUnlockFarmingEnabled", unlockTooltip, this.__farmingContainer);
         this.__chooseUnlockStrategy();
+
+        // Restore previous session state
+        this.__toggleAutoFarming();
     }
 
     /**
