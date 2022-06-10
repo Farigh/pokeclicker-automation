@@ -11,7 +11,16 @@ class AutomationFarm
     static __farmingLoop = null;
     static __forcePlantBerriesAsked = false;
 
-    // Collection of { isNeeded: function(), harvestAsSoonAsPossible: boolean, oakItemToEquip: OakItemType, forbiddenOakItem: OakItemType, requiredPokemon: String, action: function() };
+    // Collection of
+    // {
+    //     isNeeded: function(),
+    //     harvestAsSoonAsPossible: boolean,
+    //     oakItemToEquip: OakItemType,
+    //     forbiddenOakItem: OakItemType,
+    //     requiredPokemon: String,
+    //     requiresDiscord: boolean,
+    //     action: function()
+    // }
     static __unlockStrategySelection = [];
 
     static __harvestCount = 0;
@@ -458,6 +467,8 @@ class AutomationFarm
 
         // Farm Gen5 last since those berries are pretty hard to get
         this.__addGen5UnlockStrategies();
+
+        this.__addEnigmaBerryStrategy();
     }
 
     /**
@@ -902,6 +913,7 @@ class AutomationFarm
                 oakItemToEquip: null,
                 forbiddenOakItem: null,
                 requiredPokemon: null,
+                requiresDiscord: false,
                 action: function() {}
             });
 
@@ -1084,6 +1096,7 @@ class AutomationFarm
                 oakItemToEquip: null,
                 forbiddenOakItem: null,
                 requiredPokemon: null,
+                requiresDiscord: false,
                 action: function()
                     {
                         // Always harvest the middle on as soon as possible
@@ -1114,6 +1127,36 @@ class AutomationFarm
     }
 
     /**
+     * @brief Adds Enigma berry (requiring a discord account linked) unlock strategy to the internal list
+     */
+    static __addEnigmaBerryStrategy()
+    {
+        this.__unlockStrategySelection.push(
+            {
+                // Check if the berry is unlocked
+                isNeeded: function() { return !App.game.farming.unlockedBerries[BerryType.Enigma](); },
+                harvestAsSoonAsPossible: false,
+                oakItemToEquip: null,
+                forbiddenOakItem: null,
+                requiredPokemon: null,
+                requiresDiscord: true,
+                action: function()
+                        {
+                            let neededBerries = EnigmaMutation.getReqs();
+                            // North berry
+                            [ 1, 13 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, neededBerries[0]));
+                            // West berry
+                            [ 5, 17 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, neededBerries[1]));
+                            // East berry
+                            [ 7, 19 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, neededBerries[2]));
+                            // South berry
+                            [ 11, 23 ].forEach((index) => Automation.Farm.__tryPlantBerryAtIndex(index, neededBerries[3]));
+
+                        }
+            });
+    }
+
+    /**
      * @brief Adds an unlock strategy to unlock the slot at @p slotIndex that requires @p berryType
      *
      * @param slotIndex: The index of the slot to unlock
@@ -1129,6 +1172,7 @@ class AutomationFarm
                 oakItemToEquip: null,
                 forbiddenOakItem: null,
                 requiredPokemon: null,
+                requiresDiscord: false,
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -1153,7 +1197,7 @@ class AutomationFarm
      * @param actionCallback: The action to perform if it's locked
      * @param oakItemNeeded: The Oak item needed for the mutation to work
      * @param oakItemToRemove: The Oak item that might ruin the mutation and needs to be forbidden
-     * @param requiredPokemonName: The name of the Pokemon needed for the mutation
+     * @param requiredPokemonName: The name of the Pokemon needed for the mutation to occur
      */
     static __addUnlockMutationStrategy(berryType, actionCallback, oakItemNeeded = null, oakItemToRemove = null, requiredPokemonName = null)
     {
@@ -1165,6 +1209,7 @@ class AutomationFarm
                 oakItemToEquip: oakItemNeeded,
                 forbiddenOakItem: oakItemToRemove,
                 requiredPokemon: requiredPokemonName,
+                requiresDiscord: false,
                 action: actionCallback
             });
     }
@@ -1188,6 +1233,7 @@ class AutomationFarm
                 oakItemToEquip: null,
                 forbiddenOakItem: null,
                 requiredPokemon: null,
+                requiresDiscord: false,
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -1253,6 +1299,7 @@ class AutomationFarm
 
         this.__checkOakItemRequirement();
         this.__checkPokemonRequirement();
+        this.__checkDiscordLinkRequirement();
     }
 
     /**
@@ -1308,6 +1355,52 @@ class AutomationFarm
         let watcher = setInterval(function()
             {
                 if (App.game.statistics.pokemonCaptured[neededPokemonId]() !== 0)
+                {
+                    Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
+                    clearInterval(watcher);
+                }
+            }, 5000); // Check every 5s
+    }
+
+    /**
+     * @brief If the new strategy requires a linked discord account and it's not the case, turn off the feature and disable the button
+     */
+    static __checkDiscordLinkRequirement()
+    {
+        if (!this.__internalStrategy.requiresDiscord)
+        {
+            return;
+        }
+
+        // Check if the discord is linked and all hints are gathered
+        if (App.game.discord.ID() !== null)
+        {
+            let enigmaMutation = App.game.farming.mutations.filter((mutation) => mutation instanceof EnigmaMutation)[0];
+
+            if (enigmaMutation.hintsSeen.every((seen) => seen()))
+            {
+                return;
+            }
+
+            this.__disableAutoUnlock("You need to collect the four hints from the Kanto Berry Master\n"
+                                     + "for the next unlock. He's located in Cerulean City.");
+        }
+        else
+        {
+            this.__disableAutoUnlock("A linked discord account is needed for the next unlock.");
+        }
+
+        // Set a watcher to re-enable the feature once the pokemon has been caught
+        let watcher = setInterval(function()
+            {
+                if (App.game.discord.ID() === null)
+                {
+                    return;
+                }
+
+                let enigmaMutation = App.game.farming.mutations.filter((mutation) => mutation instanceof EnigmaMutation)[0];
+
+                if (enigmaMutation.hintsSeen.every((seen) => seen()))
                 {
                     Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
                     clearInterval(watcher);
