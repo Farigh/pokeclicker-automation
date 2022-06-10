@@ -9,6 +9,7 @@ class AutomationQuest
     static __questContainer = null;
 
     static __autoQuestLoop = null;
+    static __forbiddenItem = null;
 
     /**
      * @brief Builds the menu, and retores previous running state if needed
@@ -71,7 +72,8 @@ class AutomationQuest
         static PokemonCatch = [
                                   OakItemType.Magic_Ball,
                                   OakItemType.Shiny_Charm,
-                                  OakItemType.Poison_Barb
+                                  OakItemType.Poison_Barb,
+                                  OakItemType.Exp_Share
                               ];
         /**
          * @brief The most efficient setup to increase the pokemon power and make money
@@ -79,7 +81,8 @@ class AutomationQuest
         static PokemonExp = [
                                 OakItemType.Poison_Barb,
                                 OakItemType.Amulet_Coin,
-                                OakItemType.Blaze_Cassette
+                                OakItemType.Blaze_Cassette,
+                                OakItemType.Exp_Share
                             ];
     }
 
@@ -710,6 +713,12 @@ class AutomationQuest
         let expectedLoadout = loadoutCandidates.filter(
             (item) =>
             {
+                // Skip any forbidden item
+                if (item === Automation.Quest.__forbiddenItem)
+                {
+                    return false;
+                }
+
                 if (App.game.oakItems.itemList[item].isUnlocked())
                 {
                     if (possibleEquipedItem < App.game.oakItems.maxActiveCount())
@@ -717,7 +726,6 @@ class AutomationQuest
                         possibleEquipedItem++;
                         return true;
                     }
-                    return false;
                 }
                 return false;
             });

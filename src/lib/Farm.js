@@ -11,7 +11,7 @@ class AutomationFarm
     static __farmingLoop = null;
     static __forcePlantBerriesAsked = false;
 
-    // Collection of { isNeeded: function(), harvestAsSoonAsPossible: boolean, oakItemToEquip: OakItemType, action: function() };
+    // Collection of { isNeeded: function(), harvestAsSoonAsPossible: boolean, oakItemToEquip: OakItemType, forbiddenOakItem: OakItemType, action: function() };
     static __unlockStrategySelection = [];
 
     static __harvestCount = 0;
@@ -115,6 +115,9 @@ class AutomationFarm
             // Unregister the loop
             clearInterval(this.__farmingLoop);
             this.__farmingLoop = null;
+
+            // Restore setting
+            Automation.Quest.__forbiddenItem = null;
         }
     }
 
@@ -137,6 +140,7 @@ class AutomationFarm
             && !this.__forcePlantBerriesAsked)
         {
             this.__equipOakItemIfNeeded();
+            this.__removeOakItemIfNeeded();
             this.__internalStrategy.action();
         }
         else
@@ -162,6 +166,16 @@ class AutomationFarm
 
             App.game.oakItems.deactivateAll();
             customOakLoadout.forEach((item) => { App.game.oakItems.activate(item); });
+        }
+    }
+
+    static __removeOakItemIfNeeded()
+    {
+        Automation.Quest.__forbiddenItem = this.__internalStrategy.forbiddenOakItem;
+
+        if (this.__internalStrategy.forbiddenOakItem !== null)
+        {
+            App.game.oakItems.deactivate(this.__internalStrategy.forbiddenOakItem);
         }
     }
 
@@ -659,7 +673,9 @@ class AutomationFarm
         this.__addUnlockMutationStrategy(BerryType.Pamtre, function()
                                          {
                                              App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Cornn); });
-                                         });
+                                         },
+                                         null,
+                                         OakItemType.Cell_Battery);
 
         // #33 Unlock at least one Watmel berry through mutation
         this.__addUnlockMutationStrategy(BerryType.Watmel, function()
@@ -702,7 +718,9 @@ class AutomationFarm
         this.__addUnlockMutationStrategy(BerryType.Occa, function()
                                          {
                                              Automation.Farm.__plantFourBerriesForMutation(BerryType.Tamato, BerryType.Figy, BerryType.Spelon, BerryType.Razz);
-                                         });
+                                         },
+                                         null,
+                                         OakItemType.Blaze_Cassette);
 
         // #44 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
         this.__addUnlockMutationStrategy(BerryType.Coba, function()
@@ -738,7 +756,9 @@ class AutomationFarm
         this.__addUnlockMutationStrategy(BerryType.Payapa, function()
                                          {
                                              Automation.Farm.__plantFourBerriesForMutation(BerryType.Wiki, BerryType.Cornn, BerryType.Bluk, BerryType.Pamtre);
-                                         });
+                                         },
+                                         null,
+                                         OakItemType.Poison_Barb);
 
         // #46 Unlock at least one Tanga berry through mutation
         this.__addUnlockMutationStrategy(BerryType.Tanga, function()
@@ -775,7 +795,9 @@ class AutomationFarm
         this.__addUnlockMutationStrategy(BerryType.Roseli, function()
                                          {
                                              Automation.Farm.__plantFourBerriesForMutation(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel);
-                                         });
+                                         },
+                                         null,
+                                         OakItemType.Sprinklotad);
 
         /////
         // Perform mutations requiring Oak items lst to avoid any problem du to the player not having unlocked those
@@ -829,6 +851,7 @@ class AutomationFarm
                     },
                 harvestAsSoonAsPossible: true,
                 oakItemToEquip: null,
+                forbiddenOakItem: null,
                 action: function() {}
             });
 
@@ -871,6 +894,7 @@ class AutomationFarm
                 },
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: null,
+                forbiddenOakItem: null,
                 action: function()
                     {
                         // Always harvest the middle on as soon as possible
@@ -914,6 +938,7 @@ class AutomationFarm
                 isNeeded: function() { return !App.game.farming.plotList[slotIndex].isUnlocked; },
                 harvestAsSoonAsPossible: true,
                 oakItemToEquip: null,
+                forbiddenOakItem: null,
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -937,8 +962,9 @@ class AutomationFarm
      * @param berryType: The type of berry to unlock
      * @param actionCallback: The action to perform if it's locked
      * @param oakItemNeeded: The Oak item needed for the mutation to work
+     * @param oakItemToRemove: The Oak item that might ruin the mutation and needs to be forbidden
      */
-    static __addUnlockMutationStrategy(berryType, actionCallback, oakItemNeeded = null)
+    static __addUnlockMutationStrategy(berryType, actionCallback, oakItemNeeded = null, oakItemToRemove = null)
     {
         this.__unlockStrategySelection.push(
             {
@@ -946,6 +972,7 @@ class AutomationFarm
                 isNeeded: function() { return !App.game.farming.unlockedBerries[berryType](); },
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: oakItemNeeded,
+                forbiddenOakItem: oakItemToRemove,
                 action: actionCallback
             });
     }
@@ -967,6 +994,7 @@ class AutomationFarm
                 },
                 harvestAsSoonAsPossible: true,
                 oakItemToEquip: null,
+                forbiddenOakItem: null,
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -1026,8 +1054,7 @@ class AutomationFarm
         // If no strategy can be found, turn off the feature and disable the button
         if (this.__internalStrategy === null)
         {
-            Automation.Menu.__forceAutomationState("autoUnlockFarmingEnabled", false);
-            Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, "No more automated unlock possible");
+            this.__disableAutoUnlock("No more automated unlock possible");
             return;
         }
 
@@ -1050,8 +1077,7 @@ class AutomationFarm
             return;
         }
 
-        Automation.Menu.__forceAutomationState("autoUnlockFarmingEnabled", false);
-        Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, "The '" + oakItem.displayName + "' Oak item is required for the next unlock");
+        this.__disableAutoUnlock("The '" + oakItem.displayName + "' Oak item is required for the next unlock");
 
         // Set a watcher to re-enable the feature once the item is purchased
         let watcher = setInterval(function()
@@ -1065,7 +1091,21 @@ class AutomationFarm
     }
 
     /**
+     * @brief Disables the 'Auto unlock' button
+     *
+     * @param reason: The reason for disabling the button to display in the tooltip
+     */
+    static __disableAutoUnlock(reason)
+    {
+        Automation.Menu.__forceAutomationState("autoUnlockFarmingEnabled", false);
+        Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, reason);
+        Automation.Quest.__forbiddenItem = null;
+    }
+
+    /**
      * @brief Sends the Farming automation notification, if at least a berry was harvested
+     *
+     * @param details: The extra-message to display
      */
     static __sendNotif(details)
     {

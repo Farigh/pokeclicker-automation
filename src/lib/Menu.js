@@ -268,7 +268,7 @@ class AutomationMenu
      *
      * @param id: The button id
      * @param newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param reason: The reason to display in the tooltip for disabling the button
+     * @param reason: The reason for disabling the button to display in the tooltip
      *
      * @returns The created button element (It's the caller's responsibility to add it to the DOM at some point)
      */
