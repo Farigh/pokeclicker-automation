@@ -403,7 +403,7 @@ class AutomationQuest
     /**
      * @brief Works on a DefeatDungeonQuest.
      *
-     * If the player does not have enough dungeon token to enter the dungeon, some balls are equiped
+     * If the player does not have enough dungeon token to enter the dungeon, some balls are equipped
      * and the player is moved to the best road to farm some token.
      * Otherwise, the player is moved to the quest requested location, and the Auto Dungeon feature is enabled
      *
@@ -514,8 +514,8 @@ class AutomationQuest
     /**
      * @brief Works on a UseOakItemQuest.
      *
-     * The quest requested oak item is equiped and the player is moved to the best route to defeat pokemons
-     * If the item is the Magic_Ball one, some balls are equiped as well to catch the pokemons
+     * The quest requested oak item is equipped and the player is moved to the best route to defeat pokemons
+     * If the item is the Magic_Ball one, some balls are equipped as well to catch the pokemons
      *
      * @param quest: The game's quest object
      */
@@ -530,11 +530,12 @@ class AutomationQuest
             // Select the right oak item
             let customOakLoadout = this.OakItemSetup.PokemonExp;
 
-            if (!customOakLoadout.includes(quest.item))
-            {
-                // Prepend the item if it's not part of the default loadout
-                customOakLoadout.unshift(quest.item);
-            }
+            // Remove the item from the default loadout if it already exists, so we are sure it ends up in the 1st position
+            customOakLoadout = customOakLoadout.filter((item) => item !== quest.item);
+
+            // Prepend the needed item
+            customOakLoadout.unshift(quest.item);
+
             this.__selectOwkItems(customOakLoadout);
 
             // Go kill some pokemon
@@ -546,7 +547,7 @@ class AutomationQuest
     /**
      * @brief Works on a quest requiring to use pokeballs.
      *
-     * Some balls are equiped and the player is moved to the best route to catch pokemons.
+     * Some balls are equipped and the player is moved to the best route to catch pokemons.
      *
      * @param ballType: The type of pokeball to use
      * @param enforceType: If set to true, the @p ballType must be used, otherwise lower balls grade are just as fine
@@ -709,7 +710,7 @@ class AutomationQuest
      */
     static __selectOwkItems(loadoutCandidates)
     {
-        let possibleEquipedItem = 0;
+        let possibleEquippedItem = 0;
         let expectedLoadout = loadoutCandidates.filter(
             (item) =>
             {
@@ -721,9 +722,9 @@ class AutomationQuest
 
                 if (App.game.oakItems.itemList[item].isUnlocked())
                 {
-                    if (possibleEquipedItem < App.game.oakItems.maxActiveCount())
+                    if (possibleEquippedItem < App.game.oakItems.maxActiveCount())
                     {
-                        possibleEquipedItem++;
+                        possibleEquippedItem++;
                         return true;
                     }
                 }
