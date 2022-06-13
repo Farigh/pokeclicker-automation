@@ -165,7 +165,7 @@ class AutomationFarm
             return;
         }
 
-        // Equip the right oak item if not already equiped
+        // Equip the right oak item if not already equipped
         let customOakLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
 
         if (!customOakLoadout.includes(this.__internalStrategy.oakItemToEquip.oakItemToEquip))
