@@ -923,20 +923,16 @@ class AutomationQuest
         if (a instanceof CapturePokemonTypesQuest) return -1;
         if (b instanceof CapturePokemonTypesQuest) return 1;
 
-        if ((a instanceof CapturePokemonsQuest)
-            || (a instanceof UsePokeballQuest)
-            || (a instanceof GainTokensQuest))
-        {
-            return -1;
-        }
-        if ((b instanceof CapturePokemonsQuest)
-            || (b instanceof UsePokeballQuest)
-            || (b instanceof GainTokensQuest))
-        {
-            return 1;
-        }
+        if (a instanceof CapturePokemonsQuest) return -1;
+        if (b instanceof CapturePokemonsQuest) return 1;
 
-        // Then quests related to defeating pokemon
+        if (a instanceof UsePokeballQuest) return -1;
+        if (b instanceof UsePokeballQuest) return 1;
+
+        if (a instanceof GainTokensQuest) return -1;
+        if (b instanceof GainTokensQuest) return 1;
+
+        // Then quests related to defeating pokemon/opponents
         // (starting with the oak item one, since it can be related to catching)
         if (a instanceof UseOakItemQuest) return -1;
         if (b instanceof UseOakItemQuest) return 1;
@@ -944,18 +940,14 @@ class AutomationQuest
         if (a instanceof GainGemsQuest) return -1;
         if (b instanceof GainGemsQuest) return 1;
 
-        if ((a instanceof DefeatDungeonQuest)
-            || (a instanceof DefeatGymQuest)
-            || (a instanceof DefeatPokemonsQuest))
-        {
-            return -1;
-        }
-        if ((b instanceof DefeatDungeonQuest)
-            || (b instanceof DefeatGymQuest)
-            || (b instanceof DefeatPokemonsQuest))
-        {
-            return 1;
-        }
+        if (a instanceof DefeatDungeonQuest) return -1;
+        if (b instanceof DefeatDungeonQuest) return 1;
+
+        if (a instanceof DefeatGymQuest) return -1;
+        if (b instanceof DefeatGymQuest) return 1;
+
+        if (a instanceof DefeatPokemonsQuest) return -1;
+        if (b instanceof DefeatPokemonsQuest) return 1;
 
         // Then the gain pokedollar one
         if (a instanceof GainMoneyQuest) return -1;
