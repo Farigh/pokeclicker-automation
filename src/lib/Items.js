@@ -47,19 +47,7 @@ class AutomationItems
         Automation.Menu.__addSeparator(this.__upgradeContainer);
 
         /** Title **/
-        let titleDiv = document.createElement("div");
-        titleDiv.style.textAlign = "center";
-        titleDiv.style.marginBottom = "3px";
-        let titleSpan = document.createElement("span");
-        titleSpan.textContent = "Auto Upgrade";
-        titleSpan.style.borderRadius = "4px";
-        titleSpan.style.borderWidth = "1px";
-        titleSpan.style.borderColor = "#aaaaaa";
-        titleSpan.style.borderStyle = "solid";
-        titleSpan.style.display = "block";
-        titleSpan.style.marginLeft = "10px";
-        titleSpan.style.marginRight = "10px";
-        titleDiv.appendChild(titleSpan);
+        let titleDiv = Automation.Menu.__createTitle("Auto Upgrade");
         this.__upgradeContainer.appendChild(titleDiv);
 
         /** Oak items **/
@@ -131,10 +119,10 @@ class AutomationItems
     /**
      * @brief Toggles the 'Oak Item Upgrade' feature
      *
-     * If the feature was enabled and it's toggled to disabled, the auto attack loop will be stopped.
-     * If the feature was disabled and it's toggled to enabled, the auto attack loop will be started.
+     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
+     * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
-     * @param enable: [Optional] If a boolean is passed, it will used to set the right state.
+     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
     static __toggleAutoOakUpgrade(enable)
@@ -165,10 +153,10 @@ class AutomationItems
     /**
      * @brief Toggles the 'Gem Upgrade' feature
      *
-     * If the feature was enabled and it's toggled to disabled, the auto attack loop will be stopped.
-     * If the feature was disabled and it's toggled to enabled, the auto attack loop will be started.
+     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
+     * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
-     * @param enable: [Optional] If a boolean is passed, it will used to set the right state.
+     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
     static __toggleAutoGemUpgrade(enable)

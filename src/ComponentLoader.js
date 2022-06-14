@@ -27,6 +27,7 @@ class AutomationComponentLoader
         this.__addScript("src/lib/Click.js");
         this.__addScript("src/lib/Dungeon.js");
         this.__addScript("src/lib/Farm.js");
+        this.__addScript("src/lib/Focus.js");
         this.__addScript("src/lib/Gym.js");
         this.__addScript("src/lib/Hatchery.js");
         this.__addScript("src/lib/Items.js");

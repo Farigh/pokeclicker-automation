@@ -236,6 +236,9 @@ class AutomationMenu
         newSelect.style.width = "calc(100% - 10px)";
         newSelect.style.borderRadius = "4px";
         newSelect.style.marginTop = "3px";
+        newSelect.style.paddingTop = "0px";
+        newSelect.style.paddingBottom = "0px";
+        newSelect.style.height = "25px";
 
         return newSelect;
     }
@@ -266,6 +269,32 @@ class AutomationMenu
         newButton.style.verticalAlign = "middle";
 
         return newButton;
+    }
+
+    /**
+     * @brief Creates a title
+     *
+     * @param titleText: The text to display
+     *
+     * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static __createTitle(titleText)
+    {
+        let titleDiv = document.createElement("div");
+        titleDiv.style.textAlign = "center";
+        titleDiv.style.marginBottom = "3px";
+        let titleSpan = document.createElement("span");
+        titleSpan.textContent = titleText;
+        titleSpan.style.borderRadius = "4px";
+        titleSpan.style.borderWidth = "1px";
+        titleSpan.style.borderColor = "#aaaaaa";
+        titleSpan.style.borderStyle = "solid";
+        titleSpan.style.display = "block";
+        titleSpan.style.marginLeft = "10px";
+        titleSpan.style.marginRight = "10px";
+        titleDiv.appendChild(titleSpan);
+
+        return titleDiv;
     }
 
     /**
