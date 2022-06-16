@@ -9,6 +9,8 @@ class AutomationFocus
 
     static __functionalities = [];
 
+    static __lastFocusData = null;
+
     /**
      * @brief Initializes the component
      */
@@ -113,8 +115,13 @@ class AutomationFocus
         {
             // Unregister the loop
             clearInterval(this.__focusLoop);
+            if (this.__activeFocus !== null)
+            {
+                this.__activeFocus.stop();
+                this.__activeFocus = null;
+            }
             this.__focusLoop = null;
-            this.__activeFocus = null;
+            this.__lastFocusData = null;
         }
     }
 
@@ -131,6 +138,19 @@ class AutomationFocus
                                                + "Such route is the highest unlocked one\n"
                                                + "with HP lower than Click Attack",
                                         run: function (){ this.__goToBestRouteForExp(); }.bind(this),
+                                        stop: function (){},
+                                        refreshRateAsMs: 10000 // Refresh every 10s
+                                    });
+
+        this.__functionalities.push({
+                                        id: "Gold",
+                                        name: "Money",
+                                        tooltip: "Automatically moves to the best gym for money"
+                                                + Automation.Menu.__tooltipSeparator()
+                                                + "Gyms gives way more money than routes\n"
+                                                + "The best gym is the one that gives the most money per game tick",
+                                        run: function (){ this.__goToBestGymForMoney(); }.bind(this),
+                                        stop: function (){ Automation.Menu.__forceAutomationState("gymFightEnabled", false); },
                                         refreshRateAsMs: 10000 // Refresh every 10s
                                     });
     }
@@ -211,5 +231,135 @@ class AutomationFocus
         }
 
         Automation.Utils.Route.__moveToBestRouteForExp();
+    }
+
+    /**
+     * @brief Moves the player to the best gym for Money farming
+     *
+     * If the user is in a state in which he cannot be moved, the feature is automatically disabled.
+     *
+     * @todo (03/06/2022): Disable the button in such case to inform the user
+     *                     that the feature cannot be used at the moment
+     */
+    static __goToBestGymForMoney()
+    {
+        // Ask the dungeon auto-fight to stop, if the feature is enabled
+        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        {
+            Automation.Dungeon.__stopRequested = true;
+            return;
+        }
+
+        // Disable 'Focus on' if an instance is in progress, and exit
+        if (Automation.Utils.__isInInstanceState())
+        {
+            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
+            return;
+        }
+
+        // Only compute the gym the first time, since there is almost no chance that it will change while the feature is active
+        if (this.__lastFocusData === null)
+        {
+            this.__lastFocusData = this.__findBestGymForMoney();
+        }
+
+        // Equip the 'money' Oak loadout
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+
+        // Fallback to the exp route if no gym can be found
+        if (this.__lastFocusData.bestGymTown === null)
+        {
+            this.__goToBestRouteForExp();
+            return;
+        }
+
+        Automation.Utils.Route.__moveToTown(this.__lastFocusData.bestGymTown);
+
+        // Wait for the 'AutoFight' menu to appear, and then choose the right opponent and enable it
+        let menuWatcher = setInterval(function()
+            {
+                if (localStorage.getItem("focusOnTopicEnabled") === "false")
+                {
+                    clearInterval(menuWatcher);
+                    return;
+                }
+
+                [...document.getElementById("selectedAutomationGym").options].every(
+                    (option) =>
+                    {
+                        if (option.value === this.__lastFocusData.bestGym)
+                        {
+                            option.selected = true;
+                            Automation.Menu.__forceAutomationState("gymFightEnabled", true);
+                            clearInterval(menuWatcher);
+                            return false;
+                        }
+                        return true;
+                    }, this);
+            }.bind(this), 50); // Check every game tick
+    }
+
+    /**
+     * @brief Finds the most efficent gym to make money
+     *
+     * @returns A struct { bestGym, bestGymTown }, where:
+     *          @c bestGym is the best gym name
+     *          @c bestGymTown is the best gym town name
+     */
+    static __findBestGymForMoney()
+    {
+        // Move to the best Gym
+        let bestGym = null;
+        let bestGymTown = null;
+        let bestGymRatio = 0;
+        let playerClickAttack = App.game.party.calculateClickAttack();
+        Object.keys(GymList).forEach(
+            (key) =>
+            {
+                let gym = GymList[key];
+
+                // Skip locked gyms
+                if (!gym.isUnlocked())
+                {
+                    return;
+                }
+
+                // If it's a ligue champion is the target, its town points to the champion instead of the town
+                let gymTown = gym.town;
+                if (!TownList[gymTown])
+                {
+                    gymTown = gym.parent.name;
+                }
+
+                // Some gyms are trials linked to a dungeon, don't consider those
+                if (TownList[gymTown] instanceof DungeonTown)
+                {
+                    return;
+                }
+
+                // Don't consider town that the player can't move to either
+                if (!Automation.Utils.Route.__canMoveToRegion(gymTown.region))
+                {
+                    return;
+                }
+
+                // Some champion have a team that depends on the player's starter pick
+                if (gym instanceof Champion)
+                {
+                    gym.setPokemon(player.regionStarters[player.region]());
+                }
+
+                let ticksToWin = gym.pokemons.reduce((count, pokemon) => count + Math.ceil(pokemon.maxHealth / playerClickAttack), 0);
+                let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
+
+                if (rewardRatio > bestGymRatio)
+                {
+                    bestGymTown = gymTown;
+                    bestGym = key;
+                    bestGymRatio = rewardRatio;
+                }
+            });
+
+        return { bestGym, bestGymTown };
     }
 }
