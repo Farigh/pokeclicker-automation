@@ -62,31 +62,6 @@ class AutomationQuest
     }
 
     /**
-     * @class The OakItemSetup lists the different setup to use based on the current objectives
-     */
-    static OakItemSetup = class AutomationOakItemSetup
-    {
-        /**
-         * @brief The most efficient setup to catch pokemons
-         */
-        static PokemonCatch = [
-                                  OakItemType.Magic_Ball,
-                                  OakItemType.Shiny_Charm,
-                                  OakItemType.Poison_Barb,
-                                  OakItemType.Exp_Share
-                              ];
-        /**
-         * @brief The most efficient setup to increase the pokemon power and make money
-         */
-        static PokemonExp = [
-                                OakItemType.Poison_Barb,
-                                OakItemType.Amulet_Coin,
-                                OakItemType.Blaze_Cassette,
-                                OakItemType.Exp_Share
-                            ];
-    }
-
-    /**
      * @brief Watches for the in-game functionality to be unlocked.
      *        Once unlocked, the menu will be displayed to the user
      */
@@ -330,11 +305,11 @@ class AutomationQuest
             if (quest instanceof CatchShiniesQuest)
             {
                 this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
-                this.__selectOwkItems(this.OakItemSetup.PokemonCatch);
+                Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             }
             else
             {
-                this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+                Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
             }
 
             // Disable catching pokemons if enabled, and go to the best farming route
@@ -392,7 +367,7 @@ class AutomationQuest
 
         // Add a pokeball to the Caught type and set the PokemonCatch setup
         let hasBalls = this.__selectBallToCatch(GameConstants.Pokeball.Ultraball);
-        this.__selectOwkItems(this.OakItemSetup.PokemonCatch);
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         if (hasBalls && (player.route() !== bestRoute))
         {
@@ -492,7 +467,7 @@ class AutomationQuest
         {
             Automation.Utils.Route.__moveToRoute(quest.route, quest.region);
         }
-        this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
     }
 
     /**
@@ -505,7 +480,7 @@ class AutomationQuest
     static __workOnGainGemsQuest(quest)
     {
         this.__selectBallToCatch(GameConstants.Pokeball.None);
-        this.__selectOwkItems(this.OakItemSetup.PokemonExp);
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         let { bestRoute, bestRouteRegion } = this.__findBestRouteForFarmingType(quest.type);
         Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
@@ -528,7 +503,7 @@ class AutomationQuest
         else
         {
             // Select the right oak item
-            let customOakLoadout = this.OakItemSetup.PokemonExp;
+            let customOakLoadout = Automation.Utils.OakItem.Setup.PokemonExp;
 
             // Remove the item from the default loadout if it already exists, so we are sure it ends up in the 1st position
             customOakLoadout = customOakLoadout.filter((item) => item !== quest.item);
@@ -536,7 +511,7 @@ class AutomationQuest
             // Prepend the needed item
             customOakLoadout.unshift(quest.item);
 
-            this.__selectOwkItems(customOakLoadout);
+            Automation.Utils.OakItem.__equipLoadout(customOakLoadout);
 
             // Go kill some pokemon
             this.__selectBallToCatch(GameConstants.Pokeball.None);
@@ -555,7 +530,7 @@ class AutomationQuest
     static __workOnUsePokeballQuest(ballType, enforceType = false)
     {
         let hasBalls = this.__selectBallToCatch(ballType, enforceType);
-        this.__selectOwkItems(this.OakItemSetup.PokemonCatch);
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         if (hasBalls)
         {
@@ -699,44 +674,6 @@ class AutomationQuest
         }
 
         return true;
-    }
-
-    /**
-     * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
-     *
-     * The @p loadoutCandidates contains three items but the user might have less slots unlocked.
-     *
-     * @param loadoutCandidates: The wanted loadout composition
-     */
-    static __selectOwkItems(loadoutCandidates)
-    {
-        let possibleEquippedItem = 0;
-        let expectedLoadout = loadoutCandidates.filter(
-            (item) =>
-            {
-                // Skip any forbidden item
-                if (item === Automation.Quest.__forbiddenItem)
-                {
-                    return false;
-                }
-
-                if (App.game.oakItems.itemList[item].isUnlocked())
-                {
-                    if (possibleEquippedItem < App.game.oakItems.maxActiveCount())
-                    {
-                        possibleEquippedItem++;
-                        return true;
-                    }
-                }
-                return false;
-            });
-
-        App.game.oakItems.deactivateAll();
-        expectedLoadout.forEach(
-            (item) =>
-            {
-                App.game.oakItems.activate(item);
-            });
     }
 
     /**

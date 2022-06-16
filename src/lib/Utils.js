@@ -12,9 +12,78 @@ class AutomationUtils
     }
 
     /**
+     * @class The OakItem inner-class
+     */
+    static OakItem = class AutomationOakItemUtils
+    {
+        /**
+         * @class The Setup class lists the different setup to use based on the current objectives
+         */
+        static Setup = class AutomationOakItemUtilsSetup
+        {
+            /**
+             * @brief The most efficient setup to catch pokemons
+             */
+            static PokemonCatch = [
+                                    OakItemType.Magic_Ball,
+                                    OakItemType.Shiny_Charm,
+                                    OakItemType.Poison_Barb,
+                                    OakItemType.Exp_Share
+                                ];
+            /**
+             * @brief The most efficient setup to increase the pokemon power and make money
+             */
+            static PokemonExp = [
+                                    OakItemType.Poison_Barb,
+                                    OakItemType.Amulet_Coin,
+                                    OakItemType.Blaze_Cassette,
+                                    OakItemType.Exp_Share
+                                ];
+        }
+
+        /**
+         * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
+         *
+         * The @p loadoutCandidates contains three items but the user might have less slots unlocked.
+         *
+         * @param loadoutCandidates: The wanted loadout composition
+         */
+        static __equipLoadout(loadoutCandidates)
+        {
+            let possibleEquippedItem = 0;
+            let expectedLoadout = loadoutCandidates.filter(
+                (item) =>
+                {
+                    // Skip any forbidden item
+                    if (item === Automation.Quest.__forbiddenItem)
+                    {
+                        return false;
+                    }
+
+                    if (App.game.oakItems.itemList[item].isUnlocked())
+                    {
+                        if (possibleEquippedItem < App.game.oakItems.maxActiveCount())
+                        {
+                            possibleEquippedItem++;
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+
+            App.game.oakItems.deactivateAll();
+            expectedLoadout.forEach(
+                (item) =>
+                {
+                    App.game.oakItems.activate(item);
+                });
+        }
+    }
+
+    /**
      * @class The Route inner-class
      */
-    static Route = class AutomationRouteUils
+    static Route = class AutomationRouteUtils
     {
         // Map of Map [ region => [ route => maxHp ]]
         static __routeMaxHealthMap = new Map();
