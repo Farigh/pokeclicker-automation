@@ -153,6 +153,24 @@ class AutomationFocus
                                         stop: function (){ Automation.Menu.__forceAutomationState("gymFightEnabled", false); },
                                         refreshRateAsMs: 10000 // Refresh every 10s
                                     });
+
+        this.__functionalities.push({
+                                        id: "DungeonTokens",
+                                        name: "Dungeon Tokens",
+                                        tooltip: "Moves to the best route to make dungeon tokens"
+                                               + Automation.Menu.__tooltipSeparator()
+                                               + "The most efficient route is the one giving\n"
+                                               + "the most token per game tick.\n"
+                                               + "The most efficient Oak items loadout will be equipped.\n"
+                                               + "Ultraballs will automatically be used and bought if needed.",
+                                        run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
+                                        stop: function ()
+                                              {
+                                                  Automation.Menu.__forceAutomationState("gymFightEnabled", false);
+                                                  App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
+                                              },
+                                        refreshRateAsMs: 3000 // Refresh every 3s
+                                    });
     }
 
     /**
@@ -297,6 +315,54 @@ class AutomationFocus
                         return true;
                     }, this);
             }.bind(this), 50); // Check every game tick
+    }
+
+    /**
+     * @brief Moves the player to the best route for EXP farming
+     *
+     * If the user is in a state in which he cannot de moved, the feature is automatically disabled.
+     *
+     * @todo (03/06/2022): Disable the button in such case to inform the user
+     *                     that the feature cannot be used at the moment
+     */
+    static __goToBestRouteForDungeonToken()
+    {
+        // Ask the dungeon auto-fight to stop, if the feature is enabled
+        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        {
+            Automation.Dungeon.__stopRequested = true;
+            return;
+        }
+
+        // Disable the feature if an instance is in progress, and exit
+        if (Automation.Utils.__isInInstanceState())
+        {
+            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
+            return;
+        }
+
+        // Buy some balls if needed
+        if (App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Ultraball) === 0)
+        {
+            // No more money, or too expensive, go farm some money
+            if ((App.game.wallet.currencies[Currency.money]() < ItemList["Ultraball"].totalPrice(10))
+                || (ItemList["Ultraball"].totalPrice(1) !== ItemList["Ultraball"].basePrice))
+            {
+                this.__goToBestGymForMoney();
+                return;
+            }
+
+            ItemList["Ultraball"].buy(10);
+        }
+
+        // Equip the Oak item catch loadout
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+
+        // Equip an "Already caught" pokeball
+        App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.Ultraball;
+
+        // Move to the highest unlocked route
+        Automation.Utils.Route.__moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
     }
 
     /**
