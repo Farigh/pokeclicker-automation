@@ -257,6 +257,63 @@ class AutomationUtils
         }
 
         /**
+         * @brief Moves the player to the most suitable route for dungeon token farming
+         *
+         * Such route is the one giving the most token per game tick
+         *
+         * @param ballTypeToUse: The pokeball type that will be used (might have a different catch time)
+         */
+        static __moveToHighestDungeonTokenIncomeRoute(ballTypeToUse)
+        {
+            let bestRoute = 0;
+            let bestRouteRegion = 0;
+            let bestRouteIncome = 0;
+
+            let playerClickAttack = App.game.party.calculateClickAttack();
+            let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
+
+            // Fortunately routes are sorted by attack
+            Routes.regionRoutes.every(
+                (route) =>
+                {
+                    if (!route.isUnlocked())
+                    {
+                        return false;
+                    }
+
+                    // Skip any route that we can't access
+                    if (!this.__canMoveToRegion(route.region))
+                    {
+                        return true;
+                    }
+
+                    let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
+
+                    let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    if (routeAvgHp > playerClickAttack)
+                    {
+                        let nbClickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
+                        routeIncome = routeIncome / (nbClickToDefeat + catchTimeTicks);
+                    }
+
+                    if (routeIncome > bestRouteIncome)
+                    {
+                        bestRoute = route.number;
+                        bestRouteRegion = route.region;
+                        bestRouteIncome = routeIncome;
+                    }
+
+                    return true;
+                }, this);
+
+            if ((player.region !== bestRouteRegion)
+                || (player.route() !== bestRoute))
+            {
+                this.__moveToRoute(bestRoute, bestRouteRegion);
+            }
+        }
+
+        /**
          * @brief Gets the highest HP amount that a pokemon can have on the given @p route
          *
          * @param route: The pokeclicker RegionRoute object
