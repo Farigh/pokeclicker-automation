@@ -72,7 +72,7 @@ class AutomationUtils
             }
 
             // Move the player to the region first, if needed
-            if (town.region != player.town().region)
+            if (town.region != player.region)
             {
                 MapHelper.moveToTown(GameConstants.DockTowns[town.region]);
                 player.region = town.region;
