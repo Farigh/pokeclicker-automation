@@ -106,7 +106,7 @@ class AutomationDungeon
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
             if (this.__stopRequested
-                || ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
+                || ((localStorage.getItem("stopDungeonAtPokedexCompletion") === "true")
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, false)))
             {
                 Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);

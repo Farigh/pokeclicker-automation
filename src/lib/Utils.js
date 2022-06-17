@@ -105,8 +105,8 @@ class AutomationUtils
         /**
          * @brief Moves the player to the given @p route, in the @p region
          *
-         * @param route: The number of the route to move to
-         * @param region: The region number of the route to move to
+         * @param {number} route: The number of the route to move to
+         * @param {number} region: The region number of the route to move to
          *
          * @note If the @p route or @p region have not been unlocked, no move will happen
          */
@@ -154,7 +154,7 @@ class AutomationUtils
         /**
          * @brief Checks if the player is allowed to move to the given @p region
          *
-         * @param region: The region number to move to
+         * @param {number} region: The region number to move to
          *
          * @returns True if the player can mov to the region, False otherwise
          */
@@ -406,9 +406,9 @@ class AutomationUtils
         /**
          * @brief Computes the maximum number of click needed to defeat a pokemon with the given @p pokemonHp
          *
-         * @param pokemonHp: The HP of the pokemon to defeat
-         * @param playerClickAttack: The current player click attack
-         * @param totalAtkPerSecond: The players total attack per seconds (click + pokemon)
+         * @param {number} pokemonHp: The HP of the pokemon to defeat
+         * @param {number} playerClickAttack: The current player click attack
+         * @param {number} totalAtkPerSecond: The players total attack per seconds (click + pokemon)
          *
          * @returns The number of game ticks needed to defeat the pokemon
          */
@@ -499,19 +499,52 @@ class AutomationUtils
 
     /**
      * @brief Adds a pokeclicker notification using the given @p message
-     *        The notification is a blue one, without sound and with the "Automation" ttitle
+     *        The notification is a blue one, without sound and with the "Automation" title
      *
-     * @param message: The notification message
+     * @param {string} message: The notification message
+     * @param {string} module: [optional] The automation module name
      */
-    static __sendNotif(message)
+    static __sendNotif(message, module = null)
     {
         if (localStorage.getItem("automationNotificationsEnabled") == "true")
         {
+            let titleStr = "Automation";
+            if (module !== null)
+            {
+                titleStr += " > " + module;
+            }
+
             Notifier.notify({
-                                title: "Automation",
+                                title: titleStr,
                                 message: message,
                                 type: NotificationConstants.NotificationOption.primary,
                                 timeout: 3000,
+                            });
+        }
+    }
+
+    /**
+     * @brief Adds a pokeclicker warning notification using the given @p message
+     *        The notification is a yellow one, without sound and with the "Automation" title
+     *
+     * @param {string} message: The warning notification message
+     * @param {string} module: [optional] The automation module name
+     */
+    static __sendWarningNotif(message, module = null)
+    {
+        if (localStorage.getItem("automationNotificationsEnabled") == "true")
+        {
+            let titleStr = "Automation";
+            if (module !== null)
+            {
+                titleStr += " > " + module;
+            }
+
+            Notifier.notify({
+                                title: titleStr,
+                                message: message,
+                                type: NotificationConstants.NotificationOption.warning,
+                                timeout: 10000,
                             });
         }
     }
@@ -546,8 +579,8 @@ class AutomationUtils
      *   - Their length is the same
      *   - Their content is the same and at the same index
      *
-     * @param a: The first array
-     * @param b: The second array
+     * @param {Array} a: The first array
+     * @param {Array} b: The second array
      *
      * @returns True if the arrays are equals, False otherwise
      */
