@@ -270,6 +270,13 @@ class AutomationUtils
             let bestRouteIncome = 0;
 
             let playerClickAttack = App.game.party.calculateClickAttack();
+            let playerWorstPokemonAttack = [...Array(Gems.nTypes).keys()].reduce(
+                (count, type) =>
+                {
+                    let pokemonAttack = App.game.party.calculatePokemonAttack(type, type);
+                    return (pokemonAttack < count) ? pokemonAttack : count;
+                }, Number.MAX_SAFE_INTEGER);
+            let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
             let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
             // Fortunately routes are sorted by attack
@@ -289,12 +296,27 @@ class AutomationUtils
 
                     let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
 
+                    // Compute the bonus
+                    routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
+
                     let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    let nbGameTickToDefeat = 1;
                     if (routeAvgHp > playerClickAttack)
                     {
-                        let nbClickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
-                        routeIncome = routeIncome / (nbClickToDefeat + catchTimeTicks);
+                        nbGameTickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
+
+                        if (nbGameTickToDefeat > 20)
+                        {
+                            // Compute the number of game tick considering click and pokemon attack
+                            let nbSecondsToDefeat = Math.floor(routeAvgHp / totalAtkPerSecond);
+                            let leftLifeAfterPokemonAttack = routeAvgHp % totalAtkPerSecond;
+                            let nbClickForLifeLeft = Math.ceil(leftLifeAfterPokemonAttack / playerClickAttack);
+
+                            nbGameTickToDefeat = (nbSecondsToDefeat * 20) + Math.min(nbClickForLifeLeft, 20);
+                        }
                     }
+
+                    routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
 
                     if (routeIncome > bestRouteIncome)
                     {
