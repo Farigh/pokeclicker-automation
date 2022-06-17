@@ -270,12 +270,7 @@ class AutomationUtils
             let bestRouteIncome = 0;
 
             let playerClickAttack = App.game.party.calculateClickAttack();
-            let playerWorstPokemonAttack = [...Array(Gems.nTypes).keys()].reduce(
-                (count, type) =>
-                {
-                    let pokemonAttack = App.game.party.calculatePokemonAttack(type, type);
-                    return (pokemonAttack < count) ? pokemonAttack : count;
-                }, Number.MAX_SAFE_INTEGER);
+            let playerWorstPokemonAttack = this.__getPlayerWorstPokemonAttack();
             let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
             let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
@@ -300,22 +295,7 @@ class AutomationUtils
                     routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
 
                     let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-                    let nbGameTickToDefeat = 1;
-                    if (routeAvgHp > playerClickAttack)
-                    {
-                        nbGameTickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
-
-                        if (nbGameTickToDefeat > 20)
-                        {
-                            // Compute the number of game tick considering click and pokemon attack
-                            let nbSecondsToDefeat = Math.floor(routeAvgHp / totalAtkPerSecond);
-                            let leftLifeAfterPokemonAttack = routeAvgHp % totalAtkPerSecond;
-                            let nbClickForLifeLeft = Math.ceil(leftLifeAfterPokemonAttack / playerClickAttack);
-
-                            nbGameTickToDefeat = (nbSecondsToDefeat * 20) + Math.min(nbClickForLifeLeft, 20);
-                        }
-                    }
-
+                    let nbGameTickToDefeat = this.__getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
                     routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
 
                     if (routeIncome > bestRouteIncome)
@@ -336,6 +316,75 @@ class AutomationUtils
         }
 
         /**
+         * @brief Finds the best available route to farm the given @p pokemonType gems/pokemons
+         *
+         * The best route is the one that will give the most gems per game tick
+         *
+         * @param pokemonType: The pokemon type to look for
+         *
+         * @returns A struct { bestRoute, bestRouteRegion }, where:
+         *          @c bestRoute is the best route number
+         *          @c bestRouteRegion is the best route region number
+         */
+        static __findBestRouteForFarmingType(pokemonType)
+        {
+            let bestRoute = 0;
+            let bestRouteRegion = 0;
+            let bestRouteRate = 0;
+
+            let playerClickAttack = App.game.party.calculateClickAttack();
+            let playerWorstPokemonAttack = this.__getPlayerWorstPokemonAttack();
+            let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
+
+            // Fortunately routes are sorted by attack
+            Routes.regionRoutes.every(
+                (route) =>
+                {
+                    if (!route.isUnlocked())
+                    {
+                        return false;
+                    }
+
+                    // Skip any route that we can't access
+                    if (!this.__canMoveToRegion(route.region))
+                    {
+                        return true;
+                    }
+
+                    let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
+
+                    let currentRouteCount = 0;
+                    pokemons.forEach(
+                        (pokemon) =>
+                        {
+                            let pokemonData = pokemonMap[pokemon];
+
+                            if (pokemonData.type.includes(pokemonType))
+                            {
+                                currentRouteCount++;
+                            }
+                        });
+
+                    let currentRouteRate = currentRouteCount / pokemons.length;
+
+                    let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    let nbGameTickToDefeat = this.__getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+                    currentRouteRate = currentRouteRate / nbGameTickToDefeat;
+
+                    if (currentRouteRate > bestRouteRate)
+                    {
+                        bestRoute = route.number;
+                        bestRouteRegion = route.region;
+                        bestRouteRate = currentRouteRate;
+                    }
+
+                    return true;
+                }, this);
+
+            return { bestRoute, bestRouteRegion };
+        }
+
+        /**
          * @brief Gets the highest HP amount that a pokemon can have on the given @p route
          *
          * @param route: The pokeclicker RegionRoute object
@@ -352,6 +401,53 @@ class AutomationUtils
                 }, this);
 
             return routeMaxHealth;
+        }
+
+        /**
+         * @brief Computes the maximum number of click needed to defeat a pokemon with the given @p pokemonHp
+         *
+         * @param pokemonHp: The HP of the pokemon to defeat
+         * @param playerClickAttack: The current player click attack
+         * @param totalAtkPerSecond: The players total attack per seconds (click + pokemon)
+         *
+         * @returns The number of game ticks needed to defeat the pokemon
+         */
+        static __getGameTickCountNeededToDefeatPokemon(pokemonHp, playerClickAttack, totalAtkPerSecond)
+        {
+            let nbGameTickToDefeat = 1;
+            let nbTicksPerSeconds = 20; // Based on https://github.com/pokeclicker/pokeclicker/blob/b5807ae2b8b14431e267d90563ae8944272e1679/src/scripts/Battle.ts#L55-L57
+
+            if (pokemonHp > playerClickAttack)
+            {
+                nbGameTickToDefeat = Math.ceil(pokemonHp / playerClickAttack);
+
+                if (nbGameTickToDefeat > nbTicksPerSeconds)
+                {
+                    // Compute the number of game tick considering click and pokemon attack
+                    let nbSecondsToDefeat = Math.floor(pokemonHp / totalAtkPerSecond);
+                    let leftLifeAfterPokemonAttack = pokemonHp % totalAtkPerSecond;
+                    let nbClickForLifeLeft = Math.ceil(leftLifeAfterPokemonAttack / playerClickAttack);
+
+                    nbGameTickToDefeat = (nbSecondsToDefeat * nbTicksPerSeconds) + Math.min(nbClickForLifeLeft, nbTicksPerSeconds);
+                }
+            }
+
+            return nbGameTickToDefeat;
+        }
+
+        /**
+         * @brief Computes the player's worst possible pokemon attack value against any pokemon
+         *
+         * @returns The lowest possible pokemon attack
+         */
+        static __getPlayerWorstPokemonAttack()
+        {
+            return [...Array(Gems.nTypes).keys()].reduce(
+                (count, type) =>
+                {
+                    let pokemonAttack = App.game.party.calculatePokemonAttack(type);
+                    return (pokemonAttack < count) ? pokemonAttack : count;
+                }, Number.MAX_SAFE_INTEGER);
         }
 
         /**

@@ -363,13 +363,13 @@ class AutomationQuest
      */
     static __workOnCapturePokemonTypesQuest(quest)
     {
-        let { bestRoute, bestRouteRegion } = this.__findBestRouteForFarmingType(quest.type);
+        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(quest.type);
 
         // Add a pokeball to the Caught type and set the PokemonCatch setup
         let hasBalls = this.__selectBallToCatch(GameConstants.Pokeball.Ultraball);
         Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
-        if (hasBalls && (player.route() !== bestRoute))
+        if (hasBalls && ((player.route() !== bestRoute) || (player.region !== bestRouteRegion)))
         {
             Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
         }
@@ -482,7 +482,7 @@ class AutomationQuest
         this.__selectBallToCatch(GameConstants.Pokeball.None);
         Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
-        let { bestRoute, bestRouteRegion } = this.__findBestRouteForFarmingType(quest.type);
+        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(quest.type);
         Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
     }
 
@@ -537,76 +537,6 @@ class AutomationQuest
             // Go to the highest route, for higher quest point income
             Automation.Utils.Route.__moveToHighestDungeonTokenIncomeRoute(ballType);
         }
-    }
-
-    /**
-     * @brief Finds the best available route to farm the given @p pokemonType gems/pokemons
-     *
-     * The best route is the one that will give the most gems per game tick
-     *
-     * @param pokemonType: The pokemon type to look for
-     *
-     * @returns A struct { bestRoute, bestRouteRegion }, where:
-     *          @c bestRoute is the best route number
-     *          @c bestRouteRegion is the best route region number
-     */
-    static __findBestRouteForFarmingType(pokemonType)
-    {
-        let bestRoute = 0;
-        let bestRouteRegion = 0;
-        let bestRouteRate = 0;
-
-        let playerClickAttack = App.game.party.calculateClickAttack();
-
-        // Fortunately routes are sorted by attack
-        Routes.regionRoutes.every(
-            (route) =>
-            {
-                if (!route.isUnlocked())
-                {
-                    return false;
-                }
-
-                // Skip any route that we can't access
-                if (!Automation.Utils.Route.__canMoveToRegion(route.region))
-                {
-                    return true;
-                }
-
-                let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
-
-                let currentRouteCount = 0;
-                pokemons.forEach(
-                    (pokemon) =>
-                    {
-                        let pokemonData = pokemonMap[pokemon];
-
-                        if (pokemonData.type.includes(pokemonType))
-                        {
-                            currentRouteCount++;
-                        }
-                    });
-
-                let currentRouteRate = currentRouteCount / pokemons.length;
-
-                let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-                if (routeAvgHp > playerClickAttack)
-                {
-                    let nbClickToDefeat = Math.ceil(routeAvgHp / playerClickAttack);
-                    currentRouteRate = currentRouteRate / nbClickToDefeat;
-                }
-
-                if (currentRouteRate > bestRouteRate)
-                {
-                    bestRoute = route.number;
-                    bestRouteRegion = route.region;
-                    bestRouteRate = currentRouteRate;
-                }
-
-                return true;
-            }, this);
-
-        return { bestRoute, bestRouteRegion };
     }
 
     /**
