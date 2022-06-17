@@ -24,6 +24,9 @@ class AutomationComponentLoader
         this.__baseUrl = baseUrl;
 
         // From the least dependant, to the most dependent
+        this.__addScript("src/lib/Focus/Achievements.js");
+
+        this.__loadingOrder += 1;
         this.__addScript("src/lib/Click.js");
         this.__addScript("src/lib/Dungeon.js");
         this.__addScript("src/lib/Farm.js");

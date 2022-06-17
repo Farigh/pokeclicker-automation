@@ -3,6 +3,11 @@
  */
 class AutomationFocus
 {
+    // Aliases on the other classes
+    static Achievements = AutomationFocusAchievements;
+
+    static __noFunctionalityRefresh = -1;
+
     static __focusLoop = null;
     static __activeFocus = null;
     static __focusSelectElem = null;
@@ -107,8 +112,11 @@ class AutomationFocus
                 // First loop run (to avoid waiting too long before the first iteration, in case of long refresh rate)
                 this.__activeFocus.run();
 
-                // Set focus loop
-                this.__focusLoop = setInterval(this.__activeFocus.run, this.__activeFocus.refreshRateAsMs);
+                // Set focus loop if needed
+                if (this.__activeFocus.refreshRateAsMs !== this.__noFunctionalityRefresh)
+                {
+                    this.__focusLoop = setInterval(this.__activeFocus.run, this.__activeFocus.refreshRateAsMs);
+                }
             }
         }
         else
@@ -171,6 +179,8 @@ class AutomationFocus
                                               },
                                         refreshRateAsMs: 3000 // Refresh every 3s
                                     });
+
+        this.Achievements.__registerFunctionalities(this.__functionalities);
 
         this.__addGemsFocusFunctionalities();
     }
@@ -287,17 +297,8 @@ class AutomationFocus
      */
     static __goToBestRouteForExp()
     {
-        // Ask the dungeon auto-fight to stop, if the feature is enabled
-        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        if (!this.__ensureNoInstanceIsInProgress())
         {
-            Automation.Dungeon.__stopRequested = true;
-            return;
-        }
-
-        // Disable 'Focus on' if an instance is in progress, and exit
-        if (Automation.Utils.__isInInstanceState())
-        {
-            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
             return;
         }
 
@@ -314,17 +315,8 @@ class AutomationFocus
      */
     static __goToBestGymForMoney()
     {
-        // Ask the dungeon auto-fight to stop, if the feature is enabled
-        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        if (!this.__ensureNoInstanceIsInProgress())
         {
-            Automation.Dungeon.__stopRequested = true;
-            return;
-        }
-
-        // Disable 'Focus on' if an instance is in progress, and exit
-        if (Automation.Utils.__isInInstanceState())
-        {
-            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
             return;
         }
 
@@ -380,17 +372,8 @@ class AutomationFocus
      */
     static __goToBestRouteForDungeonToken()
     {
-        // Ask the dungeon auto-fight to stop, if the feature is enabled
-        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        if (!this.__ensureNoInstanceIsInProgress())
         {
-            Automation.Dungeon.__stopRequested = true;
-            return;
-        }
-
-        // Disable the feature if an instance is in progress, and exit
-        if (Automation.Utils.__isInInstanceState())
-        {
-            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
             return;
         }
 
@@ -480,5 +463,31 @@ class AutomationFocus
             });
 
         return { bestGym, bestGymTown };
+    }
+
+    /**
+     * @brief Makes sure no instance is in progress
+     *        It will ask the Dungeon 'Auto fight' feature to stop if enabled
+     *
+     * @returns True if no instance is in progress, false otherwise
+     */
+    static __ensureNoInstanceIsInProgress()
+    {
+        // Ask the dungeon auto-fight to stop, if the feature is enabled
+        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        {
+            Automation.Dungeon.__stopRequested = true;
+            return false;
+        }
+
+        // Disable 'Focus on' if an instance is in progress, and exit
+        if (Automation.Utils.__isInInstanceState())
+        {
+            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
+            Automation.Utils.__sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
+            return false;
+        }
+
+        return true;
     }
 }
