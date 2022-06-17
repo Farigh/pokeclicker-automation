@@ -1,19 +1,21 @@
 /**
  * @class The automation loader abstraction class.
  *
- * This class contains a loadFromUrl function that is used by the userscript to load the module.
+ * This class contains a @c loadFromUrl function that is used by the userscript to load the module.
  * This is possible because pokeclicker is in the same origin as GitHub.
  * pokeclicker.com is probably only an alias on a github.io pages.
  */
 class AutomationComponentLoader
 {
     static __baseUrl = null;
-    static __loadingTable = {};
+    static __loadingList = [];
+    static __loadingProgressTable = {};
+    static __loadingOrder = 0;
 
     /**
      * @brief Loads the Automation classes from the given @p baseUrl
      *
-     * @param baseUrl: The base URL to download the lib component files from
+     * @param {string} baseUrl: The base URL to download the lib component files from
      *
      * @warning This function should never change its prototype, otherwise it would break the API
      */
@@ -21,30 +23,44 @@ class AutomationComponentLoader
     {
         this.__baseUrl = baseUrl;
 
-        this.__loadScript("src/lib/Click.js");
-        this.__loadScript("src/lib/Dungeon.js");
-        this.__loadScript("src/lib/Farm.js");
-        this.__loadScript("src/lib/Gym.js");
-        this.__loadScript("src/lib/Hatchery.js");
-        this.__loadScript("src/lib/Items.js");
-        this.__loadScript("src/lib/Menu.js");
-        this.__loadScript("src/lib/Quest.js");
-        this.__loadScript("src/lib/Trivia.js");
-        this.__loadScript("src/lib/Underground.js");
-        this.__loadScript("src/lib/Utils.js");
+        // From the least dependant, to the most dependent
+        this.__addScript("src/lib/Click.js");
+        this.__addScript("src/lib/Dungeon.js");
+        this.__addScript("src/lib/Farm.js");
+        this.__addScript("src/lib/Gym.js");
+        this.__addScript("src/lib/Hatchery.js");
+        this.__addScript("src/lib/Items.js");
+        this.__addScript("src/lib/Menu.js");
+        this.__addScript("src/lib/Quest.js");
+        this.__addScript("src/lib/Trivia.js");
+        this.__addScript("src/lib/Underground.js");
+        this.__addScript("src/lib/Utils.js");
+
+        this.__loadingOrder += 1;
+        this.__addScript("src/Automation.js");
 
         this.__setupAutomationRunner();
     }
 
     /**
+     * @brief Adds the given @p fileRelativePath js file to the loading list
+     *
+     * @param {string} fileRelativePath: The file path relative to the @p __baseUrl
+     */
+    static __addScript(fileRelativePath)
+    {
+        this.__loadingList.push({ order: this.__loadingOrder, filePath: fileRelativePath });
+    }
+
+    /**
      * @brief Download the given @p fileRelativePath js file, and loads it into the page as a script component
      *
-     * @param fileRelativePath: The file path relative to the @p __baseUrl
+     * @param {string} fileRelativePath: The file path relative to the @p __baseUrl
      */
     static __loadScript(fileRelativePath)
     {
         let scriptName = this.__extractNameFromFile(fileRelativePath);
-        this.__loadingTable[scriptName] = false;
+        this.__loadingProgressTable[scriptName] = false;
 
         // Github only serves plain-text so we can't load it as a script object directly
         let request = new XMLHttpRequest();
@@ -58,7 +74,7 @@ class AutomationComponentLoader
                     script.id = "pokeclicker-automation-" + scriptName;
                     document.head.appendChild(script);
 
-                    this.__loadingTable[scriptName] = true;
+                    this.__loadingProgressTable[scriptName] = true;
                 }
             }.bind(this);
 
@@ -70,10 +86,16 @@ class AutomationComponentLoader
     /**
      * @brief Extracts the script name from the given @p filePath
      *
-     * @param filePath: The path to extract the script name from
+     * @param {string} filePath: The path to extract the script name from
      */
     static __extractNameFromFile(filePath)
     {
+        let libPrefix = "src/lib/";
+        if (filePath.startsWith(libPrefix))
+        {
+            let result = filePath.substring(libPrefix.length, filePath.length - 3);
+            return result.replace("/", "-").toLowerCase();
+        }
         return filePath.match(/^(.*\/)?([^/]+)\.js$/)[2].toLowerCase();
     }
 
@@ -84,22 +106,31 @@ class AutomationComponentLoader
      */
     static __setupAutomationRunner()
     {
-        let isMainLoading = false;
+        let currentLoadingOrder = -1;
 
         let watcher = setInterval(function ()
             {
-                let isLoadingCompleted = Object.keys(this.__loadingTable).every(key => this.__loadingTable[key]);
+                let isLoadingCompleted = Object.keys(this.__loadingProgressTable).every(key => this.__loadingProgressTable[key]);
 
                 if (!isLoadingCompleted)
                 {
                     return;
                 }
 
-                // Load the main class last (dependency requirement)
-                if (!isMainLoading)
+                // Load the next batch (dependency requirement)
+                if (currentLoadingOrder != this.__loadingOrder)
                 {
-                    this.__loadScript("src/Automation.js");
-                    isMainLoading = true;
+                    currentLoadingOrder += 1;
+
+                    this.__loadingList.forEach(
+                        (scriptData) =>
+                        {
+                            if (scriptData.order === currentLoadingOrder)
+                            {
+                                this.__loadScript(scriptData.filePath);
+                            }
+                        });
+
                     return;
                 }
 
