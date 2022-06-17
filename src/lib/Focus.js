@@ -171,6 +171,52 @@ class AutomationFocus
                                               },
                                         refreshRateAsMs: 3000 // Refresh every 3s
                                     });
+
+        this.__addGemsFocusFunctionalities();
+    }
+
+    /**
+     * @brief Adds a separator to the focus drop-down list
+     *
+     * @param title: The separator text to display
+     */
+    static __addFunctionalitySeparator(title)
+    {
+        this.__functionalities.push({ id: "separator", name: title, tooltip: "" });
+    }
+
+    /**
+     * @brief Registers all gem focus features to the drop-down list
+     */
+    static __addGemsFocusFunctionalities()
+    {
+        this.__addFunctionalitySeparator("==== Gems ====");
+
+        [...Array(Gems.nTypes).keys()].forEach(
+            (gemType) =>
+            {
+                let gemTypeName = PokemonType[gemType];
+
+                this.__functionalities.push(
+                    {
+                        id: gemTypeName + "Gems",
+                        name: gemTypeName + " Gems",
+                        tooltip: "Moves to the best route to make " + gemTypeName + " gems"
+                            + Automation.Menu.__tooltipSeparator()
+                            + "The best route is the one that will give the most\n"
+                            + gemTypeName + " gems per game tick.",
+                        run: function ()
+                        {
+                            let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(gemType);
+                            if ((player.route() !== bestRoute) || (player.region !== bestRouteRegion))
+                            {
+                                Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
+                            }
+                        },
+                        stop: function (){},
+                        refreshRateAsMs: 10000 // Refresh every 10s
+                    });
+            }, this);
     }
 
     /**
@@ -183,15 +229,22 @@ class AutomationFocus
             (functionality) =>
             {
                 let opt = document.createElement("option");
-                opt.value = functionality.id;
-                opt.id = functionality.id;
 
-                if (lastAutomationFocusedTopic === functionality.id)
+                if (functionality.id == "separator")
                 {
-                    // Restore previous session selected element
-                    opt.selected = true;
+                    opt.disabled = true;
                 }
+                else
+                {
+                    opt.value = functionality.id;
+                    opt.id = functionality.id;
 
+                    if (lastAutomationFocusedTopic === functionality.id)
+                    {
+                        // Restore previous session selected element
+                        opt.selected = true;
+                    }
+                }
                 opt.textContent = functionality.name;
 
                 this.__focusSelectElem.options.add(opt);
