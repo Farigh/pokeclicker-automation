@@ -14,7 +14,7 @@ class AutomationQuest
     /**
      * @brief Builds the menu, and retores previous running state if needed
      *
-     * The 'Use/buy Small Restore' functionality is disabled by default (if never set in a previous session)
+     * The 'Use/buy Small Restore' and 'AutoQuests' functionalities are disabled by default (if never set in a previous session)
      */
     static start()
     {
@@ -22,6 +22,12 @@ class AutomationQuest
         if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
         {
             localStorage.setItem("autoUseSmallRestoreEnabled", false);
+        }
+
+        // Disable Auto quest mode by default
+        if (localStorage.getItem("autoQuestEnabled") === null)
+        {
+            localStorage.setItem("autoQuestEnabled", false);
         }
 
         // Add the related button to the automation menu
