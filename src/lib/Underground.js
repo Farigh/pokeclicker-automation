@@ -166,7 +166,8 @@ class AutomationUnderground
             if (nothingElseToDo)
             {
                 Automation.Utils.__sendNotif("Performed mining actions " + this.__actionCount.toString() + " times,"
-                                           + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!");
+                                           + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!",
+                                             "Mining");
                 clearInterval(miningLoop);
                 return;
             }

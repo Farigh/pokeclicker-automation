@@ -12,9 +12,78 @@ class AutomationUtils
     }
 
     /**
+     * @class The OakItem inner-class
+     */
+    static OakItem = class AutomationOakItemUtils
+    {
+        /**
+         * @class The Setup class lists the different setup to use based on the current objectives
+         */
+        static Setup = class AutomationOakItemUtilsSetup
+        {
+            /**
+             * @brief The most efficient setup to catch pokemons
+             */
+            static PokemonCatch = [
+                                    OakItemType.Magic_Ball,
+                                    OakItemType.Shiny_Charm,
+                                    OakItemType.Poison_Barb,
+                                    OakItemType.Exp_Share
+                                ];
+            /**
+             * @brief The most efficient setup to increase the pokemon power and make money
+             */
+            static PokemonExp = [
+                                    OakItemType.Poison_Barb,
+                                    OakItemType.Amulet_Coin,
+                                    OakItemType.Blaze_Cassette,
+                                    OakItemType.Exp_Share
+                                ];
+        }
+
+        /**
+         * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
+         *
+         * The @p loadoutCandidates contains three items but the user might have less slots unlocked.
+         *
+         * @param loadoutCandidates: The wanted loadout composition
+         */
+        static __equipLoadout(loadoutCandidates)
+        {
+            let possibleEquippedItem = 0;
+            let expectedLoadout = loadoutCandidates.filter(
+                (item) =>
+                {
+                    // Skip any forbidden item
+                    if (item === Automation.Quest.__forbiddenItem)
+                    {
+                        return false;
+                    }
+
+                    if (App.game.oakItems.itemList[item].isUnlocked())
+                    {
+                        if (possibleEquippedItem < App.game.oakItems.maxActiveCount())
+                        {
+                            possibleEquippedItem++;
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+
+            App.game.oakItems.deactivateAll();
+            expectedLoadout.forEach(
+                (item) =>
+                {
+                    App.game.oakItems.activate(item);
+                });
+        }
+    }
+
+    /**
      * @class The Route inner-class
      */
-    static Route = class AutomationRouteUils
+    static Route = class AutomationRouteUtils
     {
         // Map of Map [ region => [ route => maxHp ]]
         static __routeMaxHealthMap = new Map();
@@ -36,8 +105,8 @@ class AutomationUtils
         /**
          * @brief Moves the player to the given @p route, in the @p region
          *
-         * @param route: The number of the route to move to
-         * @param region: The region number of the route to move to
+         * @param {number} route: The number of the route to move to
+         * @param {number} region: The region number of the route to move to
          *
          * @note If the @p route or @p region have not been unlocked, no move will happen
          */
@@ -85,7 +154,7 @@ class AutomationUtils
         /**
          * @brief Checks if the player is allowed to move to the given @p region
          *
-         * @param region: The region number to move to
+         * @param {number} region: The region number to move to
          *
          * @returns True if the player can mov to the region, False otherwise
          */
@@ -188,6 +257,134 @@ class AutomationUtils
         }
 
         /**
+         * @brief Moves the player to the most suitable route for dungeon token farming
+         *
+         * Such route is the one giving the most token per game tick
+         *
+         * @param ballTypeToUse: The pokeball type that will be used (might have a different catch time)
+         */
+        static __moveToHighestDungeonTokenIncomeRoute(ballTypeToUse)
+        {
+            let bestRoute = 0;
+            let bestRouteRegion = 0;
+            let bestRouteIncome = 0;
+
+            let playerClickAttack = App.game.party.calculateClickAttack();
+            let playerWorstPokemonAttack = this.__getPlayerWorstPokemonAttack();
+            let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
+            let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
+
+            // Fortunately routes are sorted by attack
+            Routes.regionRoutes.every(
+                (route) =>
+                {
+                    if (!route.isUnlocked())
+                    {
+                        return false;
+                    }
+
+                    // Skip any route that we can't access
+                    if (!this.__canMoveToRegion(route.region))
+                    {
+                        return true;
+                    }
+
+                    let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
+
+                    // Compute the bonus
+                    routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
+
+                    let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    let nbGameTickToDefeat = this.__getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+                    routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
+
+                    if (routeIncome > bestRouteIncome)
+                    {
+                        bestRoute = route.number;
+                        bestRouteRegion = route.region;
+                        bestRouteIncome = routeIncome;
+                    }
+
+                    return true;
+                }, this);
+
+            if ((player.region !== bestRouteRegion)
+                || (player.route() !== bestRoute))
+            {
+                this.__moveToRoute(bestRoute, bestRouteRegion);
+            }
+        }
+
+        /**
+         * @brief Finds the best available route to farm the given @p pokemonType gems/pokemons
+         *
+         * The best route is the one that will give the most gems per game tick
+         *
+         * @param pokemonType: The pokemon type to look for
+         *
+         * @returns A struct { bestRoute, bestRouteRegion }, where:
+         *          @c bestRoute is the best route number
+         *          @c bestRouteRegion is the best route region number
+         */
+        static __findBestRouteForFarmingType(pokemonType)
+        {
+            let bestRoute = 0;
+            let bestRouteRegion = 0;
+            let bestRouteRate = 0;
+
+            let playerClickAttack = App.game.party.calculateClickAttack();
+            let playerWorstPokemonAttack = this.__getPlayerWorstPokemonAttack();
+            let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
+
+            // Fortunately routes are sorted by attack
+            Routes.regionRoutes.every(
+                (route) =>
+                {
+                    if (!route.isUnlocked())
+                    {
+                        return false;
+                    }
+
+                    // Skip any route that we can't access
+                    if (!this.__canMoveToRegion(route.region))
+                    {
+                        return true;
+                    }
+
+                    let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
+
+                    let currentRouteCount = 0;
+                    pokemons.forEach(
+                        (pokemon) =>
+                        {
+                            let pokemonData = pokemonMap[pokemon];
+
+                            if (pokemonData.type.includes(pokemonType))
+                            {
+                                currentRouteCount++;
+                            }
+                        });
+
+                    let currentRouteRate = currentRouteCount / pokemons.length;
+
+                    let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+                    let nbGameTickToDefeat = this.__getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+                    currentRouteRate = currentRouteRate / nbGameTickToDefeat;
+
+                    if (currentRouteRate > bestRouteRate)
+                    {
+                        bestRoute = route.number;
+                        bestRouteRegion = route.region;
+                        bestRouteRate = currentRouteRate;
+                    }
+
+                    return true;
+                }, this);
+
+            return { bestRoute, bestRouteRegion };
+        }
+
+        /**
          * @brief Gets the highest HP amount that a pokemon can have on the given @p route
          *
          * @param route: The pokeclicker RegionRoute object
@@ -204,6 +401,53 @@ class AutomationUtils
                 }, this);
 
             return routeMaxHealth;
+        }
+
+        /**
+         * @brief Computes the maximum number of click needed to defeat a pokemon with the given @p pokemonHp
+         *
+         * @param {number} pokemonHp: The HP of the pokemon to defeat
+         * @param {number} playerClickAttack: The current player click attack
+         * @param {number} totalAtkPerSecond: The players total attack per seconds (click + pokemon)
+         *
+         * @returns The number of game ticks needed to defeat the pokemon
+         */
+        static __getGameTickCountNeededToDefeatPokemon(pokemonHp, playerClickAttack, totalAtkPerSecond)
+        {
+            let nbGameTickToDefeat = 1;
+            let nbTicksPerSeconds = 20; // Based on https://github.com/pokeclicker/pokeclicker/blob/b5807ae2b8b14431e267d90563ae8944272e1679/src/scripts/Battle.ts#L55-L57
+
+            if (pokemonHp > playerClickAttack)
+            {
+                nbGameTickToDefeat = Math.ceil(pokemonHp / playerClickAttack);
+
+                if (nbGameTickToDefeat > nbTicksPerSeconds)
+                {
+                    // Compute the number of game tick considering click and pokemon attack
+                    let nbSecondsToDefeat = Math.floor(pokemonHp / totalAtkPerSecond);
+                    let leftLifeAfterPokemonAttack = pokemonHp % totalAtkPerSecond;
+                    let nbClickForLifeLeft = Math.ceil(leftLifeAfterPokemonAttack / playerClickAttack);
+
+                    nbGameTickToDefeat = (nbSecondsToDefeat * nbTicksPerSeconds) + Math.min(nbClickForLifeLeft, nbTicksPerSeconds);
+                }
+            }
+
+            return nbGameTickToDefeat;
+        }
+
+        /**
+         * @brief Computes the player's worst possible pokemon attack value against any pokemon
+         *
+         * @returns The lowest possible pokemon attack
+         */
+        static __getPlayerWorstPokemonAttack()
+        {
+            return [...Array(Gems.nTypes).keys()].reduce(
+                (count, type) =>
+                {
+                    let pokemonAttack = App.game.party.calculatePokemonAttack(type);
+                    return (pokemonAttack < count) ? pokemonAttack : count;
+                }, Number.MAX_SAFE_INTEGER);
         }
 
         /**
@@ -255,19 +499,52 @@ class AutomationUtils
 
     /**
      * @brief Adds a pokeclicker notification using the given @p message
-     *        The notification is a blue one, without sound and with the "Automation" ttitle
+     *        The notification is a blue one, without sound and with the "Automation" title
      *
-     * @param message: The notification message
+     * @param {string} message: The notification message
+     * @param {string} module: [optional] The automation module name
      */
-    static __sendNotif(message)
+    static __sendNotif(message, module = null)
     {
         if (localStorage.getItem("automationNotificationsEnabled") == "true")
         {
+            let titleStr = "Automation";
+            if (module !== null)
+            {
+                titleStr += " > " + module;
+            }
+
             Notifier.notify({
-                                title: "Automation",
+                                title: titleStr,
                                 message: message,
                                 type: NotificationConstants.NotificationOption.primary,
                                 timeout: 3000,
+                            });
+        }
+    }
+
+    /**
+     * @brief Adds a pokeclicker warning notification using the given @p message
+     *        The notification is a yellow one, without sound and with the "Automation" title
+     *
+     * @param {string} message: The warning notification message
+     * @param {string} module: [optional] The automation module name
+     */
+    static __sendWarningNotif(message, module = null)
+    {
+        if (localStorage.getItem("automationNotificationsEnabled") == "true")
+        {
+            let titleStr = "Automation";
+            if (module !== null)
+            {
+                titleStr += " > " + module;
+            }
+
+            Notifier.notify({
+                                title: titleStr,
+                                message: message,
+                                type: NotificationConstants.NotificationOption.warning,
+                                timeout: 10000,
                             });
         }
     }
@@ -302,8 +579,8 @@ class AutomationUtils
      *   - Their length is the same
      *   - Their content is the same and at the same index
      *
-     * @param a: The first array
-     * @param b: The second array
+     * @param {Array} a: The first array
+     * @param {Array} b: The second array
      *
      * @returns True if the arrays are equals, False otherwise
      */
