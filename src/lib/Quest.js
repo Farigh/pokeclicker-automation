@@ -81,10 +81,10 @@ class AutomationQuest
     /**
      * @brief Toggles the 'Daily Quest' feature
      *
-     * If the feature was enabled and it's toggled to disabled, the auto attack loop will be stopped.
-     * If the feature was disabled and it's toggled to enabled, the auto attack loop will be started.
+     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
+     * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
-     * @param enable: [Optional] If a boolean is passed, it will used to set the right state.
+     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
     static __toggleAutoQuest(enable)
@@ -111,7 +111,7 @@ class AutomationQuest
                 // Disable other modes button
                 let disableReason = "The 'AutoQuests' feature is enabled";
                 Automation.Menu.__disableButton("autoClickEnabled", true, disableReason);
-                Automation.Menu.__disableButton("bestRouteClickEnabled", true, disableReason);
+                Automation.Menu.__disableButton("focusOnTopicEnabled", true, disableReason);
                 Automation.Menu.__disableButton("hatcheryAutomationEnabled", true, disableReason);
                 Automation.Menu.__disableButton("autoFarmingEnabled", true, disableReason);
                 Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, disableReason);
@@ -127,8 +127,8 @@ class AutomationQuest
                 Automation.Farm.__toggleAutoFarming(true);
                 Automation.Underground.__toggleAutoMining(true);
 
-                // Force disable best route mode
-                Automation.Click.__toggleBestRoute(false);
+                // Force disable the 'Focus on' mode
+                Automation.Focus.__toggleFocus(false);
             }
         }
         else if (this.__autoQuestLoop !== null)
@@ -143,13 +143,14 @@ class AutomationQuest
 
             // Reset other modes status
             Automation.Click.__toggleAutoClick();
+            Automation.Focus.__toggleFocus();
             Automation.Hatchery.__toggleAutoHatchery();
             Automation.Farm.__toggleAutoFarming();
             Automation.Underground.__toggleAutoMining();
 
             // Re-enable other modes button
             Automation.Menu.__disableButton("autoClickEnabled", false);
-            Automation.Menu.__disableButton("bestRouteClickEnabled", false);
+            Automation.Menu.__disableButton("focusOnTopicEnabled", false);
             Automation.Menu.__disableButton("hatcheryAutomationEnabled", false);
             Automation.Menu.__disableButton("autoFarmingEnabled", false);
             Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);

@@ -91,10 +91,10 @@ class AutomationFarm
     /**
      * @brief Toggles the 'Farming' feature
      *
-     * If the feature was enabled and it's toggled to disabled, the auto attack loop will be stopped.
-     * If the feature was disabled and it's toggled to enabled, the auto attack loop will be started.
+     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
+     * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
-     * @param enable: [Optional] If a boolean is passed, it will used to set the right state.
+     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
     static __toggleAutoFarming(enable)
@@ -1224,7 +1224,7 @@ class AutomationFarm
     {
         this.__unlockStrategySelection.push(
             {
-                // Check if the slot is unlocked
+                // Check if all berries are in sufficient amount
                 isNeeded: function()
                 {
                     return !berriesToGather.every((berryType) => (App.game.farming.berryList[berryType]() >= berriesMinAmount));
@@ -1234,7 +1234,7 @@ class AutomationFarm
                 forbiddenOakItem: null,
                 requiredPokemon: null,
                 requiresDiscord: false,
-                // If not unlocked, then farm some needed berries
+                // If not, then farm some needed berries
                 action: function()
                 {
                     let plotIndex = 0;

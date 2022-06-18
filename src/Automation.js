@@ -4,6 +4,7 @@ class Automation
     static Click = AutomationClick;
     static Dungeon = AutomationDungeon;
     static Farm = AutomationFarm;
+    static Focus = AutomationFocus;
     static Gym = AutomationGym;
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
@@ -34,6 +35,7 @@ class Automation
                 this.Trivia.start();
 
                 this.Click.start();
+                this.Focus.start();
                 this.Hatchery.start();
                 this.Underground.start();
                 this.Farm.start();
