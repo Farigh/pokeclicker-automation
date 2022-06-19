@@ -360,7 +360,7 @@ class AutomationMenu
                              {
                                  position: relative;
                              }
-                             .hasAutomationTooltip:before
+                             .hasAutomationTooltip::before
                              {
                                  content: attr(automation-tooltip-text);
                                  white-space: pre;
@@ -378,13 +378,13 @@ class AutomationMenu
                                  z-index: 9;
                                  pointer-events: none;
                              }
-                             .hasAutomationTooltip[automation-tooltip-disable-reason]:before
+                             .hasAutomationTooltip[automation-tooltip-disable-reason]::before
                              {
                                  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='207' height='20'%3E%3Ctext x='0' y='17' style='fill:%23f24444; font-weight: 600; font-size:.900rem;'%3EDisabled for the following reason:%3C/text%3E%3C/svg%3E")
                                           attr(automation-tooltip-disable-reason)
                                           attr(automation-tooltip-text);
                              }
-                             .hasAutomationTooltip:after
+                             .hasAutomationTooltip::after
                              {
                                  content: "";
                                  position: absolute;
@@ -397,18 +397,18 @@ class AutomationMenu
                                  z-index: 9;
                                  pointer-events: none;
                              }
-                             .hasAutomationTooltip:hover:before, .hasAutomationTooltip:hover:after
+                             .hasAutomationTooltip:hover::before, .hasAutomationTooltip:hover::after
                              {
                                  transition-delay: 2s;
                                  transition-duration:.3s;
                                  transition-property: opacity;
                                  opacity: 1;
                              }
-                             .hasAutomationTooltip.centeredAutomationTooltip:after
+                             .hasAutomationTooltip.centeredAutomationTooltip::after
                              {
                                  left: calc(50%);
                              }
-                             .hasAutomationTooltip.gotoAutomationTooltip:after
+                             .hasAutomationTooltip.gotoAutomationTooltip::after
                              {
                                  left: calc(100% - 85px);
                              }

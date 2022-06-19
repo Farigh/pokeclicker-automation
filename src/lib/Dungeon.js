@@ -5,6 +5,7 @@ class AutomationDungeon
 {
     static __autoDungeonLoop = null;
 
+    static __isShinyCatchStopMode = false;
     static __isCompleted = false;
     static __bossPosition = null;
     static __chestPositions = [];
@@ -16,6 +17,8 @@ class AutomationDungeon
      */
     static start()
     {
+        this.__injectQuestCss();
+
         // Hide the gym and dungeon fight menus by default and disable auto fight
         let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
                          +     '&nbsp;Dungeon fight&nbsp;'
@@ -36,12 +39,78 @@ class AutomationDungeon
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
-                                   + "once all pokemon are caught in this dungeon";
-        let buttonLabel = 'Stop on <img src="assets/images/pokeball/Pokeball.svg" height="17px"> :';
+                                   + "once all pokemon are caught in this dungeon."
+                                   + Automation.Menu.__tooltipSeparator()
+                                   + "You can switch between pokemon and shiny completion\n"
+                                   + "by clicking on the pokeball image.";
+
+        let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
         Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv);
+
+        // Add the button action
+        let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
+        pokedexSwitch.onclick = this.__toggleCatchStopMode.bind(this);
 
         // Set the div visibility watcher
         setInterval(this.__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+    }
+
+    /**
+     * @brief Injects the Dungeon quest menu css to the document heading
+     */
+    static __injectQuestCss()
+    {
+        const style = document.createElement('style');
+        style.textContent = `#automation-dungeon-pokedex-img
+                             {
+                                 position:relative;
+                                 cursor: pointer;
+                             }
+                             #automation-dungeon-pokedex-img::after, #automation-dungeon-pokedex-img::before
+                             {
+                                 display: inline-block;
+                                 width: 17px;
+                                 height: 17px;
+                                 position: absolute;
+                                 left: 0px;
+                                 bottom: 0px;
+                                 border-radius: 50%;
+                                 border-width: 0px;
+                                 content: '';
+                                 opacity: 0%;
+                             }
+                             #automation-dungeon-pokedex-img::before
+                             {
+                                 background-color: transparent;
+                             }
+                             #automation-dungeon-pokedex-img::after
+                             {
+                                 background-color: #ccccff;
+                             }
+                             #automation-dungeon-pokedex-img:hover::before
+                             {
+                                 opacity: 100%;
+                                 box-shadow: 0px 0px 2px 1px #178fd7;
+                             }
+                             #automation-dungeon-pokedex-img:hover::after
+                             {
+                                 opacity: 20%;
+                             }`;
+        document.head.append(style);
+    }
+
+    /**
+     * @brief Switched from Pokedex completion to Shiny pokedex completion mode
+     */
+    static __toggleCatchStopMode()
+    {
+        // Switch mode
+        this.__isShinyCatchStopMode = !this.__isShinyCatchStopMode;
+
+        // Update the image accordingly
+        let image = (this.__isShinyCatchStopMode) ? "Pokeball-shiny" : "Pokeball";
+        let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
+        pokedexSwitch.innerHTML = `<img src="assets/images/pokeball/${image}.svg" height="17px">`;
     }
 
     /**
@@ -107,7 +176,7 @@ class AutomationDungeon
             //    - the pokedex is full for this dungeon, and it has been ask for
             if (this.__stopRequested
                 || ((localStorage.getItem("stopDungeonAtPokedexCompletion") === "true")
-                    && DungeonRunner.dungeonCompleted(player.town().dungeon, false)))
+                    && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode)))
             {
                 Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
                 this.__stopRequested = false;
@@ -251,10 +320,16 @@ class AutomationDungeon
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
             if ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
-                && DungeonRunner.dungeonCompleted(player.town().dungeon, false))
+                && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))
             {
                 disableNeeded = true;
                 disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
+
+                if (this.__isShinyCatchStopMode)
+                {
+                    disableReason += "shiny ";
+                }
+
                 disableReason += "pokemons are already caught,\nand the option to stop in this case is enabled";
             }
 
