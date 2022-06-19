@@ -276,7 +276,7 @@ class AutomationUnderground
     {
         let itemsState = new Map();
 
-        [...Array(Underground.sizeY).keys()].forEach(
+        [...Array(App.game.underground.getSizeY()).keys()].forEach(
             (row) =>
             {
                 [...Array(Underground.sizeX).keys()].forEach(
