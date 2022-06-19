@@ -11,13 +11,15 @@ class AutomationDungeon
     static __chestPositions = [];
     static __previousTown = null;
     static __stopRequested = false;
+    static __isFirstMove = true;
+    static __playerActionOccured = false;
 
     /**
      * @brief Builds the menu
      */
     static start()
     {
-        this.__injectQuestCss();
+        this.__injectDungeonCss();
 
         // Hide the gym and dungeon fight menus by default and disable auto fight
         let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
@@ -56,9 +58,9 @@ class AutomationDungeon
     }
 
     /**
-     * @brief Injects the Dungeon quest menu css to the document heading
+     * @brief Injects the Dungeon menu css to the document heading
      */
-    static __injectQuestCss()
+    static __injectDungeonCss()
     {
         const style = document.createElement('style');
         style.textContent = `#automation-dungeon-pokedex-img
@@ -144,6 +146,8 @@ class AutomationDungeon
             // Unregister the loop
             clearInterval(this.__autoDungeonLoop);
             this.__autoDungeonLoop = null;
+            this.__playerActionOccured = false;
+            this.__resetSavedStates();
         }
     }
 
@@ -175,9 +179,15 @@ class AutomationDungeon
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
             if (this.__stopRequested
+                || this.__playerActionOccured
                 || ((localStorage.getItem("stopDungeonAtPokedexCompletion") === "true")
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode)))
             {
+                if (this.__playerActionOccured)
+                {
+                    Automation.Utils.__sendWarningNotif("User action detected, turning off the automation", "Dungeon");
+                }
+
                 Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
                 this.__stopRequested = false;
             }
@@ -192,6 +202,13 @@ class AutomationDungeon
             // Let any fight finish before moving
             if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
             {
+                return;
+            }
+
+            if (this.__isFirstMove)
+            {
+                this.__ensureTheBoardIsInAnAcceptableState();
+                this.__isFirstMove = false;
                 return;
             }
 
@@ -231,7 +248,7 @@ class AutomationDungeon
                 }
                 else
                 {
-                    this.__chestPositions.push(playerCurrentPosition);
+                    this.__addChestPosition(playerCurrentPosition);
                 }
             }
 
@@ -243,7 +260,9 @@ class AutomationDungeon
             // Detect board ending and move to the boss if it's the case
             if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
             {
-                this.__isCompleted = true;
+                this.__isCompleted = (this.__bossPosition !== null);
+                this.__ensureTheBoardIsInAnAcceptableState();
+
                 return;
             }
 
@@ -283,6 +302,74 @@ class AutomationDungeon
             this.__previousTown = null;
             this.__resetSavedStates();
             Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
+        }
+    }
+
+    /**
+     * @brief Ensure the board is in an acceptable state.
+     *        If any chest or boss tile are visible, store them in the internal variables, if not already done.
+     *        If any player interaction is detected, and the boss was not found, move the player to the left-most visited tile of the bottom-most row
+     *
+     * The player is considered to have interfered if:
+     *   - It's the first automation move and any tile was already visited apart from the entrance
+     *   - It's the last automation move and any tile is still unvisited
+     */
+    static __ensureTheBoardIsInAnAcceptableState()
+    {
+        let startingTile = null;
+
+        DungeonRunner.map.board().forEach(
+            (row, rowIndex) =>
+            {
+                row.forEach(
+                    (tile, columnIndex) =>
+                    {
+                        // Ignore not visible tiles
+                        if (!tile.isVisible) return;
+
+                        let currentLocation = { x: columnIndex, y: rowIndex };
+
+                        if (DungeonRunner.map.hasAccesToTile(currentLocation))
+                        {
+                            // Store chest positions
+                            if (tile.type() === GameConstants.DungeonTile.chest)
+                            {
+                                this.__addChestPosition(currentLocation);
+                            }
+
+                            if (tile.type() === GameConstants.DungeonTile.boss)
+                            {
+                                this.__isCompleted = true;
+                                this.__bossPosition = currentLocation;
+                            }
+                        }
+
+                        // For the next part, ignore not visited tiles
+                        if (!tile.isVisited) return;
+
+                        if ((rowIndex === (DungeonRunner.map.size - 1))
+                            && (startingTile === null))
+                        {
+                            startingTile = currentLocation;
+                        }
+
+                        if ((tile.type() !== GameConstants.DungeonTile.entrance)
+                            && this.__isFirstMove)
+                        {
+                            this.__playerActionOccured = true;
+                        }
+                    });
+            });
+
+        if (!this.__isFirstMove)
+        {
+            this.__playerActionOccured = this.__playerActionOccured || !DungeonRunner.map.board().every((row) => row.every((tile) => tile.isVisited));
+        }
+
+        // The boss was not found, reset the chest positions and move the player to the entrance, if not already there
+        if (!this.__isCompleted && this.__playerActionOccured)
+        {
+            DungeonRunner.map.moveToTile(startingTile);
         }
     }
 
@@ -354,6 +441,17 @@ class AutomationDungeon
     }
 
     /**
+     * @brief Adds the given @p position to the check list, if not already added.
+     */
+     static __addChestPosition(position)
+     {
+         if (!this.__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y)))
+         {
+             this.__chestPositions.push(position);
+         }
+     }
+
+    /**
      * @brief Resets the internal data for the next run
      */
     static __resetSavedStates()
@@ -361,5 +459,6 @@ class AutomationDungeon
         this.__bossPosition = null;
         this.__chestPositions = [];
         this.__isCompleted = false;
+        this.__isFirstMove = true;
     }
 }
