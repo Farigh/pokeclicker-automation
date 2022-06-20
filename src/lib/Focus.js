@@ -18,11 +18,22 @@ class AutomationFocus
 
     /**
      * @brief Initializes the component
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        this.__buildFunctionalitiesList();
-        this.__buildMenu();
+        // Only consider the BuildMenu init step
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            this.__buildFunctionalitiesList();
+            this.__buildMenu();
+        }
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            // Restore previous session state
+            this.__toggleFocus();
+        }
     }
 
     /**
@@ -79,9 +90,6 @@ class AutomationFocus
 
         // Toggle the 'Focus on' loop on click
         focusButton.addEventListener("click", this.__toggleFocus.bind(this), false);
-
-        // Restore previous session state
-        this.__toggleFocus();
     }
 
     /**

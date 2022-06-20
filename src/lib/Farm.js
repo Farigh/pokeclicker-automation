@@ -31,11 +31,23 @@ class AutomationFarm
 
     /**
      * @brief Builds the menu, and inialize internal data
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        this.__buildUnlockStrategySelection();
-        this.__buildMenu();
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            this.__buildMenu();
+        }
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            this.__buildUnlockStrategySelection();
+            this.__chooseUnlockStrategy();
+
+            // Restore previous session state
+            this.__toggleAutoFarming();
+        }
     }
 
     /**
@@ -65,10 +77,6 @@ class AutomationFarm
 
         let unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
         Automation.Menu.__addAutomationButton("Auto unlock", "autoUnlockFarmingEnabled", unlockTooltip, this.__farmingContainer);
-        this.__chooseUnlockStrategy();
-
-        // Restore previous session state
-        this.__toggleAutoFarming();
     }
 
     /**

@@ -14,22 +14,40 @@ class AutomationQuest
     /**
      * @brief Builds the menu, and retores previous running state if needed
      *
+     * @param initStep: The current automation init step
+     */
+    static initialize(initStep)
+    {
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            // Disable use/buy small restore mode by default
+            if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
+            {
+                localStorage.setItem("autoUseSmallRestoreEnabled", false);
+            }
+
+            // Disable Auto quest mode by default
+            if (localStorage.getItem("autoQuestEnabled") === null)
+            {
+                localStorage.setItem("autoQuestEnabled", false);
+            }
+
+            this.__buildMenu();
+        }
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            // Restore previous session state
+            this.__toggleAutoQuest();
+        }
+    }
+
+    /**
+     * @brief Builds the menu
+     *
      * The 'Use/buy Small Restore' and 'AutoQuests' functionalities are disabled by default (if never set in a previous session)
      */
-    static start()
+    static __buildMenu()
     {
-        // Disable use/buy small restore mode by default
-        if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
-        {
-            localStorage.setItem("autoUseSmallRestoreEnabled", false);
-        }
-
-        // Disable Auto quest mode by default
-        if (localStorage.getItem("autoQuestEnabled") === null)
-        {
-            localStorage.setItem("autoQuestEnabled", false);
-        }
-
         // Add the related button to the automation menu
         this.__questContainer = document.createElement("div");
         Automation.Menu.__automationButtonsDiv.appendChild(this.__questContainer);
@@ -62,9 +80,6 @@ class AutomationQuest
                                 + "⚠️ This can be cost-heavy during early game";
         let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
         Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip, this.__questContainer);
-
-        // Restore previous session state
-        this.__toggleAutoQuest();
     }
 
     /**

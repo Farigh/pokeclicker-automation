@@ -5,10 +5,12 @@ class AutomationUtils
 {
     /**
      * @brief Initializes the Utils components
+     *
+     * @param initStep: The current automation init step
      */
-    static init()
+    static initialize(initStep)
     {
-        this.Route.init();
+        this.Route.initialize(initStep);
     }
 
     /**
@@ -96,9 +98,14 @@ class AutomationUtils
 
         /**
          * @brief Initializes the class members
+         *
+         * @param initStep: The current automation init step
          */
-        static init()
+        static initialize(initStep)
         {
+            // Only consider the Finalize init step
+            if (initStep != Automation.InitSteps.Finalize) return;
+
             this.__buildRouteMaxHealthMap();
         }
 

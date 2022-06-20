@@ -16,9 +16,14 @@ class AutomationDungeon
 
     /**
      * @brief Builds the menu
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
+        // Only consider the BuildMenu init step
+        if (initStep != Automation.InitSteps.BuildMenu) return;
+
         this.__injectDungeonCss();
 
         // Hide the gym and dungeon fight menus by default and disable auto fight

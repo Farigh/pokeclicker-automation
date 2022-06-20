@@ -22,20 +22,27 @@ class AutomationItems
      * @brief Builds the menu, and retores previous running state if needed
      *
      * The 'Oak Items Upgrade' functionality is disabled by default (if never set in a previous session)
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        // Disable Oak Items auto-upgrades by default
-        if (localStorage.getItem("autoOakUpgradeEnabled") == null)
+        if (initStep == Automation.InitSteps.BuildMenu)
         {
-            localStorage.setItem("autoOakUpgradeEnabled", false);
+            // Disable Oak Items auto-upgrades by default
+            if (localStorage.getItem("autoOakUpgradeEnabled") == null)
+            {
+                localStorage.setItem("autoOakUpgradeEnabled", false);
+            }
+
+            this.__buildMenu();
         }
-
-        this.__buildMenu();
-
-        // Restore previous session state
-        this.__toggleAutoOakUpgrade();
-        this.__toggleAutoGemUpgrade();
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            // Restore previous session state
+            this.__toggleAutoOakUpgrade();
+            this.__toggleAutoGemUpgrade();
+        }
     }
 
     static __buildMenu()

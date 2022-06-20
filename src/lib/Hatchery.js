@@ -14,19 +14,26 @@ class AutomationHatchery
      * @brief Builds the menu, and retores previous running state if needed
      *
      * The 'Not shiny 1st' functionality is disabled by default (if never set in a previous session)
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        // Disable no-shiny mode by default
-        if (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === null)
+        if (initStep == Automation.InitSteps.BuildMenu)
         {
-            localStorage.setItem("notShinyFirstHatcheryAutomationEnabled", false);
+            // Disable no-shiny mode by default
+            if (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === null)
+            {
+                localStorage.setItem("notShinyFirstHatcheryAutomationEnabled", false);
+            }
+
+            this.__buildMenu();
         }
-
-        this.__buildMenu();
-
-        // Restore previous session state
-        this.__toggleAutoHatchery();
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            // Restore previous session state
+            this.__toggleAutoHatchery();
+        }
     }
 
     static __buildMenu()
