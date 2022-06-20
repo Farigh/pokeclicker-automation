@@ -1,3 +1,6 @@
+/**
+ * @brief The automation main class
+ */
 class Automation
 {
     // Aliases on the other classes so every calls in the code can use the `Automation.Alias` form
@@ -9,7 +12,6 @@ class Automation
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
     static Menu = AutomationMenu;
-    static Quest = AutomationQuest;
     static Trivia = AutomationTrivia;
     static Underground = AutomationUnderground;
     static Utils = AutomationUtils;
@@ -49,7 +51,6 @@ class Automation
                     this.Underground.initialize(initStep);
                     this.Farm.initialize(initStep);
                     this.Items.initialize(initStep);
-                    this.Quest.initialize(initStep);
 
                     // 'Trivia' panel
                     this.Trivia.initialize(initStep);

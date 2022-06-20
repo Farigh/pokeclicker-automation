@@ -57,7 +57,7 @@ class AutomationUtils
                 (item) =>
                 {
                     // Skip any forbidden item
-                    if (item === Automation.Quest.__forbiddenItem)
+                    if (item === Automation.Focus.Quests.__forbiddenItem)
                     {
                         return false;
                     }

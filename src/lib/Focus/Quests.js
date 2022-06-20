@@ -1,185 +1,127 @@
 /**
- * @class The AutomationQuest regroups the 'Daily Quest' functionalities
+ * @class The AutomationFocusQuest regroups the 'Focus on' button's 'Quests' functionalities
  *
  * @note The quest feature is not accessible right away when starting a new game.
- *       This menu will be hidden until the functionality is unlocked in-game.
+ *       This focus topic will be hidden until the functionality is unlocked in-game.
  */
-class AutomationQuest
+class AutomationFocusQuests
 {
-    static __questContainer = null;
-
     static __autoQuestLoop = null;
     static __forbiddenItem = null;
 
     /**
-     * @brief Builds the menu, and retores previous running state if needed
+     * @brief Adds the Quests functionality to the 'Focus on' list
      *
-     * @param initStep: The current automation init step
+     * @param {Array} functionalitiesList: The list to add the functionality to
      */
-    static initialize(initStep)
+    static __registerFunctionalities(functionalitiesList)
     {
-        if (initStep == Automation.InitSteps.BuildMenu)
-        {
-            // Disable use/buy small restore mode by default
-            if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
+        functionalitiesList.push(
             {
-                localStorage.setItem("autoUseSmallRestoreEnabled", false);
-            }
-
-            // Disable Auto quest mode by default
-            if (localStorage.getItem("autoQuestEnabled") === null)
-            {
-                localStorage.setItem("autoQuestEnabled", false);
-            }
-
-            this.__buildMenu();
-        }
-        else if (initStep == Automation.InitSteps.Finalize)
-        {
-            // Restore previous session state
-            this.__toggleAutoQuest();
-        }
+                id: "Quests",
+                name: "Quests",
+                tooltip: "Automatically add and complete quests"
+                       + Automation.Menu.__tooltipSeparator()
+                       + "This mode fully automates quest completion\n"
+                       + "It automatically equips Oak items and balls\n"
+                       + "It automatically moves to the appropriate location\n"
+                       + "It automatically attacks, starts gym and enters dungeons"
+                       + Automation.Menu.__tooltipSeparator()
+                       + "Most modes are disabled while this is enabled\n"
+                       + "as it will take over control of those modes"
+                       + Automation.Menu.__tooltipSeparator()
+                       + "⚠️ You will hardly be able to manually play with this mode enabled",
+                run: function (){ this.__start(); }.bind(this),
+                stop: function (){ this.__stop(); }.bind(this),
+                isUnlocked: function (){ return App.game.quests.isDailyQuestsUnlocked(); },
+                refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
+            });
     }
 
     /**
      * @brief Builds the menu
      *
-     * The 'Use/buy Small Restore' and 'AutoQuests' functionalities are disabled by default (if never set in a previous session)
+     * The 'Use/buy Small Restore' functionality is disabled by default (if never set in a previous session)
+     *
+     * @param parent: The div container to insert the menu to
      */
-    static __buildMenu()
+    static __buildSpecificMenu(parent)
     {
-        // Add the related button to the automation menu
-        this.__questContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__questContainer);
-
-        Automation.Menu.__addSeparator(this.__questContainer);
-
-        // Only display the menu when the hatchery is unlocked
-        if (!App.game.quests.isDailyQuestsUnlocked())
+        // Disable use/buy small restore mode by default
+        if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
         {
-            this.__questContainer.hidden = true;
-            this.__setQuestUnlockWatcher();
+            localStorage.setItem("autoUseSmallRestoreEnabled", false);
         }
 
-        let autoQuestTooltip = "Automatically add and complete quests"
-                             + Automation.Menu.__tooltipSeparator()
-                             + "This mode fully automates quest completion\n"
-                             + "It automatically equips Oak items and balls\n"
-                             + "It automatically moves to the appropriate location\n"
-                             + "It automatically attacks, starts gym and enters dungeons"
-                             + Automation.Menu.__tooltipSeparator()
-                             + "Most modes are disabled while this is enabled\n"
-                             + "as it will take over control of those modes"
-                             + Automation.Menu.__tooltipSeparator()
-                             + "⚠️ You will hardly be able to manually play with this mode enabled";
-        let questButton = Automation.Menu.__addAutomationButton("AutoQuests", "autoQuestEnabled", autoQuestTooltip, this.__questContainer);
-        questButton.addEventListener("click", this.__toggleAutoQuest.bind(this), false);
-
-        let smallRestoreTooltip = "Allows the AutoQuests mode to buy and use Small Restore items"
+        let smallRestoreTooltip = "Allows the Quests focus topic to buy and use Small Restore items"
                                 + Automation.Menu.__tooltipSeparator()
+                                + "This will only be used when a mining quest is active.\n"
                                 + "⚠️ This can be cost-heavy during early game";
         let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
-        Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip, this.__questContainer);
+        let buttonContainer = Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip, parent).parentElement;
+        buttonContainer.style.textAlign = "right";
+        buttonContainer.style.merginTop = "2px";
     }
 
     /**
-     * @brief Watches for the in-game functionality to be unlocked.
-     *        Once unlocked, the menu will be displayed to the user
+     * @brief Starts the quests automation
      */
-    static __setQuestUnlockWatcher()
+    static __start()
     {
-        let watcher = setInterval(function()
+        // Only set a loop if there is none active
+        if (this.__autoQuestLoop === null)
         {
-            if (App.game.quests.isDailyQuestsUnlocked())
-            {
-                clearInterval(watcher);
-                this.__questContainer.hidden = false;
-                this.__toggleAutoQuest();
-            }
-        }.bind(this), 10000); // Check every 10 seconds
+            // Set auto-quest loop
+            this.__autoQuestLoop = setInterval(this.__questLoop.bind(this), 1000); // Runs every second
+
+            // Disable other modes button
+            let disableReason = "The 'Focus on Quests' feature is enabled";
+            Automation.Menu.__disableButton("autoClickEnabled", true, disableReason);
+            Automation.Menu.__disableButton("hatcheryAutomationEnabled", true, disableReason);
+            Automation.Menu.__disableButton("autoFarmingEnabled", true, disableReason);
+            Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, disableReason);
+            Automation.Menu.__disableButton("autoMiningEnabled", true, disableReason);
+
+            // Select cheri berry to avoid long riping time
+            Automation.Farm.__forcePlantBerriesAsked = true;
+            FarmController.selectedBerry(BerryType.Cheri);
+
+            // Force enable other modes
+            Automation.Click.__toggleAutoClick(true);
+            Automation.Hatchery.__toggleAutoHatchery(true);
+            Automation.Farm.__toggleAutoFarming(true);
+            Automation.Underground.__toggleAutoMining(true);
+        }
     }
 
     /**
-     * @brief Toggles the 'Daily Quest' feature
-     *
-     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
-     * If the feature was disabled and it's toggled to enabled, the loop will be started.
-     *
-     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
+     * @brief Stops the quests automation
      */
-    static __toggleAutoQuest(enable)
+    static __stop()
     {
-        if (!App.game.quests.isDailyQuestsUnlocked())
-        {
-            return;
-        }
+        // Unregister the loop
+        clearInterval(this.__autoQuestLoop);
+        this.__autoQuestLoop = null;
 
-        // If we got the click event, use the button status
-        if ((enable !== true) && (enable !== false))
-        {
-            enable = (localStorage.getItem("autoQuestEnabled") === "true");
-        }
+        // Reset demands
+        Automation.Farm.__forcePlantBerriesAsked = false;
+        Automation.Dungeon.__stopRequested = false;
 
-        if (enable)
-        {
-            // Only set a loop if there is none active
-            if (this.__autoQuestLoop === null)
-            {
-                // Set auto-quest loop
-                this.__autoQuestLoop = setInterval(this.__questLoop.bind(this), 1000); // Runs every second
+        // Reset other modes status
+        Automation.Click.__toggleAutoClick();
+        Automation.Hatchery.__toggleAutoHatchery();
+        Automation.Farm.__toggleAutoFarming();
+        Automation.Underground.__toggleAutoMining();
 
-                // Disable other modes button
-                let disableReason = "The 'AutoQuests' feature is enabled";
-                Automation.Menu.__disableButton("autoClickEnabled", true, disableReason);
-                Automation.Menu.__disableButton("focusOnTopicEnabled", true, disableReason);
-                Automation.Menu.__disableButton("hatcheryAutomationEnabled", true, disableReason);
-                Automation.Menu.__disableButton("autoFarmingEnabled", true, disableReason);
-                Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, disableReason);
-                Automation.Menu.__disableButton("autoMiningEnabled", true, disableReason);
+        // Re-enable other modes button
+        Automation.Menu.__disableButton("autoClickEnabled", false);
+        Automation.Menu.__disableButton("hatcheryAutomationEnabled", false);
+        Automation.Menu.__disableButton("autoFarmingEnabled", false);
+        Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
+        Automation.Menu.__disableButton("autoMiningEnabled", false);
 
-                // Select cheri berry to avoid long riping time
-                Automation.Farm.__forcePlantBerriesAsked = true;
-                FarmController.selectedBerry(BerryType.Cheri);
-
-                // Force enable other modes
-                Automation.Click.__toggleAutoClick(true);
-                Automation.Hatchery.__toggleAutoHatchery(true);
-                Automation.Farm.__toggleAutoFarming(true);
-                Automation.Underground.__toggleAutoMining(true);
-
-                // Force disable the 'Focus on' mode
-                Automation.Focus.__toggleFocus(false);
-            }
-        }
-        else if (this.__autoQuestLoop !== null)
-        {
-            // Unregister the loop
-            clearInterval(this.__autoQuestLoop);
-            this.__autoQuestLoop = null;
-
-            // Reset demands
-            Automation.Farm.__forcePlantBerriesAsked = false;
-            Automation.Dungeon.__stopRequested = false;
-
-            // Reset other modes status
-            Automation.Click.__toggleAutoClick();
-            Automation.Focus.__toggleFocus();
-            Automation.Hatchery.__toggleAutoHatchery();
-            Automation.Farm.__toggleAutoFarming();
-            Automation.Underground.__toggleAutoMining();
-
-            // Re-enable other modes button
-            Automation.Menu.__disableButton("autoClickEnabled", false);
-            Automation.Menu.__disableButton("focusOnTopicEnabled", false);
-            Automation.Menu.__disableButton("hatcheryAutomationEnabled", false);
-            Automation.Menu.__disableButton("autoFarmingEnabled", false);
-            Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
-            Automation.Menu.__disableButton("autoMiningEnabled", false);
-
-            // Remove the ball to catch
-            this.__selectBallToCatch(GameConstants.Pokeball.None);
-        }
+        // Remove the ball to catch
+        this.__selectBallToCatch(GameConstants.Pokeball.None);
     }
 
     /**

@@ -134,7 +134,7 @@ class AutomationFarm
             this.__farmingLoop = null;
 
             // Restore setting
-            Automation.Quest.__forbiddenItem = null;
+            Automation.Focus.Quests.__forbiddenItem = null;
         }
     }
 
@@ -188,7 +188,7 @@ class AutomationFarm
 
     static __removeOakItemIfNeeded()
     {
-        Automation.Quest.__forbiddenItem = this.__internalStrategy.forbiddenOakItem;
+        Automation.Focus.Quests.__forbiddenItem = this.__internalStrategy.forbiddenOakItem;
 
         if (this.__internalStrategy.forbiddenOakItem !== null)
         {
@@ -1427,7 +1427,7 @@ class AutomationFarm
     {
         Automation.Menu.__forceAutomationState("autoUnlockFarmingEnabled", false);
         Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, reason);
-        Automation.Quest.__forbiddenItem = null;
+        Automation.Focus.Quests.__forbiddenItem = null;
     }
 
     /**
