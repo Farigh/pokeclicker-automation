@@ -142,6 +142,10 @@ class AutomationDungeon
             // Only set a loop if there is none active
             if (this.__autoDungeonLoop === null)
             {
+                // Reset internal members
+                this.__playerActionOccured = false;
+                this.__resetSavedStates();
+
                 // Set auto-dungeon loop
                 this.__autoDungeonLoop = setInterval(this.__dungeonFightLoop.bind(this), 50); // Runs every game tick
             }
@@ -151,8 +155,6 @@ class AutomationDungeon
             // Unregister the loop
             clearInterval(this.__autoDungeonLoop);
             this.__autoDungeonLoop = null;
-            this.__playerActionOccured = false;
-            this.__resetSavedStates();
         }
     }
 
@@ -204,8 +206,8 @@ class AutomationDungeon
         }
         else if (App.game.gameState === GameConstants.GameState.dungeon)
         {
-            // Let any fight finish before moving
-            if (DungeonRunner.fightingBoss() || DungeonRunner.fighting())
+            // Let any fight or catch finish before moving
+            if (DungeonRunner.fightingBoss() || DungeonRunner.fighting() || DungeonBattle.catching())
             {
                 return;
             }
@@ -301,10 +303,11 @@ class AutomationDungeon
 
             return;
         }
-        // Else hide the menu, if we're not in the dungeon
+        // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
         else
         {
             this.__previousTown = null;
+            this.__playerActionOccured = false;
             this.__resetSavedStates();
             Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
         }
