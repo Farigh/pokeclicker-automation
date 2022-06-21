@@ -18,6 +18,8 @@ class AutomationUtils
      */
     static OakItem = class AutomationOakItemUtils
     {
+        static __forbiddenItem = null;
+
         /**
          * @class The Setup class lists the different setup to use based on the current objectives
          */
@@ -57,7 +59,7 @@ class AutomationUtils
                 (item) =>
                 {
                     // Skip any forbidden item
-                    if (item === Automation.Focus.Quests.__forbiddenItem)
+                    if (item === this.__forbiddenItem)
                     {
                         return false;
                     }
@@ -71,7 +73,7 @@ class AutomationUtils
                         }
                     }
                     return false;
-                });
+                }, this);
 
             App.game.oakItems.deactivateAll();
             expectedLoadout.forEach(

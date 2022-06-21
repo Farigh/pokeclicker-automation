@@ -7,7 +7,6 @@
 class AutomationFocusQuests
 {
     static __autoQuestLoop = null;
-    static __forbiddenItem = null;
 
     /**
      * @brief Adds the Quests functionality to the 'Focus on' list
