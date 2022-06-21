@@ -173,7 +173,7 @@ class AutomationFocusQuests
         }
 
         let availableQuests = App.game.quests.questList().filter(
-            (quest, index) =>
+            (_, index) =>
             {
                 return (!App.game.quests.questList()[index].isCompleted()
                         && !App.game.quests.questList()[index].inProgress());
@@ -183,7 +183,7 @@ class AutomationFocusQuests
         availableQuests.sort(this.__sortQuestByPriority, this);
 
         availableQuests.forEach(
-            (quest, index) =>
+            (quest) =>
             {
                 if (App.game.quests.canStartNewQuest())
                 {
@@ -268,11 +268,11 @@ class AutomationFocusQuests
             if (quest instanceof CatchShiniesQuest)
             {
                 this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
-                Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+                this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             }
             else
             {
-                Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+                this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
             }
 
             // Disable catching pokemons if enabled, and go to the best farming route
@@ -330,7 +330,7 @@ class AutomationFocusQuests
 
         // Add a pokeball to the Caught type and set the PokemonCatch setup
         let hasBalls = this.__selectBallToCatch(GameConstants.Pokeball.Ultraball);
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         if (hasBalls && ((player.route() !== bestRoute) || (player.region !== bestRouteRegion)))
         {
@@ -430,7 +430,7 @@ class AutomationFocusQuests
         {
             Automation.Utils.Route.__moveToRoute(quest.route, quest.region);
         }
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
     }
 
     /**
@@ -443,7 +443,7 @@ class AutomationFocusQuests
     static __workOnGainGemsQuest(quest)
     {
         this.__selectBallToCatch(GameConstants.Pokeball.None);
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(quest.type);
         Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
@@ -465,16 +465,7 @@ class AutomationFocusQuests
         }
         else
         {
-            // Select the right oak item
-            let customOakLoadout = Automation.Utils.OakItem.Setup.PokemonExp;
-
-            // Remove the item from the default loadout if it already exists, so we are sure it ends up in the 1st position
-            customOakLoadout = customOakLoadout.filter((item) => item !== quest.item);
-
-            // Prepend the needed item
-            customOakLoadout.unshift(quest.item);
-
-            Automation.Utils.OakItem.__equipLoadout(customOakLoadout);
+            this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
             // Go kill some pokemon
             this.__selectBallToCatch(GameConstants.Pokeball.None);
@@ -493,7 +484,7 @@ class AutomationFocusQuests
     static __workOnUsePokeballQuest(ballType, enforceType = false)
     {
         let hasBalls = this.__selectBallToCatch(ballType, enforceType);
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         if (hasBalls)
         {
@@ -748,5 +739,46 @@ class AutomationFocusQuests
 
         // Don't sort other quests
         return 0;
+    }
+
+    /**
+     * @brief Amends the @p loadoutCandidates with any side quests needed Oak item, and equips the resulting loadout
+     *
+     * @param {Array} loadoutCandidates: The wanted loadout composition
+     */
+    static __equipOptimizedLoadout(loadoutCandidates)
+    {
+        let optimumItems = [];
+
+        let currentQuests = App.game.quests.currentQuests();
+
+        // Always equip UseOakItemQuest items 1st
+        let useOakItemQuests = currentQuests.filter((quest) => quest instanceof UseOakItemQuest)
+        if (useOakItemQuests == 1)
+        {
+            optimumItems.push(useOakItemQuests[0].item);
+        }
+
+        if (currentQuests.some((quest) => quest instanceof CatchShiniesQuest))
+        {
+            optimumItems.push(OakItemType.Shiny_Charm);
+        }
+
+        let resultLoadout = loadoutCandidates;
+        // Reverse iterate so the order is preserved, since the items will be prepended to the list
+        optimumItems.reverse().forEach(
+            (wantedItem) =>
+            {
+                if (App.game.oakItems.isUnlocked(wantedItem))
+                {
+                    // Remove the item from the default loadout if it already exists, so we are sure it ends up in the 1st position
+                    resultLoadout = resultLoadout.filter((item) => item !== wantedItem);
+
+                    // Prepend the needed item
+                    resultLoadout.unshift(wantedItem);
+                }
+            });
+
+        Automation.Utils.OakItem.__equipLoadout(resultLoadout);
     }
 }

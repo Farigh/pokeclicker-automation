@@ -48,9 +48,10 @@ class AutomationUtils
         /**
          * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
          *
-         * The @p loadoutCandidates contains three items but the user might have less slots unlocked.
+         * The @p loadoutCandidates might contain more items than the user have unlocked.
+         * In such case, the items will be equipped respecting the provided list order
          *
-         * @param loadoutCandidates: The wanted loadout composition
+         * @param {Array} loadoutCandidates: The wanted loadout composition
          */
         static __equipLoadout(loadoutCandidates)
         {
