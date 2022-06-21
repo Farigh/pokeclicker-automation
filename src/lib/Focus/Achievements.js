@@ -25,6 +25,7 @@ class AutomationFocusAchievements
                        + "The current achievement will be pinned to the tracker",
                 run: function (){ this.__start(); }.bind(this),
                 stop: function (){ this.__stop(); }.bind(this),
+                isUnlocked: function (){ return App.game.achievementTracker.canAccess(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }
