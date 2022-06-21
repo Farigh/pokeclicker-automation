@@ -9,18 +9,26 @@ class AutomationTrivia
     static __lastEvoStone = null;
 
     /**
-     * @brief Starts the Trivia components
+     * @brief Initializes the Trivia components
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        this.__buildMenu();
-        this.__initializeGotoLocationTrivia();
-        this.__initializeRoamingRouteTrivia();
-        this.__initializeEvolutionTrivia();
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            this.__buildMenu();
+        }
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            this.__initializeGotoLocationTrivia();
+            this.__initializeRoamingRouteTrivia();
+            this.__initializeEvolutionTrivia();
+        }
     }
 
     /**
-     * @brief Builds the `Trivia` menu panel
+     * @brief Builds the 'Trivia' menu panel
      */
     static __buildMenu()
     {

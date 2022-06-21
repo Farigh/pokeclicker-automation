@@ -1,11 +1,16 @@
 /**
- * @class The AutomationFocusAchievements regroups the 'Focus on' button 'Achievements' functionalities
+ * @class The AutomationFocusAchievements regroups the 'Focus on' button's 'Achievements' functionalities
  */
 class AutomationFocusAchievements
 {
     static __achievementLoop = null;
     static __currentAchievement = null;
 
+    /**
+     * @brief Adds the Achivements functionality to the 'Focus on' list
+     *
+     * @param {Array} functionalitiesList: The list to add the functionality to
+     */
     static __registerFunctionalities(functionalitiesList)
     {
         functionalitiesList.push(
@@ -20,17 +25,24 @@ class AutomationFocusAchievements
                        + "The current achievement will be pinned to the tracker",
                 run: function (){ this.__start(); }.bind(this),
                 stop: function (){ this.__stop(); }.bind(this),
+                isUnlocked: function (){ return App.game.achievementTracker.canAccess(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }
 
+    /**
+     * @brief Starts the achievements automation
+     */
     static __start()
     {
         // Set achievement loop
         this.__achievementLoop = setInterval(this.__focusOnAchievements.bind(this), 1000); // Runs every second
     }
 
-    static __stop()
+    /**
+     * @brief Stops the achievements automation
+     */
+     static __stop()
     {
         this.__currentAchievement = null;
 

@@ -10,9 +10,14 @@
 
     /**
      * @brief Builds the menu
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
+        // Only consider the BuildMenu init step
+        if (initStep != Automation.InitSteps.BuildMenu) return;
+
         // Hide the gym and dungeon fight menus by default and disable auto fight
         let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
                      +     '&nbsp;Gym fight&nbsp;'

@@ -7,18 +7,25 @@ class AutomationClick
 
     /**
      * @brief Builds the menu, and retores previous running state if needed
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        // Add auto click button
-        let autoClickTooltip = "Attack clicks are performed every 50ms"
-                             + Automation.Menu.__tooltipSeparator()
-                             + "Applies to battle, gym and dungeon";
-        let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", "autoClickEnabled", autoClickTooltip);
-        autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
-
-        // Restore previous session state
-        this.__toggleAutoClick();
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            // Add auto click button
+            let autoClickTooltip = "Attack clicks are performed every 50ms"
+                                + Automation.Menu.__tooltipSeparator()
+                                + "Applies to battle, gym and dungeon";
+            let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", "autoClickEnabled", autoClickTooltip);
+            autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
+        }
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            // Restore previous session state
+            this.__toggleAutoClick();
+        }
     }
 
     /**

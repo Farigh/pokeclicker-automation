@@ -5,6 +5,7 @@ class AutomationFocus
 {
     // Aliases on the other classes
     static Achievements = AutomationFocusAchievements;
+    static Quests = AutomationFocusQuests;
 
     static __noFunctionalityRefresh = -1;
 
@@ -13,16 +14,28 @@ class AutomationFocus
     static __focusSelectElem = null;
 
     static __functionalities = [];
+    static __lockedFunctionalities = [];
 
     static __lastFocusData = null;
 
     /**
      * @brief Initializes the component
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
-        this.__buildFunctionalitiesList();
-        this.__buildMenu();
+        // Only consider the BuildMenu init step
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            this.__buildFunctionalitiesList();
+            this.__buildMenu();
+        }
+        else if (initStep == Automation.InitSteps.Finalize)
+        {
+            // Restore previous session state
+            this.__toggleFocus();
+        }
     }
 
     /**
@@ -80,8 +93,8 @@ class AutomationFocus
         // Toggle the 'Focus on' loop on click
         focusButton.addEventListener("click", this.__toggleFocus.bind(this), false);
 
-        // Restore previous session state
-        this.__toggleFocus();
+        // Add the quests-specific menu
+        this.Quests.__buildSpecificMenu(focusContainer);
     }
 
     /**
@@ -125,7 +138,10 @@ class AutomationFocus
             clearInterval(this.__focusLoop);
             if (this.__activeFocus !== null)
             {
-                this.__activeFocus.stop();
+                if (this.__activeFocus.stop !== undefined)
+                {
+                    this.__activeFocus.stop();
+                }
                 this.__activeFocus = null;
             }
             this.__focusLoop = null;
@@ -146,7 +162,6 @@ class AutomationFocus
                                                + "Such route is the highest unlocked one\n"
                                                + "with HP lower than Click Attack",
                                         run: function (){ this.__goToBestRouteForExp(); }.bind(this),
-                                        stop: function (){},
                                         refreshRateAsMs: 10000 // Refresh every 10s
                                     });
 
@@ -180,6 +195,7 @@ class AutomationFocus
                                         refreshRateAsMs: 3000 // Refresh every 3s
                                     });
 
+        this.Quests.__registerFunctionalities(this.__functionalities);
         this.Achievements.__registerFunctionalities(this.__functionalities);
 
         this.__addGemsFocusFunctionalities();
@@ -231,6 +247,9 @@ class AutomationFocus
 
     /**
      * @brief Populates the drop-down list based on the registered functionalities
+     *
+     * If any functionality is locked, the corresponding focus topic will be hidden to the player.
+     * A watcher will be set to show it in the list, once it has been unlocked by the player.
      */
     static __populateFocusOptions()
     {
@@ -249,7 +268,13 @@ class AutomationFocus
                     opt.value = functionality.id;
                     opt.id = functionality.id;
 
-                    if (lastAutomationFocusedTopic === functionality.id)
+                    if ((functionality.isUnlocked !== undefined)
+                        && !functionality.isUnlocked())
+                    {
+                        this.__lockedFunctionalities.push({ functionality, opt });
+                        opt.hidden = true;
+                    }
+                    else if (lastAutomationFocusedTopic === functionality.id)
                     {
                         // Restore previous session selected element
                         opt.selected = true;
@@ -258,7 +283,41 @@ class AutomationFocus
                 opt.textContent = functionality.name;
 
                 this.__focusSelectElem.options.add(opt);
-            });
+            }, this);
+
+        if (this.__lockedFunctionalities.length != 0)
+        {
+            this.__setFunctionalityWatcher();
+        }
+    }
+
+    /**
+     * @brief Watches for the in-game functionalities to be unlocked.
+     *        Once unlocked, the drop-down list item will be displayed to the user
+     */
+    static __setFunctionalityWatcher()
+    {
+        let watcher = setInterval(function()
+            {
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__lockedFunctionalities.length - 1; i >= 0; i--)
+                {
+                    if (this.__lockedFunctionalities[i].functionality.isUnlocked())
+                    {
+                        // Make the element visible
+                        this.__lockedFunctionalities[i].opt.hidden = false;
+
+                        // Remove the functionality from the locked list
+                        this.__lockedFunctionalities.splice(i, 1);
+                    }
+                }
+
+                if (this.__lockedFunctionalities.length == 0)
+                {
+                    // No more missing focus, unregister the loop
+                    clearInterval(watcher);
+                }
+            }.bind(this), 5000); // Refresh every 5s
     }
 
     /**

@@ -5,10 +5,12 @@ class AutomationUtils
 {
     /**
      * @brief Initializes the Utils components
+     *
+     * @param initStep: The current automation init step
      */
-    static init()
+    static initialize(initStep)
     {
-        this.Route.init();
+        this.Route.initialize(initStep);
     }
 
     /**
@@ -16,6 +18,8 @@ class AutomationUtils
      */
     static OakItem = class AutomationOakItemUtils
     {
+        static __forbiddenItem = null;
+
         /**
          * @class The Setup class lists the different setup to use based on the current objectives
          */
@@ -55,7 +59,7 @@ class AutomationUtils
                 (item) =>
                 {
                     // Skip any forbidden item
-                    if (item === Automation.Quest.__forbiddenItem)
+                    if (item === this.__forbiddenItem)
                     {
                         return false;
                     }
@@ -69,7 +73,7 @@ class AutomationUtils
                         }
                     }
                     return false;
-                });
+                }, this);
 
             App.game.oakItems.deactivateAll();
             expectedLoadout.forEach(
@@ -96,9 +100,14 @@ class AutomationUtils
 
         /**
          * @brief Initializes the class members
+         *
+         * @param initStep: The current automation init step
          */
-        static init()
+        static initialize(initStep)
         {
+            // Only consider the Finalize init step
+            if (initStep != Automation.InitSteps.Finalize) return;
+
             this.__buildRouteMaxHealthMap();
         }
 

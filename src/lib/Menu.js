@@ -15,9 +15,14 @@ class AutomationMenu
      *   - Tooltip creation
      *   - Drop-down list creation
      *   - ...
+     *
+     * @param initStep: The current automation init step
      */
-    static build()
+    static initialize(initStep)
     {
+        // Only consider the BuildMenu init step
+        if (initStep != Automation.InitSteps.BuildMenu) return;
+
         this.__injectAutomationCss();
 
         let node = document.createElement("div");

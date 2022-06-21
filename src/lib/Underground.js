@@ -15,9 +15,14 @@ class AutomationUnderground
 
     /**
      * @brief Builds the menu, and retores previous running state if needed
+     *
+     * @param initStep: The current automation init step
      */
-    static start()
+    static initialize(initStep)
     {
+        // Only consider the BuildMenu init step
+        if (initStep != Automation.InitSteps.BuildMenu) return;
+
         // Add the related button to the automation menu
         this.__undergroundContainer = document.createElement("div");
         Automation.Menu.__automationButtonsDiv.appendChild(this.__undergroundContainer);
