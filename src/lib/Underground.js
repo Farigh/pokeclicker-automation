@@ -281,10 +281,10 @@ class AutomationUnderground
     {
         let itemsState = new Map();
 
-        [...Array(App.game.underground.getSizeY()).keys()].forEach(
+        [...Array(Mine.rewardGrid.length).keys()].forEach(
             (row) =>
             {
-                [...Array(Underground.sizeX).keys()].forEach(
+                [...Array(Mine.rewardGrid[row].length).keys()].forEach(
                     (column) =>
                     {
                         let content = Mine.rewardGrid[row][column];
