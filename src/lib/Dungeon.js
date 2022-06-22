@@ -14,6 +14,11 @@ class AutomationDungeon
     static __isFirstMove = true;
     static __playerActionOccured = false;
 
+    static Settings = {
+                          FeatureEnabled: "Dungeon-FightEnabled",
+                          StopOnPokedex: "Dungeon-FightStopOnPokedex"
+                      };
+
     /**
      * @brief Builds the menu
      *
@@ -38,11 +43,11 @@ class AutomationDungeon
                                + Automation.Menu.__tooltipSeparator()
                                + "Chests and the boss are ignored until all tiles are revealed\n"
                                + "Chests are all picked right before fighting the boss";
-        let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", "dungeonFightEnabled", autoDungeonTooltip, dungeonDiv, true);
+        let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
         autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
 
         // Disable by default
-        Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
+        Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
@@ -52,7 +57,7 @@ class AutomationDungeon
                                    + "by clicking on the pokeball image.";
 
         let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
-        Automation.Menu.__addAutomationButton(buttonLabel, "stopDungeonAtPokedexCompletion", autoStopDungeonTooltip, dungeonDiv);
+        Automation.Menu.__addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
 
         // Add the button action
         let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
@@ -134,7 +139,7 @@ class AutomationDungeon
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("dungeonFightEnabled") === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -187,7 +192,7 @@ class AutomationDungeon
             //    - the pokedex is full for this dungeon, and it has been ask for
             if (this.__stopRequested
                 || this.__playerActionOccured
-                || ((localStorage.getItem("stopDungeonAtPokedexCompletion") === "true")
+                || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode)))
             {
                 if (this.__playerActionOccured)
@@ -195,7 +200,7 @@ class AutomationDungeon
                     Automation.Utils.__sendWarningNotif("User action detected, turning off the automation", "Dungeon");
                 }
 
-                Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
+                Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
                 this.__stopRequested = false;
             }
             else
@@ -309,7 +314,7 @@ class AutomationDungeon
             this.__previousTown = null;
             this.__playerActionOccured = false;
             this.__resetSavedStates();
-            Automation.Menu.__forceAutomationState("dungeonFightEnabled", false);
+            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
         }
     }
 
@@ -414,7 +419,7 @@ class AutomationDungeon
             }
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((localStorage.getItem("stopDungeonAtPokedexCompletion") == "true")
+            if ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                 && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))
             {
                 disableNeeded = true;
@@ -439,11 +444,11 @@ class AutomationDungeon
 
             if (disableNeeded)
             {
-                Automation.Menu.__disableButton("dungeonFightEnabled", true, disableReason);
+                Automation.Menu.__disableButton(this.Settings.FeatureEnabled, true, disableReason);
             }
             else
             {
-                Automation.Menu.__disableButton("dungeonFightEnabled", false);
+                Automation.Menu.__disableButton(this.Settings.FeatureEnabled, false);
             }
         }
     }

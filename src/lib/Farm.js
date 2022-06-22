@@ -29,6 +29,11 @@ class AutomationFarm
 
     static __internalStrategy = null;
 
+    static Settings = {
+                          FeatureEnabled: "Farming-Enabled",
+                          FocusOnUnlocks: "Farming-FocusOnUnlocks"
+                      };
+
     /**
      * @brief Builds the menu, and inialize internal data
      *
@@ -72,11 +77,11 @@ class AutomationFarm
                             + Automation.Menu.__tooltipSeparator()
                             + "Crops are harvested as soon as they ripe\n"
                             + "New crops are planted using the selected one in the farm menu";
-        let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", "autoFarmingEnabled", autoFarmTooltip, this.__farmingContainer);
+        let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", this.Settings.FeatureEnabled, autoFarmTooltip, this.__farmingContainer);
         autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
 
         let unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
-        Automation.Menu.__addAutomationButton("Auto unlock", "autoUnlockFarmingEnabled", unlockTooltip, this.__farmingContainer);
+        Automation.Menu.__addAutomationButton("Auto unlock", this.Settings.FocusOnUnlocks, unlockTooltip, this.__farmingContainer);
     }
 
     /**
@@ -115,7 +120,7 @@ class AutomationFarm
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("autoFarmingEnabled") === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -148,12 +153,12 @@ class AutomationFarm
         this.__harvestAsEfficientAsPossible();
         this.__tryToUnlockNewSpots();
 
-        if (localStorage.getItem("autoUnlockFarmingEnabled") === "true")
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
         {
             this.__chooseUnlockStrategy();
         }
 
-        if ((localStorage.getItem("autoUnlockFarmingEnabled") === "true")
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
             && !this.__forcePlantBerriesAsked)
         {
             this.__equipOakItemIfNeeded();
@@ -241,7 +246,7 @@ class AutomationFarm
                     return;
                 }
 
-                if ((localStorage.getItem("autoUnlockFarmingEnabled") === "false")
+                if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
                     || (this.__internalStrategy === null)
                     || (this.__internalStrategy.harvestAsSoonAsPossible === true)
                     || ((plot.berryData.growthTime[4] - plot.age) < 15))
@@ -1335,7 +1340,7 @@ class AutomationFarm
             {
                 if (App.game.oakItems.itemList[this.__internalStrategy.oakItemToEquip].isUnlocked())
                 {
-                    Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
+                    Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
                 }
             }.bind(this), 5000); // Check every 5s
@@ -1366,7 +1371,7 @@ class AutomationFarm
             {
                 if (App.game.statistics.pokemonCaptured[neededPokemonId]() !== 0)
                 {
-                    Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
+                    Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
                 }
             }, 5000); // Check every 5s
@@ -1412,7 +1417,7 @@ class AutomationFarm
 
                 if (enigmaMutation.hintsSeen.every((seen) => seen()))
                 {
-                    Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
+                    Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
                 }
             }, 5000); // Check every 5s
@@ -1425,8 +1430,8 @@ class AutomationFarm
      */
     static __disableAutoUnlock(reason)
     {
-        Automation.Menu.__forceAutomationState("autoUnlockFarmingEnabled", false);
-        Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, reason);
+        Automation.Menu.__forceAutomationState(this.Settings.FocusOnUnlocks, false);
+        Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, true, reason);
         Automation.Utils.OakItem.__forbiddenItem = null;
     }
 

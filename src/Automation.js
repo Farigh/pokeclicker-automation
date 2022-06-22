@@ -22,6 +22,8 @@ class Automation
         static Finalize = 1;
     };
 
+    static Settings = { Notifications: "Notifications" };
+
     /**************************/
     /*    PUBLIC INTERFACE    */
     /**************************/
@@ -64,7 +66,7 @@ class Automation
                 this.Menu.__addSeparator();
 
                 let notificationTooltip = "Enables automation-related notifications";
-                this.Menu.__addAutomationButton("Notification", "automationNotificationsEnabled", notificationTooltip);
+                this.Menu.__addAutomationButton("Notification", this.Settings.Notifications, notificationTooltip);
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");

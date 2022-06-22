@@ -18,6 +18,11 @@ class AutomationFocus
 
     static __lastFocusData = null;
 
+    static Settings = {
+                          FeatureEnabled: "Focus-Enabled",
+                          FocusedTopic: "Focus-SelectedTopic"
+                      };
+
     /**
      * @brief Initializes the component
      *
@@ -45,13 +50,8 @@ class AutomationFocus
      */
     static __buildMenu()
     {
-        let focusFeatureId = "focusOnTopicEnabled";
-
         // Disable 'Focus on' by default
-        if (localStorage.getItem(focusFeatureId) === null)
-        {
-            localStorage.setItem(focusFeatureId, false);
-        }
+        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
 
         // Add the related buttons to the automation menu
         let focusContainer = document.createElement("div");
@@ -81,10 +81,11 @@ class AutomationFocus
         this.__focusSelectElem.onchange = function() { Automation.Focus.__focusOnChanged(); };
 
         // Add the 'Focus on' button
-        let focusButton = Automation.Menu.__createButtonElement(focusFeatureId);
-        focusButton.textContent = (localStorage.getItem(focusFeatureId) === "true") ? "On" : "Off";
-        focusButton.classList.add((localStorage.getItem(focusFeatureId) === "true") ? "btn-success" : "btn-danger");
-        focusButton.onclick = function() { Automation.Menu.__toggleButton(focusFeatureId) };
+        let focusButton = Automation.Menu.__createButtonElement(this.Settings.FeatureEnabled);
+        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
+        focusButton.textContent = (isFeatureEnabled ? "On" : "Off");
+        focusButton.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
+        focusButton.onclick = function() { Automation.Menu.__toggleButton(this.Settings.FeatureEnabled) }.bind(this);
         focusButton.style.marginTop = "3px";
         focusButton.style.marginLeft = "5px";
         focusButton.style.marginRight = "10px";
@@ -111,7 +112,7 @@ class AutomationFocus
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("focusOnTopicEnabled") === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -173,7 +174,7 @@ class AutomationFocus
                                                 + "Gyms gives way more money than routes\n"
                                                 + "The best gym is the one that gives the most money per game tick",
                                         run: function (){ this.__goToBestGymForMoney(); }.bind(this),
-                                        stop: function (){ Automation.Menu.__forceAutomationState("gymFightEnabled", false); },
+                                        stop: function (){ Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                                         refreshRateAsMs: 10000 // Refresh every 10s
                                     });
 
@@ -189,7 +190,7 @@ class AutomationFocus
                                         run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
                                         stop: function ()
                                               {
-                                                  Automation.Menu.__forceAutomationState("gymFightEnabled", false);
+                                                  Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
                                                   App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
                                               },
                                         refreshRateAsMs: 3000 // Refresh every 3s
@@ -253,7 +254,7 @@ class AutomationFocus
      */
     static __populateFocusOptions()
     {
-        let lastAutomationFocusedTopic = localStorage.getItem("lastAutomationFocusedTopic");
+        let lastAutomationFocusedTopic = Automation.Utils.LocalStorage.getValue(this.Settings.FocusedTopic);
         this.__functionalities.forEach(
             (functionality) =>
             {
@@ -333,7 +334,7 @@ class AutomationFocus
         if (forceOff)
         {
             // Stop the current loop if any, and disable the button
-            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
+            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
         }
 
         // Update the tooltip
@@ -341,7 +342,7 @@ class AutomationFocus
         this.__focusSelectElem.parentElement.setAttribute("automation-tooltip-text", activeFocus.tooltip);
 
         // Save the last selected topic
-        localStorage.setItem("lastAutomationFocusedTopic", this.__focusSelectElem.value);
+        Automation.Utils.LocalStorage.setValue(this.Settings.FocusedTopic, this.__focusSelectElem.value);
     }
 
     /**
@@ -400,7 +401,7 @@ class AutomationFocus
         // Wait for the 'AutoFight' menu to appear, and then choose the right opponent and enable it
         let menuWatcher = setInterval(function()
             {
-                if (localStorage.getItem("focusOnTopicEnabled") === "false")
+                if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "false")
                 {
                     clearInterval(menuWatcher);
                     return;
@@ -412,7 +413,7 @@ class AutomationFocus
                         if (option.value === this.__lastFocusData.bestGym)
                         {
                             option.selected = true;
-                            Automation.Menu.__forceAutomationState("gymFightEnabled", true);
+                            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
                             clearInterval(menuWatcher);
                             return false;
                         }
@@ -533,7 +534,7 @@ class AutomationFocus
     static __ensureNoInstanceIsInProgress()
     {
         // Ask the dungeon auto-fight to stop, if the feature is enabled
-        if (localStorage.getItem("dungeonFightEnabled") === "true")
+        if (Automation.Utils.LocalStorage.getValue(Automation.Dungeon.Settings.FeatureEnabled) === "true")
         {
             Automation.Dungeon.__stopRequested = true;
             return false;
@@ -542,7 +543,7 @@ class AutomationFocus
         // Disable 'Focus on' if an instance is in progress, and exit
         if (Automation.Utils.__isInInstanceState())
         {
-            Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
+            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
             Automation.Utils.__sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
             return false;
         }

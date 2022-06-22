@@ -54,7 +54,7 @@ class AutomationFocusAchievements
         {
             Automation.Dungeon.__stopRequested = true;
         }
-        Automation.Menu.__forceAutomationState("gymFightEnabled", false);
+        Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
     }
 
@@ -88,7 +88,7 @@ class AutomationFocusAchievements
             if (this.__currentAchievement === null)
             {
                 // No more achievements, stop the feature
-                Automation.Menu.__forceAutomationState("focusOnTopicEnabled", false);
+                Automation.Menu.__forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
                 Automation.Utils.__sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
 
                 return;
@@ -157,9 +157,9 @@ class AutomationFocusAchievements
         {
             Automation.Utils.Route.__moveToTown(townToGoTo);
         }
-        else if (localStorage.getItem("gymFightEnabled") === "false")
+        else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
-            Automation.Menu.__forceAutomationState("gymFightEnabled", true);
+            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
         }
         else
         {
@@ -205,7 +205,7 @@ class AutomationFocusAchievements
         Automation.Menu.__forceAutomationState("stopDungeonAtPokedexCompletion", false);
 
         // Enable auto dungeon fight
-        Automation.Menu.__forceAutomationState("dungeonFightEnabled", true);
+        Automation.Menu.__forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
     }
 
     /**
