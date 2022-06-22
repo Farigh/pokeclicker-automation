@@ -10,6 +10,13 @@ class AutomationHatchery
 
     static __autoHatcheryLoop = null;
 
+    static Settings = {
+                          FeatureEnabled: "Hatchery-Enabled",
+                          NotShinyFirst: "Hatchery-NotShinyFirst",
+                          UseFossils: "Hatchery-UseFossils",
+                          UseEggs: "Hatchery-UseEggs"
+                      };
+
     /**
      * @brief Builds the menu, and retores previous running state if needed
      *
@@ -22,9 +29,9 @@ class AutomationHatchery
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Disable no-shiny mode by default
-            if (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === null)
+            if (localStorage.getItem(this.Settings.NotShinyFirst) === null)
             {
-                localStorage.setItem("notShinyFirstHatcheryAutomationEnabled", false);
+                localStorage.setItem(this.Settings.NotShinyFirst, false);
             }
 
             this.__buildMenu();
@@ -57,22 +64,22 @@ class AutomationHatchery
                                 + "The queue is not used, as it would reduce the Pokemon Attack\n"
                                 + "It also enables you to manually add pokemons to the queue\n"
                                 + "The queued pokemon are hatched first";
-        let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", "hatcheryAutomationEnabled", autoHatcheryTooltip, this.__hatcheryContainer);
+        let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__hatcheryContainer);
         autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
 
         let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
                          + Automation.Menu.__tooltipSeparator()
                          + "This is useful to farm shinies you don't have yet";
-        Automation.Menu.__addAutomationButton("Not shiny 1st", "notShinyFirstHatcheryAutomationEnabled", shinyTooltip, this.__hatcheryContainer);
+        Automation.Menu.__addAutomationButton("Not shiny 1st", this.Settings.NotShinyFirst, shinyTooltip, this.__hatcheryContainer);
         let fossilTooltip = "Add fossils to the hatchery as well"
                           + Automation.Menu.__tooltipSeparator()
                           + "Only fossils for which pokemon are not currently held are added";
-        Automation.Menu.__addAutomationButton("Fossil", "fossilHatcheryAutomationEnabled", fossilTooltip, this.__hatcheryContainer);
+        Automation.Menu.__addAutomationButton("Fossil", this.Settings.UseFossils, fossilTooltip, this.__hatcheryContainer);
         let eggTooltip = "Add eggs to the hatchery as well"
                        + Automation.Menu.__tooltipSeparator()
                        + "Only eggs for which some pokemon are not currently held are added\n"
                        + "Only one egg of a given type is used at the same time";
-        Automation.Menu.__addAutomationButton("Eggs", "eggsHatcheryAutomationEnabled", eggTooltip, this.__hatcheryContainer);
+        Automation.Menu.__addAutomationButton("Eggs", this.Settings.UseEggs, eggTooltip, this.__hatcheryContainer);
     }
 
     /**
@@ -111,7 +118,7 @@ class AutomationHatchery
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("hatcheryAutomationEnabled") === "true");
+            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -147,13 +154,13 @@ class AutomationHatchery
         [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
         // Try to use eggs first, if enabled
-        if (localStorage.getItem("eggsHatcheryAutomationEnabled") === "true")
+        if (localStorage.getItem(this.Settings.UseEggs) === "true")
         {
             this.__addEggsToHatchery();
         }
 
         // Then try to use fossils, if enabled
-        if (localStorage.getItem("fossilHatcheryAutomationEnabled") === "true")
+        if (localStorage.getItem(this.Settings.UseFossils) === "true")
         {
             this.__addFossilsToHatchery();
         }
@@ -169,7 +176,7 @@ class AutomationHatchery
                     return !pokemon.breeding && (pokemon.level == 100);
                 });
 
-            let notShinyFirst = (localStorage.getItem("notShinyFirstHatcheryAutomationEnabled") === "true");
+            let notShinyFirst = (localStorage.getItem(this.Settings.NotShinyFirst) === "true");
 
             // Sort list by breeding efficiency
             filteredEggList.sort((a, b) =>

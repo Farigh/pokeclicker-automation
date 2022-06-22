@@ -5,6 +5,8 @@ class AutomationClick
 {
     static __autoClickLoop = null;
 
+    static Settings = { FeatureEnabled: "Click-Enabled" };
+
     /**
      * @brief Builds the menu, and retores previous running state if needed
      *
@@ -18,7 +20,7 @@ class AutomationClick
             let autoClickTooltip = "Attack clicks are performed every 50ms"
                                 + Automation.Menu.__tooltipSeparator()
                                 + "Applies to battle, gym and dungeon";
-            let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", "autoClickEnabled", autoClickTooltip);
+            let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip);
             autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
         }
         else if (initStep == Automation.InitSteps.Finalize)
@@ -42,7 +44,7 @@ class AutomationClick
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("autoClickEnabled") === "true");
+            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)

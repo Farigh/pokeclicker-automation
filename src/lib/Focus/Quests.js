@@ -8,6 +8,8 @@ class AutomationFocusQuests
 {
     static __autoQuestLoop = null;
 
+    static Settings = { UseSmallRestore: "Focus-Quest-UseSmallRestore" };
+
     /**
      * @brief Adds the Quests functionality to the 'Focus on' list
      *
@@ -47,9 +49,9 @@ class AutomationFocusQuests
     static __buildSpecificMenu(parent)
     {
         // Disable use/buy small restore mode by default
-        if (localStorage.getItem("autoUseSmallRestoreEnabled") === null)
+        if (localStorage.getItem(this.Settings.UseSmallRestore) === null)
         {
-            localStorage.setItem("autoUseSmallRestoreEnabled", false);
+            localStorage.setItem(this.Settings.UseSmallRestore, false);
         }
 
         let smallRestoreTooltip = "Allows the Quests focus topic to buy and use Small Restore items"
@@ -57,7 +59,7 @@ class AutomationFocusQuests
                                 + "This will only be used when a mining quest is active.\n"
                                 + "⚠️ This can be cost-heavy during early game";
         let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
-        let buttonContainer = Automation.Menu.__addAutomationButton(smallRestoreLabel, "autoUseSmallRestoreEnabled", smallRestoreTooltip, parent).parentElement;
+        let buttonContainer = Automation.Menu.__addAutomationButton(smallRestoreLabel, this.Settings.UseSmallRestore, smallRestoreTooltip, parent).parentElement;
         buttonContainer.style.textAlign = "right";
         buttonContainer.style.merginTop = "2px";
     }
@@ -75,11 +77,11 @@ class AutomationFocusQuests
 
             // Disable other modes button
             let disableReason = "The 'Focus on Quests' feature is enabled";
-            Automation.Menu.__disableButton("autoClickEnabled", true, disableReason);
-            Automation.Menu.__disableButton("hatcheryAutomationEnabled", true, disableReason);
-            Automation.Menu.__disableButton("autoFarmingEnabled", true, disableReason);
-            Automation.Menu.__disableButton("autoUnlockFarmingEnabled", true, disableReason);
-            Automation.Menu.__disableButton("autoMiningEnabled", true, disableReason);
+            Automation.Menu.__disableButton(Automation.Click.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.__disableButton(Automation.Hatchery.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.__disableButton(Automation.Farm.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.__disableButton(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
+            Automation.Menu.__disableButton(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
 
             // Select cheri berry to avoid long riping time
             Automation.Farm.__forcePlantBerriesAsked = true;
@@ -113,11 +115,11 @@ class AutomationFocusQuests
         Automation.Underground.__toggleAutoMining();
 
         // Re-enable other modes button
-        Automation.Menu.__disableButton("autoClickEnabled", false);
-        Automation.Menu.__disableButton("hatcheryAutomationEnabled", false);
-        Automation.Menu.__disableButton("autoFarmingEnabled", false);
-        Automation.Menu.__disableButton("autoUnlockFarmingEnabled", false);
-        Automation.Menu.__disableButton("autoMiningEnabled", false);
+        Automation.Menu.__disableButton(Automation.Click.Settings.FeatureEnabled, false);
+        Automation.Menu.__disableButton(Automation.Hatchery.Settings.FeatureEnabled, false);
+        Automation.Menu.__disableButton(Automation.Farm.Settings.FeatureEnabled, false);
+        Automation.Menu.__disableButton(Automation.Farm.Settings.FocusOnUnlocks, false);
+        Automation.Menu.__disableButton(Automation.Underground.Settings.FeatureEnabled, false);
 
         // Remove the ball to catch
         this.__selectBallToCatch(GameConstants.Pokeball.None);
@@ -373,7 +375,7 @@ class AutomationFocusQuests
         Automation.Menu.__forceAutomationState("stopDungeonAtPokedexCompletion", false);
 
         // Enable auto dungeon fight
-        Automation.Menu.__forceAutomationState("dungeonFightEnabled", true);
+        Automation.Menu.__forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
     }
 
     /**
@@ -400,9 +402,9 @@ class AutomationFocusQuests
         {
             Automation.Utils.Route.__moveToTown(townToGoTo);
         }
-        else if (localStorage.getItem("gymFightEnabled") === "false")
+        else if (localStorage.getItem(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
-            Automation.Menu.__forceAutomationState("gymFightEnabled", true);
+            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
         }
         else
         {
@@ -647,7 +649,7 @@ class AutomationFocusQuests
         //    - It can be bought (ie. the Cinnabar Island store is unlocked)
         //    - The user allowed it
         if (!TownList["Cinnabar Island"].isUnlocked()
-            && (localStorage.getItem("autoUseSmallRestoreEnabled") === "true"))
+            && (localStorage.getItem(this.Settings.UseSmallRestore) === "true"))
         {
             return;
         }

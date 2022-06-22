@@ -516,7 +516,7 @@ class AutomationUtils
      */
     static __sendNotif(message, module = null)
     {
-        if (localStorage.getItem("automationNotificationsEnabled") == "true")
+        if (localStorage.getItem(Automation.Settings.Notifications) == "true")
         {
             let titleStr = "Automation";
             if (module !== null)
@@ -542,7 +542,7 @@ class AutomationUtils
      */
     static __sendWarningNotif(message, module = null)
     {
-        if (localStorage.getItem("automationNotificationsEnabled") == "true")
+        if (localStorage.getItem(Automation.Settings.Notifications) == "true")
         {
             let titleStr = "Automation";
             if (module !== null)

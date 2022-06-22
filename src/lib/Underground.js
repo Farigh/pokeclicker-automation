@@ -14,6 +14,8 @@ class AutomationUnderground
     static __actionCount = 0;
     static __foundItems = [];
 
+    static Settings = { FeatureEnabled: "Mining-Enabled" };
+
     /**
      * @brief Builds the menu, and retores previous running state if needed
      *
@@ -43,7 +45,7 @@ class AutomationUnderground
                               + "The hammer will then be used if more than 3 blocks\n"
                               + "can be destroyed on an item within its range\n"
                               + "The chisel will then be used to finish the remaining blocks\n";
-        let miningButton = Automation.Menu.__addAutomationButton("Mining", "autoMiningEnabled", autoMiningTooltip, this.__undergroundContainer);
+        let miningButton = Automation.Menu.__addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__undergroundContainer);
         miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
 
         // Restore previous session state
@@ -86,7 +88,7 @@ class AutomationUnderground
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("autoMiningEnabled") === "true");
+            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)

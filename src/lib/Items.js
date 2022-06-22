@@ -18,6 +18,11 @@ class AutomationItems
     static __autoOakUpgradeLoop = null;
     static __autoGemUpgradeLoop = null;
 
+    static Settings = {
+                          UpgradeOakItems: "Items-UpgradeOakItems",
+                          UpgradeGems: "Items-UpgradeGems"
+                      };
+
     /**
      * @brief Builds the menu, and retores previous running state if needed
      *
@@ -30,9 +35,9 @@ class AutomationItems
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Disable Oak Items auto-upgrades by default
-            if (localStorage.getItem("autoOakUpgradeEnabled") == null)
+            if (localStorage.getItem(this.Settings.UpgradeOakItems) == null)
             {
-                localStorage.setItem("autoOakUpgradeEnabled", false);
+                localStorage.setItem(this.Settings.UpgradeOakItems, false);
             }
 
             this.__buildMenu();
@@ -67,7 +72,7 @@ class AutomationItems
         let oakItemTooltip = "Automatically ugrades Oak items when possible"
                            + Automation.Menu.__tooltipSeparator()
                            + "⚠️ This can be cost-heavy during early game";
-        let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", "autoOakUpgradeEnabled", oakItemTooltip, this.__oakUpgradeContainer);
+        let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", this.Settings.UpgradeOakItems, oakItemTooltip, this.__oakUpgradeContainer);
         oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
 
         /** Gems **/
@@ -78,7 +83,7 @@ class AutomationItems
         this.__gemUpgradeContainer.hidden = !App.game.gems.canAccess();
 
         let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
-        let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", "autoGemUpgradeEnabled", gemsTooltip, this.__gemUpgradeContainer);
+        let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", this.Settings.UpgradeGems, gemsTooltip, this.__gemUpgradeContainer);
         gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
 
         // If both are hidden, hide the whole menu
@@ -137,7 +142,7 @@ class AutomationItems
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("autoOakUpgradeEnabled") === "true");
+            enable = (localStorage.getItem(this.Settings.UpgradeOakItems) === "true");
         }
 
         if (enable)
@@ -176,7 +181,7 @@ class AutomationItems
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem("autoGemUpgradeEnabled") === "true");
+            enable = (localStorage.getItem(this.Settings.UpgradeGems) === "true");
         }
 
         if (enable)
