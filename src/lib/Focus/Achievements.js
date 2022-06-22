@@ -157,7 +157,7 @@ class AutomationFocusAchievements
         {
             Automation.Utils.Route.__moveToTown(townToGoTo);
         }
-        else if (localStorage.getItem(Automation.Gym.Settings.FeatureEnabled) === "false")
+        else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
             Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
         }

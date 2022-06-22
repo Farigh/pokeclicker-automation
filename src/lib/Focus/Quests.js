@@ -49,10 +49,7 @@ class AutomationFocusQuests
     static __buildSpecificMenu(parent)
     {
         // Disable use/buy small restore mode by default
-        if (localStorage.getItem(this.Settings.UseSmallRestore) === null)
-        {
-            localStorage.setItem(this.Settings.UseSmallRestore, false);
-        }
+        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseSmallRestore, false);
 
         let smallRestoreTooltip = "Allows the Quests focus topic to buy and use Small Restore items"
                                 + Automation.Menu.__tooltipSeparator()
@@ -402,7 +399,7 @@ class AutomationFocusQuests
         {
             Automation.Utils.Route.__moveToTown(townToGoTo);
         }
-        else if (localStorage.getItem(Automation.Gym.Settings.FeatureEnabled) === "false")
+        else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
             Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
         }
@@ -649,7 +646,7 @@ class AutomationFocusQuests
         //    - It can be bought (ie. the Cinnabar Island store is unlocked)
         //    - The user allowed it
         if (!TownList["Cinnabar Island"].isUnlocked()
-            && (localStorage.getItem(this.Settings.UseSmallRestore) === "true"))
+            && (Automation.Utils.LocalStorage.getValue(this.Settings.UseSmallRestore) === "true"))
         {
             return;
         }

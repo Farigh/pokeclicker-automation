@@ -88,7 +88,7 @@ class AutomationUnderground
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)

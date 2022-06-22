@@ -139,7 +139,7 @@ class AutomationDungeon
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -192,7 +192,7 @@ class AutomationDungeon
             //    - the pokedex is full for this dungeon, and it has been ask for
             if (this.__stopRequested
                 || this.__playerActionOccured
-                || ((localStorage.getItem(this.Settings.StopOnPokedex) === "true")
+                || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode)))
             {
                 if (this.__playerActionOccured)
@@ -419,7 +419,7 @@ class AutomationDungeon
             }
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((localStorage.getItem(this.Settings.StopOnPokedex) == "true")
+            if ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                 && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))
             {
                 disableNeeded = true;

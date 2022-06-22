@@ -35,10 +35,7 @@ class AutomationItems
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Disable Oak Items auto-upgrades by default
-            if (localStorage.getItem(this.Settings.UpgradeOakItems) == null)
-            {
-                localStorage.setItem(this.Settings.UpgradeOakItems, false);
-            }
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UpgradeOakItems, false);
 
             this.__buildMenu();
         }
@@ -142,7 +139,7 @@ class AutomationItems
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem(this.Settings.UpgradeOakItems) === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.UpgradeOakItems) === "true");
         }
 
         if (enable)
@@ -181,7 +178,7 @@ class AutomationItems
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem(this.Settings.UpgradeGems) === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.UpgradeGems) === "true");
         }
 
         if (enable)

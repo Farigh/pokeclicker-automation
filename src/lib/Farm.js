@@ -120,7 +120,7 @@ class AutomationFarm
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -153,12 +153,12 @@ class AutomationFarm
         this.__harvestAsEfficientAsPossible();
         this.__tryToUnlockNewSpots();
 
-        if (localStorage.getItem(this.Settings.FocusOnUnlocks) === "true")
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
         {
             this.__chooseUnlockStrategy();
         }
 
-        if ((localStorage.getItem(this.Settings.FocusOnUnlocks) === "true")
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
             && !this.__forcePlantBerriesAsked)
         {
             this.__equipOakItemIfNeeded();
@@ -246,7 +246,7 @@ class AutomationFarm
                     return;
                 }
 
-                if ((localStorage.getItem(this.Settings.FocusOnUnlocks) === "false")
+                if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
                     || (this.__internalStrategy === null)
                     || (this.__internalStrategy.harvestAsSoonAsPossible === true)
                     || ((plot.berryData.growthTime[4] - plot.age) < 15))

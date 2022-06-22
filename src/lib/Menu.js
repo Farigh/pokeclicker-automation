@@ -103,14 +103,11 @@ class AutomationMenu
     static __addAutomationButton(label, id, tooltip = "", containingDiv = this.__automationButtonsDiv, forceDisabled = false)
     {
         // Enable automation by default, in not already set in cookies
-        if (localStorage.getItem(id) == null)
-        {
-            localStorage.setItem(id, true)
-        }
+        Automation.Utils.LocalStorage.setDefaultValue(id, true);
 
         if (forceDisabled)
         {
-            localStorage.setItem(id, false);
+            Automation.Utils.LocalStorage.setValue(id, false);
         }
 
         let buttonContainer = document.createElement("div");
@@ -129,8 +126,9 @@ class AutomationMenu
         buttonContainer.appendChild(buttonLabel);
 
         let buttonElem = Automation.Menu.__createButtonElement(id);
-        buttonElem.textContent = (localStorage.getItem(id) === "true") ? "On" : "Off";
-        buttonElem.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
+        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        buttonElem.textContent = (isFeatureEnabled ? "On" : "Off");
+        buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
         buttonElem.onclick = function() { Automation.Menu.__toggleButton(id) };
 
         if (tooltip != "")
@@ -160,7 +158,7 @@ class AutomationMenu
             return;
         }
 
-        let newStatus = !(localStorage.getItem(id) == "true");
+        let newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
         if (newStatus)
         {
             // Only update the class if the button was not disabled
@@ -182,7 +180,7 @@ class AutomationMenu
             button.innerText = "Off";
         }
 
-        localStorage.setItem(button.id, newStatus);
+        Automation.Utils.LocalStorage.setValue(button.id, newStatus);
     }
 
     /**
@@ -192,7 +190,7 @@ class AutomationMenu
      */
     static __forceAutomationState(id, newState)
     {
-        let isEnabled = (localStorage.getItem(id) === "true");
+        let isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
 
         if (isEnabled !== newState)
         {
@@ -327,7 +325,7 @@ class AutomationMenu
         button.disabled = newState;
         if (newState)
         {
-            button.classList.remove((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
+            button.classList.remove((Automation.Utils.LocalStorage.getValue(id) === "true") ? "btn-success" : "btn-danger");
             button.classList.add("btn-secondary");
 
             if (reason !== "")
@@ -341,7 +339,7 @@ class AutomationMenu
         }
         else
         {
-            button.classList.add((localStorage.getItem(id) === "true") ? "btn-success" : "btn-danger");
+            button.classList.add((Automation.Utils.LocalStorage.getValue(id) === "true") ? "btn-success" : "btn-danger");
             button.classList.remove("btn-secondary");
             button.parentElement.removeAttribute("automation-tooltip-disable-reason");
         }

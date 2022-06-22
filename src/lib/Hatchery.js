@@ -29,10 +29,7 @@ class AutomationHatchery
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Disable no-shiny mode by default
-            if (localStorage.getItem(this.Settings.NotShinyFirst) === null)
-            {
-                localStorage.setItem(this.Settings.NotShinyFirst, false);
-            }
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
 
             this.__buildMenu();
         }
@@ -118,7 +115,7 @@ class AutomationHatchery
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
-            enable = (localStorage.getItem(this.Settings.FeatureEnabled) === "true");
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
         if (enable)
@@ -154,13 +151,13 @@ class AutomationHatchery
         [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
 
         // Try to use eggs first, if enabled
-        if (localStorage.getItem(this.Settings.UseEggs) === "true")
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.UseEggs) === "true")
         {
             this.__addEggsToHatchery();
         }
 
         // Then try to use fossils, if enabled
-        if (localStorage.getItem(this.Settings.UseFossils) === "true")
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.UseFossils) === "true")
         {
             this.__addFossilsToHatchery();
         }
@@ -176,7 +173,7 @@ class AutomationHatchery
                     return !pokemon.breeding && (pokemon.level == 100);
                 });
 
-            let notShinyFirst = (localStorage.getItem(this.Settings.NotShinyFirst) === "true");
+            let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
 
             // Sort list by breeding efficiency
             filteredEggList.sort((a, b) =>
