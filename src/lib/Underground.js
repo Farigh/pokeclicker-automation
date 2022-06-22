@@ -9,6 +9,7 @@ class AutomationUnderground
     static __undergroundContainer = null;
 
     static __autoMiningLoop = null;
+    static __innerMiningLoop = null;
 
     static __actionCount = 0;
     static __foundItems = [];
@@ -129,13 +130,15 @@ class AutomationUnderground
      */
     static __miningLoop()
     {
-        if (!this.__isBombingPossible())
+        // Don't run an additionnal loop if the player do not have enough energy
+        // or if a loop is already in progress
+        if ((this.__innerMiningLoop !== null) || !this.__isBombingPossible())
         {
             return;
         }
 
         this.__actionCount = 0;
-        var miningLoop = setInterval(function()
+        this.__innerMiningLoop = setInterval(function()
         {
             let nothingElseToDo = true;
 
@@ -163,8 +166,7 @@ class AutomationUnderground
                 }
                 else
                 {
-                    this.__useTheBestItem(itemsState);
-                    nothingElseToDo = false;
+                    nothingElseToDo = !this.__tryUseTheBestItem(itemsState);
                 }
             }
 
@@ -173,16 +175,19 @@ class AutomationUnderground
                 Automation.Utils.__sendNotif("Performed mining actions " + this.__actionCount.toString() + " times,"
                                            + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!",
                                              "Mining");
-                clearInterval(miningLoop);
+                clearInterval(this.__innerMiningLoop);
+                this.__innerMiningLoop = null;
                 return;
             }
-        }.bind(this), 500); // Runs every 0.5s
+        }.bind(this), 300); // Runs every 0.3s
     }
 
     /**
-     * @brief Determines which tools to use according to @see __miningLoop strategy
+     * @brief Determines which tools to use according to @see __miningLoop strategy, and tries to use it
+     *
+     * @returns True if some action are still possible after the current move, false otherwise (if the player does not have enough energy)
      */
-    static __useTheBestItem(itemsState)
+    static __tryUseTheBestItem(itemsState)
     {
         let nextTilesToMine = [];
 
@@ -200,20 +205,29 @@ class AutomationUnderground
 
         if (nextTilesToMine.length == 0)
         {
-            return;
+            return true;
         }
 
         let { useHammer, useToolX, useToolY } = this.__considerHammerUse(nextTilesToMine);
 
+        let result = false;
         if (useHammer)
         {
+            result = (App.game.underground.energy >= Underground.HAMMER_ENERGY);
             Mine.hammer(useToolX, useToolY);
         }
         else
         {
+            result = (App.game.underground.energy >= Underground.CHISEL_ENERGY);
             Mine.chisel(useToolX, useToolY);
         }
-        this.__actionCount++;
+
+        if (result)
+        {
+            this.__actionCount++;
+        }
+
+        return result;
     }
 
     /**
