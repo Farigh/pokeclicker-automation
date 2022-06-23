@@ -352,7 +352,9 @@ class AutomationDungeon
 
                             if (tile.type() === GameConstants.DungeonTile.boss)
                             {
-                                this.__isCompleted = true;
+                                // Only tag the dungeon as completed if it's not the first move or any tile is visited apart from the entrance
+                                this.__isCompleted = (!this.__isFirstMove)
+                                                  || DungeonRunner.map.board().some((row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
                                 this.__bossPosition = currentLocation;
                             }
                         }
