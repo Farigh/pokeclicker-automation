@@ -10,7 +10,6 @@ class AutomationDungeon
     static __bossPosition = null;
     static __chestPositions = [];
     static __previousTown = null;
-    static __stopRequested = false;
     static __isFirstMove = true;
     static __playerActionOccured = false;
 
@@ -18,6 +17,14 @@ class AutomationDungeon
                           FeatureEnabled: "Dungeon-FightEnabled",
                           StopOnPokedex: "Dungeon-FightStopOnPokedex"
                       };
+
+    static InternalMode = {
+                              None: 0,
+                              StopAfterThisRun: 1,
+                              ByPassUserSettings: 2
+                          };
+
+    static __internalModeRequested = this.InternalMode.None;
 
     /**
      * @brief Builds the menu
@@ -190,10 +197,11 @@ class AutomationDungeon
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if (this.__stopRequested
-                || this.__playerActionOccured
-                || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
-                    && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode)))
+            if ((this.__internalModeRequested != this.InternalMode.ByPassUserSettings)
+                && ((this.__internalModeRequested == this.InternalMode.StopAfterThisRun)
+                    || this.__playerActionOccured
+                    || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
+                        && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))))
             {
                 if (this.__playerActionOccured)
                 {
@@ -201,7 +209,7 @@ class AutomationDungeon
                 }
 
                 Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
-                this.__stopRequested = false;
+                this.__internalModeRequested = this.InternalMode.None;
             }
             else
             {
@@ -421,7 +429,8 @@ class AutomationDungeon
             }
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
+            if ((this.__internalModeRequested != this.InternalMode.ByPassUserSettings)
+                && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                 && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))
             {
                 disableNeeded = true;
@@ -458,13 +467,13 @@ class AutomationDungeon
     /**
      * @brief Adds the given @p position to the check list, if not already added.
      */
-     static __addChestPosition(position)
-     {
-         if (!this.__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y)))
-         {
-             this.__chestPositions.push(position);
-         }
-     }
+    static __addChestPosition(position)
+    {
+        if (!this.__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y)))
+        {
+            this.__chestPositions.push(position);
+        }
+    }
 
     /**
      * @brief Resets the internal data for the next run
