@@ -536,7 +536,7 @@ class AutomationFocus
         // Ask the dungeon auto-fight to stop, if the feature is enabled
         if (Automation.Utils.LocalStorage.getValue(Automation.Dungeon.Settings.FeatureEnabled) === "true")
         {
-            Automation.Dungeon.__stopRequested = true;
+            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.StopAfterThisRun;
             return false;
         }
 

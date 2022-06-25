@@ -103,7 +103,7 @@ class AutomationFocusQuests
 
         // Reset demands
         Automation.Farm.__forcePlantBerriesAsked = false;
-        Automation.Dungeon.__stopRequested = false;
+        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
 
         // Reset other modes status
         Automation.Click.__toggleAutoClick();
@@ -199,10 +199,10 @@ class AutomationFocusQuests
         // Already fighting, nothing to do for now
         if (Automation.Utils.__isInInstanceState())
         {
-            Automation.Dungeon.__stopRequested = true;
+            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.StopAfterThisRun;
             return;
         }
-        Automation.Dungeon.__stopRequested = false;
+        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
 
         let currentQuests = App.game.quests.currentQuests();
         if (currentQuests.length == 0)
