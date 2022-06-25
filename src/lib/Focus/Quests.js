@@ -753,7 +753,7 @@ class AutomationFocusQuests
 
         // Always equip UseOakItemQuest items 1st
         let useOakItemQuests = currentQuests.filter((quest) => quest instanceof UseOakItemQuest)
-        if (useOakItemQuests == 1)
+        if (useOakItemQuests.length == 1)
         {
             optimumItems.push(useOakItemQuests[0].item);
         }
