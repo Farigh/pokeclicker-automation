@@ -368,8 +368,8 @@ class AutomationFocusQuests
             return;
         }
 
-        // Disable pokedex stop
-        Automation.Menu.__forceAutomationState("stopDungeonAtPokedexCompletion", false);
+        // Bypass user settings like the stop on pokedex one
+        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.ByPassUserSettings;
 
         // Enable auto dungeon fight
         Automation.Menu.__forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);

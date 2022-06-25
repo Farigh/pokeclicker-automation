@@ -42,7 +42,7 @@ class AutomationFocusAchievements
     /**
      * @brief Stops the achievements automation
      */
-     static __stop()
+    static __stop()
     {
         this.__currentAchievement = null;
 
@@ -50,10 +50,9 @@ class AutomationFocusAchievements
         clearInterval(this.__achievementLoop);
         this.__achievementLoop = null;
 
-        if (Automation.Utils.__isInInstanceState())
-        {
-            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.StopAfterThisRun;
-        }
+        Automation.Dungeon.__internalModeRequested = Automation.Utils.__isInInstanceState() ? Automation.Dungeon.InternalMode.StopAfterThisRun
+                                                                                            : Automation.Dungeon.InternalMode.None;
+
         Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
     }
@@ -64,8 +63,15 @@ class AutomationFocusAchievements
     static __focusOnAchievements()
     {
         // Already fighting, nothing to do for now
-        if (!Automation.Focus.__ensureNoInstanceIsInProgress())
+        if (Automation.Utils.__isInInstanceState())
         {
+            // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress^M
+            if ((this.__currentAchievement === null)
+                || ((this.__currentAchievement.property instanceof ClearDungeonRequirement)
+                    && this.__currentAchievement.isCompleted()))
+            {
+                Automation.Focus.__ensureNoInstanceIsInProgress();
+            }
             return;
         }
 
@@ -108,10 +114,12 @@ class AutomationFocusAchievements
 
         if (this.__currentAchievement.property instanceof RouteKillRequirement)
         {
+            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
             this.__workOnRouteKillRequirement();
         }
         else if (this.__currentAchievement.property instanceof ClearGymRequirement)
         {
+            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
             this.__workOnClearGymRequirement();
         }
         else if (this.__currentAchievement.property instanceof ClearDungeonRequirement)
@@ -201,8 +209,8 @@ class AutomationFocusAchievements
             return;
         }
 
-        // Disable pokedex stop
-        Automation.Menu.__forceAutomationState("stopDungeonAtPokedexCompletion", false);
+        // Bypass user settings like the stop on pokedex one
+        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.ByPassUserSettings;
 
         // Enable auto dungeon fight
         Automation.Menu.__forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);

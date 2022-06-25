@@ -21,6 +21,7 @@ class AutomationDungeon
     static InternalMode = {
                               None: 0,
                               StopAfterThisRun: 1,
+                              ByPassUserSettings: 2
                           };
 
     static __internalModeRequested = this.InternalMode.None;
@@ -196,10 +197,11 @@ class AutomationDungeon
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if ((this.__internalModeRequested == this.InternalMode.StopAfterThisRun)
-                || this.__playerActionOccured
-                || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
-                    && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode)))
+            if ((this.__internalModeRequested != this.InternalMode.ByPassUserSettings)
+                && ((this.__internalModeRequested == this.InternalMode.StopAfterThisRun)
+                    || this.__playerActionOccured
+                    || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
+                        && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))))
             {
                 if (this.__playerActionOccured)
                 {
@@ -427,7 +429,8 @@ class AutomationDungeon
             }
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
+            if ((this.__internalModeRequested != this.InternalMode.ByPassUserSettings)
+                && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                 && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))
             {
                 disableNeeded = true;
