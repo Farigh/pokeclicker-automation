@@ -21,7 +21,7 @@ class AutomationFocusQuests
             {
                 id: "Quests",
                 name: "Quests",
-                tooltip: "Automatically add and complete quests"
+                tooltip: "Automatically adds and completes quests"
                        + Automation.Menu.__tooltipSeparator()
                        + "This mode fully automates quest completion\n"
                        + "It automatically equips Oak items and balls\n"

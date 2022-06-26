@@ -181,7 +181,7 @@ class AutomationFocus
         this.__functionalities.push({
                                         id: "DungeonTokens",
                                         name: "Dungeon Tokens",
-                                        tooltip: "Moves to the best route to make dungeon tokens"
+                                        tooltip: "Moves to the best route to earn dungeon tokens"
                                                + Automation.Menu.__tooltipSeparator()
                                                + "The most efficient route is the one giving\n"
                                                + "the most token per game tick.\n"
@@ -228,19 +228,14 @@ class AutomationFocus
                     {
                         id: gemTypeName + "Gems",
                         name: gemTypeName + " Gems",
-                        tooltip: "Moves to the best route to make " + gemTypeName + " gems"
+                        tooltip: "Moves to the best gym or route to earn " + gemTypeName + " gems"
                             + Automation.Menu.__tooltipSeparator()
-                            + "The best route is the one that will give the most\n"
-                            + gemTypeName + " gems per game tick.",
-                        run: function ()
-                        {
-                            let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(gemType);
-                            if ((player.route() !== bestRoute) || (player.region !== bestRouteRegion))
-                            {
-                                Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
-                            }
-                        },
-                        stop: function (){},
+                            + "The best location is the one that will give the most\n"
+                            + gemTypeName + " gems per game tick.\n"
+                            + "Gyms are considered in priority, if none is found\n"
+                            + "the routes will be considered.",
+                        run: function (){ this.__goToBestGymOrRouteForGem(gemType); }.bind(this),
+                        stop: function (){ Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                         refreshRateAsMs: 10000 // Refresh every 10s
                     });
             }, this);
@@ -397,29 +392,7 @@ class AutomationFocus
         }
 
         Automation.Utils.Route.__moveToTown(this.__lastFocusData.bestGymTown);
-
-        // Wait for the 'AutoFight' menu to appear, and then choose the right opponent and enable it
-        let menuWatcher = setInterval(function()
-            {
-                if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "false")
-                {
-                    clearInterval(menuWatcher);
-                    return;
-                }
-
-                [...document.getElementById("selectedAutomationGym").options].every(
-                    (option) =>
-                    {
-                        if (option.value === this.__lastFocusData.bestGym)
-                        {
-                            option.selected = true;
-                            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
-                            clearInterval(menuWatcher);
-                            return false;
-                        }
-                        return true;
-                    }, this);
-            }.bind(this), 50); // Check every game tick
+        this.__enableAutoGymFight(this.__lastFocusData.bestGym);
     }
 
     /**
@@ -462,7 +435,7 @@ class AutomationFocus
     }
 
     /**
-     * @brief Finds the most efficent gym to make money
+     * @brief Finds the most efficent gym to earn money
      *
      * @returns A struct { bestGym, bestGymTown }, where:
      *          @c bestGym is the best gym name
@@ -526,6 +499,36 @@ class AutomationFocus
     }
 
     /**
+     * @brief Moves the player to the best gym to earn the given @p gemType
+     *        If no gym is found, moves to the best route to earn the given @p gemType
+     *
+     * If the user is in a state in which he cannot de moved, the feature is automatically disabled.
+     */
+    static __goToBestGymOrRouteForGem(gemType)
+    {
+        if (!this.__ensureNoInstanceIsInProgress())
+        {
+            return;
+        }
+
+        let bestGym = Automation.Utils.Gym.findBestGymForFarmingType(gemType);
+        if (bestGym !== null)
+        {
+            Automation.Utils.Route.__moveToTown(bestGym.Town);
+            this.__enableAutoGymFight(bestGym.Name);
+
+            return;
+        }
+
+        // Fallback to routes if no gym could be found
+        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(gemType);
+        if ((player.route() !== bestRoute) || (player.region !== bestRouteRegion))
+        {
+            Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
+        }
+    }
+
+    /**
      * @brief Makes sure no instance is in progress
      *        It will ask the Dungeon 'Auto fight' feature to stop if enabled
      *
@@ -549,5 +552,35 @@ class AutomationFocus
         }
 
         return true;
+    }
+
+    /**
+     * @brief Waits for the 'AutoFight' menu to appear, and then chooses the right opponent and enables it
+     *
+     * @param {string} gymName
+     */
+    static __enableAutoGymFight(gymName)
+    {
+        let menuWatcher = setInterval(function()
+            {
+                if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "false")
+                {
+                    clearInterval(menuWatcher);
+                    return;
+                }
+
+                [...document.getElementById("selectedAutomationGym").options].every(
+                    (option) =>
+                    {
+                        if (option.value === gymName)
+                        {
+                            option.selected = true;
+                            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
+                            clearInterval(menuWatcher);
+                            return false;
+                        }
+                        return true;
+                    });
+            }.bind(this), 50); // Check every game tick
     }
 }
