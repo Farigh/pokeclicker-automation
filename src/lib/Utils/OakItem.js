@@ -16,14 +16,14 @@ class AutomationUtilsOakItem
         static PokemonCatch = [
                                 OakItemType.Magic_Ball,
                                 OakItemType.Shiny_Charm,
-                                OakItemType.Poison_Barb,
+                                OakItemType.Rocky_Helmet,
                                 OakItemType.Exp_Share
                             ];
         /**
          * @brief The most efficient setup to increase the pokemon power and make money
          */
         static PokemonExp = [
-                                OakItemType.Poison_Barb,
+                                OakItemType.Rocky_Helmet,
                                 OakItemType.Amulet_Coin,
                                 OakItemType.Blaze_Cassette,
                                 OakItemType.Exp_Share
