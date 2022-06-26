@@ -831,7 +831,7 @@ class AutomationFarm
                                              Automation.Farm.__plantFourBerriesForMutation(BerryType.Wiki, BerryType.Cornn, BerryType.Bluk, BerryType.Pamtre);
                                          },
                                          null,
-                                         OakItemType.Poison_Barb);
+                                         OakItemType.Rocky_Helmet);
 
         // #46 Unlock at least one Tanga berry through mutation
         this.__addUnlockMutationStrategy(BerryType.Tanga, function()
@@ -961,7 +961,7 @@ class AutomationFarm
                                              Automation.Farm.__plantABerryForMutationRequiringOver600Points(BerryType.Pamtre);
                                          },
                                          null,
-                                         OakItemType.Poison_Barb);
+                                         OakItemType.Rocky_Helmet);
 
         // #55 Unlock at least one Custap berry through mutation
         this.__addUnlockMutationStrategy(BerryType.Custap, function()
@@ -1136,7 +1136,7 @@ class AutomationFarm
                                          {
                                              App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__tryPlantBerryAtIndex(index, BerryType.Pamtre); });
                                          },
-                                         OakItemType.Poison_Barb);
+                                         OakItemType.Rocky_Helmet);
     }
 
     /**
