@@ -423,13 +423,13 @@ class AutomationFocusQuests
     static __workOnDefeatPokemonsQuest(quest)
     {
         this.__selectBallToCatch(GameConstants.Pokeball.None);
+        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         if ((player.region != quest.region)
             || (player.route() != quest.route))
         {
             Automation.Utils.Route.__moveToRoute(quest.route, quest.region);
         }
-        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
     }
 
     /**

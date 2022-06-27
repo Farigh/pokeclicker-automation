@@ -357,6 +357,9 @@ class AutomationFocus
             return;
         }
 
+        // Equip the most effective Oak item loadout for XP farming
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+
         Automation.Utils.Route.__moveToBestRouteForExp();
     }
 
@@ -382,7 +385,7 @@ class AutomationFocus
         }
 
         // Equip the 'money' Oak loadout
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
         // Fallback to the exp route if no gym can be found
         if (this.__lastFocusData.bestGymTown === null)

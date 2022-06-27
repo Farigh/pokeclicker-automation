@@ -11,22 +11,33 @@ class AutomationUtilsOakItem
     static Setup = class AutomationOakItemUtilsSetup
     {
         /**
+         * @brief The most efficient setup to make money
+         */
+        static Money = [
+                           OakItemType.Amulet_Coin,
+                           OakItemType.Rocky_Helmet,
+                           OakItemType.Exp_Share,
+                           OakItemType.Blaze_Cassette
+                       ];
+
+        /**
          * @brief The most efficient setup to catch pokemons
          */
         static PokemonCatch = [
-                                OakItemType.Magic_Ball,
-                                OakItemType.Shiny_Charm,
-                                OakItemType.Rocky_Helmet,
-                                OakItemType.Exp_Share
-                            ];
+                                  OakItemType.Magic_Ball,
+                                  OakItemType.Shiny_Charm,
+                                  OakItemType.Rocky_Helmet,
+                                  OakItemType.Exp_Share
+                              ];
+
         /**
-         * @brief The most efficient setup to increase the pokemon power and make money
+         * @brief The most efficient setup to increase the pokemon power
          */
         static PokemonExp = [
                                 OakItemType.Rocky_Helmet,
-                                OakItemType.Amulet_Coin,
+                                OakItemType.Exp_Share,
                                 OakItemType.Blaze_Cassette,
-                                OakItemType.Exp_Share
+                                OakItemType.Amulet_Coin
                             ];
     }
 
