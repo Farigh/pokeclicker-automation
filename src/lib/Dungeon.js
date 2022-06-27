@@ -415,7 +415,9 @@ class AutomationDungeon
                               || ((App.game.gameState === GameConstants.GameState.town)
                                   && (player.town() instanceof DungeonTown)));
 
-        if (!dungeonDiv.hidden)
+        // Don't disable the button if the player is still in the dungeon
+        if (!dungeonDiv.hidden
+            && (App.game.gameState !== GameConstants.GameState.dungeon))
         {
             // Disable the AutoFight button if the requirements are not met
             let disableNeeded = false;
