@@ -59,6 +59,8 @@ class AutomationFocusAchievements
 
     /**
      * @brief The achievement main loop
+     *
+     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      */
     static __focusOnAchievements()
     {

@@ -343,10 +343,7 @@ class AutomationFocus
     /**
      * @brief Moves the player to the best route for EXP farming
      *
-     * If the user is in a state in which he cannot be moved, the feature is automatically disabled.
-     *
-     * @todo (03/06/2022): Disable the button in such case to inform the user
-     *                     that the feature cannot be used at the moment
+     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      *
      * @see Automation.Utils.Route.__moveToBestRouteForExp
      */
@@ -366,10 +363,7 @@ class AutomationFocus
     /**
      * @brief Moves the player to the best gym for Money farming
      *
-     * If the user is in a state in which he cannot be moved, the feature is automatically disabled.
-     *
-     * @todo (03/06/2022): Disable the button in such case to inform the user
-     *                     that the feature cannot be used at the moment
+     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      */
     static __goToBestGymForMoney()
     {
@@ -381,7 +375,7 @@ class AutomationFocus
         // Only compute the gym the first time, since there is almost no chance that it will change while the feature is active
         if (this.__lastFocusData === null)
         {
-            this.__lastFocusData = this.__findBestGymForMoney();
+            this.__lastFocusData = Automation.Utils.Gym.findBestGymForMoney();
         }
 
         // Equip the 'money' Oak loadout
@@ -390,7 +384,7 @@ class AutomationFocus
         // Fallback to the exp route if no gym can be found
         if (this.__lastFocusData.bestGymTown === null)
         {
-            this.__goToBestRouteForExp();
+            Automation.Utils.Route.__moveToBestRouteForExp();
             return;
         }
 
@@ -401,10 +395,7 @@ class AutomationFocus
     /**
      * @brief Moves the player to the best route for EXP farming
      *
-     * If the user is in a state in which he cannot de moved, the feature is automatically disabled.
-     *
-     * @todo (03/06/2022): Disable the button in such case to inform the user
-     *                     that the feature cannot be used at the moment
+     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      */
     static __goToBestRouteForDungeonToken()
     {
@@ -438,74 +429,10 @@ class AutomationFocus
     }
 
     /**
-     * @brief Finds the most efficent gym to earn money
-     *
-     * @returns A struct { bestGym, bestGymTown }, where:
-     *          @c bestGym is the best gym name
-     *          @c bestGymTown is the best gym town name
-     */
-    static __findBestGymForMoney()
-    {
-        // Move to the best Gym
-        let bestGym = null;
-        let bestGymTown = null;
-        let bestGymRatio = 0;
-        let playerClickAttack = App.game.party.calculateClickAttack();
-        Object.keys(GymList).forEach(
-            (key) =>
-            {
-                let gym = GymList[key];
-
-                // Skip locked gyms
-                if (!gym.isUnlocked())
-                {
-                    return;
-                }
-
-                // If it's a ligue champion is the target, its town points to the champion instead of the town
-                let gymTown = gym.town;
-                if (!TownList[gymTown])
-                {
-                    gymTown = gym.parent.name;
-                }
-
-                // Some gyms are trials linked to a dungeon, don't consider those
-                if (TownList[gymTown] instanceof DungeonTown)
-                {
-                    return;
-                }
-
-                // Don't consider town that the player can't move to either
-                if (!Automation.Utils.Route.__canMoveToRegion(gymTown.region))
-                {
-                    return;
-                }
-
-                // Some champion have a team that depends on the player's starter pick
-                if (gym instanceof Champion)
-                {
-                    gym.setPokemon(player.regionStarters[player.region]());
-                }
-
-                let ticksToWin = gym.pokemons.reduce((count, pokemon) => count + Math.ceil(pokemon.maxHealth / playerClickAttack), 0);
-                let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
-
-                if (rewardRatio > bestGymRatio)
-                {
-                    bestGymTown = gymTown;
-                    bestGym = key;
-                    bestGymRatio = rewardRatio;
-                }
-            });
-
-        return { bestGym, bestGymTown };
-    }
-
-    /**
      * @brief Moves the player to the best gym to earn the given @p gemType
      *        If no gym is found, moves to the best route to earn the given @p gemType
      *
-     * If the user is in a state in which he cannot de moved, the feature is automatically disabled.
+     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      */
     static __goToBestGymOrRouteForGem(gemType)
     {
