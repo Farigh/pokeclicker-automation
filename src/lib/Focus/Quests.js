@@ -214,7 +214,7 @@ class AutomationFocusQuests
         currentQuests.sort(this.__sortQuestByPriority, this);
 
         // Filter the quests that do not need specific action
-        currentQuests = currentQuests.filter(
+        let filteredQuests = currentQuests.filter(
             (quest) =>
             {
                 return !((quest instanceof CatchShiniesQuest)
@@ -225,7 +225,7 @@ class AutomationFocusQuests
                          || (quest instanceof MineLayersQuest));
             });
 
-        let quest = currentQuests[0];
+        let quest = filteredQuests[0];
 
         // Defeat gym quest
         if ((quest instanceof CapturePokemonsQuest)
@@ -263,19 +263,31 @@ class AutomationFocusQuests
         }
         else // Other type of quest don't need much
         {
-            // Buy some ball to be prepared
-            if (quest instanceof CatchShiniesQuest)
+            // Disable catching pokemons if enabled
+            this.__selectBallToCatch(GameConstants.Pokeball.None);
+
+            if (currentQuests.some((quest) => quest instanceof CatchShiniesQuest))
             {
+                // Buy some ball to be prepared
                 this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
                 this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+            }
+            else if (currentQuests.some((quest) => quest instanceof GainMoneyQuest))
+            {
+                this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.Money);
+
+                let bestGym = Automation.Utils.Gym.findBestGymForMoney();
+                if (bestGym.bestGymTown !== null)
+                {
+                    Automation.Utils.Route.__moveToTown(bestGym.bestGymTown);
+                    Automation.Focus.__enableAutoGymFight(bestGym.bestGym);
+                    return;
+                }
             }
             else
             {
                 this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
             }
-
-            // Disable catching pokemons if enabled, and go to the best farming route
-            this.__selectBallToCatch(GameConstants.Pokeball.None);
 
             Automation.Utils.Route.__moveToBestRouteForExp();
         }
@@ -423,13 +435,13 @@ class AutomationFocusQuests
     static __workOnDefeatPokemonsQuest(quest)
     {
         this.__selectBallToCatch(GameConstants.Pokeball.None);
+        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         if ((player.region != quest.region)
             || (player.route() != quest.route))
         {
             Automation.Utils.Route.__moveToRoute(quest.route, quest.region);
         }
-        this.__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
     }
 
     /**
@@ -514,7 +526,7 @@ class AutomationFocusQuests
 
         if (!enforceType)
         {
-            // Choose the optimal pokeball, base on the other quests
+            // Choose the most optimal pokeball, based on the other quests
             App.game.quests.currentQuests().forEach(
                 (quest) =>
                 {
@@ -551,7 +563,18 @@ class AutomationFocusQuests
             {
                 // No more balls, go farm to buy some
                 App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
-                Automation.Utils.Route.__moveToBestRouteForExp();
+                Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.Money);
+
+                let bestGym = Automation.Utils.Gym.findBestGymForMoney();
+
+                if (bestGym.bestGymTown === null)
+                {
+                    Automation.Utils.Route.__moveToBestRouteForExp();
+                    return;
+                }
+
+                Automation.Utils.Route.__moveToTown(bestGym.bestGymTown);
+                Automation.Focus.__enableAutoGymFight(bestGym.bestGym);
             }
             return false;
         }

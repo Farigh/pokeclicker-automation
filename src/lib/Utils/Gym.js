@@ -77,6 +77,70 @@ class AutomationUtilsGym
         return (bestGymName !== null) ? { Name: bestGymName, Town: bestGymTown } : null;
     }
 
+    /**
+     * @brief Finds the most efficent gym to earn money
+     *
+     * @returns A struct { bestGym, bestGymTown }, where:
+     *          @c bestGym is the best gym name
+     *          @c bestGymTown is the best gym town name
+     */
+    static findBestGymForMoney()
+    {
+        // Move to the best Gym
+        let bestGym = null;
+        let bestGymTown = null;
+        let bestGymRatio = 0;
+        let playerClickAttack = App.game.party.calculateClickAttack();
+        Object.keys(GymList).forEach(
+            (key) =>
+            {
+                let gym = GymList[key];
+
+                // Skip locked gyms
+                if (!gym.isUnlocked())
+                {
+                    return;
+                }
+
+                // If it's a ligue champion is the target, its town points to the champion instead of the town
+                let gymTown = gym.town;
+                if (!TownList[gymTown])
+                {
+                    gymTown = gym.parent.name;
+                }
+
+                // Some gyms are trials linked to a dungeon, don't consider those
+                if (TownList[gymTown] instanceof DungeonTown)
+                {
+                    return;
+                }
+
+                // Don't consider town that the player can't move to either
+                if (!Automation.Utils.Route.__canMoveToRegion(gymTown.region))
+                {
+                    return;
+                }
+
+                // Some champion have a team that depends on the player's starter pick
+                if (gym instanceof Champion)
+                {
+                    gym.setPokemon(player.regionStarters[player.region]());
+                }
+
+                let ticksToWin = gym.pokemons.reduce((count, pokemon) => count + Math.ceil(pokemon.maxHealth / playerClickAttack), 0);
+                let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
+
+                if (rewardRatio > bestGymRatio)
+                {
+                    bestGymTown = gymTown;
+                    bestGym = key;
+                    bestGymRatio = rewardRatio;
+                }
+            });
+
+        return { bestGym, bestGymTown };
+    }
+
     /******************************************************************\
     |***    Internal data, should never be used by other classes    ***|
     \******************************************************************/
