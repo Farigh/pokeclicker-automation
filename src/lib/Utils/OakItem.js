@@ -39,6 +39,15 @@ class AutomationUtilsOakItem
                                 OakItemType.Blaze_Cassette,
                                 OakItemType.Amulet_Coin
                             ];
+
+        /**
+         * @brief The most efficient setup to mine in the underground
+         */
+        static Underground = [
+            OakItemType.Cell_Battery,
+            OakItemType.Explosive_Charge,
+            OakItemType.Treasure_Scanner,
+        ];
     }
 
     /**

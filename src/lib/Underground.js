@@ -132,12 +132,15 @@ class AutomationUnderground
      */
     static __miningLoop()
     {
-        // Don't run an additionnal loop if the player do not have enough energy
+        // Don't run an additional loop if the player does not have enough energy
         // or if a loop is already in progress
         if ((this.__innerMiningLoop !== null) || !this.__isBombingPossible())
         {
             return;
         }
+
+        const prevOakItems = App.game.oakItems.itemList.filter(item => item.isActive).reduce((prev, item) => [...prev, item.name], []);
+        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.Underground);
 
         this.__actionCount = 0;
         this.__innerMiningLoop = setInterval(function()
@@ -177,6 +180,7 @@ class AutomationUnderground
                 Automation.Utils.__sendNotif("Performed mining actions " + this.__actionCount.toString() + " times,"
                                            + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!",
                                              "Mining");
+                Automation.Utils.OakItem.__equipLoadout(prevOakItems);
                 clearInterval(this.__innerMiningLoop);
                 this.__innerMiningLoop = null;
                 return;
