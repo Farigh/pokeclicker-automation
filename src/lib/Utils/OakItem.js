@@ -44,9 +44,9 @@ class AutomationUtilsOakItem
          * @brief The most efficient setup to mine in the underground
          */
         static Underground = [
-            OakItemType.Cell_Battery,
-            OakItemType.Explosive_Charge,
-            OakItemType.Treasure_Scanner,
+                                OakItemType.Cell_Battery,
+                                OakItemType.Explosive_Charge,
+                                OakItemType.Treasure_Scanner,
         ];
     }
 
