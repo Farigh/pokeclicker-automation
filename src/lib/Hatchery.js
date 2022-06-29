@@ -64,19 +64,26 @@ class AutomationHatchery
         let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__hatcheryContainer);
         autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
 
+        // Build advanced settings panel
+        let hatcherySettingPanel = Automation.Menu.addSettingPanel(autoHatcheryButton.parentElement.parentElement);
+
+        let titleDiv = Automation.Menu.__createTitle("Hatchery advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        hatcherySettingPanel.appendChild(titleDiv);
+
         let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
                          + Automation.Menu.__tooltipSeparator()
                          + "This is useful to farm shinies you don't have yet";
-        Automation.Menu.__addAutomationButton("Not shiny 1st", this.Settings.NotShinyFirst, shinyTooltip, this.__hatcheryContainer);
+        Automation.Menu.__addAutomationButton("Consider shiny pokemons last", this.Settings.NotShinyFirst, shinyTooltip, hatcherySettingPanel);
         let fossilTooltip = "Add fossils to the hatchery as well"
                           + Automation.Menu.__tooltipSeparator()
                           + "Only fossils for which pokemon are not currently held are added";
-        Automation.Menu.__addAutomationButton("Fossil", this.Settings.UseFossils, fossilTooltip, this.__hatcheryContainer);
+        Automation.Menu.__addAutomationButton("Hatch Fossils", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
         let eggTooltip = "Add eggs to the hatchery as well"
                        + Automation.Menu.__tooltipSeparator()
                        + "Only eggs for which some pokemon are not currently held are added\n"
                        + "Only one egg of a given type is used at the same time";
-        Automation.Menu.__addAutomationButton("Eggs", this.Settings.UseEggs, eggTooltip, this.__hatcheryContainer);
+        Automation.Menu.__addAutomationButton("Hatch Eggs", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
     }
 
     /**

@@ -110,10 +110,12 @@ class AutomationMenu
             Automation.Utils.LocalStorage.setValue(id, false);
         }
 
+        let buttonMainContainer = document.createElement("span");
+        containingDiv.appendChild(buttonMainContainer);
         let buttonContainer = document.createElement("div");
         buttonContainer.style.paddingLeft = "10px";
         buttonContainer.style.paddingRight = "10px";
-        containingDiv.appendChild(buttonContainer);
+        buttonMainContainer.appendChild(buttonContainer);
 
         let buttonLabel = document.createElement("span");
 
@@ -301,6 +303,70 @@ class AutomationMenu
     }
 
     /**
+     * @brief Adds an hideable panel where additional settings can be added
+     *
+     * @param elemDiv: The html element to add a settings panel next to
+     *
+     * @returns The newly created settings panel container
+     */
+    static addSettingPanel(elemDiv)
+    {
+        let placeholderDiv = document.createElement("div");
+        placeholderDiv.style.position = "relative";
+        placeholderDiv.style.width = "0px";
+        placeholderDiv.style.height = "0px";
+
+        let panelContainer = document.createElement("div");
+        panelContainer.style.position = "absolute";
+        panelContainer.style.top = "calc(-30px)";
+        panelContainer.style.right = "calc(100% - 10px)";
+        placeholderDiv.appendChild(panelContainer);
+
+        let innerDiv = document.createElement("div");
+        innerDiv.classList.add("automation-setting-menu-container");
+        panelContainer.appendChild(innerDiv);
+
+        let settingsContainerDiv = document.createElement("div");
+        settingsContainerDiv.style.whiteSpace = "nowrap";
+        innerDiv.appendChild(settingsContainerDiv);
+
+        let buttonDiv = document.createElement("div");
+        buttonDiv.classList.add("automation-arrow-div");
+        settingsContainerDiv.appendChild(buttonDiv);
+
+        let arrowDiv = document.createElement("div");
+        arrowDiv.classList.add("automation-arrow");
+        buttonDiv.appendChild(arrowDiv);
+
+        // Add onclick action
+        buttonDiv.onclick = function()
+            {
+                if (!innerDiv.hasAttribute("automation-visible"))
+                {
+                    innerDiv.setAttribute("automation-visible", "true");
+                    arrowDiv.classList.add("right");
+                }
+                else
+                {
+                    innerDiv.removeAttribute("automation-visible");
+                    arrowDiv.classList.remove("right");
+                }
+            };
+
+        elemDiv.appendChild(placeholderDiv);
+
+        let settingsContentDiv = document.createElement("div");
+        settingsContentDiv.style.display = "inline-block";
+        settingsContentDiv.style.paddingTop = "5px";
+        settingsContentDiv.style.paddingBottom = "5px";
+        settingsContentDiv.style.paddingLeft = "15px";
+        settingsContentDiv.style.paddingRight = "10px";
+        settingsContainerDiv.appendChild(settingsContentDiv);
+
+        return settingsContentDiv;
+    }
+
+    /**
      * @brief Sets the disable state of the given button
      *
      * A disabled button will be greyed-out and its clic action will be inhibited
@@ -359,72 +425,155 @@ class AutomationMenu
          */
 
         const style = document.createElement('style');
-        style.textContent = `.hasAutomationTooltip
-                             {
-                                 position: relative;
-                             }
-                             .hasAutomationTooltip::before
-                             {
-                                 content: attr(automation-tooltip-text);
-                                 white-space: pre;
-                                 line-height: normal;
-                                 position: absolute;
-                                 left: calc(100% + 5px);
-                                 transform: translateX(-100%);
-                                 top: calc(100% + 6px);
-                                 padding: 5px 10px;
-                                 border-radius: 5px;
-                                 background: #222222;
-                                 color: #eeeeee;
-                                 text-align: center;
-                                 opacity: 0;
-                                 z-index: 9;
-                                 pointer-events: none;
-                             }
-                             .hasAutomationTooltip[automation-tooltip-disable-reason]::before
-                             {
-                                 content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='207' height='20'%3E%3Ctext x='0' y='17' style='fill:%23f24444; font-weight: 600; font-size:.900rem;'%3EDisabled for the following reason:%3C/text%3E%3C/svg%3E")
-                                          attr(automation-tooltip-disable-reason)
-                                          attr(automation-tooltip-text);
-                             }
-                             .hasAutomationTooltip::after
-                             {
-                                 content: "";
-                                 position: absolute;
-                                 top: 100%;
-                                 margin-top:-4px;
-                                 left: calc(100% - 30px);
-                                 border: 5px solid #222222;
-                                 border-color: transparent transparent black transparent;
-                                 opacity: 0;
-                                 z-index: 9;
-                                 pointer-events: none;
-                             }
-                             .hasAutomationTooltip:hover::before, .hasAutomationTooltip:hover::after
-                             {
-                                 transition-delay: 2s;
-                                 transition-duration:.3s;
-                                 transition-property: opacity;
-                                 opacity: 1;
-                             }
-                             .hasAutomationTooltip.centeredAutomationTooltip::after
-                             {
-                                 left: calc(50%);
-                             }
-                             .hasAutomationTooltip.gotoAutomationTooltip::after
-                             {
-                                 left: calc(100% - 85px);
-                             }
-                             .automationCategorie
-                             {
-                                 max-height: 500px;
-                                 display: block;
-                             }
-                             .automationCategorie.hide
-                             {
-                                 max-height: 0px;
-                                 display: none;
-                             }`;
+        style.textContent = `
+            .hasAutomationTooltip
+            {
+                position: relative;
+            }
+            .hasAutomationTooltip::before
+            {
+                content: attr(automation-tooltip-text);
+                white-space: pre;
+                line-height: normal;
+                position: absolute;
+                left: calc(100% + 5px);
+                transform: translateX(-100%);
+                top: calc(100% + 6px);
+                padding: 5px 10px;
+                border-radius: 5px;
+                background: #222222;
+                color: #eeeeee;
+                text-align: center;
+                opacity: 0;
+                z-index: 9;
+                pointer-events: none;
+            }
+            .hasAutomationTooltip[automation-tooltip-disable-reason]::before
+            {
+                content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='207' height='20'%3E%3Ctext x='0' y='17' style='fill:%23f24444; font-weight: 600; font-size:.900rem;'%3EDisabled for the following reason:%3C/text%3E%3C/svg%3E")
+                        attr(automation-tooltip-disable-reason)
+                        attr(automation-tooltip-text);
+            }
+            .hasAutomationTooltip::after
+            {
+                content: "";
+                position: absolute;
+                top: 100%;
+                margin-top:-4px;
+                left: calc(100% - 30px);
+                border: 5px solid #222222;
+                border-color: transparent transparent black transparent;
+                opacity: 0;
+                z-index: 9;
+                pointer-events: none;
+            }
+            .hasAutomationTooltip:hover::before, .hasAutomationTooltip:hover::after
+            {
+                transition-delay: 2s;
+                transition-duration:.3s;
+                transition-property: opacity;
+                opacity: 1;
+            }
+            .hasAutomationTooltip.centeredAutomationTooltip::after
+            {
+                left: calc(50%);
+            }
+            .hasAutomationTooltip.gotoAutomationTooltip::after
+            {
+                left: calc(100% - 85px);
+            }
+            .automationCategorie
+            {
+                max-height: 500px;
+                display: block;
+            }
+            .automationCategorie.hide
+            {
+                max-height: 0px;
+                display: none;
+            }
+            .automation-arrow
+            {
+                position: relative;
+                top: 15px;
+                left: 4px;
+                width: 7px;
+                height: 7px;
+                border: 2px solid;
+                border-color: #cccccc transparent transparent #cccccc;
+                transform: rotate(-45deg);
+                transition: transform 2s, left 2s;
+            }
+            .automation-arrow.right
+            {
+                transform: rotate(135deg);
+                transition: transform 2s, left 2s;
+                left: calc(-1px);
+            }
+            .automation-setting-menu-container
+            {
+                white-space: pre;
+                text-overflow: clip;
+                overflow: clip;
+                background-color: #2b3548;
+                border-color: #aaaaaa;
+                border-style: solid;
+                border-width: 1px;
+                margin-right: 10px;
+                border-bottom-left-radius: 5px;
+                min-width: 0px;
+                max-width: 0px;
+                min-height: 37px;
+                max-height: 37px;
+
+                transition-property:        max-height, max-width;
+                transition-timing-function:  ease-out,   ease-out;
+                transition-duration:               1s,         1s;
+                transition-delay:                  0s,      500ms;
+            }
+            .automation-setting-menu-container[automation-visible]
+            {
+                max-width: 500px;
+                max-height: 500px;
+
+                transition-property:        max-width, max-height;
+                transition-timing-function:   ease-in,    ease-in;
+                transition-duration:               1s,         1s;
+                transition-delay:                  0s,      500ms;
+
+                /* Delay the overflow change after the entire animation */
+                animation: 4s automation-delay-overflow forwards;
+            }
+            @keyframes automation-delay-overflow
+            {
+                to
+                {
+                    text-overflow: unset;
+                    overflow: unset;
+                }
+            }
+            .automation-arrow-div
+            {
+                cursor: pointer;
+                position: absolute;
+                top: 0px;
+                right: calc(100% - 5px);
+                height: 37px;
+                width: 12px;
+                background-color: #444444;
+                border-color: #aaaaaa;
+                border-style: solid;
+                border-width: 1px;
+                border-top-left-radius: 5px;
+                border-bottom-left-radius: 5px;
+                transition: right 0.3s;
+            }
+            .automation-arrow-div:hover
+            {
+                right: calc(100% - 2px);
+                background-color: #555555;
+                transition: right 0.3s;
+            }`;
         document.head.append(style);
     }
 
