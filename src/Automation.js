@@ -4,6 +4,7 @@
 class Automation
 {
     // Aliases on the other classes so every calls in the code can use the `Automation.Alias` form
+    static AutoBuy = AutomationAutoBuy;
     static Click = AutomationClick;
     static Dungeon = AutomationDungeon;
     static Farm = AutomationFarm;
@@ -60,6 +61,9 @@ class Automation
                     // 'Gym' and 'Dungeon' panels
                     this.Gym.initialize(initStep);
                     this.Dungeon.initialize(initStep);
+
+                    // 'Auto Buy' panel
+                    this.AutoBuy.initialize(initStep);
                 }
 
                 // Add a notification button to the automation menu
