@@ -43,7 +43,7 @@ class AutomationHatchery
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
+     *                Otherwise, the local storage value will be used
      */
     static toggleAutoHatchery(enable)
     {
@@ -82,6 +82,9 @@ class AutomationHatchery
     static __internal__hatcheryContainer = null;
     static __internal__autoHatcheryLoop = null;
 
+    /**
+     * @brief Builds the menu, and restores the previous running state if needed
+     */
     static __internal__buildMenu()
     {
         // Add the related buttons to the automation menu

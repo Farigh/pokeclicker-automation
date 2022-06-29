@@ -51,6 +51,9 @@ class AutomationItems
     static __internal__autoOakUpgradeLoop = null;
     static __internal__autoGemUpgradeLoop = null;
 
+    /**
+     * @brief Builds the menu, and restores the previous running state if needed
+     */
     static __internal__buildMenu()
     {
         // Add the related button to the automation menu
@@ -138,7 +141,7 @@ class AutomationItems
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
+     *                Otherwise, the local storage value will be used
      */
     static __internal__toggleAutoOakUpgrade(enable)
     {
@@ -172,7 +175,7 @@ class AutomationItems
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
+     *                Otherwise, the local storage value will be used
      */
     static __internal__toggleAutoGemUpgrade(enable)
     {

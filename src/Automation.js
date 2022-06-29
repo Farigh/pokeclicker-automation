@@ -12,6 +12,7 @@ class Automation
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
     static Menu = AutomationMenu;
+    static Shop = AutomationShop;
     static Trivia = AutomationTrivia;
     static Underground = AutomationUnderground;
     static Utils = AutomationUtils;
@@ -52,6 +53,7 @@ class Automation
                     this.Hatchery.initialize(initStep);
                     this.Underground.initialize(initStep);
                     this.Farm.initialize(initStep);
+                    this.Shop.initialize(initStep);
                     this.Items.initialize(initStep);
 
                     // 'Trivia' panel

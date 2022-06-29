@@ -235,7 +235,7 @@ class AutomationMenu
 
     /**
      * @brief Toggles the button elem between on and off based on its current state
-     *        The cookie value will be updated accordingly
+     *        The local storage value will be updated accordingly
      *
      * @note If the button has been disabled, this function has no effect
      *
