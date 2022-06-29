@@ -297,6 +297,8 @@ class AutomationMenu
         titleSpan.style.display = "block";
         titleSpan.style.marginLeft = "10px";
         titleSpan.style.marginRight = "10px";
+        titleSpan.style.paddingLeft = "10px";
+        titleSpan.style.paddingRight = "10px";
         titleDiv.appendChild(titleSpan);
 
         return titleDiv;
@@ -312,6 +314,7 @@ class AutomationMenu
     static addSettingPanel(elemDiv)
     {
         let placeholderDiv = document.createElement("div");
+        placeholderDiv.classList.add("automation-setting-placeholder");
         placeholderDiv.style.position = "relative";
         placeholderDiv.style.width = "0px";
         placeholderDiv.style.height = "0px";
@@ -341,15 +344,24 @@ class AutomationMenu
         // Add onclick action
         buttonDiv.onclick = function()
             {
+                let allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
+
                 if (!innerDiv.hasAttribute("automation-visible"))
                 {
                     innerDiv.setAttribute("automation-visible", "true");
                     arrowDiv.classList.add("right");
+
+                    // Hide all other settings panels
+                    Array.from(allSettingsPanels).forEach((el) => { el.setAttribute("automation-visible", "false"); });
+                    placeholderDiv.removeAttribute("automation-visible");
                 }
                 else
                 {
                     innerDiv.removeAttribute("automation-visible");
                     arrowDiv.classList.remove("right");
+
+                    // Show all settings panels
+                    Array.from(allSettingsPanels).forEach((el) => { el.removeAttribute("automation-visible"); });
                 }
             };
 
@@ -491,6 +503,33 @@ class AutomationMenu
             {
                 max-height: 0px;
                 display: none;
+            }
+            .automation-setting-placeholder
+            {
+                position: relative;
+                width: 0px;
+                height: 0px;
+                visibility: visible;
+                opacity: 100%;
+
+                transition: opacity 1s ease-out;
+            }
+            .automation-setting-placeholder[automation-visible]
+            {
+                opacity: 0%;
+                pointer-events: none;
+
+                transition: opacity 1s ease-in;
+
+                /* Delay the visibility change after the entire animation */
+                animation: 1s automation-delay-visibility forwards;
+            }
+            @keyframes automation-delay-visibility
+            {
+                to
+                {
+                    visibility: hidden;
+                }
             }
             .automation-arrow
             {
