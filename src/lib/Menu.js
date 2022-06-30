@@ -460,12 +460,59 @@ class AutomationMenu
      * @param newState: If set to True the button is disable, otherwise it's re-enabled
      * @param reason: The reason for disabling the button to display in the tooltip
      *
-     * @returns The created button element (It's the caller's responsibility to add it to the DOM at some point)
+     * @todo Disable both button using the same attribute
      */
     static __disableButton(id, newState, reason = "")
     {
         let button = document.getElementById(id);
+        if (button.classList.contains("automation-toggle-button"))
+        {
+            this.__internal__disableToggleButton(button, newState, reason);
+        }
+        else
+        {
+            this.__internal__disableOnOffButton(button, newState, reason);
+        }
+    }
 
+    /**
+     * @brief Disables the given toggle @p button and updates its theme accordingly
+     *
+     * @param button: The On/Off button to disable
+     * @param newState: If set to True the button is disable, otherwise it's re-enabled
+     * @param reason: The reason for disabling the button to display in the tooltip
+     */
+    static __internal__disableToggleButton(button, newState, reason)
+    {
+        let wasDisabled = button.getAttribute("disabled") == "true";
+
+        if (wasDisabled === newState)
+        {
+            // Nothing to do
+            return;
+        }
+
+        button.setAttribute("disabled", newState ? "true" : "false");
+
+        if (newState &&  (reason !== ""))
+        {
+            button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.__tooltipSeparator());
+        }
+        else
+        {
+            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+        }
+    }
+
+    /**
+     * @brief Disables the given On/Off @p button and updates its theme accordingly
+     *
+     * @param button: The On/Off button to disable
+     * @param newState: If set to True the button is disable, otherwise it's re-enabled
+     * @param reason: The reason for disabling the button to display in the tooltip
+     */
+    static __internal__disableOnOffButton(button, newState, reason)
+    {
         if (button.disabled === newState)
         {
             // Nothing to do
@@ -475,7 +522,7 @@ class AutomationMenu
         button.disabled = newState;
         if (newState)
         {
-            button.classList.remove((Automation.Utils.LocalStorage.getValue(id) === "true") ? "btn-success" : "btn-danger");
+            button.classList.remove((Automation.Utils.LocalStorage.getValue(button.id) === "true") ? "btn-success" : "btn-danger");
             button.classList.add("btn-secondary");
 
             if (reason !== "")
@@ -489,7 +536,7 @@ class AutomationMenu
         }
         else
         {
-            button.classList.add((Automation.Utils.LocalStorage.getValue(id) === "true") ? "btn-success" : "btn-danger");
+            button.classList.add((Automation.Utils.LocalStorage.getValue(button.id) === "true") ? "btn-success" : "btn-danger");
             button.classList.remove("btn-secondary");
             button.parentElement.removeAttribute("automation-tooltip-disable-reason");
         }
@@ -713,7 +760,7 @@ class AutomationMenu
                 display: inline-block;
                 position: relative;
                 border: 2px solid #474755;
-                background: #070C31;
+                background-color: #070C31;
                 transition: all 0.2s cubic-bezier(0.5, 0.1, 0.75, 1.35);
             }
             .automation-toggle-button::before
@@ -737,7 +784,7 @@ class AutomationMenu
                 width: 10px;
                 height: 10px;
                 border-radius: 50%;
-                background: #999999;
+                background-color: #999999;
                 box-shadow: inset -1px -1px 2px #111111;
                 transition: all 0.2s cubic-bezier(0.5, 0.1, 0.75, 1.35);
             }
@@ -753,7 +800,36 @@ class AutomationMenu
             .automation-toggle-button[checked=true]::after
             {
                 transform: translateX(14px);
-                background: #8bff00;
+                background-color: #8bff00;
+            }
+            .automation-toggle-button[disabled=true]
+            {
+                pointer-events: none;
+                border-color: #467546;
+                transition: all 500ms;
+                border-color: #950606;
+            }
+            .automation-toggle-button[disabled=true]::before, .automation-toggle-button[disabled=true]::after
+            {
+                width: 24px;
+                height: 2px;
+                background-color: #FF0000;
+                border-radius: 2px;
+            }
+            .automation-toggle-button[disabled=true]::before
+            {
+                border-width: 0px;
+                box-shadow: inset -1px -1px 2px #111111;
+                transform: rotate(20deg);
+                left: 2px;
+            }
+            .automation-toggle-button[disabled=true]::after
+            {
+                border-width: 0px;
+                box-shadow: inset -1px -1px 2px #111111;
+                transform: rotate(-20deg);
+                right: 2px;
+                top: 6px;
             }`;
         document.head.append(style);
     }
