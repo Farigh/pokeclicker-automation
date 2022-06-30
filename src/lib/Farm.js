@@ -80,8 +80,15 @@ class AutomationFarm
         let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", this.Settings.FeatureEnabled, autoFarmTooltip, this.__farmingContainer);
         autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
 
+        // Build advanced settings panel
+        let farmingSettingPanel = Automation.Menu.addSettingPanel(autoFarmingButton.parentElement.parentElement);
+
+        let titleDiv = Automation.Menu.__createTitle("Farming advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        farmingSettingPanel.appendChild(titleDiv);
+
         let unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
-        Automation.Menu.__addAutomationButton("Auto unlock", this.Settings.FocusOnUnlocks, unlockTooltip, this.__farmingContainer);
+        Automation.Menu.addToggleButton("Focus on unlocking plots and new berries", this.Settings.FocusOnUnlocks, unlockTooltip, farmingSettingPanel);
     }
 
     /**
