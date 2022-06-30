@@ -36,7 +36,7 @@ class AutomationTrivia
         let triviaTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
                         +     '&nbsp;Trivia&nbsp;'
                         + '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">';
-        let triviaDiv = Automation.Menu.__addCategory("automationTrivia", triviaTitle);
+        let triviaDiv = Automation.Menu.addCategory("automationTrivia", triviaTitle);
 
         // Add roaming route div
         let containerDiv = document.createElement("div");
@@ -50,7 +50,7 @@ class AutomationTrivia
         contentNode.style.textAlign = "center";
         containerDiv.appendChild(contentNode);
 
-        Automation.Menu.__addSeparator(containerDiv);
+        Automation.Menu.addSeparator(containerDiv);
 
         this.__addAvailableEvolutionContent(triviaDiv);
 
@@ -74,7 +74,7 @@ class AutomationTrivia
         evolutionLabel.classList.add("hasAutomationTooltip");
         evolutionLabel.classList.add("centeredAutomationTooltip");
         let tooltip = "Displays the available stone evolutions"
-                    + Automation.Menu.__tooltipSeparator()
+                    + Automation.Menu.TooltipSeparator
                     + "You can click on a stone to get to the according page\n"
                     + "in your inventory directly";
         evolutionLabel.setAttribute("automation-tooltip-text", tooltip);
@@ -85,7 +85,7 @@ class AutomationTrivia
         evolutionStoneListContainer.id = "availableEvolutionTriviaContent";
         containerDiv.appendChild(evolutionStoneListContainer);
 
-        Automation.Menu.__addSeparator(containerDiv);
+        Automation.Menu.addSeparator(containerDiv);
     }
 
     /**
@@ -106,14 +106,14 @@ class AutomationTrivia
         gotoContainer.classList.add("hasAutomationTooltip");
         gotoContainer.classList.add("gotoAutomationTooltip");
         let tooltip = "Goes to the selected location"
-                    + Automation.Menu.__tooltipSeparator()
+                    + Automation.Menu.TooltipSeparator
                     + "🏫-prefixed locations are towns\n"
                     + "⚔-prefixed locations are dungeons";
         gotoContainer.setAttribute("automation-tooltip-text", tooltip);
         gotoLocationDiv.appendChild(gotoContainer);
 
         // Add go to location button
-        let gotoButton = Automation.Menu.__createButtonElement("moveToLocationButton");
+        let gotoButton = Automation.Menu.createButtonElement("moveToLocationButton");
         gotoButton.textContent = "Go";
         gotoButton.classList.add("btn-primary");
         gotoButton.onclick = this.__moveToLocation;
@@ -125,7 +125,7 @@ class AutomationTrivia
         gotoContainer.appendChild(gotoText);
 
         // Add go to location drop-down list
-        let selectElem = Automation.Menu.__createDropDownList("gotoSelectedLocation");
+        let selectElem = Automation.Menu.createDropDownListElement("gotoSelectedLocation");
         selectElem.style.paddingLeft = "2px";
         gotoLocationDiv.appendChild(selectElem);
     }
@@ -162,7 +162,7 @@ class AutomationTrivia
                 button.disabled = true;
                 button.classList.remove("btn-primary");
                 button.classList.add("btn-secondary");
-                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\nThe player can't move while in an instance (dungeon, safari, battle frontier...)" + Automation.Menu.__tooltipSeparator());
+                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\nThe player can't move while in an instance (dungeon, safari, battle frontier...)" + Automation.Menu.TooltipSeparator);
             }
             return;
         }

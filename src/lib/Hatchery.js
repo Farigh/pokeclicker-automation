@@ -44,9 +44,9 @@ class AutomationHatchery
     {
         // Add the related buttons to the automation menu
         this.__hatcheryContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__hatcheryContainer);
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__hatcheryContainer);
 
-        Automation.Menu.__addSeparator(this.__hatcheryContainer);
+        Automation.Menu.addSeparator(this.__hatcheryContainer);
 
         // Only display the menu when the hatchery is unlocked
         if (!App.game.breeding.canAccess())
@@ -56,31 +56,31 @@ class AutomationHatchery
         }
 
         let autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
-                                + Automation.Menu.__tooltipSeparator()
+                                + Automation.Menu.TooltipSeparator
                                 + "The higher beeding efficiency pokemon are added first\n"
                                 + "The queue is not used, as it would reduce the Pokemon Attack\n"
                                 + "It also enables you to manually add pokemons to the queue\n"
                                 + "The queued pokemon are hatched first";
-        let autoHatcheryButton = Automation.Menu.__addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__hatcheryContainer);
+        let autoHatcheryButton = Automation.Menu.addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__hatcheryContainer);
         autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
 
         // Build advanced settings panel
         let hatcherySettingPanel = Automation.Menu.addSettingPanel(autoHatcheryButton.parentElement.parentElement);
 
-        let titleDiv = Automation.Menu.__createTitle("Hatchery advanced settings");
+        let titleDiv = Automation.Menu.createTitleElement("Hatchery advanced settings");
         titleDiv.style.marginBottom = "10px";
         hatcherySettingPanel.appendChild(titleDiv);
 
         let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
-                         + Automation.Menu.__tooltipSeparator()
+                         + Automation.Menu.TooltipSeparator
                          + "This is useful to farm shinies you don't have yet";
         Automation.Menu.addToggleButton("Consider shiny pokemons last", this.Settings.NotShinyFirst, shinyTooltip, hatcherySettingPanel);
         let fossilTooltip = "Add fossils to the hatchery as well"
-                          + Automation.Menu.__tooltipSeparator()
+                          + Automation.Menu.TooltipSeparator
                           + "Only fossils for which pokemon are not currently held are added";
         Automation.Menu.addToggleButton("Hatch Fossils", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
         let eggTooltip = "Add eggs to the hatchery as well"
-                       + Automation.Menu.__tooltipSeparator()
+                       + Automation.Menu.TooltipSeparator
                        + "Only eggs for which some pokemon are not currently held are added\n"
                        + "Only one egg of a given type is used at the same time";
         Automation.Menu.addToggleButton("Hatch Eggs", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);

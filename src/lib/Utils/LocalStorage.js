@@ -42,6 +42,10 @@ class AutomationUtilsLocalStorage
         }
     }
 
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
     /**
      * @brief Creates a save specific automation local storage key from the given generic @p key
      *

@@ -22,15 +22,15 @@ class AutomationFocusQuests
                 id: "Quests",
                 name: "Quests",
                 tooltip: "Automatically adds and completes quests"
-                       + Automation.Menu.__tooltipSeparator()
+                       + Automation.Menu.TooltipSeparator
                        + "This mode fully automates quest completion\n"
                        + "It automatically equips Oak items and balls\n"
                        + "It automatically moves to the appropriate location\n"
                        + "It automatically attacks, starts gym and enters dungeons"
-                       + Automation.Menu.__tooltipSeparator()
+                       + Automation.Menu.TooltipSeparator
                        + "Most modes are disabled while this is enabled\n"
                        + "as it will take over control of those modes"
-                       + Automation.Menu.__tooltipSeparator()
+                       + Automation.Menu.TooltipSeparator
                        + "⚠️ You will hardly be able to manually play with this mode enabled",
                 run: function (){ this.__start(); }.bind(this),
                 stop: function (){ this.__stop(); }.bind(this),
@@ -52,11 +52,11 @@ class AutomationFocusQuests
         Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseSmallRestore, false);
 
         let smallRestoreTooltip = "Allows the Quests focus topic to buy and use Small Restore items"
-                                + Automation.Menu.__tooltipSeparator()
+                                + Automation.Menu.TooltipSeparator
                                 + "This will only be used when a mining quest is active.\n"
                                 + "⚠️ This can be cost-heavy during early game";
         let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
-        let buttonContainer = Automation.Menu.__addAutomationButton(smallRestoreLabel, this.Settings.UseSmallRestore, smallRestoreTooltip, parent).parentElement;
+        let buttonContainer = Automation.Menu.addAutomationButton(smallRestoreLabel, this.Settings.UseSmallRestore, smallRestoreTooltip, parent).parentElement;
         buttonContainer.style.textAlign = "right";
         buttonContainer.style.merginTop = "2px";
     }
@@ -74,11 +74,11 @@ class AutomationFocusQuests
 
             // Disable other modes button
             let disableReason = "The 'Focus on Quests' feature is enabled";
-            Automation.Menu.__disableButton(Automation.Click.Settings.FeatureEnabled, true, disableReason);
-            Automation.Menu.__disableButton(Automation.Hatchery.Settings.FeatureEnabled, true, disableReason);
-            Automation.Menu.__disableButton(Automation.Farm.Settings.FeatureEnabled, true, disableReason);
-            Automation.Menu.__disableButton(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
-            Automation.Menu.__disableButton(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
 
             // Select cheri berry to avoid long riping time
             Automation.Farm.__forcePlantBerriesAsked = true;
@@ -112,11 +112,11 @@ class AutomationFocusQuests
         Automation.Underground.__toggleAutoMining();
 
         // Re-enable other modes button
-        Automation.Menu.__disableButton(Automation.Click.Settings.FeatureEnabled, false);
-        Automation.Menu.__disableButton(Automation.Hatchery.Settings.FeatureEnabled, false);
-        Automation.Menu.__disableButton(Automation.Farm.Settings.FeatureEnabled, false);
-        Automation.Menu.__disableButton(Automation.Farm.Settings.FocusOnUnlocks, false);
-        Automation.Menu.__disableButton(Automation.Underground.Settings.FeatureEnabled, false);
+        Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
+        Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, false);
+        Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
+        Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
+        Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
         // Remove the ball to catch
         this.__selectBallToCatch(GameConstants.Pokeball.None);
@@ -135,7 +135,7 @@ class AutomationFocusQuests
         this.__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
 
         // Disable best route if needed
-        Automation.Menu.__forceAutomationState("bestRouteClickEnabled", false);
+        Automation.Menu.forceAutomationState("bestRouteClickEnabled", false);
 
         this.__claimCompletedQuests();
         this.__selectNewQuests();
@@ -384,7 +384,7 @@ class AutomationFocusQuests
         Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.ByPassUserSettings;
 
         // Enable auto dungeon fight
-        Automation.Menu.__forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
+        Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
     }
 
     /**
@@ -413,7 +413,7 @@ class AutomationFocusQuests
         }
         else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
-            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
+            Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
         }
         else
         {

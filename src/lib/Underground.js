@@ -28,9 +28,9 @@ class AutomationUnderground
 
         // Add the related button to the automation menu
         this.__undergroundContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__undergroundContainer);
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__undergroundContainer);
 
-        Automation.Menu.__addSeparator(this.__undergroundContainer);
+        Automation.Menu.addSeparator(this.__undergroundContainer);
 
         // Only display the menu when the underground is unlocked
         if (!App.game.underground.canAccess())
@@ -40,12 +40,12 @@ class AutomationUnderground
         }
 
         let autoMiningTooltip = "Automatically mine in the Underground"
-                              + Automation.Menu.__tooltipSeparator()
+                              + Automation.Menu.TooltipSeparator
                               + "Bombs will be used until all items have at least one visible tile\n"
                               + "The hammer will then be used if more than 3 blocks\n"
                               + "can be destroyed on an item within its range\n"
                               + "The chisel will then be used to finish the remaining blocks\n";
-        let miningButton = Automation.Menu.__addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__undergroundContainer);
+        let miningButton = Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__undergroundContainer);
         miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
 
         // Restore previous session state

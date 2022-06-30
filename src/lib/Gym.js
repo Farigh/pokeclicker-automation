@@ -24,19 +24,19 @@
         let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
                      +     '&nbsp;Gym fight&nbsp;'
                      + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-        let gymDiv = Automation.Menu.__addCategory("gymFightButtons", gymTitle);
+        let gymDiv = Automation.Menu.addCategory("gymFightButtons", gymTitle);
         gymDiv.parentElement.hidden = true;
 
         // Add an on/off button
         let autoGymTooltip = "Automatically starts the selected gym fight";
-        let autoGymButton = Automation.Menu.__addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoGymTooltip, gymDiv, true);
+        let autoGymButton = Automation.Menu.addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoGymTooltip, gymDiv, true);
         autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
 
         // Disable by default
-        Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
 
         // Add gym selector drop-down list
-        let selectElem = Automation.Menu.__createDropDownList("selectedAutomationGym");
+        let selectElem = Automation.Menu.createDropDownListElement("selectedAutomationGym");
         selectElem.style.marginRight = "5px";
         gymDiv.appendChild(selectElem);
 
@@ -88,7 +88,7 @@
         // Kill the loop if the menu is not visible anymore
         if (document.getElementById("gymFightButtons").hidden)
         {
-            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
             return;
         }
 
@@ -106,7 +106,7 @@
             if ((document.getElementById("selectedAutomationGym").selectedIndex < 0)
                 || (selectedGym.parent.name !== player.town().name))
             {
-                Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+                Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
                 return;
             }
 
@@ -136,7 +136,7 @@
                 {
                     this.__updateGymList(player.town().name, true);
 
-                    Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+                    Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
                 }
                 this.__previousTown = player.town().name;
             }
@@ -149,7 +149,7 @@
         }
         else
         {
-            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
             document.getElementById("gymFightButtons").hidden = true;
         }
     }

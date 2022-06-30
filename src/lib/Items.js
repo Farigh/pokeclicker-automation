@@ -51,12 +51,12 @@ class AutomationItems
     {
         // Add the related button to the automation menu
         this.__upgradeContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__upgradeContainer);
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__upgradeContainer);
 
-        Automation.Menu.__addSeparator(this.__upgradeContainer);
+        Automation.Menu.addSeparator(this.__upgradeContainer);
 
         /** Title **/
-        let titleDiv = Automation.Menu.__createTitle("Auto Upgrade");
+        let titleDiv = Automation.Menu.createTitleElement("Auto Upgrade");
         this.__upgradeContainer.appendChild(titleDiv);
 
         /** Oak items **/
@@ -67,9 +67,9 @@ class AutomationItems
         this.__oakUpgradeContainer.hidden = !App.game.oakItems.canAccess();
 
         let oakItemTooltip = "Automatically ugrades Oak items when possible"
-                           + Automation.Menu.__tooltipSeparator()
+                           + Automation.Menu.TooltipSeparator
                            + "⚠️ This can be cost-heavy during early game";
-        let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", this.Settings.UpgradeOakItems, oakItemTooltip, this.__oakUpgradeContainer);
+        let oakUpgradeButton = Automation.Menu.addAutomationButton("Oak Items", this.Settings.UpgradeOakItems, oakItemTooltip, this.__oakUpgradeContainer);
         oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
 
         /** Gems **/
@@ -80,7 +80,7 @@ class AutomationItems
         this.__gemUpgradeContainer.hidden = !App.game.gems.canAccess();
 
         let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
-        let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", this.Settings.UpgradeGems, gemsTooltip, this.__gemUpgradeContainer);
+        let gemUpgradeButton = Automation.Menu.addAutomationButton("Gems", this.Settings.UpgradeGems, gemsTooltip, this.__gemUpgradeContainer);
         gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
 
         // If both are hidden, hide the whole menu

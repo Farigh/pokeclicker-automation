@@ -62,9 +62,9 @@ class AutomationFarm
     {
         // Add the related buttons to the automation menu
         this.__farmingContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__farmingContainer);
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__farmingContainer);
 
-        Automation.Menu.__addSeparator(this.__farmingContainer);
+        Automation.Menu.addSeparator(this.__farmingContainer);
 
         // Only display the menu when the farm is unlocked
         if (!App.game.farming.canAccess())
@@ -74,16 +74,16 @@ class AutomationFarm
         }
 
         let autoFarmTooltip = "Automatically harvest and plant crops"
-                            + Automation.Menu.__tooltipSeparator()
+                            + Automation.Menu.TooltipSeparator
                             + "Crops are harvested as soon as they ripe\n"
                             + "New crops are planted using the selected one in the farm menu";
-        let autoFarmingButton = Automation.Menu.__addAutomationButton("Farming", this.Settings.FeatureEnabled, autoFarmTooltip, this.__farmingContainer);
+        let autoFarmingButton = Automation.Menu.addAutomationButton("Farming", this.Settings.FeatureEnabled, autoFarmTooltip, this.__farmingContainer);
         autoFarmingButton.addEventListener("click", this.__toggleAutoFarming.bind(this), false);
 
         // Build advanced settings panel
         let farmingSettingPanel = Automation.Menu.addSettingPanel(autoFarmingButton.parentElement.parentElement);
 
-        let titleDiv = Automation.Menu.__createTitle("Farming advanced settings");
+        let titleDiv = Automation.Menu.createTitleElement("Farming advanced settings");
         titleDiv.style.marginBottom = "10px";
         farmingSettingPanel.appendChild(titleDiv);
 
@@ -1347,7 +1347,7 @@ class AutomationFarm
             {
                 if (App.game.oakItems.itemList[this.__internalStrategy.oakItemToEquip].isUnlocked())
                 {
-                    Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, false);
+                    Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
                 }
             }.bind(this), 5000); // Check every 5s
@@ -1378,7 +1378,7 @@ class AutomationFarm
             {
                 if (App.game.statistics.pokemonCaptured[neededPokemonId]() !== 0)
                 {
-                    Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, false);
+                    Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
                 }
             }, 5000); // Check every 5s
@@ -1424,7 +1424,7 @@ class AutomationFarm
 
                 if (enigmaMutation.hintsSeen.every((seen) => seen()))
                 {
-                    Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, false);
+                    Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
                 }
             }, 5000); // Check every 5s
@@ -1437,8 +1437,8 @@ class AutomationFarm
      */
     static __disableAutoUnlock(reason)
     {
-        Automation.Menu.__forceAutomationState(this.Settings.FocusOnUnlocks, false);
-        Automation.Menu.__disableButton(this.Settings.FocusOnUnlocks, true, reason);
+        Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
+        Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
         Automation.Utils.OakItem.__forbiddenItem = null;
     }
 

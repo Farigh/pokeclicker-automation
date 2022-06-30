@@ -3,7 +3,9 @@
  */
 class AutomationMenu
 {
-    static __automationButtonsDiv;
+    static TooltipSeparator = "\n─────────\n";
+
+    static AutomationButtonsDiv;
 
     /**
      * @brief Builds the menu container, inside of which any automation interface element should be placed.
@@ -23,7 +25,7 @@ class AutomationMenu
         // Only consider the BuildMenu init step
         if (initStep != Automation.InitSteps.BuildMenu) return;
 
-        this.__injectAutomationCss();
+        this.__internal__injectAutomationCss();
 
         let node = document.createElement("div");
         node.style.position = "absolute";
@@ -38,8 +40,9 @@ class AutomationMenu
         node.id = "automationContainer";
         document.body.appendChild(node);
 
-        let automationTitle = '<img src="assets/images/badges/Bolt.png" height="20px">Automation<img src="assets/images/badges/Bolt.png" height="20px">';
-        this.__automationButtonsDiv = this.__addCategory("automationButtons", automationTitle);
+        let boltImage = '<img src="assets/images/badges/Bolt.png" height="20px">';
+        let automationTitle = `${boltImage}Automation${boltImage}`;
+        this.AutomationButtonsDiv = this.addCategory("automationButtons", automationTitle);
     }
 
     /**
@@ -49,12 +52,12 @@ class AutomationMenu
      *   - The title div
      *   - The content div (where any element can safely be added)
      *
-     * @param categoryId: The id that will be given to the resulting div
-     * @param title: The title that will be used for the category (can contain HTML)
+     * @param {string} categoryId: The id that will be given to the resulting div
+     * @param {string} title: The title that will be used for the category (can contain HTML)
      *
      * @returns The content div element
      */
-    static __addCategory(categoryId, title)
+    static addCategory(categoryId, title)
     {
         let mainNode = document.getElementById("automationContainer");
 
@@ -84,23 +87,37 @@ class AutomationMenu
         contentDiv.classList.add("automationCategorie");
         newNode.appendChild(contentDiv);
 
-        Automation.Menu.__addSeparator(contentDiv);
+        Automation.Menu.addSeparator(contentDiv);
 
         return contentDiv;
     }
 
     /**
+     * @brief Adds a separator line to the given @p containingDiv
+     *
+     * @param {Element} containingDiv: The div element to append the separator to
+     */
+    static addSeparator(containingDiv = this.AutomationButtonsDiv)
+    {
+        let separatorDiv = document.createElement("div");
+        separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
+        separatorDiv.style.marginBottom = "5px";
+        separatorDiv.style.marginTop = "6px";
+        containingDiv.appendChild(separatorDiv);
+    }
+
+    /**
      * @brief Adds an On/Off button element
      *
-     * @param label: The text label to place before the button
-     * @param id: The button id (that will be used for the corresponding local storage item id as well)
-     * @param tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
-     * @param containingDiv: The div element to append the button to
-     * @param forceDisabled: If set to true, the button will be turned off by default (ignoring the stored local storage value)
+     * @param {string}  label: The text label to place before the button
+     * @param {string}  id: The button id (that will be used for the corresponding local storage item id as well)
+     * @param {string}  tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
+     * @param {Element} containingDiv: The div element to append the button to
+     * @param {boolean} forceDisabled: If set to true, the button will be turned off by default (ignoring the stored local storage value)
      *
      * @returns The button element
      */
-    static __addAutomationButton(label, id, tooltip = "", containingDiv = this.__automationButtonsDiv, forceDisabled = false)
+    static addAutomationButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv, forceDisabled = false)
     {
         if (forceDisabled)
         {
@@ -129,11 +146,11 @@ class AutomationMenu
         buttonLabel.innerHTML = label + " ";
         buttonContainer.appendChild(buttonLabel);
 
-        let buttonElem = this.__createButtonElement(id);
+        let buttonElem = this.createButtonElement(id);
         let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
         buttonElem.textContent = (isFeatureEnabled ? "On" : "Off");
         buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
-        buttonElem.onclick = function() { Automation.Menu.__toggleButton(id) };
+        buttonElem.onclick = function() { Automation.Menu.toggleButtonState(id) };
 
         if (tooltip != "")
         {
@@ -149,14 +166,14 @@ class AutomationMenu
     /**
      * @brief Adds a toggle button element
      *
-     * @param label: The text label to place before the toggle button
-     * @param id: The button id (that will be used for the corresponding local storage item id as well)
-     * @param tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
-     * @param containingDiv: The div element to append the button to
+     * @param {string}  label: The text label to place before the toggle button
+     * @param {string}  id: The button's id (that will be used for the corresponding local storage item id as well)
+     * @param {string}  tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
+     * @param {Element} containingDiv: The div element to append the button to
      *
      * @returns The button element
      */
-    static addToggleButton(label, id, tooltip = "", containingDiv = this.__automationButtonsDiv)
+    static addToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
     {
         // Enable automation by default, if not already set in local storage
         Automation.Utils.LocalStorage.setDefaultValue(id, true);
@@ -202,9 +219,9 @@ class AutomationMenu
      *
      * @note If the button has been disabled, this function has no effect
      *
-     * @param id: The id of the button to toggle
+     * @param {string} id: The id of the button to toggle
      */
-    static __toggleButton(id)
+    static toggleButtonState(id)
     {
         let button = document.getElementById(id);
         if (button.disabled)
@@ -240,9 +257,10 @@ class AutomationMenu
     /**
      * @brief Forces the button status to the given @p newState
      *
-     * @param newState: The state to force the button to (True for 'On', False for 'Off')
+     * @param {string} id: The id of the button to froce the state of
+     * @param {boolean} newState: The state to force the button to (True for 'On', False for 'Off')
      */
-    static __forceAutomationState(id, newState)
+    static forceAutomationState(id, newState)
     {
         let isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
 
@@ -264,27 +282,13 @@ class AutomationMenu
     }
 
     /**
-     * @brief Adds a separator line to the given @p containingDiv
-     *
-     * @param containingDiv: The div element to append the separator to
-     */
-    static __addSeparator(containingDiv = this.__automationButtonsDiv)
-    {
-        let separatorDiv = document.createElement("div");
-        separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
-        separatorDiv.style.marginBottom = "5px";
-        separatorDiv.style.marginTop = "6px";
-        containingDiv.appendChild(separatorDiv);
-    }
-
-    /**
      * @brief Creates a drop-down list (select) element
      *
-     * @param id: The select id
+     * @param {string} id: The select id
      *
      * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
      */
-    static __createDropDownList(id)
+    static createDropDownListElement(id)
     {
         let newSelect = document.createElement("select");
         newSelect.className = "custom-select";
@@ -303,11 +307,11 @@ class AutomationMenu
     /**
      * @brief Creates a button element
      *
-     * @param id: The button id
+     * @param {string} id: The button id
      *
      * @returns The created button element (It's the caller's responsibility to add it to the DOM at some point)
      */
-    static __createButtonElement(id)
+    static createButtonElement(id)
     {
         // Create as a span to avoid the glowing effect on click
         let newButton = document.createElement("span");
@@ -331,7 +335,7 @@ class AutomationMenu
     /**
      * @brief Creates a toggle button element
      *
-     * @param id: The button id
+     * @param {string} id: The button id
      *
      * @returns The created toggle button element (It's the caller's responsibility to add it to the DOM at some point)
      */
@@ -347,11 +351,11 @@ class AutomationMenu
     /**
      * @brief Creates a title
      *
-     * @param titleText: The text to display
+     * @param {string} titleText: The text to display
      *
      * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
      */
-    static __createTitle(titleText)
+    static createTitleElement(titleText)
     {
         let titleDiv = document.createElement("div");
         titleDiv.style.textAlign = "center";
@@ -375,7 +379,7 @@ class AutomationMenu
     /**
      * @brief Adds an hideable panel where additional settings can be added
      *
-     * @param elemDiv: The html element to add a settings panel next to
+     * @param {Element} elemDiv: The html element to add a settings panel next to
      *
      * @returns The newly created settings panel container
      */
@@ -456,13 +460,13 @@ class AutomationMenu
      * A disabled button will be greyed-out and its clic action will be inhibited
      * If the button is already in the @p newState, nothing will happen
      *
-     * @param id: The button id
-     * @param newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param reason: The reason for disabling the button to display in the tooltip
+     * @param {string}  id: The button id
+     * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
+     * @param {string}  reason: The reason for disabling the button to display in the tooltip
      *
      * @todo Disable both button using the same attribute
      */
-    static __disableButton(id, newState, reason = "")
+    static setButtonDisabledState(id, newState, reason = "")
     {
         let button = document.getElementById(id);
         if (button.classList.contains("automation-toggle-button"))
@@ -475,12 +479,16 @@ class AutomationMenu
         }
     }
 
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
     /**
      * @brief Disables the given toggle @p button and updates its theme accordingly
      *
-     * @param button: The On/Off button to disable
-     * @param newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param reason: The reason for disabling the button to display in the tooltip
+     * @param {Element} button: The toggle button to disable
+     * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
+     * @param {string}  reason: The reason for disabling the button to display in the tooltip
      */
     static __internal__disableToggleButton(button, newState, reason)
     {
@@ -496,7 +504,7 @@ class AutomationMenu
 
         if (newState &&  (reason !== ""))
         {
-            button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.__tooltipSeparator());
+            button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
         }
         else
         {
@@ -507,9 +515,9 @@ class AutomationMenu
     /**
      * @brief Disables the given On/Off @p button and updates its theme accordingly
      *
-     * @param button: The On/Off button to disable
-     * @param newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param reason: The reason for disabling the button to display in the tooltip
+     * @param {Element} button: The On/Off button to disable
+     * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
+     * @param {string}  reason: The reason for disabling the button to display in the tooltip
      */
     static __internal__disableOnOffButton(button, newState, reason)
     {
@@ -527,7 +535,7 @@ class AutomationMenu
 
             if (reason !== "")
             {
-                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.__tooltipSeparator());
+                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
             }
             else
             {
@@ -545,7 +553,7 @@ class AutomationMenu
     /**
      * @brief Injects the automation menu css to the document heading
      */
-    static __injectAutomationCss()
+    static __internal__injectAutomationCss()
     {
         /*
          * The 'Disabled for the following reason' colored title was geneted using https://yoksel.github.io/url-encoder/
@@ -582,8 +590,8 @@ class AutomationMenu
             .hasAutomationTooltip[automation-tooltip-disable-reason]::before
             {
                 content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='207' height='20'%3E%3Ctext x='0' y='17' style='fill:%23f24444; font-weight: 600; font-size:.900rem;'%3EDisabled for the following reason:%3C/text%3E%3C/svg%3E")
-                        attr(automation-tooltip-disable-reason)
-                        attr(automation-tooltip-text);
+                         attr(automation-tooltip-disable-reason)
+                         attr(automation-tooltip-text);
             }
             .hasAutomationTooltip::after
             {
@@ -832,13 +840,5 @@ class AutomationMenu
                 top: 6px;
             }`;
         document.head.append(style);
-    }
-
-    /**
-     * @returns The tooltip separator string
-     */
-    static __tooltipSeparator()
-    {
-        return "\n─────────\n";
     }
 }

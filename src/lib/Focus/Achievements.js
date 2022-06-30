@@ -18,7 +18,7 @@ class AutomationFocusAchievements
                 id: "Achievements",
                 name: "Achievements",
                 tooltip: "Completes the pending achivements"
-                       + Automation.Menu.__tooltipSeparator()
+                       + Automation.Menu.TooltipSeparator
                        + "This feature handles the following achievements:\n"
                        + "Route Kill, Clear Gym and Clear Dungeon\n"
                        + "The achievements will be completed in region order.\n"
@@ -53,7 +53,7 @@ class AutomationFocusAchievements
         Automation.Dungeon.__internalModeRequested = Automation.Utils.__isInInstanceState() ? Automation.Dungeon.InternalMode.StopAfterThisRun
                                                                                             : Automation.Dungeon.InternalMode.None;
 
-        Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
+        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
     }
 
@@ -96,7 +96,7 @@ class AutomationFocusAchievements
             if (this.__currentAchievement === null)
             {
                 // No more achievements, stop the feature
-                Automation.Menu.__forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
+                Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
                 Automation.Utils.__sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
 
                 return;
@@ -169,7 +169,7 @@ class AutomationFocusAchievements
         }
         else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
-            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
+            Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
         }
         else
         {
@@ -215,7 +215,7 @@ class AutomationFocusAchievements
         Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.ByPassUserSettings;
 
         // Enable auto dungeon fight
-        Automation.Menu.__forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
+        Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
     }
 
     /**

@@ -18,9 +18,9 @@ class AutomationClick
         {
             // Add auto click button
             let autoClickTooltip = "Attack clicks are performed every 50ms"
-                                + Automation.Menu.__tooltipSeparator()
+                                + Automation.Menu.TooltipSeparator
                                 + "Applies to battle, gym and dungeon";
-            let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip);
+            let autoClickButton = Automation.Menu.addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip);
             autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
         }
         else if (initStep == Automation.InitSteps.Finalize)

@@ -141,9 +141,9 @@ class AutomationUtilsGym
         return { bestGym, bestGymTown };
     }
 
-    /******************************************************************\
-    |***    Internal data, should never be used by other classes    ***|
-    \******************************************************************/
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
 
     static __internal__gymGemTypeMap = new Map();
 

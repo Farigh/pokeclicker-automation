@@ -42,29 +42,29 @@ class AutomationDungeon
         let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
                          +     '&nbsp;Dungeon fight&nbsp;'
                          + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-        let dungeonDiv = Automation.Menu.__addCategory("dungeonFightButtons", dungeonTitle);
+        let dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
         dungeonDiv.parentElement.hidden = true;
 
         // Add an on/off button
         let autoDungeonTooltip = "Automatically enters and completes the dungeon"
-                               + Automation.Menu.__tooltipSeparator()
+                               + Automation.Menu.TooltipSeparator
                                + "Chests and the boss are ignored until all tiles are revealed\n"
                                + "Chests are all picked right before fighting the boss";
-        let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
+        let autoDungeonButton = Automation.Menu.addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
         autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
 
         // Disable by default
-        Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
                                    + "once all pokemon are caught in this dungeon."
-                                   + Automation.Menu.__tooltipSeparator()
+                                   + Automation.Menu.TooltipSeparator
                                    + "You can switch between pokemon and shiny completion\n"
                                    + "by clicking on the pokeball image.";
 
         let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
-        Automation.Menu.__addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
+        Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
 
         // Add the button action
         let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
@@ -208,7 +208,7 @@ class AutomationDungeon
                     Automation.Utils.__sendWarningNotif("User action detected, turning off the automation", "Dungeon");
                 }
 
-                Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+                Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
                 this.__internalModeRequested = this.InternalMode.None;
             }
             else
@@ -322,7 +322,7 @@ class AutomationDungeon
             this.__previousTown = null;
             this.__playerActionOccured = false;
             this.__resetSavedStates();
-            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
         }
     }
 
@@ -457,11 +457,11 @@ class AutomationDungeon
 
             if (disableNeeded)
             {
-                Automation.Menu.__disableButton(this.Settings.FeatureEnabled, true, disableReason);
+                Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, true, disableReason);
             }
             else
             {
-                Automation.Menu.__disableButton(this.Settings.FeatureEnabled, false);
+                Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, false);
             }
         }
     }

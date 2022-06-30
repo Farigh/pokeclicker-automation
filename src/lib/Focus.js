@@ -56,12 +56,12 @@ class AutomationFocus
         // Add the related buttons to the automation menu
         let focusContainer = document.createElement("div");
         focusContainer.style.textAlign = "center";
-        Automation.Menu.__automationButtonsDiv.appendChild(focusContainer);
+        Automation.Menu.AutomationButtonsDiv.appendChild(focusContainer);
 
-        Automation.Menu.__addSeparator(focusContainer);
+        Automation.Menu.addSeparator(focusContainer);
 
         // Add the title
-        let titleDiv = Automation.Menu.__createTitle("Focus on");
+        let titleDiv = Automation.Menu.createTitleElement("Focus on");
         focusContainer.appendChild(titleDiv);
 
         // Button and list container
@@ -71,7 +71,7 @@ class AutomationFocus
         focusContainer.appendChild(buttonContainer);
 
         // Add the drop-down list
-        this.__focusSelectElem = Automation.Menu.__createDropDownList("focusSelection");
+        this.__focusSelectElem = Automation.Menu.createDropDownListElement("focusSelection");
         this.__focusSelectElem.style.width = "calc(100% - 55px)";
         this.__focusSelectElem.style.paddingLeft = "3px";
         buttonContainer.appendChild(this.__focusSelectElem);
@@ -81,11 +81,11 @@ class AutomationFocus
         this.__focusSelectElem.onchange = function() { Automation.Focus.__focusOnChanged(); };
 
         // Add the 'Focus on' button
-        let focusButton = Automation.Menu.__createButtonElement(this.Settings.FeatureEnabled);
+        let focusButton = Automation.Menu.createButtonElement(this.Settings.FeatureEnabled);
         let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         focusButton.textContent = (isFeatureEnabled ? "On" : "Off");
         focusButton.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
-        focusButton.onclick = function() { Automation.Menu.__toggleButton(this.Settings.FeatureEnabled) }.bind(this);
+        focusButton.onclick = function() { Automation.Menu.toggleButtonState(this.Settings.FeatureEnabled) }.bind(this);
         focusButton.style.marginTop = "3px";
         focusButton.style.marginLeft = "5px";
         focusButton.style.marginRight = "10px";
@@ -159,7 +159,7 @@ class AutomationFocus
                                         id: "XP",
                                         name: "Experience",
                                         tooltip: "Automatically moves to the best route for EXP"
-                                               + Automation.Menu.__tooltipSeparator()
+                                               + Automation.Menu.TooltipSeparator
                                                + "Such route is the highest unlocked one\n"
                                                + "with HP lower than Click Attack",
                                         run: function (){ this.__goToBestRouteForExp(); }.bind(this),
@@ -170,11 +170,11 @@ class AutomationFocus
                                         id: "Gold",
                                         name: "Money",
                                         tooltip: "Automatically moves to the best gym for money"
-                                                + Automation.Menu.__tooltipSeparator()
+                                                + Automation.Menu.TooltipSeparator
                                                 + "Gyms gives way more money than routes\n"
                                                 + "The best gym is the one that gives the most money per game tick",
                                         run: function (){ this.__goToBestGymForMoney(); }.bind(this),
-                                        stop: function (){ Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                                        stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                                         refreshRateAsMs: 10000 // Refresh every 10s
                                     });
 
@@ -182,7 +182,7 @@ class AutomationFocus
                                         id: "DungeonTokens",
                                         name: "Dungeon Tokens",
                                         tooltip: "Moves to the best route to earn dungeon tokens"
-                                               + Automation.Menu.__tooltipSeparator()
+                                               + Automation.Menu.TooltipSeparator
                                                + "The most efficient route is the one giving\n"
                                                + "the most token per game tick.\n"
                                                + "The most efficient Oak items loadout will be equipped.\n"
@@ -190,7 +190,7 @@ class AutomationFocus
                                         run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
                                         stop: function ()
                                               {
-                                                  Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
+                                                  Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
                                                   App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
                                               },
                                         refreshRateAsMs: 3000 // Refresh every 3s
@@ -229,13 +229,13 @@ class AutomationFocus
                         id: gemTypeName + "Gems",
                         name: gemTypeName + " Gems",
                         tooltip: "Moves to the best gym or route to earn " + gemTypeName + " gems"
-                            + Automation.Menu.__tooltipSeparator()
+                            + Automation.Menu.TooltipSeparator
                             + "The best location is the one that will give the most\n"
                             + gemTypeName + " gems per game tick.\n"
                             + "Gyms are considered in priority, if none is found\n"
                             + "the routes will be considered.",
                         run: function (){ this.__goToBestGymOrRouteForGem(gemType); }.bind(this),
-                        stop: function (){ Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                        stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                         refreshRateAsMs: 10000 // Refresh every 10s
                     });
             }, this);
@@ -329,7 +329,7 @@ class AutomationFocus
         if (forceOff)
         {
             // Stop the current loop if any, and disable the button
-            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
         }
 
         // Update the tooltip
@@ -476,7 +476,7 @@ class AutomationFocus
         // Disable 'Focus on' if an instance is in progress, and exit
         if (Automation.Utils.__isInInstanceState())
         {
-            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
             Automation.Utils.__sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
             return false;
         }
@@ -505,7 +505,7 @@ class AutomationFocus
                         if (option.value === gymName)
                         {
                             option.selected = true;
-                            Automation.Menu.__forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
+                            Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
                             clearInterval(menuWatcher);
                             return false;
                         }
