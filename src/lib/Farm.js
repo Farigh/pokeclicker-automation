@@ -88,7 +88,7 @@ class AutomationFarm
         farmingSettingPanel.appendChild(titleDiv);
 
         let unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
-        Automation.Menu.__addAutomationButton("Focus on unlocking plots and new berries", this.Settings.FocusOnUnlocks, unlockTooltip, farmingSettingPanel);
+        Automation.Menu.addToggleButton("Focus on unlocking plots and new berries", this.Settings.FocusOnUnlocks, unlockTooltip, farmingSettingPanel);
     }
 
     /**

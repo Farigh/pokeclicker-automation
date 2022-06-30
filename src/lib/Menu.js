@@ -93,21 +93,23 @@ class AutomationMenu
      * @brief Adds an On/Off button element
      *
      * @param label: The text label to place before the button
-     * @param id: The button id (that will be used for the corresponding cookie item id as well)
-     * @param tooltip: The tooltip text to display upon hovering the button of the label (leave blank to disable)
+     * @param id: The button id (that will be used for the corresponding local storage item id as well)
+     * @param tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
      * @param containingDiv: The div element to append the button to
-     * @param forceDisabled: If set to true, the button will be turned off by default (ignoring the stored cookie value)
+     * @param forceDisabled: If set to true, the button will be turned off by default (ignoring the stored local storage value)
      *
      * @returns The button element
      */
     static __addAutomationButton(label, id, tooltip = "", containingDiv = this.__automationButtonsDiv, forceDisabled = false)
     {
-        // Enable automation by default, in not already set in cookies
-        Automation.Utils.LocalStorage.setDefaultValue(id, true);
-
         if (forceDisabled)
         {
             Automation.Utils.LocalStorage.setValue(id, false);
+        }
+        else
+        {
+            // Enable automation by default, if not already set in local storage
+            Automation.Utils.LocalStorage.setDefaultValue(id, true);
         }
 
         let buttonMainContainer = document.createElement("span");
@@ -127,7 +129,7 @@ class AutomationMenu
         buttonLabel.innerHTML = label + " ";
         buttonContainer.appendChild(buttonLabel);
 
-        let buttonElem = Automation.Menu.__createButtonElement(id);
+        let buttonElem = this.__createButtonElement(id);
         let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
         buttonElem.textContent = (isFeatureEnabled ? "On" : "Off");
         buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
@@ -136,6 +138,56 @@ class AutomationMenu
         if (tooltip != "")
         {
             buttonContainer.classList.add("hasAutomationTooltip");
+            buttonContainer.setAttribute("automation-tooltip-text", tooltip);
+        }
+
+        buttonContainer.appendChild(buttonElem);
+
+        return buttonElem;
+    }
+
+    /**
+     * @brief Adds a toggle button element
+     *
+     * @param label: The text label to place before the toggle button
+     * @param id: The button id (that will be used for the corresponding local storage item id as well)
+     * @param tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
+     * @param containingDiv: The div element to append the button to
+     *
+     * @returns The button element
+     */
+    static addToggleButton(label, id, tooltip = "", containingDiv = this.__automationButtonsDiv)
+    {
+        // Enable automation by default, if not already set in local storage
+        Automation.Utils.LocalStorage.setDefaultValue(id, true);
+
+        let buttonMainContainer = document.createElement("span");
+        containingDiv.appendChild(buttonMainContainer);
+        let buttonContainer = document.createElement("div");
+        buttonContainer.style.paddingLeft = "10px";
+        buttonContainer.style.paddingRight = "10px";
+        buttonMainContainer.appendChild(buttonContainer);
+
+        let buttonLabel = document.createElement("span");
+
+        buttonLabel.innerHTML = label;
+        buttonLabel.style.paddingRight = "7px";
+        buttonContainer.appendChild(buttonLabel);
+
+        let buttonElem = this.createToggleButtonElement(id);
+        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
+        buttonElem.onclick = function()
+            {
+                let wasChecked = buttonElem.getAttribute("checked") == "true";
+                buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
+                Automation.Utils.LocalStorage.setValue(id, !wasChecked);
+            };
+
+        if (tooltip != "")
+        {
+            buttonContainer.classList.add("hasAutomationTooltip");
+            buttonContainer.classList.add("toggleAutomationTooltip");
             buttonContainer.setAttribute("automation-tooltip-text", tooltip);
         }
 
@@ -249,7 +301,7 @@ class AutomationMenu
     }
 
     /**
-     * @brief Creates a blue button element
+     * @brief Creates a button element
      *
      * @param id: The button id
      *
@@ -274,6 +326,22 @@ class AutomationMenu
         newButton.style.verticalAlign = "middle";
 
         return newButton;
+    }
+
+    /**
+     * @brief Creates a toggle button element
+     *
+     * @param id: The button id
+     *
+     * @returns The created toggle button element (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static createToggleButtonElement(id)
+    {
+        let toggleButton = document.createElement("span");
+        toggleButton.id = id;
+        toggleButton.classList.add("automation-toggle-button");
+
+        return toggleButton;
     }
 
     /**
@@ -453,7 +521,7 @@ class AutomationMenu
                 top: calc(100% + 6px);
                 padding: 5px 10px;
                 border-radius: 5px;
-                background: #222222;
+                background-color: #222222;
                 color: #eeeeee;
                 text-align: center;
                 opacity: 0;
@@ -471,10 +539,10 @@ class AutomationMenu
                 content: "";
                 position: absolute;
                 top: 100%;
-                margin-top:-4px;
+                margin-top: -4px;
                 left: calc(100% - 30px);
                 border: 5px solid #222222;
-                border-color: transparent transparent black transparent;
+                border-color: transparent transparent #222222 transparent;
                 opacity: 0;
                 z-index: 9;
                 pointer-events: none;
@@ -493,6 +561,14 @@ class AutomationMenu
             .hasAutomationTooltip.gotoAutomationTooltip::after
             {
                 left: calc(100% - 85px);
+            }
+            .hasAutomationTooltip.toggleAutomationTooltip::after
+            {
+                top: calc(100% - 4px);
+            }
+            .hasAutomationTooltip.toggleAutomationTooltip::before
+            {
+                top: calc(100% + 2px);
             }
             .automationCategorie
             {
@@ -612,6 +688,60 @@ class AutomationMenu
                 right: calc(100% - 2px);
                 background-color: #555555;
                 transition: right 0.3s;
+            }
+            .automation-toggle-button
+            {
+                box-sizing: border-box;
+                cursor: pointer;
+                top: 4px;
+
+                height: 18px;
+                width: 32px;
+                border-radius: 16px;
+                display: inline-block;
+                position: relative;
+                border: 2px solid #474755;
+                background: #070C31;
+                transition: all 0.2s cubic-bezier(0.5, 0.1, 0.75, 1.35);
+            }
+            .automation-toggle-button::before
+            {
+                content: "";
+                position: absolute;
+                bottom: calc(50% - 1px);
+                left: 4px;
+                width: calc(100% - 10px);
+                height: 0px;
+                border: solid 1px #999999;
+                border-radius: 50%;
+                transition: border-color 500ms;
+            }
+            .automation-toggle-button::after
+            {
+                content: "";
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: #999999;
+                box-shadow: inset -1px -1px 2px #111111;
+                transition: all 0.2s cubic-bezier(0.5, 0.1, 0.75, 1.35);
+            }
+            .automation-toggle-button[checked=true]
+            {
+                border-color: #86d02c;
+            }
+            .automation-toggle-button[checked=true]::before
+            {
+                border-color: #467546;
+                transition: border-color 500ms;
+            }
+            .automation-toggle-button[checked=true]::after
+            {
+                transform: translateX(14px);
+                background: #8bff00;
             }`;
         document.head.append(style);
     }
