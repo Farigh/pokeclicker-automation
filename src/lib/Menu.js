@@ -401,16 +401,20 @@ class AutomationMenu
         settingsContainerDiv.style.whiteSpace = "nowrap";
         innerDiv.appendChild(settingsContainerDiv);
 
+        let buttonContainerDiv = document.createElement("div");
+        buttonContainerDiv.classList.add("automation-arrow-container-div");
+        settingsContainerDiv.appendChild(buttonContainerDiv)
+
         let buttonDiv = document.createElement("div");
         buttonDiv.classList.add("automation-arrow-div");
-        settingsContainerDiv.appendChild(buttonDiv);
+        buttonContainerDiv.appendChild(buttonDiv)
 
         let arrowDiv = document.createElement("div");
         arrowDiv.classList.add("automation-arrow");
         buttonDiv.appendChild(arrowDiv);
 
         // Add onclick action
-        buttonDiv.onclick = function()
+        buttonContainerDiv.onclick = function()
             {
                 let allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
 
@@ -667,12 +671,20 @@ class AutomationMenu
                     overflow: unset;
                 }
             }
-            .automation-arrow-div
+            .automation-arrow-container-div
             {
                 cursor: pointer;
                 position: absolute;
                 top: 0px;
-                right: calc(100% - 5px);
+                right: calc(100% - 12px);
+                width: 30px;
+                height: 40px;
+            }
+            .automation-arrow-div
+            {
+                position: absolute;
+                top: 0px;
+                left: calc(100% - 18px);
                 height: 37px;
                 width: 12px;
                 background-color: #444444;
@@ -681,13 +693,13 @@ class AutomationMenu
                 border-width: 1px;
                 border-top-left-radius: 5px;
                 border-bottom-left-radius: 5px;
-                transition: right 0.3s;
+                transition: left 0.3s;
             }
-            .automation-arrow-div:hover
+            .automation-arrow-container-div:hover .automation-arrow-div
             {
-                right: calc(100% - 2px);
+                left: calc(100% - 20px);
                 background-color: #555555;
-                transition: right 0.3s;
+                transition: left 0.3s;
             }
             .automation-toggle-button
             {
