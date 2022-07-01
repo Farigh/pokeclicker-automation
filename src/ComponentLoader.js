@@ -108,9 +108,8 @@ class AutomationComponentLoader
     }
 
     /**
-     * @brief Sets a loading watcher.
-     *        Once all scripts are properly loaded, the main class is loaded.
-     *        Once done, it runs the automation.
+     * @brief Sets a loading watcher which prevent loading the automation before the game components are fully up and running.
+     *        Once all scripts are properly loaded, it runs the automation.
      */
     static __setupAutomationRunner()
     {
@@ -119,8 +118,9 @@ class AutomationComponentLoader
         let watcher = setInterval(function ()
             {
                 let isLoadingCompleted = Object.keys(this.__loadingProgressTable).every(key => this.__loadingProgressTable[key]);
+                let isGameStarted = (App && App.game && App.game.worker && (App.game.worker instanceof Worker));
 
-                if (!isLoadingCompleted)
+                if (!isLoadingCompleted || !isGameStarted)
                 {
                     return;
                 }
