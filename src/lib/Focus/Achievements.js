@@ -3,8 +3,9 @@
  */
 class AutomationFocusAchievements
 {
-    static __achievementLoop = null;
-    static __currentAchievement = null;
+    /******************************************************************************\
+    |***    Focus specific members, should only be used by focus sub-classes    ***|
+    \******************************************************************************/
 
     /**
      * @brief Adds the Achivements functionality to the 'Focus on' list
@@ -23,32 +24,39 @@ class AutomationFocusAchievements
                        + "Route Kill, Clear Gym and Clear Dungeon\n"
                        + "The achievements will be completed in region order.\n"
                        + "The current achievement will be pinned to the tracker",
-                run: function (){ this.__start(); }.bind(this),
-                stop: function (){ this.__stop(); }.bind(this),
+                run: function (){ this.__internal__start(); }.bind(this),
+                stop: function (){ this.__internal__stop(); }.bind(this),
                 isUnlocked: function (){ return App.game.achievementTracker.canAccess(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }
 
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__achievementLoop = null;
+    static __internal__currentAchievement = null;
+
     /**
      * @brief Starts the achievements automation
      */
-    static __start()
+    static __internal__start()
     {
         // Set achievement loop
-        this.__achievementLoop = setInterval(this.__focusOnAchievements.bind(this), 1000); // Runs every second
+        this.__internal__achievementLoop = setInterval(this.__internal__focusOnAchievements.bind(this), 1000); // Runs every second
     }
 
     /**
      * @brief Stops the achievements automation
      */
-    static __stop()
+    static __internal__stop()
     {
-        this.__currentAchievement = null;
+        this.__internal__currentAchievement = null;
 
         // Unregister the loop
-        clearInterval(this.__achievementLoop);
-        this.__achievementLoop = null;
+        clearInterval(this.__internal__achievementLoop);
+        this.__internal__achievementLoop = null;
 
         Automation.Dungeon.__internalModeRequested = Automation.Utils.__isInInstanceState() ? Automation.Dungeon.InternalMode.StopAfterThisRun
                                                                                             : Automation.Dungeon.InternalMode.None;
@@ -62,15 +70,15 @@ class AutomationFocusAchievements
      *
      * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      */
-    static __focusOnAchievements()
+    static __internal__focusOnAchievements()
     {
         // Already fighting, nothing to do for now
         if (Automation.Utils.__isInInstanceState())
         {
             // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress^M
-            if ((this.__currentAchievement === null)
-                || ((this.__currentAchievement.property instanceof ClearDungeonRequirement)
-                    && this.__currentAchievement.isCompleted()))
+            if ((this.__internal__currentAchievement === null)
+                || ((this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
+                    && this.__internal__currentAchievement.isCompleted()))
             {
                 Automation.Focus.__ensureNoInstanceIsInProgress();
             }
@@ -78,22 +86,22 @@ class AutomationFocusAchievements
         }
 
         // Get a new achievement if needed
-        this.__updateTheAchievementIfNeeded();
+        this.__internal__updateTheAchievementIfNeeded();
 
         // Work on the current achievement
-        this.__workOnAchievement();
+        this.__internal__workOnAchievement();
     }
 
     /**
      * @brief Updates the focused achievement if there is none, or the current one is completed
      */
-    static __updateTheAchievementIfNeeded()
+    static __internal__updateTheAchievementIfNeeded()
     {
-        if ((this.__currentAchievement === null) || this.__currentAchievement.isCompleted())
+        if ((this.__internal__currentAchievement === null) || this.__internal__currentAchievement.isCompleted())
         {
-            this.__currentAchievement = this.__getNextAchievement();
+            this.__internal__currentAchievement = this.__internal__getNextAchievement();
 
-            if (this.__currentAchievement === null)
+            if (this.__internal__currentAchievement === null)
             {
                 // No more achievements, stop the feature
                 Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
@@ -102,31 +110,31 @@ class AutomationFocusAchievements
                 return;
             }
 
-            App.game.achievementTracker.trackAchievement(this.__currentAchievement);
+            App.game.achievementTracker.trackAchievement(this.__internal__currentAchievement);
         }
     }
 
     /**
      * @brief Works on the currently selected achievement
      */
-    static __workOnAchievement()
+    static __internal__workOnAchievement()
     {
         // Reset any equipped pokeball
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
 
-        if (this.__currentAchievement.property instanceof RouteKillRequirement)
+        if (this.__internal__currentAchievement.property instanceof RouteKillRequirement)
         {
             Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
-            this.__workOnRouteKillRequirement();
+            this.__internal__workOnRouteKillRequirement();
         }
-        else if (this.__currentAchievement.property instanceof ClearGymRequirement)
+        else if (this.__internal__currentAchievement.property instanceof ClearGymRequirement)
         {
             Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
-            this.__workOnClearGymRequirement();
+            this.__internal__workOnClearGymRequirement();
         }
-        else if (this.__currentAchievement.property instanceof ClearDungeonRequirement)
+        else if (this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
         {
-            this.__workOnClearDungeonRequirement();
+            this.__internal__workOnClearDungeonRequirement();
         }
     }
 
@@ -135,13 +143,13 @@ class AutomationFocusAchievements
      *
      * The player is moved to the achievement requested location to defeat pokemons
      */
-    static __workOnRouteKillRequirement()
+    static __internal__workOnRouteKillRequirement()
     {
         // Equip the Oak item Exp loadout
         Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         // Move to the selected route
-        Automation.Utils.Route.__moveToRoute(this.__currentAchievement.property.route, this.__currentAchievement.property.region);
+        Automation.Utils.Route.__moveToRoute(this.__internal__currentAchievement.property.route, this.__internal__currentAchievement.property.region);
     }
 
     /**
@@ -151,9 +159,9 @@ class AutomationFocusAchievements
      *
      * @todo Merge with Automation.Quest.__workOnDefeatGymQuest()
      */
-    static __workOnClearGymRequirement()
+    static __internal__workOnClearGymRequirement()
     {
-        let gymName = GameConstants.RegionGyms.flat()[this.__currentAchievement.property.gymIndex];
+        let gymName = GameConstants.RegionGyms.flat()[this.__internal__currentAchievement.property.gymIndex];
         let townToGoTo = gymName;
 
         // If a ligue champion is the target, the gymTown points to the champion instead of the town
@@ -192,9 +200,9 @@ class AutomationFocusAchievements
      *
      * @todo Merge with Automation.Quest.__workOnDefeatDungeonQuest()
      */
-    static __workOnClearDungeonRequirement()
+    static __internal__workOnClearDungeonRequirement()
     {
-        let targetedDungeonName = GameConstants.RegionDungeons.flat()[this.__currentAchievement.property.dungeonIndex];
+        let targetedDungeonName = GameConstants.RegionDungeons.flat()[this.__internal__currentAchievement.property.dungeonIndex];
         // If we don't have enough tokens, go farm some
         if (TownList[targetedDungeonName].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
         {
@@ -223,7 +231,7 @@ class AutomationFocusAchievements
      *
      * @returns The pokeclicker Achievement object if any achievement is available, null otherwise
      */
-    static __getNextAchievement()
+    static __internal__getNextAchievement()
     {
         let result = null;
 
