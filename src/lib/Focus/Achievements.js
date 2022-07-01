@@ -248,9 +248,10 @@ class AutomationFocusAchievements
                 // Consider ClearGym achievements, if the player can move to the target town
                 if (achievement.property instanceof ClearGymRequirement)
                 {
-                    let townName = GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
+                    let gymName = GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
 
                     // If a ligue champion is the target, the gymTown points to the champion instead of the town
+                    let townName = gymName;
                     if (!TownList[townName])
                     {
                         townName = GymList[townName].parent.name;
@@ -258,7 +259,7 @@ class AutomationFocusAchievements
 
                     return (Automation.Utils.Route.__canMoveToRegion(achievement.region)
                             && MapHelper.accessToTown(townName)
-                            && GymList[townName].isUnlocked());
+                            && GymList[gymName].isUnlocked());
                 }
 
                 // Consider ClearDungeon achievements, if the player can move to the target dungeon
