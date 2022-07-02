@@ -34,7 +34,7 @@ class AutomationUtilsGym
         let bestGymRate = 0;
 
         let playerClickAttack = App.game.party.calculateClickAttack();
-        let playerWorstPokemonAttack = Automation.Utils.Route.__getPlayerWorstPokemonAttack();
+        let playerWorstPokemonAttack = Automation.Utils.Route.getPlayerWorstPokemonAttack();
         let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
 
         this.__internal__gymGemTypeMap.get(pokemonType).forEach(
@@ -44,7 +44,7 @@ class AutomationUtilsGym
 
                 // Skip any gym that we can't access
                 if (!gym.isUnlocked()
-                    || !Automation.Utils.Route.__canMoveToRegion(gymData.region))
+                    || !Automation.Utils.Route.canMoveToRegion(gymData.region))
                 {
                     return;
                 }
@@ -59,7 +59,8 @@ class AutomationUtilsGym
                             return;
                         }
 
-                        let currentPokemonTickToDefeat = Automation.Utils.Route.__getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, playerClickAttack, totalAtkPerSecond);
+                        let currentPokemonTickToDefeat =
+                            Automation.Utils.Route.getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, playerClickAttack, totalAtkPerSecond);
                         currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
                     });
 
@@ -116,7 +117,7 @@ class AutomationUtilsGym
                 }
 
                 // Don't consider town that the player can't move to either
-                if (!Automation.Utils.Route.__canMoveToRegion(gymTown.region))
+                if (!Automation.Utils.Route.canMoveToRegion(gymTown.region))
                 {
                     return;
                 }

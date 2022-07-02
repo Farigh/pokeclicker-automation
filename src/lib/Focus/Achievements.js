@@ -58,7 +58,7 @@ class AutomationFocusAchievements
         clearInterval(this.__internal__achievementLoop);
         this.__internal__achievementLoop = null;
 
-        Automation.Dungeon.__internalModeRequested = Automation.Utils.__isInInstanceState() ? Automation.Dungeon.InternalMode.StopAfterThisRun
+        Automation.Dungeon.__internalModeRequested = Automation.Utils.isInInstanceState() ? Automation.Dungeon.InternalMode.StopAfterThisRun
                                                                                             : Automation.Dungeon.InternalMode.None;
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
@@ -73,7 +73,7 @@ class AutomationFocusAchievements
     static __internal__focusOnAchievements()
     {
         // Already fighting, nothing to do for now
-        if (Automation.Utils.__isInInstanceState())
+        if (Automation.Utils.isInInstanceState())
         {
             // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress^M
             if ((this.__internal__currentAchievement === null)
@@ -105,7 +105,7 @@ class AutomationFocusAchievements
             {
                 // No more achievements, stop the feature
                 Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
-                Automation.Utils.__sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
+                Automation.Utils.sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
 
                 return;
             }
@@ -146,10 +146,10 @@ class AutomationFocusAchievements
     static __internal__workOnRouteKillRequirement()
     {
         // Equip the Oak item Exp loadout
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         // Move to the selected route
-        Automation.Utils.Route.__moveToRoute(this.__internal__currentAchievement.property.route, this.__internal__currentAchievement.property.region);
+        Automation.Utils.Route.moveToRoute(this.__internal__currentAchievement.property.route, this.__internal__currentAchievement.property.region);
     }
 
     /**
@@ -173,7 +173,7 @@ class AutomationFocusAchievements
         // Move to the associated gym if needed
         if ((player.route() != 0) || (townToGoTo !== player.town().name))
         {
-            Automation.Utils.Route.__moveToTown(townToGoTo);
+            Automation.Utils.Route.moveToTown(townToGoTo);
         }
         else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
@@ -213,7 +213,7 @@ class AutomationFocusAchievements
         // Move to dungeon if needed
         if ((player.route() != 0) || targetedDungeonName !== player.town().name)
         {
-            Automation.Utils.Route.__moveToTown(targetedDungeonName);
+            Automation.Utils.Route.moveToTown(targetedDungeonName);
 
             // Let a tick to the menu to show up
             return;
@@ -249,7 +249,7 @@ class AutomationFocusAchievements
                 // Consider RouteKill achievements, if the player can move to the target route
                 if (achievement.property instanceof RouteKillRequirement)
                 {
-                    return (Automation.Utils.Route.__canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
                             && MapHelper.accessToRoute(achievement.property.route, achievement.property.region));
                 }
 
@@ -265,7 +265,7 @@ class AutomationFocusAchievements
                         townName = GymList[townName].parent.name;
                     }
 
-                    return (Automation.Utils.Route.__canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
                             && MapHelper.accessToTown(townName)
                             && GymList[gymName].isUnlocked());
                 }
@@ -274,7 +274,7 @@ class AutomationFocusAchievements
                 if (achievement.property instanceof ClearDungeonRequirement)
                 {
                     let dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
-                    return (Automation.Utils.Route.__canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
                             && MapHelper.accessToTown(dungeonName));
                 }
 

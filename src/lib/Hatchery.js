@@ -218,7 +218,7 @@ class AutomationHatchery
             while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
             {
                 App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
-                Automation.Utils.__sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!", "Hatchery");
+                Automation.Utils.sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!", "Hatchery");
                 i++;
             }
         }
@@ -254,7 +254,7 @@ class AutomationHatchery
                                                       || (App.game.breeding.eggList[index]().pokemonType2 === pokemonType))))
                 {
                     eggType.use();
-                    Automation.Utils.__sendNotif("Added a " + eggType.displayName + " to the Hatchery!", "Hatchery");
+                    Automation.Utils.sendNotif("Added a " + eggType.displayName + " to the Hatchery!", "Hatchery");
                 }
             }, this);
     }
@@ -291,7 +291,7 @@ class AutomationHatchery
             {
                 // Hatching a fossil is performed by selling it
                 Underground.sellMineItem(type.id);
-                Automation.Utils.__sendNotif("Added a " + type.name + " to the Hatchery!", "Hatchery");
+                Automation.Utils.sendNotif("Added a " + type.name + " to the Hatchery!", "Hatchery");
             }
 
             i++;

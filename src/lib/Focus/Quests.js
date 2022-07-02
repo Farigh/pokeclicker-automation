@@ -206,7 +206,7 @@ class AutomationFocusQuests
     static __internal__workOnQuest()
     {
         // Already fighting, nothing to do for now
-        if (Automation.Utils.__isInInstanceState())
+        if (Automation.Utils.isInInstanceState())
         {
             Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.StopAfterThisRun;
             return;
@@ -288,7 +288,7 @@ class AutomationFocusQuests
                 let bestGym = Automation.Utils.Gym.findBestGymForMoney();
                 if (bestGym.bestGymTown !== null)
                 {
-                    Automation.Utils.Route.__moveToTown(bestGym.bestGymTown);
+                    Automation.Utils.Route.moveToTown(bestGym.bestGymTown);
                     Automation.Focus.__enableAutoGymFight(bestGym.bestGym);
                     return;
                 }
@@ -298,7 +298,7 @@ class AutomationFocusQuests
                 this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
             }
 
-            Automation.Utils.Route.__moveToBestRouteForExp();
+            Automation.Utils.Route.moveToBestRouteForExp();
         }
     }
 
@@ -346,7 +346,7 @@ class AutomationFocusQuests
      */
     static __internal__workOnCapturePokemonTypesQuest(quest)
     {
-        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(quest.type);
+        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
 
         // Add a pokeball to the Caught type and set the PokemonCatch setup
         let hasBalls = this.__internal__selectBallToCatch(GameConstants.Pokeball.Ultraball);
@@ -354,7 +354,7 @@ class AutomationFocusQuests
 
         if (hasBalls && ((player.route() !== bestRoute) || (player.region !== bestRouteRegion)))
         {
-            Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
+            Automation.Utils.Route.moveToRoute(bestRoute, bestRouteRegion);
         }
     }
 
@@ -383,7 +383,7 @@ class AutomationFocusQuests
         // Move to dungeon if needed
         if ((player.route() != 0) || quest.dungeon !== player.town().name)
         {
-            Automation.Utils.Route.__moveToTown(quest.dungeon);
+            Automation.Utils.Route.moveToTown(quest.dungeon);
 
             // Let a tick to the menu to show up
             return;
@@ -418,7 +418,7 @@ class AutomationFocusQuests
         // Move to the associated gym if needed
         if ((player.route() != 0) || (townToGoTo !== player.town().name))
         {
-            Automation.Utils.Route.__moveToTown(townToGoTo);
+            Automation.Utils.Route.moveToTown(townToGoTo);
         }
         else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
@@ -449,7 +449,7 @@ class AutomationFocusQuests
         if ((player.region != quest.region)
             || (player.route() != quest.route))
         {
-            Automation.Utils.Route.__moveToRoute(quest.route, quest.region);
+            Automation.Utils.Route.moveToRoute(quest.route, quest.region);
         }
     }
 
@@ -465,8 +465,8 @@ class AutomationFocusQuests
         this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
-        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(quest.type);
-        Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
+        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
+        Automation.Utils.Route.moveToRoute(bestRoute, bestRouteRegion);
     }
 
     /**
@@ -489,7 +489,7 @@ class AutomationFocusQuests
 
             // Go kill some pokemon
             this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
-            Automation.Utils.Route.__moveToBestRouteForExp();
+            Automation.Utils.Route.moveToBestRouteForExp();
         }
     }
 
@@ -509,7 +509,7 @@ class AutomationFocusQuests
         if (hasBalls)
         {
             // Go to the highest route, for higher quest point income
-            Automation.Utils.Route.__moveToHighestDungeonTokenIncomeRoute(ballType);
+            Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(ballType);
         }
     }
 
@@ -572,17 +572,17 @@ class AutomationFocusQuests
             {
                 // No more balls, go farm to buy some
                 App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
-                Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.Money);
+                Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
                 let bestGym = Automation.Utils.Gym.findBestGymForMoney();
 
                 if (bestGym.bestGymTown === null)
                 {
-                    Automation.Utils.Route.__moveToBestRouteForExp();
+                    Automation.Utils.Route.moveToBestRouteForExp();
                     return;
                 }
 
-                Automation.Utils.Route.__moveToTown(bestGym.bestGymTown);
+                Automation.Utils.Route.moveToTown(bestGym.bestGymTown);
                 Automation.Focus.__enableAutoGymFight(bestGym.bestGym);
             }
             return false;
@@ -810,6 +810,6 @@ class AutomationFocusQuests
                 }
             });
 
-        Automation.Utils.OakItem.__equipLoadout(resultLoadout);
+        Automation.Utils.OakItem.equipLoadout(resultLoadout);
     }
 }

@@ -3,7 +3,7 @@
  */
 class AutomationUtilsOakItem
 {
-    static __forbiddenItem = null;
+    static ForbiddenItem = null;
 
     /**
      * @class The Setup class lists the different setup to use based on the current objectives
@@ -49,14 +49,14 @@ class AutomationUtilsOakItem
      *
      * @param {Array} loadoutCandidates: The wanted loadout composition
      */
-    static __equipLoadout(loadoutCandidates)
+    static equipLoadout(loadoutCandidates)
     {
         let possibleEquippedItem = 0;
         let expectedLoadout = loadoutCandidates.filter(
             (item) =>
             {
                 // Skip any forbidden item
-                if (item === this.__forbiddenItem)
+                if (item === this.ForbiddenItem)
                 {
                     return false;
                 }

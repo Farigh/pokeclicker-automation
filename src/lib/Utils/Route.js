@@ -3,15 +3,6 @@
  */
 class AutomationUtilsRoute
 {
-    // Map of Map [ region => [ route => maxHp ]]
-    static __routeMaxHealthMap = new Map();
-
-    static __lastHighestRegion = null;
-    static __lastBestRouteRegion = null;
-    static __lastBestRoute = null;
-    static __lastNextBestRoute = null;
-    static __lastNextBestRouteRegion = null;
-
     /**
      * @brief Initializes the class members
      *
@@ -22,7 +13,7 @@ class AutomationUtilsRoute
         // Only consider the Finalize init step
         if (initStep != Automation.InitSteps.Finalize) return;
 
-        this.__buildRouteMaxHealthMap();
+        this.__internal__buildRouteMaxHealthMap();
     }
 
     /**
@@ -33,10 +24,10 @@ class AutomationUtilsRoute
      *
      * @note If the @p route or @p region have not been unlocked, no move will happen
      */
-    static __moveToRoute(route, region)
+    static moveToRoute(route, region)
     {
         // Don't move if the game would not allow it
-        if (!this.__canMoveToRegion(region)
+        if (!this.canMoveToRegion(region)
             || !MapHelper.accessToRoute(route, region))
         {
             return;
@@ -52,12 +43,12 @@ class AutomationUtilsRoute
      *
      * @note If the given town was not unlocked, no move will happen
      */
-    static __moveToTown(townName)
+    static moveToTown(townName)
     {
         let town = TownList[townName];
 
         // Don't move if the game would not allow it
-        if (!this.__canMoveToRegion(town.region)
+        if (!this.canMoveToRegion(town.region)
             || !town.isUnlocked())
         {
             return;
@@ -81,10 +72,10 @@ class AutomationUtilsRoute
      *
      * @returns True if the player can mov to the region, False otherwise
      */
-    static __canMoveToRegion(region)
+    static canMoveToRegion(region)
     {
         // Not possible move
-        if (Automation.Utils.__isInInstanceState()
+        if (Automation.Utils.isInInstanceState()
             || (region > player.highestRegion())
             || (region < 0))
         {
@@ -106,10 +97,10 @@ class AutomationUtilsRoute
      *
      * The best route is the highest unlocked route where any pokemon can be defeated in a single click attack
      */
-    static __moveToBestRouteForExp()
+    static moveToBestRouteForExp()
     {
         // Disable best route if any instance is in progress, and exit
-        if (Automation.Utils.__isInInstanceState())
+        if (Automation.Utils.isInInstanceState())
         {
             return;
         }
@@ -121,62 +112,62 @@ class AutomationUtilsRoute
         //    - The player attack decreased (this can happen if the rocky helmet item was unequiped)
         //    - We are currently on the highest route of the map
         //    - The next best route is still over-powered
-        let needsNewRoad = (this.__lastHighestRegion !== player.highestRegion())
-                        || (this.__routeMaxHealthMap.get(this.__lastBestRouteRegion).get(this.__lastBestRoute) > playerClickAttack)
-                        || ((this.__lastNextBestRoute !== this.__lastBestRoute)
-                            && (this.__routeMaxHealthMap.get(this.__lastNextBestRouteRegion).get(this.__lastNextBestRoute) < playerClickAttack));
+        let needsNewRoad = (this.__internal__lastHighestRegion !== player.highestRegion())
+                        || (this.__internal__routeMaxHealthMap.get(this.__internal__lastBestRouteRegion).get(this.__internal__lastBestRoute) > playerClickAttack)
+                        || ((this.__internal__lastNextBestRoute !== this.__internal__lastBestRoute)
+                            && (this.__internal__routeMaxHealthMap.get(this.__internal__lastNextBestRouteRegion).get(this.__internal__lastNextBestRoute) < playerClickAttack));
 
         // Don't refresh if we already are on the best road
-        if ((this.__lastBestRoute === player.route()) && !needsNewRoad)
+        if ((this.__internal__lastBestRoute === player.route()) && !needsNewRoad)
         {
             return;
         }
 
         if (needsNewRoad)
         {
-            this.__lastHighestRegion = player.highestRegion();
+            this.__internal__lastHighestRegion = player.highestRegion();
 
             // If no routes are below the user attack, just choose the 1st one
-            this.__lastBestRoute = 0;
-            this.__lastBestRouteRegion = 0;
-            this.__lastNextBestRoute = 0;
-            this.__lastNextBestRouteRegion = 0;
+            this.__internal__lastBestRoute = 0;
+            this.__internal__lastBestRouteRegion = 0;
+            this.__internal__lastNextBestRoute = 0;
+            this.__internal__lastNextBestRouteRegion = 0;
 
             // Fortunately routes are sorted by region and by attack
             Routes.regionRoutes.every(
                 (route) =>
                 {
                     // Skip any route that we can't access
-                    if (!Automation.Utils.Route.__canMoveToRegion(route.region))
+                    if (!Automation.Utils.Route.canMoveToRegion(route.region))
                     {
                         return true;
                     }
 
-                    if (this.__routeMaxHealthMap.get(route.region).get(route.number) < playerClickAttack)
+                    if (this.__internal__routeMaxHealthMap.get(route.region).get(route.number) < playerClickAttack)
                     {
-                        this.__lastBestRoute = route.number;
-                        this.__lastBestRouteRegion = route.region;
+                        this.__internal__lastBestRoute = route.number;
+                        this.__internal__lastBestRouteRegion = route.region;
 
                         return true;
                     }
 
-                    this.__lastNextBestRoute = route.number;
-                    this.__lastNextBestRouteRegion = route.region;
+                    this.__internal__lastNextBestRoute = route.number;
+                    this.__internal__lastNextBestRouteRegion = route.region;
                     return false;
                 }, this);
 
             // This can happen if the player is in a new region and the docks are not unlocked yet
-            if (this.__lastBestRoute == 0)
+            if (this.__internal__lastBestRoute == 0)
             {
                 let regionRoutes = Routes.getRoutesByRegion(player.region);
-                this.__lastBestRoute = regionRoutes[0].number;
-                this.__lastBestRouteRegion = regionRoutes[0].region;
-                this.__lastNextBestRoute = regionRoutes[1].number;
-                this.__lastNextBestRouteRegion = regionRoutes[1].region;
+                this.__internal__lastBestRoute = regionRoutes[0].number;
+                this.__internal__lastBestRouteRegion = regionRoutes[0].region;
+                this.__internal__lastNextBestRoute = regionRoutes[1].number;
+                this.__internal__lastNextBestRouteRegion = regionRoutes[1].region;
             }
         }
 
-        this.__moveToRoute(this.__lastBestRoute, this.__lastBestRouteRegion);
+        this.moveToRoute(this.__internal__lastBestRoute, this.__internal__lastBestRouteRegion);
     }
 
     /**
@@ -186,14 +177,14 @@ class AutomationUtilsRoute
      *
      * @param ballTypeToUse: The pokeball type that will be used (might have a different catch time)
      */
-    static __moveToHighestDungeonTokenIncomeRoute(ballTypeToUse)
+    static moveToHighestDungeonTokenIncomeRoute(ballTypeToUse)
     {
         let bestRoute = 0;
         let bestRouteRegion = 0;
         let bestRouteIncome = 0;
 
         let playerClickAttack = App.game.party.calculateClickAttack();
-        let playerWorstPokemonAttack = this.__getPlayerWorstPokemonAttack();
+        let playerWorstPokemonAttack = this.getPlayerWorstPokemonAttack();
         let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
         let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
@@ -207,7 +198,7 @@ class AutomationUtilsRoute
                 }
 
                 // Skip any route that we can't access
-                if (!this.__canMoveToRegion(route.region))
+                if (!this.canMoveToRegion(route.region))
                 {
                     return true;
                 }
@@ -218,7 +209,7 @@ class AutomationUtilsRoute
                 routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
 
                 let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-                let nbGameTickToDefeat = this.__getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+                let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
                 routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
 
                 if (routeIncome > bestRouteIncome)
@@ -234,7 +225,7 @@ class AutomationUtilsRoute
         if ((player.region !== bestRouteRegion)
             || (player.route() !== bestRoute))
         {
-            this.__moveToRoute(bestRoute, bestRouteRegion);
+            this.moveToRoute(bestRoute, bestRouteRegion);
         }
     }
 
@@ -249,14 +240,14 @@ class AutomationUtilsRoute
      *          @c bestRoute is the best route number
      *          @c bestRouteRegion is the best route region number
      */
-    static __findBestRouteForFarmingType(pokemonType)
+    static findBestRouteForFarmingType(pokemonType)
     {
         let bestRoute = 0;
         let bestRouteRegion = 0;
         let bestRouteRate = 0;
 
         let playerClickAttack = App.game.party.calculateClickAttack();
-        let playerWorstPokemonAttack = this.__getPlayerWorstPokemonAttack();
+        let playerWorstPokemonAttack = this.getPlayerWorstPokemonAttack();
         let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
 
         // Fortunately routes are sorted by attack
@@ -269,7 +260,7 @@ class AutomationUtilsRoute
                 }
 
                 // Skip any route that we can't access
-                if (!this.__canMoveToRegion(route.region))
+                if (!this.canMoveToRegion(route.region))
                 {
                     return true;
                 }
@@ -291,7 +282,7 @@ class AutomationUtilsRoute
                 let currentRouteRate = currentRouteCount / pokemons.length;
 
                 let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-                let nbGameTickToDefeat = this.__getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+                let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
                 currentRouteRate = currentRouteRate / nbGameTickToDefeat;
 
                 if (currentRouteRate > bestRouteRate)
@@ -308,25 +299,6 @@ class AutomationUtilsRoute
     }
 
     /**
-     * @brief Gets the highest HP amount that a pokemon can have on the given @p route
-     *
-     * @param route: The pokeclicker RegionRoute object
-     *
-     * @returns The computed route max HP
-     */
-    static __getRouteMaxHealth(route)
-    {
-        let routeMaxHealth = 0;
-        RouteHelper.getAvailablePokemonList(route.number, route.region).forEach(
-            (pokemonName) =>
-            {
-                routeMaxHealth = Math.max(routeMaxHealth, this.__getPokemonMaxHealth(route, pokemonName));
-            }, this);
-
-        return routeMaxHealth;
-    }
-
-    /**
      * @brief Computes the maximum number of click needed to defeat a pokemon with the given @p pokemonHp
      *
      * @param {number} pokemonHp: The HP of the pokemon to defeat
@@ -335,7 +307,7 @@ class AutomationUtilsRoute
      *
      * @returns The number of game ticks needed to defeat the pokemon
      */
-    static __getGameTickCountNeededToDefeatPokemon(pokemonHp, playerClickAttack, totalAtkPerSecond)
+    static getGameTickCountNeededToDefeatPokemon(pokemonHp, playerClickAttack, totalAtkPerSecond)
     {
         let nbGameTickToDefeat = 1;
         let nbTicksPerSeconds = 20; // Based on https://github.com/pokeclicker/pokeclicker/blob/b5807ae2b8b14431e267d90563ae8944272e1679/src/scripts/Battle.ts#L55-L57
@@ -363,7 +335,7 @@ class AutomationUtilsRoute
      *
      * @returns The lowest possible pokemon attack
      */
-    static __getPlayerWorstPokemonAttack()
+    static getPlayerWorstPokemonAttack()
     {
         return [...Array(Gems.nTypes).keys()].reduce(
             (count, type) =>
@@ -371,6 +343,38 @@ class AutomationUtilsRoute
                 let pokemonAttack = App.game.party.calculatePokemonAttack(type);
                 return (pokemonAttack < count) ? pokemonAttack : count;
             }, Number.MAX_SAFE_INTEGER);
+    }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    // Map of Map [ region => [ route => maxHp ]]
+    static __internal__routeMaxHealthMap = new Map();
+
+    static __internal__lastHighestRegion = null;
+    static __internal__lastBestRouteRegion = null;
+    static __internal__lastBestRoute = null;
+    static __internal__lastNextBestRoute = null;
+    static __internal__lastNextBestRouteRegion = null;
+
+    /**
+     * @brief Gets the highest HP amount that a pokemon can have on the given @p route
+     *
+     * @param route: The pokeclicker RegionRoute object
+     *
+     * @returns The computed route max HP
+     */
+    static __internal__getRouteMaxHealth(route)
+    {
+        let routeMaxHealth = 0;
+        RouteHelper.getAvailablePokemonList(route.number, route.region).forEach(
+            (pokemonName) =>
+            {
+                routeMaxHealth = Math.max(routeMaxHealth, this.__internal__getPokemonMaxHealth(route, pokemonName));
+            }, this);
+
+        return routeMaxHealth;
     }
 
     /**
@@ -381,7 +385,7 @@ class AutomationUtilsRoute
      *
      * @returns The computed pokemon max HP
      */
-    static __getPokemonMaxHealth(route, pokemonName)
+    static __internal__getPokemonMaxHealth(route, pokemonName)
     {
         // Based on https://github.com/pokeclicker/pokeclicker/blob/b5807ae2b8b14431e267d90563ae8944272e1679/src/scripts/pokemons/PokemonFactory.ts#L33
         let basePokemon = PokemonHelper.getPokemonByName(pokemonName);
@@ -402,20 +406,20 @@ class AutomationUtilsRoute
     /**
      * @brief Builds the [ region => [ route => maxHp ]] map of map for each existing routes
      *
-     * The resulting map is stored as a member of this class @c __routeMaxHealthMap for further use
+     * The resulting map is stored as a member of this class @c __internal__routeMaxHealthMap for further use
      */
-    static __buildRouteMaxHealthMap()
+    static __internal__buildRouteMaxHealthMap()
     {
         Routes.regionRoutes.forEach(
             (route) =>
             {
-                if (route.region >= this.__routeMaxHealthMap.size)
+                if (route.region >= this.__internal__routeMaxHealthMap.size)
                 {
-                    this.__routeMaxHealthMap.set(route.region, new Map());
+                    this.__internal__routeMaxHealthMap.set(route.region, new Map());
                 }
 
-                let routeMaxHealth = this.__getRouteMaxHealth(route);
-                this.__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
+                let routeMaxHealth = this.__internal__getRouteMaxHealth(route);
+                this.__internal__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
             }, this);
     }
 }

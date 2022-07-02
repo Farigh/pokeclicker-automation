@@ -147,7 +147,7 @@ class AutomationTrivia
      * @brief Refreshes the 'Go to' trivia content
      *
      * The following elements will be refreshed
-     *   - The button state (will be disabled if the player is in a instance; @see Utils.__isInInstanceState)
+     *   - The button state (will be disabled if the player is in a instance; @see Automation.Utils.isInInstanceState)
      *   - The destination list (if the player changed region, or unlocked new locations)
      */
     static __refreshGotoLocationTrivia()
@@ -155,7 +155,7 @@ class AutomationTrivia
         let button = document.getElementById("moveToLocationButton");
 
         // Disable the button if the player is in an instance
-        if (Automation.Utils.__isInInstanceState())
+        if (Automation.Utils.isInInstanceState())
         {
             if (!button.disabled)
             {
@@ -253,7 +253,7 @@ class AutomationTrivia
     static __moveToLocation()
     {
         let selectedDestination = document.getElementById("gotoSelectedLocation").value;
-        Automation.Utils.Route.__moveToTown(selectedDestination);
+        Automation.Utils.Route.moveToTown(selectedDestination);
     }
 
     /**
@@ -345,7 +345,7 @@ class AutomationTrivia
 
         triviaDiv.hidden = (evoStones.length == 0);
 
-        if (!triviaDiv.hidden && !Automation.Utils.__areArrayEquals(this.__lastEvoStone, evoStones))
+        if (!triviaDiv.hidden && !Automation.Utils.areArrayEquals(this.__lastEvoStone, evoStones))
         {
             let contentDiv = document.getElementById("availableEvolutionTriviaContent");
             contentDiv.innerHTML = "";

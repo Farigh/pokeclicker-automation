@@ -146,7 +146,7 @@ class AutomationFarm
             this.__farmingLoop = null;
 
             // Restore setting
-            Automation.Utils.OakItem.__forbiddenItem = null;
+            Automation.Utils.OakItem.ForbiddenItem = null;
         }
     }
 
@@ -200,7 +200,7 @@ class AutomationFarm
 
     static __removeOakItemIfNeeded()
     {
-        Automation.Utils.OakItem.__forbiddenItem = this.__internalStrategy.forbiddenOakItem;
+        Automation.Utils.OakItem.ForbiddenItem = this.__internalStrategy.forbiddenOakItem;
 
         if (this.__internalStrategy.forbiddenOakItem !== null)
         {
@@ -1314,7 +1314,7 @@ class AutomationFarm
         if (this.__internalStrategy === null)
         {
             this.__disableAutoUnlock("No more automated unlock possible");
-            Automation.Utils.__sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature",
+            Automation.Utils.sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature",
                                                 "Farming");
             return;
         }
@@ -1439,7 +1439,7 @@ class AutomationFarm
     {
         Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
-        Automation.Utils.OakItem.__forbiddenItem = null;
+        Automation.Utils.OakItem.ForbiddenItem = null;
     }
 
     /**
@@ -1451,7 +1451,7 @@ class AutomationFarm
     {
         if (this.__plantedBerryCount > 0)
         {
-            Automation.Utils.__sendNotif("Harvested " + this.__harvestCount.toString() + " berries<br>" + details, "Farming");
+            Automation.Utils.sendNotif("Harvested " + this.__harvestCount.toString() + " berries<br>" + details, "Farming");
         }
     }
 }

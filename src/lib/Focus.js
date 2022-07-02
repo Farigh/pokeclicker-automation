@@ -54,10 +54,10 @@ class AutomationFocus
         }
 
         // Disable 'Focus on' if an instance is in progress, and exit
-        if (Automation.Utils.__isInInstanceState())
+        if (Automation.Utils.isInInstanceState())
         {
             Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-            Automation.Utils.__sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
+            Automation.Utils.sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
             return false;
         }
 
@@ -91,13 +91,13 @@ class AutomationFocus
         }
 
         // Equip the Oak item catch loadout
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.Ultraball;
 
         // Move to the highest unlocked route
-        Automation.Utils.Route.__moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
     }
 
     /**
@@ -446,7 +446,7 @@ class AutomationFocus
      *
      * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      *
-     * @see Automation.Utils.Route.__moveToBestRouteForExp
+     * @see Automation.Utils.Route.moveToBestRouteForExp
      */
     static __internal__goToBestRouteForExp()
     {
@@ -456,9 +456,9 @@ class AutomationFocus
         }
 
         // Equip the most effective Oak item loadout for XP farming
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
-        Automation.Utils.Route.__moveToBestRouteForExp();
+        Automation.Utils.Route.moveToBestRouteForExp();
     }
 
     /**
@@ -480,16 +480,16 @@ class AutomationFocus
         }
 
         // Equip the 'money' Oak loadout
-        Automation.Utils.OakItem.__equipLoadout(Automation.Utils.OakItem.Setup.Money);
+        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
         // Fallback to the exp route if no gym can be found
         if (this.__internal__lastFocusData.bestGymTown === null)
         {
-            Automation.Utils.Route.__moveToBestRouteForExp();
+            Automation.Utils.Route.moveToBestRouteForExp();
             return;
         }
 
-        Automation.Utils.Route.__moveToTown(this.__internal__lastFocusData.bestGymTown);
+        Automation.Utils.Route.moveToTown(this.__internal__lastFocusData.bestGymTown);
         this.__enableAutoGymFight(this.__internal__lastFocusData.bestGym);
     }
 
@@ -509,17 +509,17 @@ class AutomationFocus
         let bestGym = Automation.Utils.Gym.findBestGymForFarmingType(gemType);
         if (bestGym !== null)
         {
-            Automation.Utils.Route.__moveToTown(bestGym.Town);
+            Automation.Utils.Route.moveToTown(bestGym.Town);
             this.__enableAutoGymFight(bestGym.Name);
 
             return;
         }
 
         // Fallback to routes if no gym could be found
-        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.__findBestRouteForFarmingType(gemType);
+        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.findBestRouteForFarmingType(gemType);
         if ((player.route() !== bestRoute) || (player.region !== bestRouteRegion))
         {
-            Automation.Utils.Route.__moveToRoute(bestRoute, bestRouteRegion);
+            Automation.Utils.Route.moveToRoute(bestRoute, bestRouteRegion);
         }
     }
 }

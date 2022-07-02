@@ -205,7 +205,7 @@ class AutomationDungeon
             {
                 if (this.__playerActionOccured)
                 {
-                    Automation.Utils.__sendWarningNotif("User action detected, turning off the automation", "Dungeon");
+                    Automation.Utils.sendWarningNotif("User action detected, turning off the automation", "Dungeon");
                 }
 
                 Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
