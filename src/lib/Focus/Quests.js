@@ -94,7 +94,7 @@ class AutomationFocusQuests
             FarmController.selectedBerry(BerryType.Cheri);
 
             // Force enable other modes
-            Automation.Click.__toggleAutoClick(true);
+            Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.__toggleAutoHatchery(true);
             Automation.Farm.__toggleAutoFarming(true);
             Automation.Underground.__toggleAutoMining(true);
@@ -115,7 +115,7 @@ class AutomationFocusQuests
         Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
 
         // Reset other modes status
-        Automation.Click.__toggleAutoClick();
+        Automation.Click.toggleAutoClick();
         Automation.Hatchery.__toggleAutoHatchery();
         Automation.Farm.__toggleAutoFarming();
         Automation.Underground.__toggleAutoMining();
