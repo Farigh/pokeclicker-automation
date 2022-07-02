@@ -97,7 +97,7 @@ class AutomationFocusQuests
             Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.toggleAutoHatchery(true);
             Automation.Farm.toggleAutoFarming(true);
-            Automation.Underground.__toggleAutoMining(true);
+            Automation.Underground.toggleAutoMining(true);
         }
     }
 
@@ -118,7 +118,7 @@ class AutomationFocusQuests
         Automation.Click.toggleAutoClick();
         Automation.Hatchery.toggleAutoHatchery();
         Automation.Farm.toggleAutoFarming();
-        Automation.Underground.__toggleAutoMining();
+        Automation.Underground.toggleAutoMining();
 
         // Re-enable other modes button
         Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
