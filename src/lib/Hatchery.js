@@ -6,10 +6,6 @@
  */
 class AutomationHatchery
 {
-    static __hatcheryContainer = null;
-
-    static __autoHatcheryLoop = null;
-
     static Settings = {
                           FeatureEnabled: "Hatchery-Enabled",
                           NotShinyFirst: "Hatchery-NotShinyFirst",
@@ -31,28 +27,74 @@ class AutomationHatchery
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
 
-            this.__buildMenu();
+            this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
             // Restore previous session state
-            this.__toggleAutoHatchery();
+            this.toggleAutoHatchery();
         }
     }
 
-    static __buildMenu()
+    /**
+     * @brief Toggles the 'Hatchery' feature
+     *
+     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
+     * If the feature was disabled and it's toggled to enabled, the loop will be started.
+     *
+     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
+     *                Otherwise, the cookie stored value will be used
+     */
+    static toggleAutoHatchery(enable)
+    {
+        if (!App.game.breeding.canAccess())
+        {
+            return;
+        }
+
+        // If we got the click event, use the button status
+        if ((enable !== true) && (enable !== false))
+        {
+            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
+        }
+
+        if (enable)
+        {
+            // Only set a loop if there is none active
+            if (this.__internal__autoHatcheryLoop === null)
+            {
+                // Set auto-hatchery loop
+                this.__internal__autoHatcheryLoop = setInterval(this.__internal__hatcheryLoop.bind(this), 1000); // Runs every second
+            }
+        }
+        else
+        {
+            // Unregister the loop
+            clearInterval(this.__internal__autoHatcheryLoop);
+            this.__internal__autoHatcheryLoop = null;
+        }
+    }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__hatcheryContainer = null;
+    static __internal__autoHatcheryLoop = null;
+
+    static __internal__buildMenu()
     {
         // Add the related buttons to the automation menu
-        this.__hatcheryContainer = document.createElement("div");
-        Automation.Menu.AutomationButtonsDiv.appendChild(this.__hatcheryContainer);
+        this.__internal__hatcheryContainer = document.createElement("div");
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__hatcheryContainer);
 
-        Automation.Menu.addSeparator(this.__hatcheryContainer);
+        Automation.Menu.addSeparator(this.__internal__hatcheryContainer);
 
         // Only display the menu when the hatchery is unlocked
         if (!App.game.breeding.canAccess())
         {
-            this.__hatcheryContainer.hidden = true;
-            this.__setHatcheryUnlockWatcher();
+            this.__internal__hatcheryContainer.hidden = true;
+            this.__internal__setHatcheryUnlockWatcher();
         }
 
         let autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
@@ -61,8 +103,9 @@ class AutomationHatchery
                                 + "The queue is not used, as it would reduce the Pokemon Attack\n"
                                 + "It also enables you to manually add pokemons to the queue\n"
                                 + "The queued pokemon are hatched first";
-        let autoHatcheryButton = Automation.Menu.addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__hatcheryContainer);
-        autoHatcheryButton.addEventListener("click", this.__toggleAutoHatchery.bind(this), false);
+        let autoHatcheryButton =
+            Automation.Menu.addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__internal__hatcheryContainer);
+        autoHatcheryButton.addEventListener("click", this.toggleAutoHatchery.bind(this), false);
 
         // Build advanced settings panel
         let hatcherySettingPanel = Automation.Menu.addSettingPanel(autoHatcheryButton.parentElement.parentElement);
@@ -90,56 +133,17 @@ class AutomationHatchery
      * @brief Watches for the in-game functionality to be unlocked.
      *        Once unlocked, the menu will be displayed to the user
      */
-    static __setHatcheryUnlockWatcher()
+    static __internal__setHatcheryUnlockWatcher()
     {
         let watcher = setInterval(function()
         {
             if (App.game.breeding.canAccess())
             {
                 clearInterval(watcher);
-                this.__hatcheryContainer.hidden = false;
-                this.__toggleAutoHatchery();
+                this.__internal__hatcheryContainer.hidden = false;
+                this.toggleAutoHatchery();
             }
         }.bind(this), 10000); // Check every 10 seconds
-    }
-
-    /**
-     * @brief Toggles the 'Hatchery' feature
-     *
-     * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
-     * If the feature was disabled and it's toggled to enabled, the loop will be started.
-     *
-     * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
-     */
-    static __toggleAutoHatchery(enable)
-    {
-        if (!App.game.breeding.canAccess())
-        {
-            return;
-        }
-
-        // If we got the click event, use the button status
-        if ((enable !== true) && (enable !== false))
-        {
-            enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
-        }
-
-        if (enable)
-        {
-            // Only set a loop if there is none active
-            if (this.__autoHatcheryLoop === null)
-            {
-                // Set auto-hatchery loop
-                this.__autoHatcheryLoop = setInterval(this.__hatcheryLoop.bind(this), 1000); // Runs every second
-            }
-        }
-        else
-        {
-            // Unregister the loop
-            clearInterval(this.__autoHatcheryLoop);
-            this.__autoHatcheryLoop = null;
-        }
     }
 
     /**
@@ -152,7 +156,7 @@ class AutomationHatchery
      *   - The pokemon at max level (100), with the highet breeding efficiency, will be added
      *     If the 'No shiny 1st' feature is enabled, shiny pokemon will only be added if no none-shiny ones are available
      */
-    static __hatcheryLoop()
+    static __internal__hatcheryLoop()
     {
         // Attempt to hatch each egg. If the egg is at 100% it will succeed
         [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
@@ -160,13 +164,13 @@ class AutomationHatchery
         // Try to use eggs first, if enabled
         if (Automation.Utils.LocalStorage.getValue(this.Settings.UseEggs) === "true")
         {
-            this.__addEggsToHatchery();
+            this.__internal__addEggsToHatchery();
         }
 
         // Then try to use fossils, if enabled
         if (Automation.Utils.LocalStorage.getValue(this.Settings.UseFossils) === "true")
         {
-            this.__addFossilsToHatchery();
+            this.__internal__addFossilsToHatchery();
         }
 
         // Now add lvl 100 pokemons to empty slots if we can
@@ -230,7 +234,7 @@ class AutomationHatchery
      * Only one egg of a given type will be added at once.
      * Only eggs that can hatch an uncaught pokemon will be considered.
      */
-    static __addEggsToHatchery()
+    static __internal__addEggsToHatchery()
     {
         let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player._itemList[eggType]());
 
@@ -265,9 +269,11 @@ class AutomationHatchery
      * Only one fossil of a given type will be added at once.
      * Only fossils that can hatch an uncaught pokemon will be considered.
      */
-    static __addFossilsToHatchery()
+    static __internal__addFossilsToHatchery()
     {
-        let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(f => player.mineInventory().find(i => i.name == f)).filter((f) => f ? f.amount() : false);
+        let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(
+            f => player.mineInventory().find(i => i.name == f)).filter((f) => f ? f.amount() : false);
+
         let i = 0;
         while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
         {
