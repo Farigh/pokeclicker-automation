@@ -90,13 +90,13 @@ class AutomationFocusQuests
             Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
 
             // Select cheri berry to avoid long riping time
-            Automation.Farm.__forcePlantBerriesAsked = true;
+            Automation.Farm.ForcePlantBerriesAsked = true;
             FarmController.selectedBerry(BerryType.Cheri);
 
             // Force enable other modes
             Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.__toggleAutoHatchery(true);
-            Automation.Farm.__toggleAutoFarming(true);
+            Automation.Farm.toggleAutoFarming(true);
             Automation.Underground.__toggleAutoMining(true);
         }
     }
@@ -111,13 +111,13 @@ class AutomationFocusQuests
         this.__internal__autoQuestLoop = null;
 
         // Reset demands
-        Automation.Farm.__forcePlantBerriesAsked = false;
+        Automation.Farm.ForcePlantBerriesAsked = false;
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         // Reset other modes status
         Automation.Click.toggleAutoClick();
         Automation.Hatchery.__toggleAutoHatchery();
-        Automation.Farm.__toggleAutoFarming();
+        Automation.Farm.toggleAutoFarming();
         Automation.Underground.__toggleAutoMining();
 
         // Re-enable other modes button
