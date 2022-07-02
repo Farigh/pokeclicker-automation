@@ -112,7 +112,7 @@ class AutomationFocusQuests
 
         // Reset demands
         Automation.Farm.__forcePlantBerriesAsked = false;
-        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         // Reset other modes status
         Automation.Click.toggleAutoClick();
@@ -208,10 +208,10 @@ class AutomationFocusQuests
         // Already fighting, nothing to do for now
         if (Automation.Utils.isInInstanceState())
         {
-            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.StopAfterThisRun;
+            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
             return;
         }
-        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         let currentQuests = App.game.quests.currentQuests();
         if (currentQuests.length == 0)
@@ -390,7 +390,7 @@ class AutomationFocusQuests
         }
 
         // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.ByPassUserSettings;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ByPassUserSettings;
 
         // Enable auto dungeon fight
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);

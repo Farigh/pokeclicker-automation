@@ -58,8 +58,8 @@ class AutomationFocusAchievements
         clearInterval(this.__internal__achievementLoop);
         this.__internal__achievementLoop = null;
 
-        Automation.Dungeon.__internalModeRequested = Automation.Utils.isInInstanceState() ? Automation.Dungeon.InternalMode.StopAfterThisRun
-                                                                                            : Automation.Dungeon.InternalMode.None;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Utils.isInInstanceState() ? Automation.Dungeon.InternalModes.StopAfterThisRun
+                                                                                            : Automation.Dungeon.InternalModes.None;
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
@@ -124,12 +124,12 @@ class AutomationFocusAchievements
 
         if (this.__internal__currentAchievement.property instanceof RouteKillRequirement)
         {
-            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
+            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
             this.__internal__workOnRouteKillRequirement();
         }
         else if (this.__internal__currentAchievement.property instanceof ClearGymRequirement)
         {
-            Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.None;
+            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
             this.__internal__workOnClearGymRequirement();
         }
         else if (this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
@@ -220,7 +220,7 @@ class AutomationFocusAchievements
         }
 
         // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.__internalModeRequested = Automation.Dungeon.InternalMode.ByPassUserSettings;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ByPassUserSettings;
 
         // Enable auto dungeon fight
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
