@@ -3,11 +3,6 @@
  */
 class AutomationTrivia
 {
-    static __previousRegion = null;
-    static __displayedRoamingRoute = null;
-    static __currentLocationListSize = 0;
-    static __lastEvoStone = null;
-
     /**
      * @brief Initializes the Trivia components
      *
@@ -17,20 +12,29 @@ class AutomationTrivia
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
-            this.__buildMenu();
+            this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
-            this.__initializeGotoLocationTrivia();
-            this.__initializeRoamingRouteTrivia();
-            this.__initializeEvolutionTrivia();
+            this.__internal__initializeGotoLocationTrivia();
+            this.__internal__initializeRoamingRouteTrivia();
+            this.__internal__initializeEvolutionTrivia();
         }
     }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__previousRegion = null;
+    static __internal__displayedRoamingRoute = null;
+    static __internal__currentLocationListSize = 0;
+    static __internal__lastEvoStone = null;
 
     /**
      * @brief Builds the 'Trivia' menu panel
      */
-    static __buildMenu()
+    static __internal__buildMenu()
     {
         // Hide the gym and dungeon fight menus by default and disable auto fight
         let triviaTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
@@ -52,17 +56,17 @@ class AutomationTrivia
 
         Automation.Menu.addSeparator(containerDiv);
 
-        this.__addAvailableEvolutionContent(triviaDiv);
+        this.__internal__addAvailableEvolutionContent(triviaDiv);
 
-        this.__addGotoLocationContent(triviaDiv);
+        this.__internal__addGotoLocationContent(triviaDiv);
     }
 
     /**
      * @brief Adds the 'Available evolution' trivia content to the given @p triviaDiv
      *
-     * @param triviaDiv: The div element to add the created elements to
+     * @param {Element} triviaDiv: The div element to add the created elements to
      */
-    static __addAvailableEvolutionContent(triviaDiv)
+    static __internal__addAvailableEvolutionContent(triviaDiv)
     {
         // Add available evolution div
         let containerDiv = document.createElement("div");
@@ -91,9 +95,9 @@ class AutomationTrivia
     /**
      * @brief Adds the 'Go to' trivia content to the given @p triviaDiv
      *
-     * @param triviaDiv: The div element to add the created elements to
+     * @param {Element} triviaDiv: The div element to add the created elements to
      */
-    static __addGotoLocationContent(triviaDiv)
+    static __internal__addGotoLocationContent(triviaDiv)
     {
         // Add go to location div
         let gotoLocationDiv = document.createElement("div");
@@ -116,7 +120,7 @@ class AutomationTrivia
         let gotoButton = Automation.Menu.createButtonElement("moveToLocationButton");
         gotoButton.textContent = "Go";
         gotoButton.classList.add("btn-primary");
-        gotoButton.onclick = this.__moveToLocation;
+        gotoButton.onclick = this.__internal__moveToLocation;
         gotoContainer.appendChild(gotoButton);
 
         // Add the text next to the button
@@ -133,14 +137,14 @@ class AutomationTrivia
     /**
      * @brief Initializes the 'Go to' trivia content and set its watcher loop
      *
-     * @see __refreshGotoLocationTrivia for more details on the loop behaviour
+     * @see __internal__refreshGotoLocationTrivia for more details on the loop behaviour
      */
-    static __initializeGotoLocationTrivia()
+    static __internal__initializeGotoLocationTrivia()
     {
         // Set the initial value
-        this.__refreshGotoLocationTrivia();
+        this.__internal__refreshGotoLocationTrivia();
 
-        setInterval(this.__refreshGotoLocationTrivia.bind(this), 1000); // Refresh every 1s
+        setInterval(this.__internal__refreshGotoLocationTrivia.bind(this), 1000); // Refresh every 1s
     }
 
     /**
@@ -150,7 +154,7 @@ class AutomationTrivia
      *   - The button state (will be disabled if the player is in a instance; @see Automation.Utils.isInInstanceState)
      *   - The destination list (if the player changed region, or unlocked new locations)
      */
-    static __refreshGotoLocationTrivia()
+    static __internal__refreshGotoLocationTrivia()
     {
         let button = document.getElementById("moveToLocationButton");
 
@@ -180,7 +184,7 @@ class AutomationTrivia
         let unlockedTownCount = filteredList.reduce((count, [townName, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
 
         // Clear the list if the player changed region
-        if (this.__previousRegion !== player.region)
+        if (this.__internal__previousRegion !== player.region)
         {
             // Drop all elements and rebuild the list
             gotoList.innerHTML = "";
@@ -226,11 +230,11 @@ class AutomationTrivia
                     gotoList.options.add(opt);
                 });
 
-            this.__previousRegion = player.region;
+            this.__internal__previousRegion = player.region;
 
-            this.__currentLocationListSize = unlockedTownCount;
+            this.__internal__currentLocationListSize = unlockedTownCount;
         }
-        else if (this.__currentLocationListSize != unlockedTownCount)
+        else if (this.__internal__currentLocationListSize != unlockedTownCount)
         {
             filteredList.forEach(
                 ([townName, town]) =>
@@ -250,7 +254,7 @@ class AutomationTrivia
     /**
      * @brief Moves the player to the selected 'Go to' location
      */
-    static __moveToLocation()
+    static __internal__moveToLocation()
     {
         let selectedDestination = document.getElementById("gotoSelectedLocation").value;
         Automation.Utils.Route.moveToTown(selectedDestination);
@@ -259,12 +263,12 @@ class AutomationTrivia
     /**
      * @brief Initializes the 'Roamers' trivia content and set its watcher loop
      */
-    static __initializeRoamingRouteTrivia()
+    static __internal__initializeRoamingRouteTrivia()
     {
         // Set the initial value
-        this.__refreshRoamingRouteTrivia();
+        this.__internal__refreshRoamingRouteTrivia();
 
-        setInterval(this.__refreshRoamingRouteTrivia.bind(this), 1000); // Refresh every 1s (changes every 8h, but the player might change map)
+        setInterval(this.__internal__refreshRoamingRouteTrivia.bind(this), 1000); // Refresh every 1s (changes every 8h, but the player might change map)
     }
 
     /**
@@ -275,7 +279,7 @@ class AutomationTrivia
      *   - The roamers route
      *   - The roamers list (in the tooltip)
      */
-    static __refreshRoamingRouteTrivia()
+    static __internal__refreshRoamingRouteTrivia()
     {
         // Their can be no roamers at this time
         let roamers = RoamingPokemonList.getRegionalRoamers(player.region);
@@ -283,9 +287,9 @@ class AutomationTrivia
         let currentRoamingRoute = (roamers.length > 0)
                                 ? roamingRouteData.number
                                 : -1;
-        if (this.__displayedRoamingRoute !== currentRoamingRoute)
+        if (this.__internal__displayedRoamingRoute !== currentRoamingRoute)
         {
-            this.__displayedRoamingRoute = currentRoamingRoute;
+            this.__internal__displayedRoamingRoute = currentRoamingRoute;
             let routeName = roamingRouteData.routeName;
             // Remove the region from the displayed name and insert non-breaking spaces
             let regionName = GameConstants.camelCaseToString(GameConstants.Region[player.region]);
@@ -321,12 +325,12 @@ class AutomationTrivia
     /**
      * @brief Initializes the 'Available evolution' trivia content and set its watcher loop
      */
-    static __initializeEvolutionTrivia()
+    static __internal__initializeEvolutionTrivia()
     {
         // Set the initial value
-        this.__refreshEvolutionTrivia();
+        this.__internal__refreshEvolutionTrivia();
 
-        setInterval(this.__refreshEvolutionTrivia.bind(this), 1000); // Refresh every 1s
+        setInterval(this.__internal__refreshEvolutionTrivia.bind(this), 1000); // Refresh every 1s
     }
 
     /**
@@ -336,24 +340,25 @@ class AutomationTrivia
      *   - Content visibility (will be hidden if no evolution is available)
      *   - The stone list
      */
-    static __refreshEvolutionTrivia()
+    static __internal__refreshEvolutionTrivia()
     {
         let triviaDiv = document.getElementById("availableEvolutionTrivia");
 
         let evoStones = Object.keys(GameConstants.StoneType).filter(
-            (stone) => isNaN(stone) && stone !== "None" && this.__hasStoneEvolutionCandidate(stone));
+            (stone) => isNaN(stone) && stone !== "None" && this.__internal__hasStoneEvolutionCandidate(stone));
 
         triviaDiv.hidden = (evoStones.length == 0);
 
-        if (!triviaDiv.hidden && !Automation.Utils.areArrayEquals(this.__lastEvoStone, evoStones))
+        if (!triviaDiv.hidden && !Automation.Utils.areArrayEquals(this.__internal__lastEvoStone, evoStones))
         {
             let contentDiv = document.getElementById("availableEvolutionTriviaContent");
             contentDiv.innerHTML = "";
 
-            evoStones.forEach((stone) => contentDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
-                                                               + ' onclick="javascript: Automation.Trivia.__goToStoneMenu(\'' + stone + '\');">');
+            evoStones.forEach(
+                (stone) => contentDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
+                                                 + ' onclick="javascript: Automation.Trivia.__internal__goToStoneMenu(\'' + stone + '\');">');
 
-            this.__lastEvoStone = evoStones;
+            this.__internal__lastEvoStone = evoStones;
         }
     }
 
@@ -362,7 +367,7 @@ class AutomationTrivia
      *
      * @param stone: The stone to open the 'Items' page of
      */
-    static __goToStoneMenu(stone)
+    static __internal__goToStoneMenu(stone)
     {
         // Display the menu
         $("#showItemsModal").modal("show");
@@ -391,7 +396,7 @@ class AutomationTrivia
      *
      * @returns True if any pokemon can be evolved using the @p stone, False otherwise
      */
-    static __hasStoneEvolutionCandidate(stone)
+    static __internal__hasStoneEvolutionCandidate(stone)
     {
         var hasCandidate = false;
 
