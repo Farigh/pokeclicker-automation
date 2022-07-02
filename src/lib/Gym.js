@@ -3,11 +3,6 @@
  */
  class AutomationGym
 {
-    static __autoGymLoop = null;
-
-    static __previousTown = null;
-    static __currentGymListSize = 0;
-
     static Settings = { FeatureEnabled: "Gym-FightEnabled" };
 
     /**
@@ -30,7 +25,7 @@
         // Add an on/off button
         let autoGymTooltip = "Automatically starts the selected gym fight";
         let autoGymButton = Automation.Menu.addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoGymTooltip, gymDiv, true);
-        autoGymButton.addEventListener("click", this.__toggleGymFight.bind(this), false);
+        autoGymButton.addEventListener("click", this.__internal__toggleGymFight.bind(this), false);
 
         // Disable by default
         Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
@@ -41,8 +36,17 @@
         gymDiv.appendChild(selectElem);
 
         // Set the div visibility and content watcher
-        setInterval(this.__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+        setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
     }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__autoGymLoop = null;
+
+    static __internal__previousTown = null;
+    static __internal__currentGymListSize = 0;
 
     /**
      * @brief Toggles the 'Gym AutoFight' feature
@@ -53,7 +57,7 @@
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
-    static __toggleGymFight(enable)
+    static __internal__toggleGymFight(enable)
     {
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
@@ -64,17 +68,17 @@
         if (enable)
         {
             // Only set a loop if there is none active
-            if (this.__autoGymLoop === null)
+            if (this.__internal__autoGymLoop === null)
             {
                 // Set auto-gym loop
-                this.__autoGymLoop = setInterval(this.__gymFightLoop.bind(this), 50); // Runs every game tick
+                this.__internal__autoGymLoop = setInterval(this.__internal__gymFightLoop.bind(this), 50); // Runs every game tick
             }
         }
         else
         {
             // Unregister the loop
-            clearInterval(this.__autoGymLoop);
-            this.__autoGymLoop = null;
+            clearInterval(this.__internal__autoGymLoop);
+            this.__internal__autoGymLoop = null;
         }
     }
 
@@ -83,7 +87,7 @@
      *
      * It will automatically start the selected gym.
      */
-    static __gymFightLoop()
+    static __internal__gymFightLoop()
     {
         // Kill the loop if the menu is not visible anymore
         if (document.getElementById("gymFightButtons").hidden)
@@ -120,32 +124,32 @@
      *
      * The category is only visible when a gym is actually available at the current position
      */
-    static __updateDivVisibilityAndContent()
+    static __internal__updateDivVisibilityAndContent()
     {
         // Check if we are in a town
         if (App.game.gameState === GameConstants.GameState.town)
         {
             // If we are in the same town as previous cycle
-            if (this.__previousTown === player.town().name)
+            if (this.__internal__previousTown === player.town().name)
             {
-                this.__updateGymList(player.town().name, false);
+                this.__internal__updateGymList(player.town().name, false);
             }
             else
             {
                 if (player.town().content.filter((x) => GymList[x.town]).length > 0)
                 {
-                    this.__updateGymList(player.town().name, true);
+                    this.__internal__updateGymList(player.town().name, true);
 
                     Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
                 }
-                this.__previousTown = player.town().name;
+                this.__internal__previousTown = player.town().name;
             }
 
-            document.getElementById("gymFightButtons").hidden = (this.__currentGymListSize == 0);
+            document.getElementById("gymFightButtons").hidden = (this.__internal__currentGymListSize == 0);
         }
         else if (App.game.gameState === GameConstants.GameState.gym)
         {
-            this.__updateGymList(this.__previousTown, false);
+            this.__internal__updateGymList(this.__internal__previousTown, false);
         }
         else
         {
@@ -161,14 +165,14 @@
      *   - The player moved to another town
      *   - A new contestant is available in the same town (for example in the league)
      */
-    static __updateGymList(townName, rebuild)
+    static __internal__updateGymList(townName, rebuild)
     {
         let selectElem = document.getElementById("selectedAutomationGym");
         let gymList = TownList[townName].content.filter((x) => GymList[x.town]);
         let unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
 
-        if ((this.__currentGymListSize === unlockedGymCount)
-            && (this.__previousTown === townName))
+        if ((this.__internal__currentGymListSize === unlockedGymCount)
+            && (this.__internal__previousTown === townName))
         {
             return;
         }
@@ -222,6 +226,6 @@
             document.getElementById("selectedAutomationGym").selectedIndex = -1;
         }
 
-        this.__currentGymListSize = unlockedGymCount;
+        this.__internal__currentGymListSize = unlockedGymCount;
     }
 }
