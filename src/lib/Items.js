@@ -11,13 +11,6 @@
  */
 class AutomationItems
 {
-    static __upgradeContainer = null;
-    static __oakUpgradeContainer = null;
-    static __gemUpgradeContainer = null;
-
-    static __autoOakUpgradeLoop = null;
-    static __autoGemUpgradeLoop = null;
-
     static Settings = {
                           UpgradeOakItems: "Items-UpgradeOakItems",
                           UpgradeGems: "Items-UpgradeGems"
@@ -37,60 +30,73 @@ class AutomationItems
             // Disable Oak Items auto-upgrades by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UpgradeOakItems, false);
 
-            this.__buildMenu();
+            this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
             // Restore previous session state
-            this.__toggleAutoOakUpgrade();
-            this.__toggleAutoGemUpgrade();
+            this.__internal__toggleAutoOakUpgrade();
+            this.__internal__toggleAutoGemUpgrade();
         }
     }
 
-    static __buildMenu()
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__upgradeContainer = null;
+    static __internal__oakUpgradeContainer = null;
+    static __internal__gemUpgradeContainer = null;
+
+    static __internal__autoOakUpgradeLoop = null;
+    static __internal__autoGemUpgradeLoop = null;
+
+    static __internal__buildMenu()
     {
         // Add the related button to the automation menu
-        this.__upgradeContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__upgradeContainer);
+        this.__internal__upgradeContainer = document.createElement("div");
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__upgradeContainer);
 
-        Automation.Menu.__addSeparator(this.__upgradeContainer);
+        Automation.Menu.addSeparator(this.__internal__upgradeContainer);
 
         /** Title **/
-        let titleDiv = Automation.Menu.__createTitle("Auto Upgrade");
-        this.__upgradeContainer.appendChild(titleDiv);
+        let titleDiv = Automation.Menu.createTitleElement("Auto Upgrade");
+        this.__internal__upgradeContainer.appendChild(titleDiv);
 
         /** Oak items **/
-        this.__oakUpgradeContainer = document.createElement("div");
-        this.__upgradeContainer.appendChild(this.__oakUpgradeContainer);
+        this.__internal__oakUpgradeContainer = document.createElement("div");
+        this.__internal__upgradeContainer.appendChild(this.__internal__oakUpgradeContainer);
 
         // Only display the menu when the elements are unlocked
-        this.__oakUpgradeContainer.hidden = !App.game.oakItems.canAccess();
+        this.__internal__oakUpgradeContainer.hidden = !App.game.oakItems.canAccess();
 
         let oakItemTooltip = "Automatically ugrades Oak items when possible"
-                           + Automation.Menu.__tooltipSeparator()
+                           + Automation.Menu.TooltipSeparator
                            + "⚠️ This can be cost-heavy during early game";
-        let oakUpgradeButton = Automation.Menu.__addAutomationButton("Oak Items", this.Settings.UpgradeOakItems, oakItemTooltip, this.__oakUpgradeContainer);
-        oakUpgradeButton.addEventListener("click", this.__toggleAutoOakUpgrade.bind(this), false);
+        let oakUpgradeButton =
+            Automation.Menu.addAutomationButton("Oak Items", this.Settings.UpgradeOakItems, oakItemTooltip, this.__internal__oakUpgradeContainer);
+        oakUpgradeButton.addEventListener("click", this.__internal__toggleAutoOakUpgrade.bind(this), false);
 
         /** Gems **/
-        this.__gemUpgradeContainer = document.createElement("div");
-        this.__upgradeContainer.appendChild(this.__gemUpgradeContainer);
+        this.__internal__gemUpgradeContainer = document.createElement("div");
+        this.__internal__upgradeContainer.appendChild(this.__internal__gemUpgradeContainer);
 
         // Only display the menu when the elements are unlocked
-        this.__gemUpgradeContainer.hidden = !App.game.gems.canAccess();
+        this.__internal__gemUpgradeContainer.hidden = !App.game.gems.canAccess();
 
         let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
-        let gemUpgradeButton = Automation.Menu.__addAutomationButton("Gems", this.Settings.UpgradeGems, gemsTooltip, this.__gemUpgradeContainer);
-        gemUpgradeButton.addEventListener("click", this.__toggleAutoGemUpgrade.bind(this), false);
+        let gemUpgradeButton =
+            Automation.Menu.addAutomationButton("Gems", this.Settings.UpgradeGems, gemsTooltip, this.__internal__gemUpgradeContainer);
+        gemUpgradeButton.addEventListener("click", this.__internal__toggleAutoGemUpgrade.bind(this), false);
 
         // If both are hidden, hide the whole menu
-        this.__upgradeContainer.hidden = this.__oakUpgradeContainer.hidden && this.__gemUpgradeContainer.hidden;
+        this.__internal__upgradeContainer.hidden = this.__internal__oakUpgradeContainer.hidden && this.__internal__gemUpgradeContainer.hidden;
 
         // Set the watcher to display the option once the mechanic has been unlocked
-        if (this.__oakUpgradeContainer.hidden
-            || this.__gemUpgradeContainer.hidden)
+        if (this.__internal__oakUpgradeContainer.hidden
+            || this.__internal__gemUpgradeContainer.hidden)
         {
-            this.__setItemUpgradeUnlockWatcher();
+            this.__internal__setItemUpgradeUnlockWatcher();
         }
     }
 
@@ -98,27 +104,27 @@ class AutomationItems
      * @brief Watches for the in-game functionalities to be unlocked.
      *        Once unlocked, the menu/button will be displayed to the user
      */
-    static __setItemUpgradeUnlockWatcher()
+    static __internal__setItemUpgradeUnlockWatcher()
     {
         let watcher = setInterval(function()
         {
-            if (this.__oakUpgradeContainer.hidden
+            if (this.__internal__oakUpgradeContainer.hidden
                 && App.game.oakItems.canAccess())
             {
-                this.__oakUpgradeContainer.hidden = false;
-                this.__toggleAutoOakUpgrade();
+                this.__internal__oakUpgradeContainer.hidden = false;
+                this.__internal__toggleAutoOakUpgrade();
             }
 
-            if (this.__gemUpgradeContainer.hidden
+            if (this.__internal__gemUpgradeContainer.hidden
                 && App.game.gems.canAccess())
             {
-                this.__gemUpgradeContainer.hidden = false;
-                this.__toggleAutoGemUpgrade();
+                this.__internal__gemUpgradeContainer.hidden = false;
+                this.__internal__toggleAutoGemUpgrade();
             }
 
-            this.__upgradeContainer.hidden = this.__oakUpgradeContainer.hidden && this.__gemUpgradeContainer.hidden;
+            this.__internal__upgradeContainer.hidden = this.__internal__oakUpgradeContainer.hidden && this.__internal__gemUpgradeContainer.hidden;
 
-            if (!this.__oakUpgradeContainer.hidden && !this.__gemUpgradeContainer.hidden)
+            if (!this.__internal__oakUpgradeContainer.hidden && !this.__internal__gemUpgradeContainer.hidden)
             {
                 clearInterval(watcher);
             }
@@ -134,7 +140,7 @@ class AutomationItems
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
-    static __toggleAutoOakUpgrade(enable)
+    static __internal__toggleAutoOakUpgrade(enable)
     {
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
@@ -145,17 +151,17 @@ class AutomationItems
         if (enable)
         {
             // Only set a loop if there is none active
-            if (this.__autoOakUpgradeLoop === null)
+            if (this.__internal__autoOakUpgradeLoop === null)
             {
                 // Set auto-upgrade loop
-                this.__autoOakUpgradeLoop = setInterval(this.__oakItemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
+                this.__internal__autoOakUpgradeLoop = setInterval(this.__internal__oakItemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
             }
         }
         else
         {
             // Unregister the loop
-            clearInterval(this.__autoOakUpgradeLoop);
-            this.__autoOakUpgradeLoop = null;
+            clearInterval(this.__internal__autoOakUpgradeLoop);
+            this.__internal__autoOakUpgradeLoop = null;
         }
     }
 
@@ -168,7 +174,7 @@ class AutomationItems
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
-    static __toggleAutoGemUpgrade(enable)
+    static __internal__toggleAutoGemUpgrade(enable)
     {
         if (!App.game.gems.canAccess())
         {
@@ -184,17 +190,17 @@ class AutomationItems
         if (enable)
         {
             // Only set a loop if there is none active
-            if (this.__autoGemUpgradeLoop === null)
+            if (this.__internal__autoGemUpgradeLoop === null)
             {
                 // Set auto-upgrade loop
-                this.__autoGemUpgradeLoop = setInterval(this.__gemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
+                this.__internal__autoGemUpgradeLoop = setInterval(this.__internal__gemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
             }
         }
         else
         {
             // Unregister the loop
-            clearInterval(this.__autoGemUpgradeLoop);
-            this.__autoGemUpgradeLoop = null;
+            clearInterval(this.__internal__autoGemUpgradeLoop);
+            this.__internal__autoGemUpgradeLoop = null;
         }
     }
 
@@ -206,7 +212,7 @@ class AutomationItems
      *   - It's not max-leveled
      *   - The player has enough currency to buy the upgrade
      */
-    static __oakItemUpgradeLoop()
+    static __internal__oakItemUpgradeLoop()
     {
         if (!App.game.oakItems.canAccess())
         {
@@ -238,7 +244,7 @@ class AutomationItems
      *   - It's not max-leveled
      *   - The player has enough gem to buy the upgrade
      */
-    static __gemUpgradeLoop()
+    static __internal__gemUpgradeLoop()
     {
         // Iterate over gem types
         [...Array(Gems.nTypes).keys()].forEach(

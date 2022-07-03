@@ -6,14 +6,6 @@
  */
 class AutomationUnderground
 {
-    static __undergroundContainer = null;
-
-    static __autoMiningLoop = null;
-    static __innerMiningLoop = null;
-
-    static __actionCount = 0;
-    static __foundItems = [];
-
     static Settings = { FeatureEnabled: "Mining-Enabled" };
 
     /**
@@ -27,46 +19,30 @@ class AutomationUnderground
         if (initStep != Automation.InitSteps.BuildMenu) return;
 
         // Add the related button to the automation menu
-        this.__undergroundContainer = document.createElement("div");
-        Automation.Menu.__automationButtonsDiv.appendChild(this.__undergroundContainer);
+        this.__internal__undergroundContainer = document.createElement("div");
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__undergroundContainer);
 
-        Automation.Menu.__addSeparator(this.__undergroundContainer);
+        Automation.Menu.addSeparator(this.__internal__undergroundContainer);
 
         // Only display the menu when the underground is unlocked
         if (!App.game.underground.canAccess())
         {
-            this.__undergroundContainer.hidden = true;
-            this.__setUndergroundUnlockWatcher();
+            this.__internal__undergroundContainer.hidden = true;
+            this.__internal__setUndergroundUnlockWatcher();
         }
 
         let autoMiningTooltip = "Automatically mine in the Underground"
-                              + Automation.Menu.__tooltipSeparator()
+                              + Automation.Menu.TooltipSeparator
                               + "Bombs will be used until all items have at least one visible tile\n"
                               + "The hammer will then be used if more than 3 blocks\n"
                               + "can be destroyed on an item within its range\n"
                               + "The chisel will then be used to finish the remaining blocks\n";
-        let miningButton = Automation.Menu.__addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__undergroundContainer);
-        miningButton.addEventListener("click", this.__toggleAutoMining.bind(this), false);
+        let miningButton =
+            Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
+        miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
 
         // Restore previous session state
-        this.__toggleAutoMining();
-    }
-
-    /**
-     * @brief Watches for the in-game functionality to be unlocked.
-     *        Once unlocked, the menu will be displayed to the user
-     */
-    static __setUndergroundUnlockWatcher()
-    {
-        let watcher = setInterval(function()
-        {
-            if (App.game.underground.canAccess())
-            {
-                clearInterval(watcher);
-                this.__undergroundContainer.hidden = false;
-                this.__toggleAutoMining();
-            }
-        }.bind(this), 10000); // Check every 10 seconds
+        this.toggleAutoMining();
     }
 
     /**
@@ -78,7 +54,7 @@ class AutomationUnderground
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
-    static __toggleAutoMining(enable)
+    static toggleAutoMining(enable)
     {
         if (!App.game.underground.canAccess())
         {
@@ -94,18 +70,46 @@ class AutomationUnderground
         if (enable)
         {
             // Only set a loop if there is none active
-            if (this.__autoMiningLoop === null)
+            if (this.__internal__autoMiningLoop === null)
             {
                 // Set auto-mine loop
-                this.__autoMiningLoop = setInterval(this.__miningLoop.bind(this), 10000); // Runs every 10 seconds
+                this.__internal__autoMiningLoop = setInterval(this.__internal__miningLoop.bind(this), 10000); // Runs every 10 seconds
             }
         }
         else
         {
             // Unregister the loop
-            clearInterval(this.__autoMiningLoop);
-            this.__autoMiningLoop = null;
+            clearInterval(this.__internal__autoMiningLoop);
+            this.__internal__autoMiningLoop = null;
         }
+    }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__undergroundContainer = null;
+
+    static __internal__autoMiningLoop = null;
+    static __internal__innerMiningLoop = null;
+
+    static __internal__actionCount = 0;
+
+    /**
+     * @brief Watches for the in-game functionality to be unlocked.
+     *        Once unlocked, the menu will be displayed to the user
+     */
+    static __internal__setUndergroundUnlockWatcher()
+    {
+        let watcher = setInterval(function()
+        {
+            if (App.game.underground.canAccess())
+            {
+                clearInterval(watcher);
+                this.__internal__undergroundContainer.hidden = false;
+                this.toggleAutoMining();
+            }
+        }.bind(this), 10000); // Check every 10 seconds
     }
 
     /**
@@ -115,7 +119,7 @@ class AutomationUnderground
      *
      * @returns True if a bombing action is possible, False otherwise
      */
-    static __isBombingPossible()
+    static __internal__isBombingPossible()
     {
         return ((Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
                 && (Mine.itemsFound() < Mine.itemsBuried()));
@@ -130,23 +134,23 @@ class AutomationUnderground
      *   - Then, use the hammer on covered blocks, if at least three tiles can be removed that way
      *   - Finally use the chisel to reveal the remaining tiles
      */
-    static __miningLoop()
+    static __internal__miningLoop()
     {
         // Don't run an additionnal loop if the player do not have enough energy
         // or if a loop is already in progress
-        if ((this.__innerMiningLoop !== null) || !this.__isBombingPossible())
+        if ((this.__internal__innerMiningLoop !== null) || !this.__internal__isBombingPossible())
         {
             return;
         }
 
-        this.__actionCount = 0;
-        this.__innerMiningLoop = setInterval(function()
+        this.__internal__actionCount = 0;
+        this.__internal__innerMiningLoop = setInterval(function()
         {
             let nothingElseToDo = true;
 
-            if (this.__autoMiningLoop !== null)
+            if (this.__internal__autoMiningLoop !== null)
             {
-                let itemsState = this.__getItemsState();
+                let itemsState = this.__internal__getItemsState();
 
                 let areAllItemRevealed = true;
                 itemsState.forEach(
@@ -158,38 +162,38 @@ class AutomationUnderground
                 if (!areAllItemRevealed)
                 {
                     // Bombing is the best strategy until all items have at least one revealed spot
-                    if (this.__isBombingPossible())
+                    if (this.__internal__isBombingPossible())
                     {
                         // Mine using bombs until the board is completed or the energy is depleted
                         Mine.bomb();
-                        this.__actionCount++;
+                        this.__internal__actionCount++;
                         nothingElseToDo = false;
                     }
                 }
                 else
                 {
-                    nothingElseToDo = !this.__tryUseTheBestItem(itemsState);
+                    nothingElseToDo = !this.__internal__tryUseTheBestItem(itemsState);
                 }
             }
 
             if (nothingElseToDo)
             {
-                Automation.Utils.__sendNotif("Performed mining actions " + this.__actionCount.toString() + " times,"
+                Automation.Utils.sendNotif("Performed mining actions " + this.__internal__actionCount.toString() + " times,"
                                            + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!",
                                              "Mining");
-                clearInterval(this.__innerMiningLoop);
-                this.__innerMiningLoop = null;
+                clearInterval(this.__internal__innerMiningLoop);
+                this.__internal__innerMiningLoop = null;
                 return;
             }
         }.bind(this), 300); // Runs every 0.3s
     }
 
     /**
-     * @brief Determines which tools to use according to @see __miningLoop strategy, and tries to use it
+     * @brief Determines which tools to use according to @see __internal__miningLoop strategy, and tries to use it
      *
      * @returns True if some action are still possible after the current move, false otherwise (if the player does not have enough energy)
      */
-    static __tryUseTheBestItem(itemsState)
+    static __internal__tryUseTheBestItem(itemsState)
     {
         let nextTilesToMine = [];
 
@@ -210,7 +214,7 @@ class AutomationUnderground
             return true;
         }
 
-        let { useHammer, useToolX, useToolY } = this.__considerHammerUse(nextTilesToMine);
+        let { useHammer, useToolX, useToolY } = this.__internal__considerHammerUse(nextTilesToMine);
 
         let result = false;
         if (useHammer)
@@ -226,7 +230,7 @@ class AutomationUnderground
 
         if (result)
         {
-            this.__actionCount++;
+            this.__internal__actionCount++;
         }
 
         return result;
@@ -241,7 +245,7 @@ class AutomationUnderground
      *          @c useHammer is a boolean indicating if the use is relevant
      *          @c useToolX and @c useToolY are the position where the use is relevant
      */
-    static __considerHammerUse(nextTilesToMine)
+    static __internal__considerHammerUse(nextTilesToMine)
     {
         let bestReachableTilesAmount = 0;
         let bestReachableTileX = 0;
@@ -293,7 +297,7 @@ class AutomationUnderground
      *
      * @returns The gathered information
      */
-    static __getItemsState()
+    static __internal__getItemsState()
     {
         let itemsState = new Map();
 

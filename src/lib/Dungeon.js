@@ -3,28 +3,18 @@
  */
 class AutomationDungeon
 {
-    static __autoDungeonLoop = null;
-
-    static __isShinyCatchStopMode = false;
-    static __isCompleted = false;
-    static __bossPosition = null;
-    static __chestPositions = [];
-    static __previousTown = null;
-    static __isFirstMove = true;
-    static __playerActionOccured = false;
-
     static Settings = {
                           FeatureEnabled: "Dungeon-FightEnabled",
                           StopOnPokedex: "Dungeon-FightStopOnPokedex"
                       };
 
-    static InternalMode = {
+    static InternalModes = {
                               None: 0,
                               StopAfterThisRun: 1,
                               ByPassUserSettings: 2
                           };
 
-    static __internalModeRequested = this.InternalMode.None;
+    static AutomationRequestedMode = this.InternalModes.None;
 
     /**
      * @brief Builds the menu
@@ -36,48 +26,62 @@ class AutomationDungeon
         // Only consider the BuildMenu init step
         if (initStep != Automation.InitSteps.BuildMenu) return;
 
-        this.__injectDungeonCss();
+        this.__internal__injectDungeonCss();
 
         // Hide the gym and dungeon fight menus by default and disable auto fight
         let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
                          +     '&nbsp;Dungeon fight&nbsp;'
                          + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-        let dungeonDiv = Automation.Menu.__addCategory("dungeonFightButtons", dungeonTitle);
+        let dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
         dungeonDiv.parentElement.hidden = true;
 
         // Add an on/off button
         let autoDungeonTooltip = "Automatically enters and completes the dungeon"
-                               + Automation.Menu.__tooltipSeparator()
+                               + Automation.Menu.TooltipSeparator
                                + "Chests and the boss are ignored until all tiles are revealed\n"
                                + "Chests are all picked right before fighting the boss";
-        let autoDungeonButton = Automation.Menu.__addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
-        autoDungeonButton.addEventListener("click", this.__toggleDungeonFight.bind(this), false);
+        let autoDungeonButton = Automation.Menu.addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
+        autoDungeonButton.addEventListener("click", this.__internal__toggleDungeonFight.bind(this), false);
 
         // Disable by default
-        Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
                                    + "once all pokemon are caught in this dungeon."
-                                   + Automation.Menu.__tooltipSeparator()
+                                   + Automation.Menu.TooltipSeparator
                                    + "You can switch between pokemon and shiny completion\n"
                                    + "by clicking on the pokeball image.";
 
         let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
-        Automation.Menu.__addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
+        Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
 
         // Add the button action
         let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
-        pokedexSwitch.onclick = this.__toggleCatchStopMode.bind(this);
+        pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
 
         // Set the div visibility watcher
-        setInterval(this.__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+        setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
     }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__autoDungeonLoop = null;
+
+    static __internal__isShinyCatchStopMode = false;
+    static __internal__isCompleted = false;
+    static __internal__bossPosition = null;
+    static __internal__chestPositions = [];
+    static __internal__previousTown = null;
+    static __internal__isFirstMove = true;
+    static __internal__playerActionOccured = false;
 
     /**
      * @brief Injects the Dungeon menu css to the document heading
      */
-    static __injectDungeonCss()
+    static __internal__injectDungeonCss()
     {
         const style = document.createElement('style');
         style.textContent = `#automation-dungeon-pokedex-img
@@ -121,13 +125,13 @@ class AutomationDungeon
     /**
      * @brief Switched from Pokedex completion to Shiny pokedex completion mode
      */
-    static __toggleCatchStopMode()
+    static __internal__toggleCatchStopMode()
     {
         // Switch mode
-        this.__isShinyCatchStopMode = !this.__isShinyCatchStopMode;
+        this.__internal__isShinyCatchStopMode = !this.__internal__isShinyCatchStopMode;
 
         // Update the image accordingly
-        let image = (this.__isShinyCatchStopMode) ? "Pokeball-shiny" : "Pokeball";
+        let image = (this.__internal__isShinyCatchStopMode) ? "Pokeball-shiny" : "Pokeball";
         let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
         pokedexSwitch.innerHTML = `<img src="assets/images/pokeball/${image}.svg" height="17px">`;
     }
@@ -141,7 +145,7 @@ class AutomationDungeon
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
-    static __toggleDungeonFight(enable)
+    static __internal__toggleDungeonFight(enable)
     {
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
@@ -152,21 +156,21 @@ class AutomationDungeon
         if (enable)
         {
             // Only set a loop if there is none active
-            if (this.__autoDungeonLoop === null)
+            if (this.__internal__autoDungeonLoop === null)
             {
                 // Reset internal members
-                this.__playerActionOccured = false;
-                this.__resetSavedStates();
+                this.__internal__playerActionOccured = false;
+                this.__internal__resetSavedStates();
 
                 // Set auto-dungeon loop
-                this.__autoDungeonLoop = setInterval(this.__dungeonFightLoop.bind(this), 50); // Runs every game tick
+                this.__internal__autoDungeonLoop = setInterval(this.__internal__dungeonFightLoop.bind(this), 50); // Runs every game tick
             }
         }
         else
         {
             // Unregister the loop
-            clearInterval(this.__autoDungeonLoop);
-            this.__autoDungeonLoop = null;
+            clearInterval(this.__internal__autoDungeonLoop);
+            this.__internal__autoDungeonLoop = null;
         }
     }
 
@@ -181,7 +185,7 @@ class AutomationDungeon
      * The chest are picked at the very end, right before fighting the boss to avoid losing time.
      * Indeed, picking a chest increases every upcomming encounters life.
      */
-    static __dungeonFightLoop()
+    static __internal__dungeonFightLoop()
     {
         // Only initialize dungeon if:
         //    - The player is in a town (dungeons are attached to town)
@@ -192,28 +196,28 @@ class AutomationDungeon
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
             && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
         {
-            this.__previousTown = player.town().name;
+            this.__internal__previousTown = player.town().name;
 
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if ((this.__internalModeRequested != this.InternalMode.ByPassUserSettings)
-                && ((this.__internalModeRequested == this.InternalMode.StopAfterThisRun)
-                    || this.__playerActionOccured
+            if ((this.AutomationRequestedMode != this.InternalModes.ByPassUserSettings)
+                && ((this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
+                    || this.__internal__playerActionOccured
                     || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
-                        && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))))
+                        && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))))
             {
-                if (this.__playerActionOccured)
+                if (this.__internal__playerActionOccured)
                 {
-                    Automation.Utils.__sendWarningNotif("User action detected, turning off the automation", "Dungeon");
+                    Automation.Utils.sendWarningNotif("User action detected, turning off the automation", "Dungeon");
                 }
 
-                Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
-                this.__internalModeRequested = this.InternalMode.None;
+                Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+                this.AutomationRequestedMode = this.InternalModes.None;
             }
             else
             {
-                this.__isCompleted = false;
+                this.__internal__isCompleted = false;
                 DungeonRunner.initializeDungeon(player.town().dungeon);
             }
         }
@@ -225,23 +229,23 @@ class AutomationDungeon
                 return;
             }
 
-            if (this.__isFirstMove)
+            if (this.__internal__isFirstMove)
             {
-                this.__ensureTheBoardIsInAnAcceptableState();
-                this.__isFirstMove = false;
+                this.__internal__ensureTheBoardIsInAnAcceptableState();
+                this.__internal__isFirstMove = false;
                 return;
             }
 
-            if (this.__isCompleted)
+            if (this.__internal__isCompleted)
             {
-                if (this.__chestPositions.length > 0)
+                if (this.__internal__chestPositions.length > 0)
                 {
-                    let chestLocation = this.__chestPositions.pop();
+                    let chestLocation = this.__internal__chestPositions.pop();
                     DungeonRunner.map.moveToTile(chestLocation);
                 }
                 else
                 {
-                    DungeonRunner.map.moveToTile(this.__bossPosition);
+                    DungeonRunner.map.moveToTile(this.__internal__bossPosition);
                 }
             }
 
@@ -250,25 +254,25 @@ class AutomationDungeon
             if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
             {
                 // Persist the boss position, to go back to it once the board has been cleared
-                this.__bossPosition = playerCurrentPosition;
+                this.__internal__bossPosition = playerCurrentPosition;
 
-                if (this.__isCompleted)
+                if (this.__internal__isCompleted)
                 {
                     DungeonRunner.startBossFight();
-                    this.__resetSavedStates();
+                    this.__internal__resetSavedStates();
                     return;
                 }
             }
             else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
             {
-                if (this.__isCompleted)
+                if (this.__internal__isCompleted)
                 {
                     DungeonRunner.openChest();
                     return;
                 }
                 else
                 {
-                    this.__addChestPosition(playerCurrentPosition);
+                    this.__internal__addChestPosition(playerCurrentPosition);
                 }
             }
 
@@ -280,8 +284,8 @@ class AutomationDungeon
             // Detect board ending and move to the boss if it's the case
             if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
             {
-                this.__isCompleted = (this.__bossPosition !== null);
-                this.__ensureTheBoardIsInAnAcceptableState();
+                this.__internal__isCompleted = (this.__internal__bossPosition !== null);
+                this.__internal__ensureTheBoardIsInAnAcceptableState();
 
                 return;
             }
@@ -319,10 +323,10 @@ class AutomationDungeon
         // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
         else
         {
-            this.__previousTown = null;
-            this.__playerActionOccured = false;
-            this.__resetSavedStates();
-            Automation.Menu.__forceAutomationState(this.Settings.FeatureEnabled, false);
+            this.__internal__previousTown = null;
+            this.__internal__playerActionOccured = false;
+            this.__internal__resetSavedStates();
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
         }
     }
 
@@ -335,7 +339,7 @@ class AutomationDungeon
      *   - It's the first automation move and any tile was already visited apart from the entrance
      *   - It's the last automation move and any tile is still unvisited
      */
-    static __ensureTheBoardIsInAnAcceptableState()
+    static __internal__ensureTheBoardIsInAnAcceptableState()
     {
         let startingTile = null;
 
@@ -355,15 +359,17 @@ class AutomationDungeon
                             // Store chest positions
                             if (tile.type() === GameConstants.DungeonTile.chest)
                             {
-                                this.__addChestPosition(currentLocation);
+                                this.__internal__addChestPosition(currentLocation);
                             }
 
                             if (tile.type() === GameConstants.DungeonTile.boss)
                             {
                                 // Only tag the dungeon as completed if it's not the first move or any tile is visited apart from the entrance
-                                this.__isCompleted = (!this.__isFirstMove)
-                                                  || DungeonRunner.map.board().some((row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
-                                this.__bossPosition = currentLocation;
+                                this.__internal__isCompleted =
+                                    (!this.__internal__isFirstMove)
+                                    || DungeonRunner.map.board().some(
+                                           (row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
+                                this.__internal__bossPosition = currentLocation;
                             }
                         }
 
@@ -377,20 +383,21 @@ class AutomationDungeon
                         }
 
                         if ((tile.type() !== GameConstants.DungeonTile.entrance)
-                            && this.__isFirstMove)
+                            && this.__internal__isFirstMove)
                         {
-                            this.__playerActionOccured = true;
+                            this.__internal__playerActionOccured = true;
                         }
                     });
             });
 
-        if (!this.__isFirstMove)
+        if (!this.__internal__isFirstMove)
         {
-            this.__playerActionOccured = this.__playerActionOccured || !DungeonRunner.map.board().every((row) => row.every((tile) => tile.isVisited));
+            this.__internal__playerActionOccured = this.__internal__playerActionOccured
+                                                || !DungeonRunner.map.board().every((row) => row.every((tile) => tile.isVisited));
         }
 
         // The boss was not found, reset the chest positions and move the player to the entrance, if not already there
-        if (!this.__isCompleted && this.__playerActionOccured)
+        if (!this.__internal__isCompleted && this.__internal__playerActionOccured)
         {
             DungeonRunner.map.moveToTile(startingTile);
         }
@@ -408,7 +415,7 @@ class AutomationDungeon
      *   - The user enabled 'Stop on Pokedex' and all pokemon in the dungeon are already caught
      *   - The player does not have enough dungeon token to enter
      */
-    static __updateDivVisibilityAndContent()
+    static __internal__updateDivVisibilityAndContent()
     {
         let dungeonDiv = document.getElementById("dungeonFightButtons");
         dungeonDiv.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
@@ -431,14 +438,14 @@ class AutomationDungeon
             }
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((this.__internalModeRequested != this.InternalMode.ByPassUserSettings)
+            if ((this.AutomationRequestedMode != this.InternalModes.ByPassUserSettings)
                 && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
-                && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__isShinyCatchStopMode))
+                && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
             {
                 disableNeeded = true;
                 disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
 
-                if (this.__isShinyCatchStopMode)
+                if (this.__internal__isShinyCatchStopMode)
                 {
                     disableReason += "shiny ";
                 }
@@ -457,11 +464,11 @@ class AutomationDungeon
 
             if (disableNeeded)
             {
-                Automation.Menu.__disableButton(this.Settings.FeatureEnabled, true, disableReason);
+                Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, true, disableReason);
             }
             else
             {
-                Automation.Menu.__disableButton(this.Settings.FeatureEnabled, false);
+                Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, false);
             }
         }
     }
@@ -469,22 +476,22 @@ class AutomationDungeon
     /**
      * @brief Adds the given @p position to the check list, if not already added.
      */
-    static __addChestPosition(position)
+    static __internal__addChestPosition(position)
     {
-        if (!this.__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y)))
+        if (!this.__internal__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y)))
         {
-            this.__chestPositions.push(position);
+            this.__internal__chestPositions.push(position);
         }
     }
 
     /**
      * @brief Resets the internal data for the next run
      */
-    static __resetSavedStates()
+    static __internal__resetSavedStates()
     {
-        this.__bossPosition = null;
-        this.__chestPositions = [];
-        this.__isCompleted = false;
-        this.__isFirstMove = true;
+        this.__internal__bossPosition = null;
+        this.__internal__chestPositions = [];
+        this.__internal__isCompleted = false;
+        this.__internal__isFirstMove = true;
     }
 }

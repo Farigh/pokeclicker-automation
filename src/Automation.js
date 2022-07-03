@@ -63,10 +63,10 @@ class Automation
                 }
 
                 // Add a notification button to the automation menu
-                this.Menu.__addSeparator();
+                this.Menu.addSeparator();
 
                 let notificationTooltip = "Enables automation-related notifications";
-                this.Menu.__addAutomationButton("Notification", this.Settings.Notifications, notificationTooltip);
+                this.Menu.addAutomationButton("Notification", this.Settings.Notifications, notificationTooltip);
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");

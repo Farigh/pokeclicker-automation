@@ -3,8 +3,6 @@
  */
 class AutomationClick
 {
-    static __autoClickLoop = null;
-
     static Settings = { FeatureEnabled: "Click-Enabled" };
 
     /**
@@ -18,15 +16,15 @@ class AutomationClick
         {
             // Add auto click button
             let autoClickTooltip = "Attack clicks are performed every 50ms"
-                                + Automation.Menu.__tooltipSeparator()
+                                + Automation.Menu.TooltipSeparator
                                 + "Applies to battle, gym and dungeon";
-            let autoClickButton = Automation.Menu.__addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip);
-            autoClickButton.addEventListener("click", this.__toggleAutoClick.bind(this), false);
+            let autoClickButton = Automation.Menu.addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip);
+            autoClickButton.addEventListener("click", this.toggleAutoClick.bind(this), false);
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
             // Restore previous session state
-            this.__toggleAutoClick();
+            this.toggleAutoClick();
         }
     }
 
@@ -39,7 +37,7 @@ class AutomationClick
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
      *                Otherwise, the cookie stored value will be used
      */
-    static __toggleAutoClick(enable)
+    static toggleAutoClick(enable)
     {
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
@@ -50,19 +48,25 @@ class AutomationClick
         if (enable)
         {
             // Only set a loop if there is none active
-            if (this.__autoClickLoop === null)
+            if (this.__internal__autoClickLoop === null)
             {
                 // Set auto-click loop
-                this.__autoClickLoop = setInterval(this.__autoClick.bind(this), 50); // The app hard-caps click attacks at 50
+                this.__internal__autoClickLoop = setInterval(this.__internal__autoClick.bind(this), 50); // The app hard-caps click attacks at 50
             }
         }
         else
         {
             // Unregister the loop
-            clearInterval(this.__autoClickLoop);
-            this.__autoClickLoop = null;
+            clearInterval(this.__internal__autoClickLoop);
+            this.__internal__autoClickLoop = null;
         }
     }
+
+    /*********************************************************************\
+    |***    Internal members, should never be used by other classes    ***|
+    \*********************************************************************/
+
+    static __internal__autoClickLoop = null;
 
     /**
      * @brief Automatically clicks according to the current game state
@@ -72,7 +76,7 @@ class AutomationClick
      *   - Gym fights
      *   - Dungeon fights
      */
-    static __autoClick()
+    static __internal__autoClick()
     {
         // Click while in a normal battle
         if (App.game.gameState == GameConstants.GameState.fighting)

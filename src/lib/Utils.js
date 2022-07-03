@@ -27,7 +27,7 @@ class AutomationUtils
      * @param {string} message: The notification message
      * @param {string} module: [optional] The automation module name
      */
-    static __sendNotif(message, module = null)
+    static sendNotif(message, module = null)
     {
         if (Automation.Utils.LocalStorage.getValue(Automation.Settings.Notifications) == "true")
         {
@@ -53,7 +53,7 @@ class AutomationUtils
      * @param {string} message: The warning notification message
      * @param {string} module: [optional] The automation module name
      */
-    static __sendWarningNotif(message, module = null)
+    static sendWarningNotif(message, module = null)
     {
         if (Automation.Utils.LocalStorage.getValue(Automation.Settings.Notifications) == "true")
         {
@@ -86,7 +86,7 @@ class AutomationUtils
      *
      * @returns True if the player is in an instance, False otherwise
      */
-    static __isInInstanceState()
+    static isInInstanceState()
     {
         return (App.game.gameState === GameConstants.GameState.dungeon)
             || (App.game.gameState === GameConstants.GameState.battleFrontier)
@@ -107,7 +107,7 @@ class AutomationUtils
      *
      * @returns True if the arrays are equals, False otherwise
      */
-    static __areArrayEquals(a, b)
+    static areArrayEquals(a, b)
     {
         return Array.isArray(a)
             && Array.isArray(b)
