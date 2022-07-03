@@ -260,6 +260,7 @@ class AutomationFarm
                 }
 
                 if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
+                    || this.ForcePlantBerriesAsked
                     || (this.__internal__currentStrategy === null)
                     || (this.__internal__currentStrategy.harvestAsSoonAsPossible === true)
                     || ((plot.berryData.growthTime[4] - plot.age) < 15))
