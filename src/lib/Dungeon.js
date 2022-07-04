@@ -74,7 +74,6 @@ class AutomationDungeon
     static __internal__isCompleted = false;
     static __internal__bossPosition = null;
     static __internal__chestPositions = [];
-    static __internal__previousTown = null;
     static __internal__isFirstMove = true;
     static __internal__playerActionOccured = false;
 
@@ -196,8 +195,6 @@ class AutomationDungeon
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
             && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
         {
-            this.__internal__previousTown = player.town().name;
-
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
@@ -323,7 +320,6 @@ class AutomationDungeon
         // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
         else
         {
-            this.__internal__previousTown = null;
             this.__internal__playerActionOccured = false;
             this.__internal__resetSavedStates();
             Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);

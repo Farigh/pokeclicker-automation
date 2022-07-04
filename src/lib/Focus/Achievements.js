@@ -171,7 +171,7 @@ class AutomationFocusAchievements
         }
 
         // Move to the associated gym if needed
-        if ((player.route() != 0) || (townToGoTo !== player.town().name))
+        if (!Automation.Utils.Route.isPlayerInTown(townToGoTo))
         {
             Automation.Utils.Route.moveToTown(townToGoTo);
         }
@@ -211,7 +211,7 @@ class AutomationFocusAchievements
         }
 
         // Move to dungeon if needed
-        if ((player.route() != 0) || targetedDungeonName !== player.town().name)
+        if (!Automation.Utils.Route.isPlayerInTown(targetedDungeonName))
         {
             Automation.Utils.Route.moveToTown(targetedDungeonName);
 

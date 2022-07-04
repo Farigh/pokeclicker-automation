@@ -381,7 +381,7 @@ class AutomationFocusQuests
         this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
 
         // Move to dungeon if needed
-        if ((player.route() != 0) || quest.dungeon !== player.town().name)
+        if (!Automation.Utils.Route.isPlayerInTown(quest.dungeon))
         {
             Automation.Utils.Route.moveToTown(quest.dungeon);
 
@@ -416,7 +416,7 @@ class AutomationFocusQuests
         }
 
         // Move to the associated gym if needed
-        if ((player.route() != 0) || (townToGoTo !== player.town().name))
+        if (!Automation.Utils.Route.isPlayerInTown(townToGoTo))
         {
             Automation.Utils.Route.moveToTown(townToGoTo);
         }

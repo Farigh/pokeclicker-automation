@@ -45,6 +45,12 @@ class AutomationUtilsRoute
      */
     static moveToTown(townName)
     {
+        // If the player is already in the right town, there's nothing to do
+        if (this.isPlayerInTown(townName))
+        {
+            return;
+        }
+
         let town = TownList[townName];
 
         // Don't move if the game would not allow it
@@ -63,6 +69,19 @@ class AutomationUtilsRoute
         }
 
         MapHelper.moveToTown(townName);
+    }
+
+    /**
+     * @brief Checks if the player is in the provided @p townName
+     *
+     * @param {string} townName: The name of the town to check
+     *
+     * @returns True if the player is in the town, false otherwise
+     */
+    static isPlayerInTown(townName)
+    {
+        // player.town() points to the last visited town, so we need to check if the current route is 0 as well
+        return (player.route() == 0) && (player.town().name == townName);
     }
 
     /**
@@ -138,7 +157,7 @@ class AutomationUtilsRoute
                 (route) =>
                 {
                     // Skip any route that we can't access
-                    if (!Automation.Utils.Route.canMoveToRegion(route.region))
+                    if (!this.canMoveToRegion(route.region))
                     {
                         return true;
                     }
