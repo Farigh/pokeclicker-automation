@@ -114,4 +114,18 @@ class AutomationUtils
             && (a.length === b.length)
             && a.every((val, index) => val === b[index]);
     }
+
+    /**
+     * @brief Converts the string representation of a number to its integer equivalent
+     *
+     * @param {string} str: The string to parse
+     * @param {number} defaultValue: The default value (in case the string was not representing an int)
+     *
+     * @returns The int value if the string could be parsed, the default value otherwise
+     */
+    static tryParseInt(str, defaultValue = 0)
+    {
+        let result = parseInt(str);
+        return isNaN(result) ? defaultValue : result;
+    }
 }

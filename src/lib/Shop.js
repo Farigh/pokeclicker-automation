@@ -16,9 +16,7 @@ class AutomationShop
     {
         if (initStep === Automation.InitSteps.BuildMenu)
         {
-            // Disable AutoBuy by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
-
+            this.__internal__setDefaultSettingValues();
             this.__internal__buildMenu();
         }
         else if (initStep === Automation.InitSteps.Finalize)
@@ -34,7 +32,15 @@ class AutomationShop
 
     static __internal__shoppingContainer = null;
     static __internal__shopLoop = null;
-    static __internal__activeTimouts = new Map();
+    static __internal__activeTimeouts = new Map();
+
+    static __internal__advancedSettings = {
+                                              MinPlayerCurrency: "Shop-MinPlayerCurrency",
+                                              ItemEnabled: function(itemName) { return `Shop-${itemName}-Enabled`; },
+                                              BuyAmount: function(itemName) { return `Shop-${itemName}-BuyAmount`; },
+                                              TargetAmount:  function(itemName) { return `Shop-${itemName}-TargetAmount`; },
+                                              MaxBuyUnitPrice:  function(itemName) { return `Shop-${itemName}-MaxBuyUnitPrice`; }
+                                          };
 
     /**
      * @brief Builds the menu, and restores the previous running state if needed
@@ -72,18 +78,44 @@ class AutomationShop
         let minPokedollarsInputContainer = document.createElement("div");
         minPokedollarsInputContainer.style.textAlign = "left";
         minPokedollarsInputContainer.style.marginBottom = "10px";
+        minPokedollarsInputContainer.style.paddingLeft = "7px";
 
         let minPokedollarsText = document.createTextNode("Stop buying if the player has less than");
         minPokedollarsInputContainer.appendChild(minPokedollarsText);
 
         let minPokedollarsInputElem = Automation.Menu.createTextInputElement(10, "[0-9]");
-        minPokedollarsInputElem.innerHTML = "10000"; // TODO get the saved setting value
+        minPokedollarsInputElem.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MinPlayerCurrency);
         minPokedollarsInputContainer.appendChild(minPokedollarsInputElem);
 
         let minPokedollarsImage = document.createElement("img");
         minPokedollarsImage.src = "assets/images/currency/money.svg";
         minPokedollarsImage.style.height = "25px";
         minPokedollarsInputContainer.appendChild(minPokedollarsImage);
+
+        // The save status checkmark
+        let checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+        minPokedollarsInputContainer.appendChild(checkmark);
+
+        minPokedollarsInputElem.oninput = function()
+        {
+            let mapKey = "MinPlayerCurrency-Save";
+
+            if (this.__internal__activeTimeouts.has(mapKey))
+            {
+                clearTimeout(this.__internal__activeTimeouts.get(mapKey));
+                this.__internal__activeTimeouts.delete(mapKey);
+            }
+
+            let timeout = setTimeout(function()
+                {
+                    Automation.Menu.showCheckmark(checkmark, 2000);
+
+                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency,
+                                                           Automation.Utils.tryParseInt(minPokedollarsInputElem.innerText));
+                }.bind(this), 3000); // Save the changes after 3s without edition
+
+            this.__internal__activeTimeouts.set(mapKey, timeout);
+        }.bind(this);
 
         shoppingSettingPanel.appendChild(minPokedollarsInputContainer);
 
@@ -157,20 +189,35 @@ class AutomationShop
             {
                 let tableRow = document.createElement("tr");
                 table.appendChild(tableRow);
-                let tableCell = document.createElement("td");
-                tableRow.appendChild(tableCell);
+                let tableFirstCell = document.createElement("td");
+                tableFirstCell.style.paddingLeft = "7px";
+                tableRow.appendChild(tableFirstCell);
 
-                let firstLineDiv = document.createElement("div");
+                // Add the toggle button
+                let buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(item.name));
+                tableFirstCell.appendChild(buttonElem);
 
                 // Buy count
+                let tableBuyLabelCell = document.createElement("td");
+                tableBuyLabelCell.style.paddingLeft = "4px";
+                tableBuyLabelCell.style.paddingRight = "4px";
+                tableRow.appendChild(tableBuyLabelCell);
+
                 let label = document.createTextNode("Buy");
-                firstLineDiv.appendChild(label);
+                tableBuyLabelCell.appendChild(label);
 
+                let tableBuyCountCell = document.createElement("td");
+                tableRow.appendChild(tableBuyCountCell);
                 let buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
-                buyCount.innerHTML = "10"; // TODO get the saved setting value
-                buyCount.style.marginRight = "3px";
-                firstLineDiv.appendChild(buyCount);
+                buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name));
+                buyCount.style.width = "100%"; // Make it take the whole cell space
+                buyCount.style.margin = "0px";
+                buyCount.style.textAlign = "right";
+                tableBuyCountCell.appendChild(buyCount);
 
+                let tableTargetLabelCell = document.createElement("td");
+                tableTargetLabelCell.style.paddingRight = "4px";
+                tableRow.appendChild(tableTargetLabelCell);
                 let itemImage = document.createElement("img");
                 if (item.imageDirectory !== undefined)
                 {
@@ -181,34 +228,60 @@ class AutomationShop
                     itemImage.src = `assets/images/items/${item.name}.png`;
                 }
                 itemImage.style.height = "25px";
-                firstLineDiv.appendChild(itemImage);
+                tableTargetLabelCell.appendChild(itemImage);
 
                 // Until count
                 label = document.createTextNode("until the player has");
-                firstLineDiv.appendChild(label);
+                tableTargetLabelCell.appendChild(label);
 
+                let tableUntilCountCell = document.createElement("td");
+                tableRow.appendChild(tableUntilCountCell);
                 let untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
-                untilCount.innerHTML = "10000"; // TODO get the saved setting value
-                firstLineDiv.appendChild(untilCount);
+                untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name));
+                untilCount.style.width = "100%"; // Make it take the whole cell space
+                untilCount.style.margin = "0px";
+                untilCount.style.textAlign = "right";
+                tableUntilCountCell.appendChild(untilCount);
 
                 // Max price
+                let tableMaxPriceLabelCell = document.createElement("td");
+                tableMaxPriceLabelCell.style.paddingLeft = "4px";
+                tableMaxPriceLabelCell.style.paddingRight = "4px";
+                tableRow.appendChild(tableMaxPriceLabelCell);
                 label = document.createTextNode("at max base price");
-                firstLineDiv.appendChild(label);
+                tableMaxPriceLabelCell.appendChild(label);
 
+                let tableMaxPriceCell = document.createElement("td");
+                tableRow.appendChild(tableMaxPriceCell);
                 let maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
-                maxPrice.innerHTML = item.basePrice; // TODO get the saved setting value
-                firstLineDiv.appendChild(maxPrice);
+                maxPrice.style.width = "100%"; // Make it take the whole cell space
+                maxPrice.style.margin = "0px";
+                maxPrice.style.textAlign = "right";
+                maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name));
+                tableMaxPriceCell.appendChild(maxPrice);
 
+                let tableLastCell = document.createElement("td");
+                tableRow.appendChild(tableLastCell);
                 let pokedollarsImage = document.createElement("img");
                 pokedollarsImage.src = "assets/images/currency/money.svg";
                 pokedollarsImage.style.height = "25px";
-                firstLineDiv.appendChild(pokedollarsImage);
+                tableLastCell.appendChild(pokedollarsImage);
 
-                tableCell.appendChild(firstLineDiv);
+                // The save status checkmark
+                let checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+                tableLastCell.appendChild(checkmark);
 
                 parentDiv.appendChild(table);
 
-                // Set oninput callbacks
+                // Set all oninput callbacks
+                buyCount.oninput = function()
+                    {
+                        this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                    }.bind(this);
+                untilCount.oninput = function()
+                    {
+                        this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                    }.bind(this);
                 maxPrice.oninput = function()
                     {
                         if (maxPrice.innerText < item.basePrice)
@@ -235,22 +308,87 @@ class AutomationShop
                                             set.addRange(range);
                                         }
                                     }
-                                    this.__internal__activeTimouts.delete(item.name);
+                                    this.__internal__activeTimeouts.delete(item.name);
                                 }.bind(this), 1000);
 
-                            if (this.__internal__activeTimouts.has(item.name))
+                            if (this.__internal__activeTimeouts.has(item.name))
                             {
-                                clearTimeout(this.__internal__activeTimouts.get(item.name));
-                                this.__internal__activeTimouts.delete(item.name);
+                                clearTimeout(this.__internal__activeTimeouts.get(item.name));
+                                this.__internal__activeTimeouts.delete(item.name);
                             }
-                            this.__internal__activeTimouts.set(item.name, timeout);
+                            this.__internal__activeTimeouts.set(item.name, timeout);
                         }
                         else
                         {
                             maxPrice.classList.remove("invalid");
                         }
+                        this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
                     }.bind(this);
-            });
+            }, this);
+    }
+
+    /**
+     * @brief Saves the settings related to the given @p itemName
+     *
+     * @param {string}  itemName: The name of the item to save the settings of
+     * @param {Element} checkmark: The checkmark save indicator element
+     * @param {Element} buyCount: The buy count input element
+     * @param {Element} untilCount: The until count input element
+     * @param {Element} maxPrice: The max price input element
+     */
+    static __internal_setSaveItemChangesTimeout(itemName, checkmark, buyCount, untilCount, maxPrice)
+    {
+        let mapKey = `${itemName}-Save`;
+
+        if (this.__internal__activeTimeouts.has(mapKey))
+        {
+            clearTimeout(this.__internal__activeTimeouts.get(mapKey));
+            this.__internal__activeTimeouts.delete(mapKey);
+        }
+
+        let timeout = setTimeout(function()
+            {
+                Automation.Menu.showCheckmark(checkmark, 2000);
+
+                // Save the buying amount
+                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.BuyAmount(itemName),
+                                                       Automation.Utils.tryParseInt(buyCount.innerText));
+                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.TargetAmount(itemName),
+                                                       Automation.Utils.tryParseInt(untilCount.innerText));
+                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemName),
+                                                       Automation.Utils.tryParseInt(maxPrice.innerText));
+            }.bind(this), 3000); // Save the changes after 3s without edition
+
+        this.__internal__activeTimeouts.set(mapKey, timeout);
+    }
+
+    /**
+     * @brief Sets the Shop settings default values in the local storage
+     */
+    static __internal__setDefaultSettingValues()
+    {
+        // Disable AutoBuy by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
+
+        // Don't buy is the player has under 1'000'000 pokédollars by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency, 1000000);
+
+        // Set default value for all buyable items
+        pokeMartShop.items.forEach(
+            (item) =>
+            {
+                // Disable all items by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.ItemEnabled(item.name), false);
+
+                // By 10 items at a time by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(item.name), 10);
+
+                // Stop buying at a stock of 10'000 by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(item.name), 10000);
+
+                // Buy at the cheapest possible by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name), item.basePrice);
+            }, this);
     }
 
     /**
@@ -258,6 +396,72 @@ class AutomationShop
      */
     static __internal__shop()
     {
-        // TODO: buy the items
+        let minPlayerCurrency = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MinPlayerCurrency));
+
+        let totalSpent = 0;
+
+        pokeMartShop.items.forEach(
+            (item) =>
+            {
+                // Skip any disabled item
+                if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.ItemEnabled(item.name)) !== "true")
+                {
+                    return;
+                }
+
+                let itemData = ItemList[item.name];
+                let targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name)));
+
+                // Don't buy if the target quantity has been reached
+                if (this.__internal__getItemQuantity(item.name) > targetAmount)
+                {
+                    return;
+                }
+
+                let buyAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name)));
+
+                // Don't buy if it would bring the player under the set threshold
+                let totalPrice = itemData.totalPrice(buyAmount);
+                if (App.game.wallet.currencies[GameConstants.Currency.money]() < (minPlayerCurrency + totalPrice))
+                {
+                    return;
+                }
+
+                let maxUnitPrice = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name)));
+
+                // Don't buy if the base price is over the set desired max price
+                if (itemData.totalPrice(1) > maxUnitPrice)
+                {
+                    return;
+                }
+
+                // Buy the item
+                itemData.buy(buyAmount);
+                totalSpent += totalPrice;
+            }, this);
+
+        if (totalSpent > 0)
+        {
+            let pokedollarsImage = `<img src="assets/images/currency/money.svg" height="25px">`;
+            Automation.Utils.sendNotif(`Bought some items for a total of ${totalSpent.toLocaleString('en-US')} ${pokedollarsImage}`, "Shop");
+        }
+    }
+
+    /**
+     * @brief Gets the player's current quantity for the given @p itemName
+     *
+     * @param {string} itemName
+     *
+     * @returns The current quantity
+     */
+    static __internal__getItemQuantity(itemName)
+    {
+        // Pokeballs always return 0 if checked through player.itemList, their dedicated getter need to be used
+        if (itemName in GameConstants.Pokeball)
+        {
+            return App.game.pokeballs.getBallQuantity(GameConstants.Pokeball[itemName]);
+        }
+
+        return player.itemList[itemName]();
     }
 }

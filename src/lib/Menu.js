@@ -929,13 +929,13 @@ class AutomationMenu
             .automation-setting-input
             {
                 display: inline-block;
+                min-width: 20px;
+                user-select: text !important;
+                background-color: #3c5071;
                 border-bottom: solid 1px #CCCDD9;
                 border-radius: 5px;
                 padding: 0px 5px;
                 margin: 0px 5px;
-                min-width: 20px;
-                user-select: text !important;
-                background-color: #3c5071;
                 transition: color 1s;
             }
             .automation-setting-input.invalid
