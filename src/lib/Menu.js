@@ -164,7 +164,35 @@ class AutomationMenu
     }
 
     /**
-     * @brief Adds a toggle button element
+     * @brief Creates a simple toggle element bound to the local storage associated to the @p id
+     *
+     * @param {string} id: The button's id (that will be used for the corresponding local storage item id as well)
+     *
+     * @returns The button element
+     */
+    static addLocalStorageBoundToggleButton(id)
+    {
+        let buttonElem = this.createToggleButtonElement(id);
+
+        // Set the current state
+        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
+
+        // Register the onclick event callback
+        buttonElem.onclick = function()
+            {
+                let wasChecked = buttonElem.getAttribute("checked") == "true";
+                buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
+                Automation.Utils.LocalStorage.setValue(id, !wasChecked);
+            };
+
+        return buttonElem;
+    }
+
+    /**
+     * @brief Adds a label-prefixed toggle button element bound to the @p id local storage key.
+     *        Such toggle button is designed for advanced settings panel
+     *        @see addSettingPanel
      *
      * @param {string}  label: The text label to place before the toggle button
      * @param {string}  id: The button's id (that will be used for the corresponding local storage item id as well)
@@ -173,7 +201,7 @@ class AutomationMenu
      *
      * @returns The button element
      */
-    static addToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
+    static addLabeledAdvancedSettingsToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
     {
         // Enable automation by default, if not already set in local storage
         Automation.Utils.LocalStorage.setDefaultValue(id, true);
@@ -191,15 +219,7 @@ class AutomationMenu
         buttonLabel.style.paddingRight = "7px";
         buttonContainer.appendChild(buttonLabel);
 
-        let buttonElem = this.createToggleButtonElement(id);
-        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
-        buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
-        buttonElem.onclick = function()
-            {
-                let wasChecked = buttonElem.getAttribute("checked") == "true";
-                buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
-                Automation.Utils.LocalStorage.setValue(id, !wasChecked);
-            };
+        let buttonElem = this.addLocalStorageBoundToggleButton(id);
 
         if (tooltip != "")
         {
