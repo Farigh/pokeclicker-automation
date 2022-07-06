@@ -349,6 +349,39 @@ class AutomationMenu
     }
 
     /**
+     * @brief Creates an animated checkmark element, hidden
+     *        Call @see showCheckmark() to reveal it
+     *
+     * @returns The created animated checkmark element (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static createAnimatedCheckMarkElement()
+    {
+        let checkmarkContainer = document.createElement("div");
+        checkmarkContainer.classList.add("automation-checkmark-container");
+
+        let checkmarkElem = document.createElement("div");
+        checkmarkElem.classList.add("automation-checkmark");
+        checkmarkContainer.appendChild(checkmarkElem);
+
+        return checkmarkContainer;
+    }
+
+    /**
+     * @brief Shows the animated checkmark
+     *
+     * @param {Element} checkmarkContainer: The element created using @see createAnimatedCheckMarkElement()
+     * @param {number} resetTimer: The timeout in milliseconds upon which the checkmark will be hidden again
+     *                             Don't use a value under 400ms, since it's the animation duration
+     */
+    static showCheckmark(checkmarkContainer, resetTimer = 2000)
+    {
+        let checkmarkElem = checkmarkContainer.children[0];
+        checkmarkElem.classList.add("shown");
+
+        setTimeout(function() { checkmarkElem.classList.remove("shown"); }, resetTimer);
+    }
+
+    /**
      * @brief Creates a title element
      *
      * @param {string} titleText: The text to display
@@ -895,6 +928,48 @@ class AutomationMenu
                 outline: none;
                 border-radius: 5px;
                 background-color: #455d77;
+            }
+            .automation-checkmark-container
+            {
+                display: inline-block;
+                margin-left: 4px;
+                height: 14px;
+                width: 9px;
+                transform: rotate(45deg);
+                padding-right: 4px;
+                padding-bottom: 4px;
+            }
+            .automation-checkmark
+            {
+                display: inline-block;
+                box-sizing: content-box;
+                margin-left: 4px;
+                height: 0px;
+                width: 0px;
+                border-bottom: 4px solid #78b13f;
+                border-right: 0px solid #78b13f;
+            }
+            .automation-checkmark.shown
+            {
+                animation: 400ms automation-checkmark-show forwards;
+                animation-iteration-count: 1;
+            }
+            @keyframes automation-checkmark-show
+            {
+                50%
+                {
+                    height: 0px;
+                    width: 5px;
+                    border-bottom: 4px solid #78b13f;
+                    border-right: 4px solid #78b13f;
+                }
+                100%
+                {
+                    height: 10px;
+                    width: 5px;
+                    border-bottom: 4px solid #78b13f;
+                    border-right: 4px solid #78b13f;
+                }
             }`;
         document.head.append(style);
     }
