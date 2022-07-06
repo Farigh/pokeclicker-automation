@@ -349,7 +349,7 @@ class AutomationMenu
     }
 
     /**
-     * @brief Creates a title
+     * @brief Creates a title element
      *
      * @param {string} titleText: The text to display
      *
@@ -374,6 +374,40 @@ class AutomationMenu
         titleDiv.appendChild(titleSpan);
 
         return titleDiv;
+    }
+
+    /**
+     * @brief Creates an editable text field element
+     *
+     * @param {number} charLimit: The max char number that the user can enter (set to -1 for no limit)
+     * @param {string} acceptedRegex: The axepted input regex (leave empty to accept any input)
+     *
+     * @returns The created element's container (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static createTextInputElement(charLimit = -1, acceptedRegex = "")
+    {
+        // Add the input
+        let inputElem = document.createElement("div");
+        inputElem.contentEditable = true;
+        inputElem.spellcheck = false;
+        inputElem.classList.add("automation-setting-input");
+
+        // Filter input based on the given parameters
+        inputElem.onkeydown = function(event)
+        {
+            let isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
+
+            return (event.key === "Backspace")
+                   || (event.key === "Delete")
+                   || (event.key === "ArrowLeft")
+                   || (event.key === "ArrowRight")
+                   || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
+        };
+
+        // Disable drag and drop
+        inputElem.ondrop = function(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'none'; return false; };
+
+        return inputElem;
     }
 
     /**
@@ -707,7 +741,7 @@ class AutomationMenu
             }
             .automation-setting-menu-container[automation-visible]
             {
-                max-width: 500px;
+                max-width: 650px;
                 max-height: 500px;
 
                 transition-property:        max-width, max-height;
@@ -716,7 +750,7 @@ class AutomationMenu
                 transition-delay:                  0s,      500ms;
 
                 /* Delay the overflow change after the entire animation */
-                animation: 4s automation-delay-overflow forwards;
+                animation: 6s automation-delay-overflow forwards;
             }
             @keyframes automation-delay-overflow
             {
@@ -838,6 +872,29 @@ class AutomationMenu
                 transform: rotate(-20deg);
                 right: 2px;
                 top: 6px;
+            }
+            .automation-setting-input
+            {
+                display: inline-block;
+                border-bottom: solid 1px #CCCDD9;
+                border-radius: 5px;
+                padding: 0px 5px;
+                margin: 0px 5px;
+                min-width: 20px;
+                user-select: text !important;
+                background-color: #3c5071;
+                transition: color 1s;
+            }
+            .automation-setting-input.invalid
+            {
+                color: #FFABAB;
+                transition: color 1s;
+            }
+            .automation-setting-input:focus
+            {
+                outline: none;
+                border-radius: 5px;
+                background-color: #455d77;
             }`;
         document.head.append(style);
     }
