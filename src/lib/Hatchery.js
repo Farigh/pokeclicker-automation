@@ -43,7 +43,7 @@ class AutomationHatchery
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
+     *                Otherwise, the local storage value will be used
      */
     static toggleAutoHatchery(enable)
     {
@@ -82,6 +82,9 @@ class AutomationHatchery
     static __internal__hatcheryContainer = null;
     static __internal__autoHatcheryLoop = null;
 
+    /**
+     * @brief Builds the menu, and restores the previous running state if needed
+     */
     static __internal__buildMenu()
     {
         // Add the related buttons to the automation menu
@@ -117,16 +120,19 @@ class AutomationHatchery
         let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
                          + Automation.Menu.TooltipSeparator
                          + "This is useful to farm shinies you don't have yet";
-        Automation.Menu.addToggleButton("Consider shiny pokemons last", this.Settings.NotShinyFirst, shinyTooltip, hatcherySettingPanel);
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider shiny pokemons last",
+                                                               this.Settings.NotShinyFirst,
+                                                               shinyTooltip,
+                                                               hatcherySettingPanel);
         let fossilTooltip = "Add fossils to the hatchery as well"
                           + Automation.Menu.TooltipSeparator
                           + "Only fossils for which pokemon are not currently held are added";
-        Automation.Menu.addToggleButton("Hatch Fossils", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Hatch Fossils", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
         let eggTooltip = "Add eggs to the hatchery as well"
                        + Automation.Menu.TooltipSeparator
                        + "Only eggs for which some pokemon are not currently held are added\n"
                        + "Only one egg of a given type is used at the same time";
-        Automation.Menu.addToggleButton("Hatch Eggs", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Hatch Eggs", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
     }
 
     /**

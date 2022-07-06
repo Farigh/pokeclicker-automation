@@ -164,7 +164,35 @@ class AutomationMenu
     }
 
     /**
-     * @brief Adds a toggle button element
+     * @brief Creates a simple toggle element bound to the local storage associated to the @p id
+     *
+     * @param {string} id: The button's id (that will be used for the corresponding local storage item id as well)
+     *
+     * @returns The button element
+     */
+    static addLocalStorageBoundToggleButton(id)
+    {
+        let buttonElem = this.createToggleButtonElement(id);
+
+        // Set the current state
+        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
+
+        // Register the onclick event callback
+        buttonElem.onclick = function()
+            {
+                let wasChecked = buttonElem.getAttribute("checked") == "true";
+                buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
+                Automation.Utils.LocalStorage.setValue(id, !wasChecked);
+            };
+
+        return buttonElem;
+    }
+
+    /**
+     * @brief Adds a label-prefixed toggle button element bound to the @p id local storage key.
+     *        Such toggle button is designed for advanced settings panel
+     *        @see addSettingPanel
      *
      * @param {string}  label: The text label to place before the toggle button
      * @param {string}  id: The button's id (that will be used for the corresponding local storage item id as well)
@@ -173,7 +201,7 @@ class AutomationMenu
      *
      * @returns The button element
      */
-    static addToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
+    static addLabeledAdvancedSettingsToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
     {
         // Enable automation by default, if not already set in local storage
         Automation.Utils.LocalStorage.setDefaultValue(id, true);
@@ -191,15 +219,7 @@ class AutomationMenu
         buttonLabel.style.paddingRight = "7px";
         buttonContainer.appendChild(buttonLabel);
 
-        let buttonElem = this.createToggleButtonElement(id);
-        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
-        buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
-        buttonElem.onclick = function()
-            {
-                let wasChecked = buttonElem.getAttribute("checked") == "true";
-                buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
-                Automation.Utils.LocalStorage.setValue(id, !wasChecked);
-            };
+        let buttonElem = this.addLocalStorageBoundToggleButton(id);
 
         if (tooltip != "")
         {
@@ -215,7 +235,7 @@ class AutomationMenu
 
     /**
      * @brief Toggles the button elem between on and off based on its current state
-     *        The cookie value will be updated accordingly
+     *        The local storage value will be updated accordingly
      *
      * @note If the button has been disabled, this function has no effect
      *
@@ -349,7 +369,40 @@ class AutomationMenu
     }
 
     /**
-     * @brief Creates a title
+     * @brief Creates an animated checkmark element, hidden
+     *        Call @see showCheckmark() to reveal it
+     *
+     * @returns The created animated checkmark element (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static createAnimatedCheckMarkElement()
+    {
+        let checkmarkContainer = document.createElement("div");
+        checkmarkContainer.classList.add("automation-checkmark-container");
+
+        let checkmarkElem = document.createElement("div");
+        checkmarkElem.classList.add("automation-checkmark");
+        checkmarkContainer.appendChild(checkmarkElem);
+
+        return checkmarkContainer;
+    }
+
+    /**
+     * @brief Shows the animated checkmark
+     *
+     * @param {Element} checkmarkContainer: The element created using @see createAnimatedCheckMarkElement()
+     * @param {number} resetTimer: The timeout in milliseconds upon which the checkmark will be hidden again
+     *                             Don't use a value under 400ms, since it's the animation duration
+     */
+    static showCheckmark(checkmarkContainer, resetTimer = 2000)
+    {
+        let checkmarkElem = checkmarkContainer.children[0];
+        checkmarkElem.classList.add("shown");
+
+        setTimeout(function() { checkmarkElem.classList.remove("shown"); }, resetTimer);
+    }
+
+    /**
+     * @brief Creates a title element
      *
      * @param {string} titleText: The text to display
      *
@@ -374,6 +427,40 @@ class AutomationMenu
         titleDiv.appendChild(titleSpan);
 
         return titleDiv;
+    }
+
+    /**
+     * @brief Creates an editable text field element
+     *
+     * @param {number} charLimit: The max char number that the user can enter (set to -1 for no limit)
+     * @param {string} acceptedRegex: The axepted input regex (leave empty to accept any input)
+     *
+     * @returns The created element's container (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static createTextInputElement(charLimit = -1, acceptedRegex = "")
+    {
+        // Add the input
+        let inputElem = document.createElement("div");
+        inputElem.contentEditable = true;
+        inputElem.spellcheck = false;
+        inputElem.classList.add("automation-setting-input");
+
+        // Filter input based on the given parameters
+        inputElem.onkeydown = function(event)
+        {
+            let isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
+
+            return (event.key === "Backspace")
+                   || (event.key === "Delete")
+                   || (event.key === "ArrowLeft")
+                   || (event.key === "ArrowRight")
+                   || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
+        };
+
+        // Disable drag and drop
+        inputElem.ondrop = function(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'none'; return false; };
+
+        return inputElem;
     }
 
     /**
@@ -707,7 +794,7 @@ class AutomationMenu
             }
             .automation-setting-menu-container[automation-visible]
             {
-                max-width: 500px;
+                max-width: 650px;
                 max-height: 500px;
 
                 transition-property:        max-width, max-height;
@@ -716,7 +803,7 @@ class AutomationMenu
                 transition-delay:                  0s,      500ms;
 
                 /* Delay the overflow change after the entire animation */
-                animation: 4s automation-delay-overflow forwards;
+                animation: 6s automation-delay-overflow forwards;
             }
             @keyframes automation-delay-overflow
             {
@@ -838,6 +925,71 @@ class AutomationMenu
                 transform: rotate(-20deg);
                 right: 2px;
                 top: 6px;
+            }
+            .automation-setting-input
+            {
+                display: inline-block;
+                min-width: 20px;
+                user-select: text !important;
+                background-color: #3c5071;
+                border-bottom: solid 1px #CCCDD9;
+                border-radius: 5px;
+                padding: 0px 5px;
+                margin: 0px 5px;
+                transition: color 1s;
+            }
+            .automation-setting-input.invalid
+            {
+                color: #FFABAB;
+                transition: color 1s;
+            }
+            .automation-setting-input:focus
+            {
+                outline: none;
+                border-radius: 5px;
+                background-color: #455d77;
+            }
+            .automation-checkmark-container
+            {
+                display: inline-block;
+                margin-left: 4px;
+                height: 14px;
+                width: 9px;
+                transform: rotate(45deg);
+                padding-right: 4px;
+                padding-bottom: 4px;
+            }
+            .automation-checkmark
+            {
+                display: inline-block;
+                box-sizing: content-box;
+                margin-left: 4px;
+                height: 0px;
+                width: 0px;
+                border-bottom: 4px solid #78b13f;
+                border-right: 0px solid #78b13f;
+            }
+            .automation-checkmark.shown
+            {
+                animation: 400ms automation-checkmark-show forwards;
+                animation-iteration-count: 1;
+            }
+            @keyframes automation-checkmark-show
+            {
+                50%
+                {
+                    height: 0px;
+                    width: 5px;
+                    border-bottom: 4px solid #78b13f;
+                    border-right: 4px solid #78b13f;
+                }
+                100%
+                {
+                    height: 10px;
+                    width: 5px;
+                    border-bottom: 4px solid #78b13f;
+                    border-right: 4px solid #78b13f;
+                }
             }`;
         document.head.append(style);
     }

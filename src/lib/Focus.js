@@ -22,6 +22,9 @@ class AutomationFocus
         // Only consider the BuildMenu init step
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            // Disable 'Focus on' by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
+
             this.__internal__buildFunctionalitiesList();
             this.__internal__buildMenu();
         }
@@ -144,15 +147,12 @@ class AutomationFocus
     static __internal__lastFocusData = null;
 
     /**
-     * @brief Builds the menu, and retores previous running state if needed
+     * @brief Builds the menu, and restores the previous running state if needed
      *
      * The 'Focus on' functionality is disabled by default (if never set in a previous session)
      */
     static __internal__buildMenu()
     {
-        // Disable 'Focus on' by default
-        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
-
         // Add the related buttons to the automation menu
         let focusContainer = document.createElement("div");
         focusContainer.style.textAlign = "center";
@@ -205,7 +205,7 @@ class AutomationFocus
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
      *
      * @param enable: [Optional] If a boolean is passed, it will be used to set the right state.
-     *                Otherwise, the cookie stored value will be used
+     *                Otherwise, the local storage value will be used
      */
     static __internal__toggleFocus(enable)
     {
