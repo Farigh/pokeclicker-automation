@@ -467,21 +467,21 @@ class AutomationMenu
      * @brief Adds an hideable panel where additional settings can be added
      *
      * @param {Element} elemDiv: The html element to add a settings panel next to
+     * @param {boolean} openUpward: If set to true, the menu will open upward, otherwise downward
      *
      * @returns The newly created settings panel container
      */
-    static addSettingPanel(elemDiv)
+    static addSettingPanel(elemDiv, openUpward = false)
     {
         let placeholderDiv = document.createElement("div");
         placeholderDiv.classList.add("automation-setting-placeholder");
-        placeholderDiv.style.position = "relative";
-        placeholderDiv.style.width = "0px";
-        placeholderDiv.style.height = "0px";
+        if (openUpward)
+        {
+            placeholderDiv.setAttribute("direction", "up");
+        }
 
         let panelContainer = document.createElement("div");
-        panelContainer.style.position = "absolute";
-        panelContainer.style.top = "calc(-30px)";
-        panelContainer.style.right = "calc(100% - 10px)";
+        panelContainer.classList.add("automation-setting-panel-container");
         placeholderDiv.appendChild(panelContainer);
 
         let innerDiv = document.createElement("div");
@@ -736,6 +736,17 @@ class AutomationMenu
 
                 transition: opacity 1s ease-out;
             }
+            .automation-setting-panel-container
+            {
+                position: absolute;
+                top: calc(-30px);
+                right: calc(100% - 10px);
+            }
+            .automation-setting-placeholder[direction=up] .automation-setting-panel-container
+            {
+                top: auto;
+                bottom: calc(-7px);
+            }
             .automation-setting-placeholder[automation-visible]
             {
                 opacity: 0%;
@@ -781,6 +792,7 @@ class AutomationMenu
                 border-style: solid;
                 border-width: 1px;
                 margin-right: 10px;
+                border-top-left-radius: 5px;
                 border-bottom-left-radius: 5px;
                 min-width: 0px;
                 max-width: 0px;
@@ -822,6 +834,16 @@ class AutomationMenu
                 width: 30px;
                 height: 40px;
             }
+            .automation-arrow-container-div:hover .automation-arrow-div
+            {
+                left: calc(100% - 20px);
+                background-color: #555555;
+                transition: left 0.3s;
+            }
+            .automation-setting-placeholder[direction=up] .automation-arrow-container-div
+            {
+                top: calc(100% - 37px);
+            }
             .automation-arrow-div
             {
                 position: absolute;
@@ -835,12 +857,6 @@ class AutomationMenu
                 border-width: 1px;
                 border-top-left-radius: 5px;
                 border-bottom-left-radius: 5px;
-                transition: left 0.3s;
-            }
-            .automation-arrow-container-div:hover .automation-arrow-div
-            {
-                left: calc(100% - 20px);
-                background-color: #555555;
                 transition: left 0.3s;
             }
             .automation-toggle-button

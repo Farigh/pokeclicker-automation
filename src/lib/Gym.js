@@ -1,5 +1,5 @@
 /**
- * @class The AutomationGym regroups the 'Gym AutoFight' functionalities
+ * @class The AutomationGym regroups the 'Gym Auto Fight' functionalities
  */
  class AutomationGym
 {
@@ -12,31 +12,33 @@
      */
     static initialize(initStep)
     {
-        // Only consider the BuildMenu init step
-        if (initStep != Automation.InitSteps.BuildMenu) return;
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            // Hide the gym fight panel by default
+            let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
+                         +     '&nbsp;Gym fight&nbsp;'
+                         + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
+            let gymDiv = Automation.Menu.addCategory("gymFightButtons", gymTitle);
+            gymDiv.parentElement.hidden = true;
 
-        // Hide the gym and dungeon fight menus by default and disable auto fight
-        let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
-                     +     '&nbsp;Gym fight&nbsp;'
-                     + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-        let gymDiv = Automation.Menu.addCategory("gymFightButtons", gymTitle);
-        gymDiv.parentElement.hidden = true;
+            // Add an on/off button
+            let autoGymTooltip = "Automatically starts the selected gym fight";
+            let autoGymButton = Automation.Menu.addAutomationButton("Auto Fight", this.Settings.FeatureEnabled, autoGymTooltip, gymDiv, true);
+            autoGymButton.addEventListener("click", this.__internal__toggleGymFight.bind(this), false);
 
-        // Add an on/off button
-        let autoGymTooltip = "Automatically starts the selected gym fight";
-        let autoGymButton = Automation.Menu.addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoGymTooltip, gymDiv, true);
-        autoGymButton.addEventListener("click", this.__internal__toggleGymFight.bind(this), false);
+            // Add gym selector drop-down list
+            let selectElem = Automation.Menu.createDropDownListElement("selectedAutomationGym");
+            selectElem.style.marginRight = "5px";
+            gymDiv.appendChild(selectElem);
 
-        // Disable by default
-        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-
-        // Add gym selector drop-down list
-        let selectElem = Automation.Menu.createDropDownListElement("selectedAutomationGym");
-        selectElem.style.marginRight = "5px";
-        gymDiv.appendChild(selectElem);
-
-        // Set the div visibility and content watcher
-        setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+            // Disable the feature by default
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+        }
+        else
+        {
+            // Set the div visibility and content watcher
+            setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+        }
     }
 
     /*********************************************************************\
@@ -49,7 +51,7 @@
     static __internal__currentGymListSize = 0;
 
     /**
-     * @brief Toggles the 'Gym AutoFight' feature
+     * @brief Toggles the 'Gym Auto Fight' feature
      *
      * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
@@ -83,7 +85,7 @@
     }
 
     /**
-     * @brief The Gym AutoFight loop
+     * @brief The Gym Auto Fight loop
      *
      * It will automatically start the selected gym.
      */
@@ -119,7 +121,7 @@
     }
 
     /**
-     * @brief Toggle the 'Gym AutoFight' category visibility based on the game state
+     * @brief Toggle the 'Gym Auto Fight' category visibility based on the game state
      *        It will refresh the gym list as well (in case of a new contestant, for example in the league)
      *
      * The category is only visible when a gym is actually available at the current position
