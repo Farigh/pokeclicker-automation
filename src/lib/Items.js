@@ -52,7 +52,7 @@ class AutomationItems
     static __internal__autoGemUpgradeLoop = null;
 
     /**
-     * @brief Builds the menu, and restores the previous running state if needed
+     * @brief Builds the menu
      */
     static __internal__buildMenu()
     {

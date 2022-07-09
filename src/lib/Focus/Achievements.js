@@ -220,7 +220,7 @@ class AutomationFocusAchievements
         }
 
         // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ByPassUserSettings;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.BypassUserSettings;
 
         // Enable auto dungeon fight
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);

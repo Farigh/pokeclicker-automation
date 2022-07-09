@@ -1,18 +1,20 @@
 /**
- * @class The AutomationDungeon regroups the 'Dungeon AutoFight' functionalities
+ * @class The AutomationDungeon regroups the 'Dungeon Auto Fight' functionalities
  */
 class AutomationDungeon
 {
     static Settings = {
                           FeatureEnabled: "Dungeon-FightEnabled",
-                          StopOnPokedex: "Dungeon-FightStopOnPokedex"
+                          StopOnPokedex: "Dungeon-FightStopOnPokedex",
+                          BossRush: "Dungeon-BossRush",
+                          SkipChests: "Dungeon-SkipChests"
                       };
 
     static InternalModes = {
-                              None: 0,
-                              StopAfterThisRun: 1,
-                              ByPassUserSettings: 2
-                          };
+                               None: 0,
+                               StopAfterThisRun: 1,
+                               BypassUserSettings: 2
+                           };
 
     static AutomationRequestedMode = this.InternalModes.None;
 
@@ -23,45 +25,23 @@ class AutomationDungeon
      */
     static initialize(initStep)
     {
-        // Only consider the BuildMenu init step
-        if (initStep != Automation.InitSteps.BuildMenu) return;
+        if (initStep == Automation.InitSteps.BuildMenu)
+        {
+            // Disable Boss rush and chesk skipping by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.BossRush, false);
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipChests, false);
 
-        this.__internal__injectDungeonCss();
+            this.__internal__injectDungeonCss();
+            this.__internal__buildMenu();
 
-        // Hide the gym and dungeon fight menus by default and disable auto fight
-        let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="transform: scaleX(-1); position:relative; bottom: 3px;">'
-                         +     '&nbsp;Dungeon fight&nbsp;'
-                         + '<img src="assets/images/trainers/Crush Kin.png" style="position:relative; bottom: 3px;" height="20px">';
-        let dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
-        dungeonDiv.parentElement.hidden = true;
-
-        // Add an on/off button
-        let autoDungeonTooltip = "Automatically enters and completes the dungeon"
-                               + Automation.Menu.TooltipSeparator
-                               + "Chests and the boss are ignored until all tiles are revealed\n"
-                               + "Chests are all picked right before fighting the boss";
-        let autoDungeonButton = Automation.Menu.addAutomationButton("AutoFight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
-        autoDungeonButton.addEventListener("click", this.__internal__toggleDungeonFight.bind(this), false);
-
-        // Disable by default
-        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-
-        // Add an on/off button to stop after pokedex completion
-        let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
-                                   + "once all pokemon are caught in this dungeon."
-                                   + Automation.Menu.TooltipSeparator
-                                   + "You can switch between pokemon and shiny completion\n"
-                                   + "by clicking on the pokeball image.";
-
-        let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
-        Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
-
-        // Add the button action
-        let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
-        pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
-
-        // Set the div visibility watcher
-        setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+            // Disable the feature by default
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+        }
+        else
+        {
+            // Set the div visibility watcher
+            setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
+        }
     }
 
     /*********************************************************************\
@@ -122,6 +102,61 @@ class AutomationDungeon
     }
 
     /**
+     * @brief Builds the menu
+     */
+    static __internal__buildMenu()
+    {
+        // Hide the dungeon fight panel by default
+        let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
+                         +     '&nbsp;Dungeon fight&nbsp;'
+                         + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
+        let dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
+        dungeonDiv.parentElement.hidden = true;
+
+        // Add an on/off button
+        let autoDungeonTooltip = "Automatically enters and completes the dungeon"
+                               + Automation.Menu.TooltipSeparator
+                               + "Chests and the boss are ignored until all tiles are revealed\n"
+                               + "Chests are all picked right before fighting the boss";
+        let autoDungeonButton = Automation.Menu.addAutomationButton("Auto Fight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
+        autoDungeonButton.addEventListener("click", this.__internal__toggleDungeonFight.bind(this), false);
+
+        // Add an on/off button to stop after pokedex completion
+        let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
+                                   + "once all pokemon are caught in this dungeon."
+                                   + Automation.Menu.TooltipSeparator
+                                   + "You can switch between pokemon and shiny completion\n"
+                                   + "by clicking on the pokeball image.";
+
+        let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
+        Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
+
+        // Add the button action
+        let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
+        pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
+
+        // Build advanced settings panel
+        let dungeonSettingsPanel = Automation.Menu.addSettingPanel(autoDungeonButton.parentElement.parentElement, true);
+
+        let titleDiv = Automation.Menu.createTitleElement("Dungeon advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        dungeonSettingsPanel.appendChild(titleDiv);
+
+        // Add boss rush button
+        let bossRushTooltip = "Fight the boss as soon as its tile was found."
+                            + Automation.Menu.TooltipSeparator
+                            + "It will still collect any chests found, before fighting\n"
+                            + "the boss, unless such setting was set as well.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Complete as soon as the boss was found", this.Settings.BossRush, bossRushTooltip, dungeonSettingsPanel);
+
+        // Add skip chests button
+        let skipChestsTooltip = "Don't pick dungeon chests at all.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Skip chests pickup", this.Settings.SkipChests, skipChestsTooltip, dungeonSettingsPanel);
+    }
+
+    /**
      * @brief Switched from Pokedex completion to Shiny pokedex completion mode
      */
     static __internal__toggleCatchStopMode()
@@ -136,7 +171,7 @@ class AutomationDungeon
     }
 
     /**
-     * @brief Toggles the 'Dungeon AutoFight' feature
+     * @brief Toggles the 'Dungeon Auto Fight' feature
      *
      * If the feature was enabled and it's toggled to disabled, the loop will be stopped.
      * If the feature was disabled and it's toggled to enabled, the loop will be started.
@@ -174,7 +209,7 @@ class AutomationDungeon
     }
 
     /**
-     * @brief The Dungeon AutoFight loop
+     * @brief The Dungeon Auto Fight loop
      *
      * It will automatically start the current dungeon.
      * Once started, it will automatically complete the dungeon, fighting every encounters in it.
@@ -198,7 +233,7 @@ class AutomationDungeon
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if ((this.AutomationRequestedMode != this.InternalModes.ByPassUserSettings)
+            if ((this.AutomationRequestedMode != this.InternalModes.BypassUserSettings)
                 && ((this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
                     || this.__internal__playerActionOccured
                     || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
@@ -235,7 +270,8 @@ class AutomationDungeon
 
             if (this.__internal__isCompleted)
             {
-                if (this.__internal__chestPositions.length > 0)
+                if ((this.__internal__chestPositions.length > 0)
+                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) !== "true"))
                 {
                     let chestLocation = this.__internal__chestPositions.pop();
                     DungeonRunner.map.moveToTile(chestLocation);
@@ -259,6 +295,11 @@ class AutomationDungeon
                     this.__internal__resetSavedStates();
                     return;
                 }
+                if (Automation.Utils.LocalStorage.getValue(this.Settings.BossRush) === "true")
+                {
+                    this.__internal__isCompleted = true;
+                    return;
+                }
             }
             else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
             {
@@ -274,12 +315,12 @@ class AutomationDungeon
             }
 
             let maxIndex = (DungeonRunner.map.board().length - 1);
-            let isEvenRaw = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
-            let isLastTileOfTheRaw = (isEvenRaw && (playerCurrentPosition.x == maxIndex))
-                                  || (!isEvenRaw && (playerCurrentPosition.x == 0));
+            let isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
+            let isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
+                                  || (!isEvenRow && (playerCurrentPosition.x == 0));
 
             // Detect board ending and move to the boss if it's the case
-            if ((playerCurrentPosition.y == 0) && isLastTileOfTheRaw)
+            if ((playerCurrentPosition.y == 0) && isLastTileOfTheRow)
             {
                 this.__internal__isCompleted = (this.__internal__bossPosition !== null);
                 this.__internal__ensureTheBoardIsInAnAcceptableState();
@@ -288,25 +329,19 @@ class AutomationDungeon
             }
 
             // Go full left at the beginning of the map
-            if (playerCurrentPosition.y == maxIndex)
+            if ((playerCurrentPosition.y == maxIndex)
+                && (playerCurrentPosition.x != 0)
+                && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
             {
-                if ((playerCurrentPosition.x != 0)
-                    && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
-                {
-                    DungeonRunner.map.moveLeft();
-                    return;
-                }
+                DungeonRunner.map.moveLeft();
             }
-
-            // Move up once a raw has been fully visited
-            if (isLastTileOfTheRaw)
+            // Move up once a row has been fully visited
+            else if (isLastTileOfTheRow)
             {
                 DungeonRunner.map.moveUp();
-                return;
             }
-
-            // Move right on even raws, left otherwise
-            if (isEvenRaw)
+            // Move right on even rows, left otherwise
+            else if (isEvenRow)
             {
                 DungeonRunner.map.moveRight();
             }
@@ -315,7 +350,36 @@ class AutomationDungeon
                 DungeonRunner.map.moveLeft();
             }
 
-            return;
+            if (Automation.Utils.LocalStorage.getValue(this.Settings.BossRush) === "true")
+            {
+                playerCurrentPosition = DungeonRunner.map.playerPosition();
+
+                // Don't consider the top row
+                if (playerCurrentPosition.y == 0)
+                {
+                    return;
+                }
+
+                let positionToCheck = { x: playerCurrentPosition.x, y: playerCurrentPosition.y - 1 };
+                let tileToCheck = DungeonRunner.map.board()[positionToCheck.y][positionToCheck.x];
+
+                // Don't consider not-visible tiles
+                if (!tileToCheck.isVisible)
+                {
+                    return;
+                }
+
+                // If the user has the flashlight, check for the boss or a chest presence on the tile above
+                if (tileToCheck.type() === GameConstants.DungeonTile.boss)
+                {
+                    this.__internal__bossPosition = positionToCheck;
+                    this.__internal__isCompleted = true;
+                }
+                else if (tileToCheck.type() === GameConstants.DungeonTile.chest)
+                {
+                    this.__internal__addChestPosition(positionToCheck);
+                }
+            }
         }
         // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
         else
@@ -401,12 +465,12 @@ class AutomationDungeon
 
     /**
      * @brief Toggle the 'Dungeon fight' category visibility based on the game state
-     *        Disables the 'AutoFight' button if the feature can't be used
+     *        Disables the 'Auto Fight' button if the feature can't be used
      *
      * The category is only visible when a dungeon is actually available at the current position
      * (or if the player is already inside the dungeon)
      *
-     * The 'AutoFight' button is disabled in the following cases:
+     * The 'Auto Fight' button is disabled in the following cases:
      *   - The player did not buy the Dungeon ticket yet
      *   - The user enabled 'Stop on Pokedex' and all pokemon in the dungeon are already caught
      *   - The player does not have enough dungeon token to enter
@@ -422,7 +486,7 @@ class AutomationDungeon
         if (!dungeonDiv.hidden
             && (App.game.gameState !== GameConstants.GameState.dungeon))
         {
-            // Disable the AutoFight button if the requirements are not met
+            // Disable the Auto Fight button if the requirements are not met
             let disableNeeded = false;
             let disableReason = "";
 
@@ -434,7 +498,7 @@ class AutomationDungeon
             }
 
             // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((this.AutomationRequestedMode != this.InternalModes.ByPassUserSettings)
+            if ((this.AutomationRequestedMode != this.InternalModes.BypassUserSettings)
                 && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                 && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
             {

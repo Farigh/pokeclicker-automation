@@ -14,7 +14,7 @@ class AutomationFarm
     static ForcePlantBerriesAsked = false;
 
     /**
-     * @brief Builds the menu, and inialize internal data
+     * @brief Builds the menu, and initializes internal data
      *
      * @param initStep: The current automation init step
      */
@@ -103,7 +103,7 @@ class AutomationFarm
     static __internal__currentStrategy = null;
 
     /**
-     * @brief Builds the menu, and restores the previous running state if needed
+     * @brief Builds the menu
      */
     static __internal__buildMenu()
     {

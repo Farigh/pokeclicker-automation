@@ -104,7 +104,7 @@ class AutomationFocus
     }
 
     /**
-     * @brief Waits for the 'AutoFight' menu to appear, and then chooses the right opponent and enables it
+     * @brief Waits for the 'Auto Fight' menu to appear, and then chooses the right opponent and enables it
      *
      * @param {string} gymName
      */
@@ -147,7 +147,7 @@ class AutomationFocus
     static __internal__lastFocusData = null;
 
     /**
-     * @brief Builds the menu, and restores the previous running state if needed
+     * @brief Builds the menu
      *
      * The 'Focus on' functionality is disabled by default (if never set in a previous session)
      */
