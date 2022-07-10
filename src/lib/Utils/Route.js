@@ -26,8 +26,9 @@ class AutomationUtilsRoute
      */
     static moveToRoute(route, region)
     {
-        // Don't move if the game would not allow it
-        if (!this.canMoveToRegion(region)
+        // Don't move if the player is already there, or the game would not allow it
+        if (((player.route() === route) && (player.region === region))
+            || !this.canMoveToRegion(region)
             || !MapHelper.accessToRoute(route, region))
         {
             return;
@@ -137,7 +138,9 @@ class AutomationUtilsRoute
                             && (this.__internal__routeMaxHealthMap.get(this.__internal__lastNextBestRouteRegion).get(this.__internal__lastNextBestRoute) < playerClickAttack));
 
         // Don't refresh if we already are on the best road
-        if ((this.__internal__lastBestRoute === player.route()) && !needsNewRoad)
+        if ((this.__internal__lastBestRoute === player.route())
+            && (this.__internal__lastBestRouteRegion === player.region)
+            && !needsNewRoad)
         {
             return;
         }
@@ -241,11 +244,7 @@ class AutomationUtilsRoute
                 return true;
             }, this);
 
-        if ((player.region !== bestRouteRegion)
-            || (player.route() !== bestRoute))
-        {
-            this.moveToRoute(bestRoute, bestRouteRegion);
-        }
+        this.moveToRoute(bestRoute, bestRouteRegion);
     }
 
     /**
@@ -255,9 +254,10 @@ class AutomationUtilsRoute
      *
      * @param pokemonType: The pokemon type to look for
      *
-     * @returns A struct { bestRoute, bestRouteRegion }, where:
-     *          @c bestRoute is the best route number
-     *          @c bestRouteRegion is the best route region number
+     * @returns A struct { Route, Region, Rate }, where:
+     *          @c Route is the best route number
+     *          @c Region is the best route region number
+     *          @c Rate is the best route gem rate
      */
     static findBestRouteForFarmingType(pokemonType)
     {
@@ -304,7 +304,8 @@ class AutomationUtilsRoute
                 let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
                 currentRouteRate = currentRouteRate / nbGameTickToDefeat;
 
-                if (currentRouteRate > bestRouteRate)
+                // Compare with a 1/1000 precision
+                if (Math.ceil(currentRouteRate * 1000) >= Math.ceil(bestRouteRate * 1000))
                 {
                     bestRoute = route.number;
                     bestRouteRegion = route.region;
@@ -314,7 +315,7 @@ class AutomationUtilsRoute
                 return true;
             }, this);
 
-        return { bestRoute, bestRouteRegion };
+        return { Route: bestRoute, Region: bestRouteRegion, Rate: bestRouteRate };
     }
 
     /**

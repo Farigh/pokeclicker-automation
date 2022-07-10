@@ -271,9 +271,9 @@ class AutomationFocus
                                         id: "Gold",
                                         name: "Money",
                                         tooltip: "Automatically moves to the best gym for money"
-                                                + Automation.Menu.TooltipSeparator
-                                                + "Gyms gives way more money than routes\n"
-                                                + "The best gym is the one that gives the most money per game tick",
+                                               + Automation.Menu.TooltipSeparator
+                                               + "Gyms gives way more money than routes\n"
+                                               + "The best gym is the one that gives the most money per game tick",
                                         run: function (){ this.__internal__goToBestGymForMoney(); }.bind(this),
                                         stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                                         refreshRateAsMs: 10000 // Refresh every 10s
@@ -307,10 +307,11 @@ class AutomationFocus
      * @brief Adds a separator to the focus drop-down list
      *
      * @param {string} title: The separator text to display
+     * @param {CallableFunction} isUnlockedCallback: The condition to display the separator
      */
-    static __internal__addFunctionalitySeparator(title)
+    static __internal__addFunctionalitySeparator(title, isUnlockedCallback = function(){ return true; })
     {
-        this.__internal__functionalities.push({ id: "separator", name: title, tooltip: "" });
+        this.__internal__functionalities.push({ id: "separator", name: title, tooltip: "", isUnlocked: isUnlockedCallback });
     }
 
     /**
@@ -318,7 +319,8 @@ class AutomationFocus
      */
     static __internal__addGemsFocusFunctionalities()
     {
-        this.__internal__addFunctionalitySeparator("==== Gems ====");
+        let isUnlockedCallback = function (){ return App.game.gems.canAccess(); };
+        this.__internal__addFunctionalitySeparator("==== Gems ====", isUnlockedCallback);
 
         [...Array(Gems.nTypes).keys()].forEach(
             (gemType) =>
@@ -330,13 +332,13 @@ class AutomationFocus
                         id: gemTypeName + "Gems",
                         name: gemTypeName + " Gems",
                         tooltip: "Moves to the best gym or route to earn " + gemTypeName + " gems"
-                            + Automation.Menu.TooltipSeparator
-                            + "The best location is the one that will give the most\n"
-                            + gemTypeName + " gems per game tick.\n"
-                            + "Gyms are considered in priority, if none is found\n"
-                            + "the routes will be considered.",
+                               + Automation.Menu.TooltipSeparator
+                               + "The best location is the one that will give the most\n"
+                               + gemTypeName + " gems per game tick.\n"
+                               + "Both gyms and routes are considered, the best one will be used.",
                         run: function (){ this.__internal__goToBestGymOrRouteForGem(gemType); }.bind(this),
                         stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                        isUnlocked: isUnlockedCallback,
                         refreshRateAsMs: 10000 // Refresh every 10s
                     });
             }, this);
@@ -356,6 +358,13 @@ class AutomationFocus
             {
                 let opt = document.createElement("option");
 
+                if ((functionality.isUnlocked !== undefined)
+                    && !functionality.isUnlocked())
+                {
+                    this.__internal__lockedFunctionalities.push({ functionality, opt });
+                    opt.hidden = true;
+                }
+
                 if (functionality.id == "separator")
                 {
                     opt.disabled = true;
@@ -365,13 +374,7 @@ class AutomationFocus
                     opt.value = functionality.id;
                     opt.id = functionality.id;
 
-                    if ((functionality.isUnlocked !== undefined)
-                        && !functionality.isUnlocked())
-                    {
-                        this.__internal__lockedFunctionalities.push({ functionality, opt });
-                        opt.hidden = true;
-                    }
-                    else if (lastAutomationFocusedTopic === functionality.id)
+                    if (!opt.hidden && (lastAutomationFocusedTopic === functionality.id))
                     {
                         // Restore previous session selected element
                         opt.selected = true;
@@ -507,19 +510,17 @@ class AutomationFocus
         }
 
         let bestGym = Automation.Utils.Gym.findBestGymForFarmingType(gemType);
-        if (bestGym !== null)
+        let bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(gemType);
+
+        // Compare with a 1/1000 precision
+        if ((bestGym !== null) && (Math.ceil(bestGym.Rate * 1000) >= Math.ceil(bestRoute.Rate * 1000)))
         {
             Automation.Utils.Route.moveToTown(bestGym.Town);
             this.__enableAutoGymFight(bestGym.Name);
-
-            return;
         }
-
-        // Fallback to routes if no gym could be found
-        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.findBestRouteForFarmingType(gemType);
-        if ((player.route() !== bestRoute) || (player.region !== bestRouteRegion))
+        else
         {
-            Automation.Utils.Route.moveToRoute(bestRoute, bestRouteRegion);
+            Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
         }
     }
 }
