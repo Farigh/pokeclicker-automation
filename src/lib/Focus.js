@@ -307,10 +307,11 @@ class AutomationFocus
      * @brief Adds a separator to the focus drop-down list
      *
      * @param {string} title: The separator text to display
+     * @param {CallableFunction} isUnlockedCallback: The condition to display the separator
      */
-    static __internal__addFunctionalitySeparator(title)
+    static __internal__addFunctionalitySeparator(title, isUnlockedCallback = function(){ return true; })
     {
-        this.__internal__functionalities.push({ id: "separator", name: title, tooltip: "" });
+        this.__internal__functionalities.push({ id: "separator", name: title, tooltip: "", isUnlocked: isUnlockedCallback });
     }
 
     /**
@@ -318,7 +319,8 @@ class AutomationFocus
      */
     static __internal__addGemsFocusFunctionalities()
     {
-        this.__internal__addFunctionalitySeparator("==== Gems ====");
+        let isUnlockedCallback = function (){ return App.game.gems.canAccess(); };
+        this.__internal__addFunctionalitySeparator("==== Gems ====", isUnlockedCallback);
 
         [...Array(Gems.nTypes).keys()].forEach(
             (gemType) =>
@@ -336,6 +338,7 @@ class AutomationFocus
                                + "Both gyms and routes are considered, the best one will be used.",
                         run: function (){ this.__internal__goToBestGymOrRouteForGem(gemType); }.bind(this),
                         stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                        isUnlocked: isUnlockedCallback,
                         refreshRateAsMs: 10000 // Refresh every 10s
                     });
             }, this);
@@ -355,6 +358,13 @@ class AutomationFocus
             {
                 let opt = document.createElement("option");
 
+                if ((functionality.isUnlocked !== undefined)
+                    && !functionality.isUnlocked())
+                {
+                    this.__internal__lockedFunctionalities.push({ functionality, opt });
+                    opt.hidden = true;
+                }
+
                 if (functionality.id == "separator")
                 {
                     opt.disabled = true;
@@ -364,13 +374,7 @@ class AutomationFocus
                     opt.value = functionality.id;
                     opt.id = functionality.id;
 
-                    if ((functionality.isUnlocked !== undefined)
-                        && !functionality.isUnlocked())
-                    {
-                        this.__internal__lockedFunctionalities.push({ functionality, opt });
-                        opt.hidden = true;
-                    }
-                    else if (lastAutomationFocusedTopic === functionality.id)
+                    if (!opt.hidden && (lastAutomationFocusedTopic === functionality.id))
                     {
                         // Restore previous session selected element
                         opt.selected = true;
