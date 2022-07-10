@@ -23,9 +23,10 @@ class AutomationUtilsGym
      *
      * @param pokemonType: The pokemon type to look for
      *
-     * @returns Null if no gym could be found, or a struct { bestGymName, bestGymTown }, where:
-     *          @c bestGymName is the best gym name
-     *          @c bestGymTown is the best gym town name
+     * @returns Null if no gym could be found, or a struct { Name, Town, Rate }, where:
+     *          @c Name is the best gym name
+     *          @c Town is the best gym town name
+     *          @c Rate is the gem rate
      */
     static findBestGymForFarmingType(pokemonType)
     {
@@ -67,7 +68,8 @@ class AutomationUtilsGym
                 // TODO (26/06/2022): Be more precise, all pokemons do not have the same health
                 currentGymGemPerTick /= gym.pokemons.length;
 
-                if (currentGymGemPerTick > bestGymRate)
+                // Compare with a 1/1000 precision
+                if (Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000))
                 {
                     bestGymName = gymData.gymName;
                     bestGymTown = gymData.gymTown;
@@ -75,7 +77,7 @@ class AutomationUtilsGym
                 }
             });
 
-        return (bestGymName !== null) ? { Name: bestGymName, Town: bestGymTown } : null;
+        return (bestGymName !== null) ? { Name: bestGymName, Town: bestGymTown, Rate: bestGymRate } : null;
     }
 
     /**

@@ -346,15 +346,15 @@ class AutomationFocusQuests
      */
     static __internal__workOnCapturePokemonTypesQuest(quest)
     {
-        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
+        let bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
 
         // Add a pokeball to the Caught type and set the PokemonCatch setup
         let hasBalls = this.__internal__selectBallToCatch(GameConstants.Pokeball.Ultraball);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
-        if (hasBalls && ((player.route() !== bestRoute) || (player.region !== bestRouteRegion)))
+        if (hasBalls)
         {
-            Automation.Utils.Route.moveToRoute(bestRoute, bestRouteRegion);
+            Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
         }
     }
 
@@ -446,11 +446,7 @@ class AutomationFocusQuests
         this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
-        if ((player.region != quest.region)
-            || (player.route() != quest.route))
-        {
-            Automation.Utils.Route.moveToRoute(quest.route, quest.region);
-        }
+        Automation.Utils.Route.moveToRoute(quest.route, quest.region);
     }
 
     /**
@@ -465,8 +461,8 @@ class AutomationFocusQuests
         this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
-        let { bestRoute, bestRouteRegion } = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
-        Automation.Utils.Route.moveToRoute(bestRoute, bestRouteRegion);
+        let bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
+        Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
     }
 
     /**
