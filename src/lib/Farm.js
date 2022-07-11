@@ -776,7 +776,7 @@ class AutomationFarm
             BerryType.Spelon,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Tamato); });
+                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Tamato); });
             });
 
         // #32 Unlock at least one Pamtre berry through mutation
@@ -784,7 +784,7 @@ class AutomationFarm
             BerryType.Pamtre,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cornn); });
+                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cornn); });
             },
             null,
             OakItemType.Cell_Battery);
@@ -794,7 +794,7 @@ class AutomationFarm
             BerryType.Watmel,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Magost); });
+                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Magost); });
             });
 
         // #34 Unlock at least one Durin berry through mutation
@@ -802,7 +802,7 @@ class AutomationFarm
             BerryType.Durin,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rabuta); });
+                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rabuta); });
             });
 
         // #35 Unlock at least one Belue berry through mutation
@@ -810,16 +810,16 @@ class AutomationFarm
             BerryType.Belue,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Nomel); });
+                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Nomel); });
             });
 
         /**********************************\
         |*   Harvest some Gen 3 berries   *|
         \**********************************/
 
-        // Make sure to have at least 24 of each berry type before proceeding
+        // Make sure to have at least 25 of each berry type before proceeding
         this.__internal__addBerryRequirementBeforeFurtherUnlockStrategy(
-            24,
+            25,
             [
                 BerryType.Pomeg, BerryType.Kelpsy, BerryType.Qualot, BerryType.Hondew, BerryType.Grepa,
                 BerryType.Tamato, BerryType.Cornn, BerryType.Magost, BerryType.Rabuta, BerryType.Nomel,
@@ -1282,8 +1282,17 @@ class AutomationFarm
     {
         this.__internal__unlockStrategySelection.push(
             {
-                // Check if the berry is unlocked
-                isNeeded: function() { return !App.game.farming.unlockedBerries[berryType](); },
+                // Check if the berry is unlocked and the player has at least 1 of them in stock or planted
+                isNeeded: function()
+                    {
+                        if (!App.game.farming.unlockedBerries[berryType]())
+                        {
+                            return true;
+                        }
+
+                        return (App.game.farming.berryList[berryType]() == 0)
+                            && (this.__internal__getPlantedBerriesCount(berryType) == 0);
+                    }.bind(this),
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: oakItemNeeded,
                 forbiddenOakItem: oakItemToRemove,
@@ -1323,8 +1332,7 @@ class AutomationFarm
                             let neededAmount = (berriesMinAmount - App.game.farming.berryList[berryType]());
                             let berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
 
-                            let alreadyPlantedCount =
-                                App.game.farming.plotList.reduce((count, plot) => count + ((plot.berryData && (plot.berry == berryType)) ? 1 : 0), 0);
+                            let alreadyPlantedCount = this.__internal__getPlantedBerriesCount(berryType);
                             neededAmount -= (alreadyPlantedCount * berryHarvestAmount);
 
                             while ((neededAmount > 0) && (plotIndex <= 24))
@@ -1342,12 +1350,12 @@ class AutomationFarm
                             }
 
                             return (plotIndex <= 24);
-                        });
+                        }, this);
 
                     // If no more berries are needed, plant Cheris on the remaining plots
                     FarmController.selectedBerry(BerryType.Cheri);
                     Automation.Farm.__internal__plantAllBerries();
-                }
+                }.bind(this)
             });
     }
 
@@ -1374,8 +1382,7 @@ class AutomationFarm
         if (this.__internal__currentStrategy === null)
         {
             this.__internal__disableAutoUnlock("No more automated unlock possible");
-            Automation.Utils.sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature",
-                                                "Farming");
+            Automation.Utils.sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature", "Farming");
             return;
         }
 
@@ -1488,6 +1495,18 @@ class AutomationFarm
                     clearInterval(watcher);
                 }
             }, 5000); // Check every 5s
+    }
+
+    /**
+     * @brief Gets the planted count for the given @p berryType
+     *
+     * @param berryType: The type of the berry
+     *
+     * @returns The number of planted berries of the given type
+     */
+    static __internal__getPlantedBerriesCount(berryType)
+    {
+        return App.game.farming.plotList.reduce((count, plot) => count + ((plot.berryData && (plot.berry == berryType)) ? 1 : 0), 0);
     }
 
     /**
