@@ -28,6 +28,8 @@ class AutomationTrivia
 
     static __internal__previousRegion = null;
     static __internal__displayedRoamingRoute = null;
+    static __internal__displayedRoamingRegion = null;
+    static __internal__displayedRoamingSubRegionGroup = null;
     static __internal__currentLocationListSize = 0;
     static __internal__lastEvoStone = null;
 
@@ -282,14 +284,29 @@ class AutomationTrivia
     static __internal__refreshRoamingRouteTrivia()
     {
         // Their can be no roamers at this time
-        let roamers = RoamingPokemonList.getRegionalRoamers(player.region);
-        let roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteByRegion(player.region)();
-        let currentRoamingRoute = (roamers.length > 0)
-                                ? roamingRouteData.number
-                                : -1;
-        if (this.__internal__displayedRoamingRoute !== currentRoamingRoute)
+        let subRegionGroup = RoamingPokemonList.findGroup(player.region, player.subregion);
+        let roamers = RoamingPokemonList.getSubRegionalGroupRoamers(player.region, subRegionGroup);
+
+        if (roamers.length === 0)
         {
-            this.__internal__displayedRoamingRoute = currentRoamingRoute;
+            if (this.__internal__displayedRoamingRoute !== -1)
+            {
+                this.__internal__displayedRoamingRoute = -1;
+                // Hide the roaming info if there is no roamers
+                document.getElementById("roamingRouteTriviaContainer").hidden = true;
+            }
+
+            return;
+        }
+
+        let roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteBySubRegionGroup(player.region, subRegionGroup)();
+        if ((this.__internal__displayedRoamingRoute !== roamingRouteData.number)
+            || (this.__internal__displayedRoamingRegion !== player.region)
+            || (this.__internal__displayedRoamingSubRegionGroup !== subRegionGroup))
+        {
+            this.__internal__displayedRoamingRoute = roamingRouteData.number;
+            this.__internal__displayedRoamingRegion = player.region;
+            this.__internal__displayedRoamingSubRegionGroup = subRegionGroup;
             let routeName = roamingRouteData.routeName;
             // Remove the region from the displayed name and insert non-breaking spaces
             let regionName = GameConstants.camelCaseToString(GameConstants.Region[player.region]);
@@ -317,8 +334,7 @@ class AutomationTrivia
                 });
             textElem.setAttribute("automation-tooltip-text", tooltip);
 
-            // Hide the roaming info if there is no roamers
-            document.getElementById("roamingRouteTriviaContainer").hidden = (RoamingPokemonList.getRegionalRoamers(player.region).length === 0);
+            document.getElementById("roamingRouteTriviaContainer").hidden = false;
         }
     }
 
