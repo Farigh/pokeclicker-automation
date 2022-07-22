@@ -42,6 +42,16 @@ class AutomationUtilsLocalStorage
         }
     }
 
+    /**
+     * @brief Unsets the value associated to @p key from the local storage
+     *
+     * @param {string} key: The key to get the value of
+     */
+    static unsetValue(key)
+    {
+        return localStorage.removeItem(this.__internal__getSaveSpecificKey(key));
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/

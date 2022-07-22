@@ -9,6 +9,7 @@ class AutomationHatchery
     static Settings = {
                           FeatureEnabled: "Hatchery-Enabled",
                           NotShinyFirst: "Hatchery-NotShinyFirst",
+                          SpreadPokerus: "Hatchery-SpreadPokerus",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs"
                       };
@@ -133,21 +134,69 @@ class AutomationHatchery
                        + "Only eggs for which some pokemon are not currently held are added\n"
                        + "Only one egg of a given type is used at the same time";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Hatch Eggs", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
+        let pokerusTooltip = "Spread the Pokérus in priority"
+                           + Automation.Menu.TooltipSeparator
+                           + "This will try to infect as many pokemon as possible with the Pokérus";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, hatcherySettingPanel);
+
+        this.__internal__disablePokerusSpreadingIfNotUnlocked();
     }
 
     /**
-     * @brief Watches for the in-game functionality to be unlocked.
-     *        Once unlocked, the menu will be displayed to the user
+     * @brief Disables the Pokérus advanced setting if the feature is not unlocked in game yet
+     */
+    static __internal__disablePokerusSpreadingIfNotUnlocked()
+    {
+        if (!App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus))
+        {
+            // This should never have been set at this point but we never know
+            Automation.Utils.LocalStorage.unsetValue(this.Settings.SpreadPokerus);
+
+            // Disable the switch button
+            let disableReason = "You need to progress further in the game to unlock the Pokérus feature";
+            Automation.Menu.setButtonDisabledState(this.Settings.SpreadPokerus, true, disableReason);
+
+            // Set the watcher if not already done
+            if (!this.__internal__hatcheryContainer.hidden)
+            {
+                this.__internal__setHatcheryUnlockWatcher();
+            }
+        }
+        else
+        {
+            // Enable Pokérus spreading by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SpreadPokerus, true);
+        }
+    }
+
+    /**
+     * @brief Watches for the in-game functionalities to be unlocked.
+     *
+     * Once the Pokémon Day Care is unlocked, the menu will be displayed to the user
+     * Once the Pokérus is unlocked, the advanced setting will be made available to the user
      */
     static __internal__setHatcheryUnlockWatcher()
     {
         let watcher = setInterval(function()
         {
-            if (App.game.breeding.canAccess())
+            let hatcheryUnlocked = App.game.breeding.canAccess();
+            let pokerusUnlocked = App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus);
+
+            if (hatcheryUnlocked && this.__internal__hatcheryContainer.hidden)
             {
-                clearInterval(watcher);
                 this.__internal__hatcheryContainer.hidden = false;
                 this.toggleAutoHatchery();
+            }
+
+            if (pokerusUnlocked)
+            {
+                Automation.Menu.setButtonDisabledState(this.Settings.SpreadPokerus, false);
+            }
+
+            if (hatcheryUnlocked && pokerusUnlocked)
+            {
+                clearInterval(watcher);
             }
         }.bind(this), 10000); // Check every 10 seconds
     }
@@ -182,53 +231,33 @@ class AutomationHatchery
         // Now add lvl 100 pokemons to empty slots if we can
         if (App.game.breeding.hasFreeEggSlot())
         {
-            // Get breedable pokemon list
-            let filteredEggList = App.game.party.caughtPokemon.filter(
-                (pokemon) =>
+            // Sort pokemon by breeding efficiency
+            let pokemonToBreed = [];
+            let sortedPokemonToBreed = this.__internal__getBreedablePokemonByBreedingEfficiency();
+
+            // Spread pokerus if enabled
+            if (Automation.Utils.LocalStorage.getValue(this.Settings.SpreadPokerus) === "true")
+            {
+                pokemonToBreed = this.__internal__getPokemonToBreedForPokerusSpreading(sortedPokemonToBreed);
+            }
+
+            // Complete with regular listing if needed
+            for (const pokemon of sortedPokemonToBreed)
+            {
+                if ((pokemonToBreed.length < App.game.breeding.eggList.length)
+                    && !pokemonToBreed.some(p => p.id === pokemon.id))
                 {
-                    // Only consider breedable Pokemon (ie. not breeding and lvl 100)
-                    return !pokemon.breeding && (pokemon.level == 100);
-                });
-
-            let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
-
-            // Sort list by breeding efficiency
-            filteredEggList.sort((a, b) =>
-                {
-                    if (notShinyFirst)
-                    {
-                        if (a.shiny && !b.shiny)
-                        {
-                            return 1;
-                        }
-                        if (!a.shiny && b.shiny)
-                        {
-                            return -1;
-                        }
-                    }
-
-                    let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
-                    let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
-
-                    if (aValue < bValue)
-                    {
-                        return 1;
-                    }
-                    if (aValue > bValue)
-                    {
-                        return -1;
-                    }
-
-                    return 0;
-                });
+                    pokemonToBreed.push(pokemon);
+                }
+            }
 
             // Do not add pokemons to the queue as it reduces the overall attack
             // (this will also allow the player to add pokemons, eggs or fossils manually)
             var i = 0;
-            while ((i < filteredEggList.length) && App.game.breeding.hasFreeEggSlot())
+            while ((i < pokemonToBreed.length) && App.game.breeding.hasFreeEggSlot())
             {
-                App.game.breeding.addPokemonToHatchery(filteredEggList[i]);
-                Automation.Utils.sendNotif("Added " + filteredEggList[i].name + " to the Hatchery!", "Hatchery");
+                App.game.breeding.addPokemonToHatchery(pokemonToBreed[i]);
+                Automation.Utils.sendNotif("Added " + pokemonToBreed[i].name + " to the Hatchery!", "Hatchery");
                 i++;
             }
         }
@@ -308,5 +337,205 @@ class AutomationHatchery
 
             i++;
         }
+    }
+
+    /**
+     * @brief Gets the Pokémon to breed based on their breeding efficiency
+     *
+     * @returns The sorted list of pokémon to hatch
+     */
+    static __internal__getBreedablePokemonByBreedingEfficiency()
+    {
+        // Get breedable pokemon list
+        let pokemonToBreed = App.game.party.caughtPokemon.filter(
+            (pokemon) =>
+            {
+                // Only consider breedable Pokemon (ie. not breeding and lvl 100)
+                return !pokemon.breeding && (pokemon.level == 100);
+            });
+
+        let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
+
+        // Sort list by breeding efficiency
+        pokemonToBreed.sort((a, b) =>
+            {
+                if (notShinyFirst)
+                {
+                    if (a.shiny && !b.shiny)
+                    {
+                        return 1;
+                    }
+                    if (!a.shiny && b.shiny)
+                    {
+                        return -1;
+                    }
+                }
+
+                let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
+                let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
+
+                if (aValue < bValue)
+                {
+                    return 1;
+                }
+                if (aValue > bValue)
+                {
+                    return -1;
+                }
+
+                return 0;
+            });
+
+        return pokemonToBreed;
+    }
+
+    /**
+     * @brief Gets the Pokémon to breed in order to maximize the Pokérus spreading
+     *
+     * @param {Array} sortedPokemonCandidates: The list of breedable Pokémons, sorted by priority
+     *
+     * @returns The sorted list of pokémon to hatch
+     */
+    static __internal__getPokemonToBreedForPokerusSpreading(sortedPokemonCandidates)
+    {
+        let pokemonToBreed = [];
+
+        let targetPokemons = sortedPokemonCandidates.filter(pokemon => pokemon?.pokerus === GameConstants.Pokerus.None);
+
+        // No more pokemon to infect, fallback to the default order
+        if (targetPokemons.length == 0)
+        {
+            return sortedPokemonCandidates;
+        }
+
+        // Both Contagious and Cured pokemon spread the Pokérus
+        let contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
+                                                                        || (pokemon?.pokerus === GameConstants.Pokerus.Cured));
+        let availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0);
+
+        let hatchingContagiousTypes = new Set();
+
+        for (const egg of App.game.breeding.eggList)
+        {
+            let currentEgg = egg();
+            if ((currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Contagious)
+                || (currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Cured))
+            {
+                for (const type of pokemonMap[currentEgg.partyPokemon.id].type)
+                {
+                    hatchingContagiousTypes.add(type);
+                }
+            }
+        }
+
+        // At least one contagious pokemon is already in place, try to add pokemon of matching types first
+        if (hatchingContagiousTypes.size != 0)
+        {
+            pokemonToBreed = this.__internal__addBestPokemonWithTypes(hatchingContagiousTypes, targetPokemons, pokemonToBreed, availableEggSlot);
+        }
+
+        // There still is room for more pokémon
+        if (availableEggSlot > pokemonToBreed.length)
+        {
+            pokemonToBreed = this.__internal__addContagiousPokemon(contagiousPokemons, targetPokemons, pokemonToBreed, availableEggSlot);
+        }
+
+        return pokemonToBreed;
+    }
+
+    /**
+     * @brief Adds the next contagious pokemon to the @p pokemonToBreed list
+     *
+     * If their is still room it will add Pokérus-free pokemons matching the new contagious type to the list as well
+     *
+     * @param {Array}  contagiousPokemons
+     * @param {Array}  targetPokemons
+     * @param {Array}  pokemonToBreed
+     * @param {number} availableEggSlot
+     *
+     * @returns The updated list of pokemon to breed
+     */
+    static __internal__addContagiousPokemon(contagiousPokemons, targetPokemons, pokemonToBreed, availableEggSlot)
+    {
+        let contagiousPokemonTypes = new Set();
+
+        // Build the list of possible contagious types
+        contagiousPokemons.forEach(
+            (pokemon) =>
+            {
+                pokemonMap[pokemon.id].type.forEach(
+                    type =>
+                    {
+                        contagiousPokemonTypes.add(type);
+                    });
+            });
+
+        // Pick the next best contagious pokémon candidate
+        let bestPokemonMatchingAContagiousType = targetPokemons.find(
+            (pokemon) => pokemonMap[pokemon.id].type.some((type) => contagiousPokemonTypes.has(type))
+                      && !pokemonToBreed.some(p => p.id === pokemon.id));
+
+        if (bestPokemonMatchingAContagiousType !== undefined)
+        {
+            // Get the best contagious candidate
+            let bestCandidate = null;
+            let possibleTypes = pokemonMap[bestPokemonMatchingAContagiousType.id].type;
+            for (const pokemon of contagiousPokemons)
+            {
+                let pokemonTypes = pokemonMap[pokemon.id].type;
+                if (!pokemonTypes.some((type) => possibleTypes.includes(type)))
+                {
+                    continue;
+                }
+
+                // Try to get contagious pokemon with multiple types
+                if (pokemonTypes.length > 1)
+                {
+                    bestCandidate = pokemon;
+                    break;
+                }
+                else if (bestCandidate === null)
+                {
+                    bestCandidate = pokemon;
+                }
+            }
+
+            if (bestCandidate !== null)
+            {
+                pokemonToBreed.push(bestCandidate);
+                let hatchingContagiousTypes = new Set();
+                pokemonMap[bestCandidate.id].type.forEach(type => hatchingContagiousTypes.add(type));
+                pokemonToBreed = this.__internal__addBestPokemonWithTypes(hatchingContagiousTypes, targetPokemons, pokemonToBreed, availableEggSlot);
+            }
+        }
+
+        return pokemonToBreed;
+    }
+
+    /**
+     * @brief Adds pokémons to the given @p currentList matching the @p validTypes
+     *
+     * @param {Set}    validTypes: The pokémon types to consider
+     * @param {Array}  pokemons: The available pokémon list
+     * @param {Array}  currentList: The list to complete
+     * @param {number} availableEggSlot: The number of available slots
+     */
+    static __internal__addBestPokemonWithTypes(validTypes, pokemons, currentList, availableEggSlot)
+    {
+        for (const pokemon of pokemons)
+        {
+            if (availableEggSlot < currentList.length)
+            {
+                break;
+            }
+
+            if (pokemonMap[pokemon.id].type.some(type => validTypes.has(type))
+                && !currentList.some(p => p.id === pokemon.id))
+            {
+                currentList.push(pokemon);
+            }
+        }
+
+        return currentList;
     }
 }
