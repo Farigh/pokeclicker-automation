@@ -482,44 +482,46 @@ class AutomationDungeon
                               || ((App.game.gameState === GameConstants.GameState.town)
                                   && (player.town() instanceof DungeonTown)));
 
-        // Don't disable the button if the player is still in the dungeon
-        if (!dungeonDiv.hidden
-            && (App.game.gameState !== GameConstants.GameState.dungeon))
+        if (!dungeonDiv.hidden)
         {
             // Disable the Auto Fight button if the requirements are not met
             let disableNeeded = false;
             let disableReason = "";
 
-            // The player might not have bought the dungeon ticket yet
-            if (!App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket))
+            // Don't disable the button if the player is still in the dungeon
+            if (App.game.gameState !== GameConstants.GameState.dungeon)
             {
-                disableNeeded = true;
-                disableReason = "You need to buy the Dungeon Ticket first";
-            }
-
-            // The 'stop on pokedex' feature might be enable and the pokedex already completed
-            if ((this.AutomationRequestedMode != this.InternalModes.BypassUserSettings)
-                && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
-                && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
-            {
-                disableNeeded = true;
-                disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
-
-                if (this.__internal__isShinyCatchStopMode)
+                // The player might not have bought the dungeon ticket yet
+                if (!App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket))
                 {
-                    disableReason += "shiny ";
+                    disableNeeded = true;
+                    disableReason = "You need to buy the Dungeon Ticket first";
                 }
 
-                disableReason += "pokemons are already caught,\nand the option to stop in this case is enabled";
-            }
+                // The 'stop on pokedex' feature might be enable and the pokedex already completed
+                if ((this.AutomationRequestedMode != this.InternalModes.BypassUserSettings)
+                    && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
+                    && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
+                {
+                    disableNeeded = true;
+                    disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
 
-            // The player does not have enough dugeon token
-            if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town().dungeon.tokenCost)
-            {
-                disableNeeded = true;
+                    if (this.__internal__isShinyCatchStopMode)
+                    {
+                        disableReason += "shiny ";
+                    }
 
-                disableReason += (disableReason !== "") ? "\nAnd you " : "You ";
-                disableReason += "do not have enough Dungeon Token to enter";
+                    disableReason += "pokemons are already caught,\nand the option to stop in this case is enabled";
+                }
+
+                // The player does not have enough dugeon token
+                if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town().dungeon.tokenCost)
+                {
+                    disableNeeded = true;
+
+                    disableReason += (disableReason !== "") ? "\nAnd you " : "You ";
+                    disableReason += "do not have enough Dungeon Token to enter";
+                }
             }
 
             if (disableNeeded)
