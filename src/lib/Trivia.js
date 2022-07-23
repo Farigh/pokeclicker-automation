@@ -208,29 +208,28 @@ class AutomationTrivia
 
             let selectedItemSet = false;
             // Build the new drop-down list
-            filteredList.forEach(
-                ([townName, town]) =>
+            for (const [townName, town] of filteredList)
+            {
+                const type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
+
+                let opt = document.createElement("option");
+                opt.value = townName;
+                opt.id = townName;
+                opt.innerHTML = type + ' ' + townName;
+
+                // Don't show the option if it's not been unlocked yet
+                if (!town.isUnlocked())
                 {
-                    const type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
+                    opt.style.display = "none";
+                }
+                else if (!selectedItemSet)
+                {
+                    opt.selected = true;
+                    selectedItemSet = true;
+                }
 
-                    let opt = document.createElement("option");
-                    opt.value = townName;
-                    opt.id = townName;
-                    opt.innerHTML = type + ' ' + townName;
-
-                    // Don't show the option if it's not been unlocked yet
-                    if (!town.isUnlocked())
-                    {
-                        opt.style.display = "none";
-                    }
-                    else if (!selectedItemSet)
-                    {
-                        opt.selected = true;
-                        selectedItemSet = true;
-                    }
-
-                    gotoList.options.add(opt);
-                });
+                gotoList.options.add(opt);
+            }
 
             this.__internal__previousRegion = player.region;
 
@@ -238,18 +237,17 @@ class AutomationTrivia
         }
         else if (this.__internal__currentLocationListSize != unlockedTownCount)
         {
-            filteredList.forEach(
-                ([townName, town]) =>
+            for (const [townName, town] of filteredList)
+            {
+                if (town.isUnlocked())
                 {
-                    if (town.isUnlocked())
+                    let opt = gotoList.options.namedItem(townName);
+                    if (opt.style.display === "none")
                     {
-                        let opt = gotoList.options.namedItem(townName);
-                        if (opt.style.display === "none")
-                        {
-                            opt.style.display = "block";
-                        }
+                        opt.style.display = "block";
                     }
-                });
+                }
+            }
         }
     }
 
@@ -320,18 +318,17 @@ class AutomationTrivia
 
             // Update the tooltip
             let tooltip = "The following pokemons are roaming this route:\n";
-            roamers.forEach(
-                (pokemon, index) =>
+            for (const [ index, pokemon ] of roamers.entries())
+            {
+                if (index !== 0)
                 {
-                    if (index !== 0)
-                    {
-                        let isLast = (index === (roamers.length - 1));
-                        tooltip += (isLast ? "" : ",")
-                                 + (((index % 3) === 0) ? "\n" : " ")
-                                 + (isLast ? "and " : "");
-                    }
-                    tooltip += pokemon.pokemon.name + " (#" + pokemon.pokemon.id + ")";
-                });
+                    let isLast = (index === (roamers.length - 1));
+                    tooltip += (isLast ? "" : ",")
+                                + (((index % 3) === 0) ? "\n" : " ")
+                                + (isLast ? "and " : "");
+                }
+                tooltip += pokemon.pokemon.name + " (#" + pokemon.pokemon.id + ")";
+            }
             textElem.setAttribute("automation-tooltip-text", tooltip);
 
             document.getElementById("roamingRouteTriviaContainer").hidden = false;
@@ -370,9 +367,11 @@ class AutomationTrivia
             let contentDiv = document.getElementById("availableEvolutionTriviaContent");
             contentDiv.innerHTML = "";
 
-            evoStones.forEach(
-                (stone) => contentDiv.innerHTML += '<img style="max-width: 28px;" src="assets/images/items/evolution/' + stone + '.png"'
-                                                 + ' onclick="javascript: Automation.Trivia.__internal__goToStoneMenu(\'' + stone + '\');">');
+            for (const stone of evoStones)
+            {
+                 contentDiv.innerHTML += `<img style="max-width: 28px;" src="assets/images/items/evolution/${stone}.png"`
+                                       + ` onclick="javascript: Automation.Trivia.__internal__goToStoneMenu('${stone}');">`;
+            }
 
             this.__internal__lastEvoStone = evoStones;
         }
@@ -416,9 +415,13 @@ class AutomationTrivia
     {
         var hasCandidate = false;
 
-        PokemonHelper.getPokemonsWithEvolution(GameConstants.StoneType[stone]).forEach(
-            (pokemon) => (PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone]).forEach(
-                              (status) => hasCandidate |= status == 0)));
+        for (const pokemon of PokemonHelper.getPokemonsWithEvolution(GameConstants.StoneType[stone]))
+        {
+            for (const status of PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone]))
+            {
+                hasCandidate |= (status == 0);
+            }
+        }
 
         return hasCandidate;
     }

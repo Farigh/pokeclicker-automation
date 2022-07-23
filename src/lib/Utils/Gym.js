@@ -38,44 +38,42 @@ class AutomationUtilsGym
         let playerWorstPokemonAttack = Automation.Utils.Route.getPlayerWorstPokemonAttack();
         let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
 
-        this.__internal__gymGemTypeMap.get(pokemonType).forEach(
-            (gymData) =>
+        for (const gymData of this.__internal__gymGemTypeMap.get(pokemonType))
+        {
+            let gym = GymList[gymData.gymName];
+
+            // Skip any gym that we can't access
+            if (!gym.isUnlocked()
+                || !Automation.Utils.Route.canMoveToRegion(gymData.region))
             {
-                let gym = GymList[gymData.gymName];
+                continue;
+            }
 
-                // Skip any gym that we can't access
-                if (!gym.isUnlocked()
-                    || !Automation.Utils.Route.canMoveToRegion(gymData.region))
+            let currentGymGemPerTick = 0;
+            for (const pokemon of gym.pokemons)
+            {
+                let pokemonData = pokemonMap[pokemon.name];
+                if (!pokemonData.type.includes(pokemonType))
                 {
-                    return;
+                    continue;
                 }
 
-                let currentGymGemPerTick = 0;
-                gym.pokemons.forEach(
-                    (pokemon) =>
-                    {
-                        let pokemonData = pokemonMap[pokemon.name];
-                        if (!pokemonData.type.includes(pokemonType))
-                        {
-                            return;
-                        }
+                let currentPokemonTickToDefeat =
+                    Automation.Utils.Route.getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, playerClickAttack, totalAtkPerSecond);
+                currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
+            }
 
-                        let currentPokemonTickToDefeat =
-                            Automation.Utils.Route.getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, playerClickAttack, totalAtkPerSecond);
-                        currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
-                    });
+            // TODO (26/06/2022): Be more precise, all pokemons do not have the same health
+            currentGymGemPerTick /= gym.pokemons.length;
 
-                // TODO (26/06/2022): Be more precise, all pokemons do not have the same health
-                currentGymGemPerTick /= gym.pokemons.length;
-
-                // Compare with a 1/1000 precision
-                if (Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000))
-                {
-                    bestGymName = gymData.gymName;
-                    bestGymTown = gymData.gymTown;
-                    bestGymRate = currentGymGemPerTick;
-                }
-            });
+            // Compare with a 1/1000 precision
+            if (Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000))
+            {
+                bestGymName = gymData.gymName;
+                bestGymTown = gymData.gymTown;
+                bestGymRate = currentGymGemPerTick;
+            }
+        }
 
         return (bestGymName !== null) ? { Name: bestGymName, Town: bestGymTown, Rate: bestGymRate } : null;
     }
@@ -94,52 +92,51 @@ class AutomationUtilsGym
         let bestGymTown = null;
         let bestGymRatio = 0;
         let playerClickAttack = App.game.party.calculateClickAttack();
-        Object.keys(GymList).forEach(
-            (key) =>
+        for (const key of Object.keys(GymList))
+        {
+            let gym = GymList[key];
+
+            // Skip locked gyms
+            if (!gym.isUnlocked())
             {
-                let gym = GymList[key];
+                continue;
+            }
 
-                // Skip locked gyms
-                if (!gym.isUnlocked())
-                {
-                    return;
-                }
+            // If it's a ligue champion is the target, its town points to the champion instead of the town
+            let gymTown = gym.town;
+            if (!TownList[gymTown])
+            {
+                gymTown = gym.parent.name;
+            }
 
-                // If it's a ligue champion is the target, its town points to the champion instead of the town
-                let gymTown = gym.town;
-                if (!TownList[gymTown])
-                {
-                    gymTown = gym.parent.name;
-                }
+            // Some gyms are trials linked to a dungeon, don't consider those
+            if (TownList[gymTown] instanceof DungeonTown)
+            {
+                continue;
+            }
 
-                // Some gyms are trials linked to a dungeon, don't consider those
-                if (TownList[gymTown] instanceof DungeonTown)
-                {
-                    return;
-                }
+            // Don't consider town that the player can't move to either
+            if (!Automation.Utils.Route.canMoveToRegion(gymTown.region))
+            {
+                continue;
+            }
 
-                // Don't consider town that the player can't move to either
-                if (!Automation.Utils.Route.canMoveToRegion(gymTown.region))
-                {
-                    return;
-                }
+            // Some champion have a team that depends on the player's starter pick
+            if (gym instanceof Champion)
+            {
+                gym.setPokemon(player.regionStarters[player.region]());
+            }
 
-                // Some champion have a team that depends on the player's starter pick
-                if (gym instanceof Champion)
-                {
-                    gym.setPokemon(player.regionStarters[player.region]());
-                }
+            let ticksToWin = gym.pokemons.reduce((count, pokemon) => count + Math.ceil(pokemon.maxHealth / playerClickAttack), 0);
+            let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
 
-                let ticksToWin = gym.pokemons.reduce((count, pokemon) => count + Math.ceil(pokemon.maxHealth / playerClickAttack), 0);
-                let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
-
-                if (rewardRatio > bestGymRatio)
-                {
-                    bestGymTown = gymTown;
-                    bestGym = key;
-                    bestGymRatio = rewardRatio;
-                }
-            });
+            if (rewardRatio > bestGymRatio)
+            {
+                bestGymTown = gymTown;
+                bestGym = key;
+                bestGymRatio = rewardRatio;
+            }
+        }
 
         return { bestGym, bestGymTown };
     }
@@ -158,56 +155,52 @@ class AutomationUtilsGym
     static __internal__buildGymGemTypeMap()
     {
         // Initialize the map for each gem types
-        [...Array(Gems.nTypes).keys()].forEach(
-            (gemType) =>
-            {
-                this.__internal__gymGemTypeMap.set(gemType, []);
-            }, this);
+        for (const gemType of Array(Gems.nTypes).keys())
+        {
+            this.__internal__gymGemTypeMap.set(gemType, []);
+        }
 
-        Object.keys(GymList).forEach(
-            (gymName) =>
-            {
-                let gym = GymList[gymName];
+        for (const gymName of Object.keys(GymList))
+        {
+            let gym = GymList[gymName];
 
-                gym.pokemons.forEach(
-                    (pokemon) =>
+            for (const pokemon of gym.pokemons)
+            {
+                let pokemonData = pokemonMap[pokemon.name];
+
+                for (const type of pokemonData.type)
+                {
+                    let gemTypeData = this.__internal__gymGemTypeMap.get(type);
+
+                    if ((gemTypeData.length == 0) || gemTypeData[gemTypeData.length - 1].gymName != gymName)
                     {
-                        let pokemonData = pokemonMap[pokemon.name];
-
-                        pokemonData.type.forEach(
-                            (type) =>
+                        let gymTown = gym.town;
+                        // If a ligue champion is the target, the gymTown points to the champion instead of the town
+                        if (!TownList[gymTown])
+                        {
+                            // If this happens, then it's a work in progress in pokeclicker's code-base
+                            if (gym.parent == undefined)
                             {
-                                let gemTypeData = this.__internal__gymGemTypeMap.get(type);
+                                continue;
+                            }
 
-                                if ((gemTypeData.length == 0) || gemTypeData[gemTypeData.length - 1].gymName != gymName)
-                                {
-                                    let gymTown = gym.town;
-                                    // If a ligue champion is the target, the gymTown points to the champion instead of the town
-                                    if (!TownList[gymTown])
-                                    {
-                                        // If this happens, then it's a work in progress in pokeclicker code-base
-                                        if (gym.parent == undefined)
-                                        {
-                                            return;
-                                        }
+                            gymTown = gym.parent.name;
+                        }
 
-                                        gymTown = gym.parent.name;
-                                    }
-
-                                    gemTypeData.push({
-                                                         gymName: gymName,
-                                                         gymTown: gymTown,
-                                                         region: TownList[gymTown].region,
-                                                         pokemonMathingType: 1,
-                                                         totalPokemons: gym.pokemons.length
-                                                     });
-                                }
-                                else
-                                {
-                                    gemTypeData[gemTypeData.length - 1].pokemonMathingType += 1;
-                                }
-                            }, this);
-                    }, this);
-            }, this);
+                        gemTypeData.push({
+                                             gymName: gymName,
+                                             gymTown: gymTown,
+                                             region: TownList[gymTown].region,
+                                             pokemonMathingType: 1,
+                                             totalPokemons: gym.pokemons.length
+                                         });
+                    }
+                    else
+                    {
+                        gemTypeData[gemTypeData.length - 1].pokemonMathingType += 1;
+                    }
+                }
+            }
+        }
     }
 }

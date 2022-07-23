@@ -118,18 +118,16 @@ class AutomationFocus
                     return;
                 }
 
-                [...document.getElementById("selectedAutomationGym").options].every(
-                    (option) =>
+                for (const option of document.getElementById("selectedAutomationGym").options)
+                {
+                    if (option.value === gymName)
                     {
-                        if (option.value === gymName)
-                        {
-                            option.selected = true;
-                            Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
-                            clearInterval(menuWatcher);
-                            return false;
-                        }
-                        return true;
-                    });
+                        option.selected = true;
+                        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
+                        clearInterval(menuWatcher);
+                        break;
+                    }
+                }
             }.bind(this), 50); // Check every game tick
     }
 
@@ -322,26 +320,25 @@ class AutomationFocus
         let isUnlockedCallback = function (){ return App.game.gems.canAccess(); };
         this.__internal__addFunctionalitySeparator("==== Gems ====", isUnlockedCallback);
 
-        [...Array(Gems.nTypes).keys()].forEach(
-            (gemType) =>
-            {
-                let gemTypeName = PokemonType[gemType];
+        for (const gemType of Array(Gems.nTypes).keys())
+        {
+            let gemTypeName = PokemonType[gemType];
 
-                this.__internal__functionalities.push(
-                    {
-                        id: gemTypeName + "Gems",
-                        name: gemTypeName + " Gems",
-                        tooltip: "Moves to the best gym or route to earn " + gemTypeName + " gems"
-                               + Automation.Menu.TooltipSeparator
-                               + "The best location is the one that will give the most\n"
-                               + gemTypeName + " gems per game tick.\n"
-                               + "Both gyms and routes are considered, the best one will be used.",
-                        run: function (){ this.__internal__goToBestGymOrRouteForGem(gemType); }.bind(this),
-                        stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
-                        isUnlocked: isUnlockedCallback,
-                        refreshRateAsMs: 10000 // Refresh every 10s
-                    });
-            }, this);
+            this.__internal__functionalities.push(
+                {
+                    id: gemTypeName + "Gems",
+                    name: gemTypeName + " Gems",
+                    tooltip: "Moves to the best gym or route to earn " + gemTypeName + " gems"
+                           + Automation.Menu.TooltipSeparator
+                           + "The best location is the one that will give the most\n"
+                           + gemTypeName + " gems per game tick.\n"
+                           + "Both gyms and routes are considered, the best one will be used.",
+                    run: function (){ this.__internal__goToBestGymOrRouteForGem(gemType); }.bind(this),
+                    stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                    isUnlocked: isUnlockedCallback,
+                    refreshRateAsMs: 10000 // Refresh every 10s
+                });
+        }
     }
 
     /**
@@ -353,37 +350,36 @@ class AutomationFocus
     static __internal__populateFocusOptions()
     {
         let lastAutomationFocusedTopic = Automation.Utils.LocalStorage.getValue(this.Settings.FocusedTopic);
-        this.__internal__functionalities.forEach(
-            (functionality) =>
+        for (const functionality of this.__internal__functionalities)
+        {
+            let opt = document.createElement("option");
+
+            if ((functionality.isUnlocked !== undefined)
+                && !functionality.isUnlocked())
             {
-                let opt = document.createElement("option");
+                this.__internal__lockedFunctionalities.push({ functionality, opt });
+                opt.hidden = true;
+            }
 
-                if ((functionality.isUnlocked !== undefined)
-                    && !functionality.isUnlocked())
+            if (functionality.id == "separator")
+            {
+                opt.disabled = true;
+            }
+            else
+            {
+                opt.value = functionality.id;
+                opt.id = functionality.id;
+
+                if (!opt.hidden && (lastAutomationFocusedTopic === functionality.id))
                 {
-                    this.__internal__lockedFunctionalities.push({ functionality, opt });
-                    opt.hidden = true;
+                    // Restore previous session selected element
+                    opt.selected = true;
                 }
+            }
+            opt.textContent = functionality.name;
 
-                if (functionality.id == "separator")
-                {
-                    opt.disabled = true;
-                }
-                else
-                {
-                    opt.value = functionality.id;
-                    opt.id = functionality.id;
-
-                    if (!opt.hidden && (lastAutomationFocusedTopic === functionality.id))
-                    {
-                        // Restore previous session selected element
-                        opt.selected = true;
-                    }
-                }
-                opt.textContent = functionality.name;
-
-                this.__internal__focusSelectElem.options.add(opt);
-            }, this);
+            this.__internal__focusSelectElem.options.add(opt);
+        }
 
         if (this.__internal__lockedFunctionalities.length != 0)
         {

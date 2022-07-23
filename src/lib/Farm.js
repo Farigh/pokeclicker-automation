@@ -203,7 +203,11 @@ class AutomationFarm
             customOakLoadout.unshift(this.__internal__currentStrategy.oakItemToEquip.oakItemToEquip);
 
             App.game.oakItems.deactivateAll();
-            customOakLoadout.forEach((item) => { App.game.oakItems.activate(item); });
+
+            for (const item of customOakLoadout)
+            {
+                App.game.oakItems.activate(item);
+            }
         }
     }
 
@@ -222,14 +226,13 @@ class AutomationFarm
      */
     static __internal__tryToUnlockNewSpots()
     {
-        App.game.farming.plotList.forEach(
-            (plot, index) =>
+        for (const [index, plot] of App.game.farming.plotList.entries())
+        {
+            if (!plot.isUnlocked)
             {
-                if (!plot.isUnlocked)
-                {
-                    FarmController.plotClick(index);
-                }
-            });
+                FarmController.plotClick(index);
+            }
+        }
     }
 
     /**
@@ -245,34 +248,33 @@ class AutomationFarm
         this.__internal__plantedBerryCount = 0;
 
         // Mutations can only occur while the berry is fully ripe, so we need to collect them the later possible
-        App.game.farming.plotList.forEach(
-            (plot, index) =>
+        for (const [index, plot] of App.game.farming.plotList.entries())
+        {
+            if (plot.isEmpty())
             {
-                if (plot.isEmpty())
+                if (plot.isUnlocked)
                 {
-                    if (plot.isUnlocked)
-                    {
-                        this.__internal__freeSlotCount++;
-                    }
-                    return;
-                }
-
-                if (plot.stage() != PlotStage.Berry)
-                {
-                    return;
-                }
-
-                if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
-                    || this.ForcePlantBerriesAsked
-                    || (this.__internal__currentStrategy === null)
-                    || (this.__internal__currentStrategy.harvestAsSoonAsPossible === true)
-                    || ((plot.berryData.growthTime[4] - plot.age) < 15))
-                {
-                    App.game.farming.harvest(index);
-                    this.__internal__harvestCount++;
                     this.__internal__freeSlotCount++;
                 }
-            }, this);
+                continue;
+            }
+
+            if (plot.stage() != PlotStage.Berry)
+            {
+                continue;
+            }
+
+            if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
+                || this.ForcePlantBerriesAsked
+                || (this.__internal__currentStrategy === null)
+                || (this.__internal__currentStrategy.harvestAsSoonAsPossible === true)
+                || ((plot.berryData.growthTime[4] - plot.age) < 15))
+            {
+                App.game.farming.harvest(index);
+                this.__internal__harvestCount++;
+                this.__internal__freeSlotCount++;
+            }
+        }
     }
 
     /**
@@ -311,14 +313,13 @@ class AutomationFarm
         //  |o| | | |o|
         //  |o|o|o|o|o|
         //  |o|o|o|o|o|
-        App.game.farming.plotList.forEach(
-            (_, index) =>
+        for (const index of App.game.farming.plotList.keys())
+        {
+            if (![ 6, 8, 11, 12, 13 ].includes(index))
             {
-                if (![ 6, 8, 11, 12, 13 ].includes(index))
-                {
-                    Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
-                }
-            });
+                Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
+            }
+        }
     }
 
     /**
@@ -334,14 +335,13 @@ class AutomationFarm
         //  |o|o| | |o|
         //  |o|o|o|o|o|
         //  |o|o|o|o|o|
-        App.game.farming.plotList.forEach(
-            (_, index) =>
+        for (const index of App.game.farming.plotList.keys())
+        {
+            if (![ 12, 13 ].includes(index))
             {
-                if (![ 12, 13 ].includes(index))
-                {
-                    Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
-                }
-            });
+                Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
+            }
+        }
     }
 
     /**
@@ -360,8 +360,8 @@ class AutomationFarm
             //  | | | | | |
             //  |1| | |1| |
             //  | |2| | |2|
-            [ 0, 3, 15, 18 ].forEach((index) => this.__internal__tryPlantBerryAtIndex(index, berry1Type), this);
-            [ 6, 9, 21, 24 ].forEach((index) => this.__internal__tryPlantBerryAtIndex(index, berry2Type), this);
+            this.__internal__tryPlantBerryAtIndexes(berry1Type, [ 0, 3, 15, 18 ]);
+            this.__internal__tryPlantBerryAtIndexes(berry2Type, [ 6, 9, 21, 24 ]);
         }
         else if (App.game.farming.plotList[2].isUnlocked)
         {
@@ -375,8 +375,8 @@ class AutomationFarm
                 //  |1| |2| |1|
                 //  |x| | | |x|
                 //  |x|x|1|x|x|
+                this.__internal__tryPlantBerryAtIndexes(berry1Type, [ 2, 10, 14, 22 ]);
                 this.__internal__tryPlantBerryAtIndex(12, berry2Type);
-                [ 2, 10, 14, 22 ].forEach((index) => this.__internal__tryPlantBerryAtIndex(index, berry1Type), this);
             }
             else
             {
@@ -386,7 +386,7 @@ class AutomationFarm
                 //  |x| |2| |x|
                 //  |x| |1| |x|
                 //  |x|x|x|x|x|
-                [ 2, 17 ].forEach((index) => this.__internal__tryPlantBerryAtIndex(index, berry1Type), this);
+                this.__internal__tryPlantBerryAtIndexes(berry1Type, [ 2, 17 ]);
                 this.__internal__tryPlantBerryAtIndex(12, berry2Type);
             }
         }
@@ -398,8 +398,8 @@ class AutomationFarm
             //  |x|2| |2|x|
             //  |x| |1| |x|
             //  |x|x|x|x|x|
-            [ 7, 17 ].forEach((index) => this.__internal__tryPlantBerryAtIndex(index, berry1Type), this);
-            [ 11, 13 ].forEach((index) => this.__internal__tryPlantBerryAtIndex(index, berry2Type), this);
+            this.__internal__tryPlantBerryAtIndexes(berry1Type, [ 7, 17 ]);
+            this.__internal__tryPlantBerryAtIndexes(berry2Type, [ 11, 13 ]);
         }
     }
 
@@ -418,9 +418,9 @@ class AutomationFarm
         //  | | | | | |
         //  | |1| | |1|
         //  |2|3| |2|3|
-        [ 1, 4, 16, 19 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry1Type));
-        [ 5, 8, 20, 23 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry2Type));
-        [ 6, 9, 21, 24 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry3Type));
+        this.__internal__tryPlantBerryAtIndexes(berry1Type, [ 1, 4, 16, 19 ]);
+        this.__internal__tryPlantBerryAtIndexes(berry2Type, [ 5, 8, 20, 23 ]);
+        this.__internal__tryPlantBerryAtIndexes(berry3Type, [ 6, 9, 21, 24 ]);
     }
 
     /**
@@ -433,10 +433,16 @@ class AutomationFarm
      */
     static __internal__plantFourBerriesForMutation(berry1Type, berry2Type, berry3Type, berry4Type)
     {
-        [ 0, 4, 17 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry1Type));
-        [ 2, 15, 19 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry2Type));
-        [ 5, 9, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry3Type));
-        [ 7, 20, 24 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, berry4Type));
+        // This represents the following strategy
+        //  |1| |2| |1|
+        //  |3| |4| |3|
+        //  | | | | | |
+        //  |2| |1| |2|
+        //  |4| |3| |4|
+        this.__internal__tryPlantBerryAtIndexes(berry1Type, [ 0, 4, 17 ]);
+        this.__internal__tryPlantBerryAtIndexes(berry2Type, [ 2, 15, 19 ]);
+        this.__internal__tryPlantBerryAtIndexes(berry3Type, [ 5, 9, 22 ]);
+        this.__internal__tryPlantBerryAtIndexes(berry4Type, [ 7, 20, 24 ]);
     }
 
     /**
@@ -453,12 +459,11 @@ class AutomationFarm
         //  |o|o|o|o|o|
         //  |o|o|o|o|o|
         //  |o|x|o|o|x|
-        App.game.farming.plotList.forEach(
-            (plot, index) =>
-            {
-                let berryType = [ 6, 9, 21, 24 ].includes(index) ? triggerBerryType : mutatedBerryType;
-                Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
-            });
+        for (const index of App.game.farming.plotList.keys())
+        {
+            let berryType = [ 6, 9, 21, 24 ].includes(index) ? triggerBerryType : mutatedBerryType;
+            Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
+        }
     }
 
     /**
@@ -480,6 +485,22 @@ class AutomationFarm
         {
             App.game.farming.plant(index, berryType, true);
             this.__internal__plantedBerryCount++;
+        }
+    }
+
+    /**
+     * @brief Tries to plant the given @p berryType in the selected @p indexes
+     *
+     * @see __internal__tryPlantBerryAtIndex
+     *
+     * @param indexes: The list of indexes of the spot to plant the berry in
+     * @param berryType: The type of the berry to plant
+     */
+    static __internal__tryPlantBerryAtIndexes(berryType, indexes)
+    {
+        for (const index of indexes)
+        {
+            this.__internal__tryPlantBerryAtIndex(index, berryType);
         }
     }
 
@@ -603,7 +624,7 @@ class AutomationFarm
             BerryType.Figy,
             function()
             {
-                [ 2, 3, 6, 10, 14, 16, 18, 19, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Cheri, [ 2, 3, 6, 10, 14, 16, 18, 19, 22 ]);
             });
 
         // Unlock the slot requiring Figy
@@ -614,7 +635,7 @@ class AutomationFarm
             BerryType.Wiki,
             function()
             {
-                [ 2, 3, 6, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chesto));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Chesto, [ 2, 3, 6, 10, 12, 14, 19, 21, 22 ]);
             });
 
         // Unlock the slot requiring Wiki
@@ -625,7 +646,7 @@ class AutomationFarm
             BerryType.Mago,
             function()
             {
-                [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pecha));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Pecha, [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ]);
             });
 
         // Unlock the slot requiring Mago
@@ -636,7 +657,7 @@ class AutomationFarm
             BerryType.Aguav,
             function()
             {
-                [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rawst));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Rawst, [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ]);
             });
 
         // Unlock the slot requiring Aguav
@@ -647,7 +668,7 @@ class AutomationFarm
             BerryType.Iapapa,
             function()
             {
-                [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Aspear));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Aspear, [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ]);
             });
 
         // Unlock the slot requiring Iapapa
@@ -680,8 +701,8 @@ class AutomationFarm
             BerryType.Pomeg,
             function()
             {
-                [ 5, 8, 16, 19 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Iapapa));
-                [ 6, 9, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Mago));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Iapapa, [ 5, 8, 16, 19 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Mago, [ 6, 9, 22 ]);
             });
 
         // Unlock the slot requiring Pomeg
@@ -692,8 +713,8 @@ class AutomationFarm
             BerryType.Kelpsy,
             function()
             {
-                [ 6, 8, 21, 23 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Persim));
-                [ 7, 10, 14, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chesto));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Persim, [ 6, 8, 21, 23 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Chesto, [ 7, 10, 14, 22 ]);
             });
 
         // Unlock the slot requiring Kelpsy
@@ -704,8 +725,8 @@ class AutomationFarm
             BerryType.Qualot,
             function()
             {
-                [ 0, 8, 15, 18 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pinap));
-                [ 6, 9, 19, 21 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Mago));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Pinap, [ 0, 8, 15, 18 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Mago, [ 6, 9, 19, 21 ]);
             });
 
         // Unlock the slot requiring Qualot
@@ -716,9 +737,9 @@ class AutomationFarm
             BerryType.Hondew,
             function()
             {
-                [ 1, 8, 15, 23 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Figy));
-                [ 3, 5, 17, 19 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Wiki));
-                [ 6, 9, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Aguav));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Figy, [ 1, 8, 15, 23 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Wiki, [ 3, 5, 17, 19 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Aguav, [ 6, 9, 22 ]);
             });
 
         // Unlock the slot requiring Hondew
@@ -729,8 +750,8 @@ class AutomationFarm
             BerryType.Grepa,
             function()
             {
-                [ 0, 3, 15, 18 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Aguav));
-                [ 6, 9, 21, 24 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Figy));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Aguav, [ 0, 3, 15, 18 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Figy, [ 6, 9, 21, 24 ]);
             });
 
         // Unlock the slot requiring Grepa
@@ -768,7 +789,7 @@ class AutomationFarm
             BerryType.Nomel,
             function()
             {
-                [ 6, 9, 21, 24 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pinap));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Pinap, [ 6, 9, 21, 24 ]);
             });
 
         // #31 Unlock at least one Spelon berry through mutation
@@ -776,7 +797,7 @@ class AutomationFarm
             BerryType.Spelon,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Tamato); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Tamato, App.game.farming.plotList.keys());
             });
 
         // #32 Unlock at least one Pamtre berry through mutation
@@ -784,7 +805,7 @@ class AutomationFarm
             BerryType.Pamtre,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cornn); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Cornn, App.game.farming.plotList.keys());
             },
             null,
             OakItemType.Cell_Battery);
@@ -794,7 +815,7 @@ class AutomationFarm
             BerryType.Watmel,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Magost); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Magost, App.game.farming.plotList.keys());
             });
 
         // #34 Unlock at least one Durin berry through mutation
@@ -802,7 +823,7 @@ class AutomationFarm
             BerryType.Durin,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rabuta); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Rabuta, App.game.farming.plotList.keys());
             });
 
         // #35 Unlock at least one Belue berry through mutation
@@ -810,7 +831,7 @@ class AutomationFarm
             BerryType.Belue,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Nomel); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Nomel, App.game.farming.plotList.keys());
             });
 
         /**********************************\
@@ -877,7 +898,7 @@ class AutomationFarm
             BerryType.Yache,
             function()
             {
-                [ 0, 2, 4, 10, 12, 14, 20, 22, 24 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Passho));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Passho, [ 0, 2, 4, 10, 12, 14, 20, 22, 24 ]);
             });
 
         // #45 Unlock at least one Payapa berry through mutation
@@ -895,14 +916,13 @@ class AutomationFarm
             BerryType.Tanga,
             function()
             {
-                App.game.farming.plotList.forEach(
-                    (_, index) =>
+                for (const index of App.game.farming.plotList.keys())
+                {
+                    if (![ 6, 9, 21, 24 ].includes(index))
                     {
-                        if (![ 6, 9, 21, 24 ].includes(index))
-                        {
-                            Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rindo);
-                        }
-                    });
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rindo);
+                    }
+                }
             });
 
         // #48 Unlock at least one Kasib berry through mutation
@@ -910,7 +930,7 @@ class AutomationFarm
             BerryType.Kasib,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Cheri, App.game.farming.plotList.keys());
             });
 
         // #49 Unlock at least one Haban berry through mutation
@@ -944,7 +964,7 @@ class AutomationFarm
             BerryType.Shuca,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Watmel); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Watmel, App.game.farming.plotList.keys());
             },
             OakItemType.Sprinklotad);
 
@@ -953,7 +973,7 @@ class AutomationFarm
             BerryType.Charti,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cornn); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Cornn, App.game.farming.plotList.keys());
             },
             OakItemType.Cell_Battery);
 
@@ -962,9 +982,8 @@ class AutomationFarm
             BerryType.Babiri,
             function()
             {
-                [ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ].forEach(
-                    (index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Shuca));
-                [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Charti));
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Shuca, [ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ]);
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Charti, [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ]);
             });
 
         // #41 Unlock at least one Chople berry through mutation (moved this far to avoid any problem, since it uses Oak items)
@@ -972,7 +991,7 @@ class AutomationFarm
             BerryType.Chople,
             function()
             {
-                App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Spelon); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Spelon, App.game.farming.plotList.keys());
             },
             OakItemType.Blaze_Cassette);
 
@@ -1011,12 +1030,12 @@ class AutomationFarm
                 // Nothing planted, plant the first batch
                 if (App.game.farming.plotList[6].isEmpty())
                 {
-                    [ 6, 8, 16, 18 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chople));
+                    Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Chople, [ 6, 8, 16, 18 ]);
                 }
                 // First batch ripped, plant the rest
                 else if (App.game.farming.plotList[6].age > App.game.farming.plotList[6].berryData.growthTime[3])
                 {
-                    App.game.farming.plotList.forEach((_, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chople); });
+                    Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Chople, App.game.farming.plotList.keys());
                 }
             });
     }
@@ -1134,14 +1153,13 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(BerryType.Starf,
                                                    function()
                                                    {
-                                                       App.game.farming.plotList.forEach(
-                                                           (_, index) =>
+                                                       for (const index of App.game.farming.plotList.keys())
+                                                       {
+                                                           if (![ 11, 12, 13 ].includes(index))
                                                            {
-                                                               if (![ 11, 12, 13 ].includes(index))
-                                                               {
-                                                                   Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
-                                                               }
-                                                           });
+                                                               Automation.Farm.__internal__tryPlantBerryAtIndex(index, berryType);
+                                                           }
+                                                       }
                                                    },
                                                    null,
                                                    null,
@@ -1177,14 +1195,17 @@ class AutomationFarm
                 action: function()
                     {
                         // Always harvest the middle on as soon as possible
-                        [ 7, 17 ].forEach((index) => FarmController.plotClick(index));
+                        for (const index of [ 7, 17 ])
+                        {
+                            FarmController.plotClick(index);
+                        }
 
                         // Plant the needed berries
-                        [ 1, 21 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Oran));
-                        [ 2, 22 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Leppa));
-                        [ 3, 23 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Aspear));
-                        [ 6, 16 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Sitrus));
-                        [ 8, 18 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rawst));
+                        Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Oran, [ 1, 21 ]);
+                        Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Leppa, [ 2, 22 ]);
+                        Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Aspear, [ 3, 23 ]);
+                        Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Sitrus, [ 6, 16 ]);
+                        Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Rawst, [ 8, 18 ]);
                         Automation.Farm.__internal__tryPlantBerryAtIndex(11, BerryType.Pecha);
                         Automation.Farm.__internal__tryPlantBerryAtIndex(12, BerryType.Cheri);
                         Automation.Farm.__internal__tryPlantBerryAtIndex(13, BerryType.Chesto);
@@ -1200,7 +1221,7 @@ class AutomationFarm
             BerryType.Kebia,
             function()
             {
-                App.game.farming.plotList.forEach((plot, index) => { Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pamtre); });
+                Automation.Farm.__internal__tryPlantBerryAtIndexes(BerryType.Pamtre, App.game.farming.plotList.keys());
             },
             OakItemType.Rocky_Helmet);
     }
@@ -1223,14 +1244,13 @@ class AutomationFarm
                         {
                             let neededBerries = EnigmaMutation.getReqs();
                             // North berry
-                            [ 1, 13 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, neededBerries[0]));
+                            Automation.Farm.__internal__tryPlantBerryAtIndexes(neededBerries[0], [ 1, 13 ]);
                             // West berry
-                            [ 5, 17 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, neededBerries[1]));
+                            Automation.Farm.__internal__tryPlantBerryAtIndexes(neededBerries[1], [ 5, 17 ]);
                             // East berry
-                            [ 7, 19 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, neededBerries[2]));
+                            Automation.Farm.__internal__tryPlantBerryAtIndexes(neededBerries[2], [ 7, 19 ]);
                             // South berry
-                            [ 11, 23 ].forEach((index) => Automation.Farm.__internal__tryPlantBerryAtIndex(index, neededBerries[3]));
-
+                            Automation.Farm.__internal__tryPlantBerryAtIndexes(neededBerries[3], [ 11, 23 ]);
                         }
             });
     }
@@ -1326,31 +1346,33 @@ class AutomationFarm
                 action: function()
                 {
                     let plotIndex = 0;
-                    berriesToGather.every(
-                        (berryType) =>
+                    for (const berryType of berriesToGather)
+                    {
+                        let neededAmount = (berriesMinAmount - App.game.farming.berryList[berryType]());
+                        let berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
+
+                        let alreadyPlantedCount = this.__internal__getPlantedBerriesCount(berryType);
+                        neededAmount -= (alreadyPlantedCount * berryHarvestAmount);
+
+                        while ((neededAmount > 0) && (plotIndex <= 24))
                         {
-                            let neededAmount = (berriesMinAmount - App.game.farming.berryList[berryType]());
-                            let berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
-
-                            let alreadyPlantedCount = this.__internal__getPlantedBerriesCount(berryType);
-                            neededAmount -= (alreadyPlantedCount * berryHarvestAmount);
-
-                            while ((neededAmount > 0) && (plotIndex <= 24))
+                            if (App.game.farming.plotList[plotIndex].isUnlocked
+                                && App.game.farming.plotList[plotIndex].isEmpty()
+                                && App.game.farming.hasBerry(berryType))
                             {
-                                if (App.game.farming.plotList[plotIndex].isUnlocked
-                                    && App.game.farming.plotList[plotIndex].isEmpty()
-                                    && App.game.farming.hasBerry(berryType))
-                                {
-                                    App.game.farming.plant(plotIndex, berryType, true);
+                                App.game.farming.plant(plotIndex, berryType, true);
 
-                                    // Subtract the harvest amount (-1 for the planted berry)
-                                    neededAmount -= (berryHarvestAmount - 1);
-                                }
-                                plotIndex++;
+                                // Subtract the harvest amount (-1 for the planted berry)
+                                neededAmount -= (berryHarvestAmount - 1);
                             }
+                            plotIndex++;
+                        }
 
-                            return (plotIndex <= 24);
-                        }, this);
+                        if (plotIndex > 24)
+                        {
+                            break;
+                        }
+                    }
 
                     // If no more berries are needed, plant Cheris on the remaining plots
                     FarmController.selectedBerry(BerryType.Cheri);
@@ -1366,17 +1388,14 @@ class AutomationFarm
     {
         this.__internal__currentStrategy = null;
 
-        this.__internal__unlockStrategySelection.every(
-            (strategy) =>
+        for (const strategy of this.__internal__unlockStrategySelection)
+        {
+            if (strategy.isNeeded())
             {
-                if (!strategy.isNeeded())
-                {
-                    return true;
-                }
-
                 this.__internal__currentStrategy = strategy;
-                return false;
-            }, this);
+                break;
+            }
+        }
 
         // If no strategy can be found, turn off the feature and disable the button
         if (this.__internal__currentStrategy === null)

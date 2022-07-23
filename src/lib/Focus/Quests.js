@@ -158,14 +158,13 @@ class AutomationFocusQuests
      */
     static __internal__claimCompletedQuests()
     {
-        App.game.quests.questList().forEach(
-            (quest, index) =>
+        for (const [ index, quest ] of App.game.quests.questList().entries())
+        {
+            if (quest.isCompleted() && !quest.claimed())
             {
-                if (quest.isCompleted() && !quest.claimed())
-                {
-                    App.game.quests.claimQuest(index);
-                }
-            });
+                App.game.quests.claimQuest(index);
+            }
+        }
     }
 
     /**
@@ -190,14 +189,13 @@ class AutomationFocusQuests
         // Sort quest to group the same type together
         availableQuests.sort(this.__internal__sortQuestByPriority, this);
 
-        availableQuests.forEach(
-            (quest) =>
+        for (const quest of availableQuests)
+        {
+            if (App.game.quests.canStartNewQuest())
             {
-                if (App.game.quests.canStartNewQuest())
-                {
-                    quest.begin();
-                }
-            });
+                quest.begin();
+            }
+        }
     }
 
     /**
@@ -314,26 +312,25 @@ class AutomationFocusQuests
         let isFarmingSpecificBerry = false;
 
         // Filter the quests that do not need specific action
-        currentQuests.forEach(
-            (quest) =>
+        for (const quest of currentQuests)
+        {
+            if (quest instanceof HarvestBerriesQuest)
             {
-                if (quest instanceof HarvestBerriesQuest)
-                {
-                    this.__internal__enableFarmingForBerryType(quest.berryType);
-                    isFarmingSpecificBerry = true;
-                }
-                else if ((quest instanceof GainFarmPointsQuest)
-                         && !isFarmingSpecificBerry)
-                {
-                    let bestBerry = this.__internal__getMostSuitableBerryForQuest(quest);
-                    this.__internal__enableFarmingForBerryType(bestBerry);
-                }
-                else if ((quest instanceof MineItemsQuest)
-                         || (quest instanceof MineLayersQuest))
-                {
-                    this.__internal__restoreUndergroundEnergyIfUnderThreshold(5);
-                }
-            });
+                this.__internal__enableFarmingForBerryType(quest.berryType);
+                isFarmingSpecificBerry = true;
+            }
+            else if ((quest instanceof GainFarmPointsQuest)
+                     && !isFarmingSpecificBerry)
+            {
+                let bestBerry = this.__internal__getMostSuitableBerryForQuest(quest);
+                this.__internal__enableFarmingForBerryType(bestBerry);
+            }
+            else if ((quest instanceof MineItemsQuest)
+                     || (quest instanceof MineLayersQuest))
+            {
+                this.__internal__restoreUndergroundEnergyIfUnderThreshold(5);
+            }
+        }
     }
 
     /**
@@ -532,15 +529,14 @@ class AutomationFocusQuests
         if (!enforceType)
         {
             // Choose the most optimal pokeball, based on the other quests
-            App.game.quests.currentQuests().forEach(
-                (quest) =>
+            for (const quest of App.game.quests.currentQuests())
+            {
+                if (quest instanceof UsePokeballQuest)
                 {
-                    if (quest instanceof UsePokeballQuest)
-                    {
-                        ballTypeToUse = quest.pokeball;
-                        enforceType = true;
-                    }
-                });
+                    ballTypeToUse = quest.pokeball;
+                    enforceType = true;
+                }
+            }
         }
 
         App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
@@ -613,33 +609,32 @@ class AutomationFocusQuests
 
         let availableSlotCount = App.game.farming.plotList.filter((plot) => plot.isUnlocked).length;
 
-        App.game.farming.unlockedBerries.forEach(
-            (isUnlocked, index) =>
+        for (const [ index, isUnlocked ] of App.game.farming.unlockedBerries.entries())
+        {
+            // Don't consider locked berries
+            if (!isUnlocked())
             {
-                // Don't consider locked berries
-                if (!isUnlocked())
-                {
-                    return;
-                }
+                continue;
+            }
 
-                let berryData = App.game.farming.berryData[index];
+            let berryData = App.game.farming.berryData[index];
 
-                // Don't consider out-of-stock berries
-                if (App.game.farming.berryList[index]() === 0)
-                {
-                    return;
-                }
+            // Don't consider out-of-stock berries
+            if (App.game.farming.berryList[index]() === 0)
+            {
+                continue;
+            }
 
-                let berryTime = (berryData.growthTime[3] * Math.ceil(quest.amount / availableSlotCount / berryData.farmValue));
+            let berryTime = (berryData.growthTime[3] * Math.ceil(quest.amount / availableSlotCount / berryData.farmValue));
 
-                // The time can't go below the berry growth time
-                let time = Math.max(berryData.growthTime[3], berryTime);
-                if (time < bestTime)
-                {
-                    bestTime = time;
-                    bestBerry = index;
-                }
-            });
+            // The time can't go below the berry growth time
+            let time = Math.max(berryData.growthTime[3], berryTime);
+            if (time < bestTime)
+            {
+                bestTime = time;
+                bestBerry = index;
+            }
+        }
 
         return bestBerry;
     }
@@ -793,18 +788,17 @@ class AutomationFocusQuests
 
         let resultLoadout = loadoutCandidates;
         // Reverse iterate so the order is preserved, since the items will be prepended to the list
-        optimumItems.reverse().forEach(
-            (wantedItem) =>
+        for (const wantedItem of optimumItems.reverse())
+        {
+            if (App.game.oakItems.isUnlocked(wantedItem))
             {
-                if (App.game.oakItems.isUnlocked(wantedItem))
-                {
-                    // Remove the item from the default loadout if it already exists, so we are sure it ends up in the 1st position
-                    resultLoadout = resultLoadout.filter((item) => item !== wantedItem);
+                // Remove the item from the default loadout if it already exists, so we are sure it ends up in the 1st position
+                resultLoadout = resultLoadout.filter((item) => item !== wantedItem);
 
-                    // Prepend the needed item
-                    resultLoadout.unshift(wantedItem);
-                }
-            });
+                // Prepend the needed item
+                resultLoadout.unshift(wantedItem);
+            }
+        }
 
         Automation.Utils.OakItem.equipLoadout(resultLoadout);
     }
