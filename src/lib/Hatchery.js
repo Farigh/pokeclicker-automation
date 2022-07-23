@@ -411,7 +411,8 @@ class AutomationHatchery
         // Both Contagious and Cured pokemon spread the Pokérus
         let contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
                                                                         || (pokemon?.pokerus === GameConstants.Pokerus.Cured));
-        let availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0);
+        let availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
+                             - (App.game.breeding.eggList.length - App.game.breeding.eggSlots);
 
         let hatchingContagiousTypes = new Set();
 
