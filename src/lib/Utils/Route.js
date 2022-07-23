@@ -14,6 +14,7 @@ class AutomationUtilsRoute
         if (initStep != Automation.InitSteps.Finalize) return;
 
         this.__internal__buildRouteMaxHealthMap();
+        this.__internal__buildRouteIncomeMap();
     }
 
     /**
@@ -218,10 +219,7 @@ class AutomationUtilsRoute
                 continue;
             }
 
-            let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
-
-            // Compute the bonus
-            routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
+            let routeIncome = this.__internal__routeIncomeMap.get(route.region).get(route.number);
 
             let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
             let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
@@ -340,12 +338,18 @@ class AutomationUtilsRoute
      */
     static getPlayerWorstPokemonAttack()
     {
-        return [...Array(Gems.nTypes).keys()].reduce(
-            (count, type) =>
+        let worstAtk = Number.MAX_SAFE_INTEGER
+
+        for (const type of Array(Gems.nTypes).keys())
+        {
+            let pokemonAttack = App.game.party.calculatePokemonAttack(type);
+            if (pokemonAttack < worstAtk)
             {
-                let pokemonAttack = App.game.party.calculatePokemonAttack(type);
-                return (pokemonAttack < count) ? pokemonAttack : count;
-            }, Number.MAX_SAFE_INTEGER);
+                worstAtk = pokemonAttack
+            }
+        }
+
+        return worstAtk;
     }
 
     /*********************************************************************\
@@ -360,6 +364,7 @@ class AutomationUtilsRoute
     static __internal__lastBestRoute = null;
     static __internal__lastNextBestRoute = null;
     static __internal__lastNextBestRouteRegion = null;
+    static __internal__routeIncomeMap = new Map();
 
     /**
      * @brief Gets the highest HP amount that a pokemon can have on the given @p route
@@ -421,6 +426,24 @@ class AutomationUtilsRoute
 
             let routeMaxHealth = this.__internal__getRouteMaxHealth(route);
             this.__internal__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
+        }
+    }
+
+    static __internal__buildRouteIncomeMap()
+    {
+        for (const route of Routes.regionRoutes)
+        {
+            if (route.region >= this.__internal__routeIncomeMap.size)
+            {
+                this.__internal__routeIncomeMap.set(route.region, new Map());
+            }
+
+            let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
+
+            // Compute the bonus
+            routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
+
+            this.__internal__routeIncomeMap.get(route.region).set(route.number, routeIncome);
         }
     }
 }
