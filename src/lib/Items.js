@@ -222,22 +222,19 @@ class AutomationItems
             return;
         }
 
-        App.game.oakItems.itemList.forEach(
-            (item) =>
+        for (const item of App.game.oakItems.itemList)
+        {
+            if (!item.isUnlocked() || item.isMaxLevel() || !item.hasEnoughExp())
             {
-                if (!item.isUnlocked()
-                    || item.isMaxLevel()
-                    || !item.hasEnoughExp())
-                {
-                    return;
-                }
+                continue;
+            }
 
-                let itemCost = item.calculateCost();
-                if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
-                {
-                    item.buy();
-                }
-            });
+            let itemCost = item.calculateCost();
+            if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
+            {
+                item.buy();
+            }
+        }
     }
 
     /**
@@ -250,20 +247,18 @@ class AutomationItems
     static __internal__gemUpgradeLoop()
     {
         // Iterate over gem types
-        [...Array(Gems.nTypes).keys()].forEach(
-            (type) =>
+        for (const type of Array(Gems.nTypes).keys())
+        {
+            // Iterate over affinity (backward)
+            for (const affinity of Array(Gems.nEffects).keys())
             {
-                // Iterate over affinity (backward)
-                [...Array(Gems.nEffects).keys()].reverse().forEach(
-                    (affinity) =>
-                    {
-                        if (App.game.gems.isValidUpgrade(type, affinity)
-                            && !App.game.gems.hasMaxUpgrade(type, affinity)
-                            && App.game.gems.canBuyGemUpgrade(type, affinity))
-                        {
-                            App.game.gems.buyGemUpgrade(type, affinity);
-                        }
-                    })
-            });
+                if (App.game.gems.isValidUpgrade(type, affinity)
+                    && !App.game.gems.hasMaxUpgrade(type, affinity)
+                    && App.game.gems.canBuyGemUpgrade(type, affinity))
+                {
+                    App.game.gems.buyGemUpgrade(type, affinity);
+                }
+            }
+        }
     }
 }

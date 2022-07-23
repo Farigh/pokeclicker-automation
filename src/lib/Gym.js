@@ -185,42 +185,40 @@
             selectElem.innerHTML = "";
 
             let selectedItemSet = false;
-            gymList.forEach(
-                (gym) =>
+            for (const gym of gymList)
+            {
+                let opt = document.createElement("option");
+                opt.value = gym.town;
+                opt.id = gym.town;
+                opt.innerHTML = gym.leaderName;
+
+                // Don't show the option if it's not been unlocked yet
+                if (!gym.isUnlocked())
                 {
-                    let opt = document.createElement("option");
-                    opt.value = gym.town;
-                    opt.id = gym.town;
-                    opt.innerHTML = gym.leaderName;
+                    opt.style.display = "none";
+                }
+                else if (!selectedItemSet)
+                {
+                    opt.selected = true;
+                    selectedItemSet = true;
+                }
 
-                    // Don't show the option if it's not been unlocked yet
-                    if (!gym.isUnlocked())
-                    {
-                        opt.style.display = "none";
-                    }
-                    else if (!selectedItemSet)
-                    {
-                        opt.selected = true;
-                        selectedItemSet = true;
-                    }
-
-                    selectElem.options.add(opt);
-                });
+                selectElem.options.add(opt);
+            }
         }
         else
         {
-            gymList.forEach(
-                (gym) =>
+            for (const gym of gymList)
+            {
+                if (gym.isUnlocked())
                 {
-                    if (gym.isUnlocked())
+                    let opt = selectElem.options.namedItem(gym.town);
+                    if (opt.style.display === "none")
                     {
-                        let opt = selectElem.options.namedItem(gym.town);
-                        if (opt.style.display === "none")
-                        {
-                            opt.style.display = "block";
-                        }
+                        opt.style.display = "block";
                     }
-                });
+                }
+            }
         }
 
         if (unlockedGymCount === 0)

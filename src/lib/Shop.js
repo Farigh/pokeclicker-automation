@@ -184,147 +184,146 @@ class AutomationShop
         let table = document.createElement("table");
         table.style.textAlign = "left";
 
-        pokeMartShop.items.forEach(
-            (item) =>
+        for (const item of pokeMartShop.items)
+        {
+            let tableRow = document.createElement("tr");
+            table.appendChild(tableRow);
+            let tableFirstCell = document.createElement("td");
+            tableFirstCell.style.paddingLeft = "7px";
+            tableRow.appendChild(tableFirstCell);
+
+            // Add the toggle button
+            let buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(item.name));
+            tableFirstCell.appendChild(buttonElem);
+
+            // Buy count
+            let tableBuyLabelCell = document.createElement("td");
+            tableBuyLabelCell.style.paddingLeft = "4px";
+            tableBuyLabelCell.style.paddingRight = "4px";
+            tableRow.appendChild(tableBuyLabelCell);
+
+            let label = document.createTextNode("Buy");
+            tableBuyLabelCell.appendChild(label);
+
+            let tableBuyCountCell = document.createElement("td");
+            tableRow.appendChild(tableBuyCountCell);
+            let buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
+            buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name));
+            buyCount.style.width = "100%"; // Make it take the whole cell space
+            buyCount.style.margin = "0px";
+            buyCount.style.textAlign = "right";
+            tableBuyCountCell.appendChild(buyCount);
+
+            let tableTargetLabelCell = document.createElement("td");
+            tableTargetLabelCell.style.paddingRight = "4px";
+            tableRow.appendChild(tableTargetLabelCell);
+            let itemImage = document.createElement("img");
+            if (item.imageDirectory !== undefined)
             {
-                let tableRow = document.createElement("tr");
-                table.appendChild(tableRow);
-                let tableFirstCell = document.createElement("td");
-                tableFirstCell.style.paddingLeft = "7px";
-                tableRow.appendChild(tableFirstCell);
+                itemImage.src = `assets/images/items/${item.imageDirectory}/${item.name}.png`;
+            }
+            else
+            {
+                itemImage.src = `assets/images/items/${item.name}.png`;
+            }
+            itemImage.style.height = "25px";
+            tableTargetLabelCell.appendChild(itemImage);
 
-                // Add the toggle button
-                let buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(item.name));
-                tableFirstCell.appendChild(buttonElem);
+            // Until count
+            label = document.createTextNode("until the player has");
+            tableTargetLabelCell.appendChild(label);
 
-                // Buy count
-                let tableBuyLabelCell = document.createElement("td");
-                tableBuyLabelCell.style.paddingLeft = "4px";
-                tableBuyLabelCell.style.paddingRight = "4px";
-                tableRow.appendChild(tableBuyLabelCell);
+            let tableUntilCountCell = document.createElement("td");
+            tableRow.appendChild(tableUntilCountCell);
+            let untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
+            untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name));
+            untilCount.style.width = "100%"; // Make it take the whole cell space
+            untilCount.style.margin = "0px";
+            untilCount.style.textAlign = "right";
+            tableUntilCountCell.appendChild(untilCount);
 
-                let label = document.createTextNode("Buy");
-                tableBuyLabelCell.appendChild(label);
+            // Max price
+            let tableMaxPriceLabelCell = document.createElement("td");
+            tableMaxPriceLabelCell.style.paddingLeft = "4px";
+            tableMaxPriceLabelCell.style.paddingRight = "4px";
+            tableRow.appendChild(tableMaxPriceLabelCell);
+            label = document.createTextNode("at max base price");
+            tableMaxPriceLabelCell.appendChild(label);
 
-                let tableBuyCountCell = document.createElement("td");
-                tableRow.appendChild(tableBuyCountCell);
-                let buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
-                buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name));
-                buyCount.style.width = "100%"; // Make it take the whole cell space
-                buyCount.style.margin = "0px";
-                buyCount.style.textAlign = "right";
-                tableBuyCountCell.appendChild(buyCount);
+            let tableMaxPriceCell = document.createElement("td");
+            tableRow.appendChild(tableMaxPriceCell);
+            let maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
+            maxPrice.style.width = "100%"; // Make it take the whole cell space
+            maxPrice.style.margin = "0px";
+            maxPrice.style.textAlign = "right";
+            maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name));
+            tableMaxPriceCell.appendChild(maxPrice);
 
-                let tableTargetLabelCell = document.createElement("td");
-                tableTargetLabelCell.style.paddingRight = "4px";
-                tableRow.appendChild(tableTargetLabelCell);
-                let itemImage = document.createElement("img");
-                if (item.imageDirectory !== undefined)
+            let tableLastCell = document.createElement("td");
+            tableRow.appendChild(tableLastCell);
+            let pokedollarsImage = document.createElement("img");
+            pokedollarsImage.src = "assets/images/currency/money.svg";
+            pokedollarsImage.style.height = "25px";
+            tableLastCell.appendChild(pokedollarsImage);
+
+            // The save status checkmark
+            let checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+            tableLastCell.appendChild(checkmark);
+
+            parentDiv.appendChild(table);
+
+            // Set all oninput callbacks
+            buyCount.oninput = function()
                 {
-                    itemImage.src = `assets/images/items/${item.imageDirectory}/${item.name}.png`;
-                }
-                else
+                    this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                }.bind(this);
+            untilCount.oninput = function()
                 {
-                    itemImage.src = `assets/images/items/${item.name}.png`;
-                }
-                itemImage.style.height = "25px";
-                tableTargetLabelCell.appendChild(itemImage);
-
-                // Until count
-                label = document.createTextNode("until the player has");
-                tableTargetLabelCell.appendChild(label);
-
-                let tableUntilCountCell = document.createElement("td");
-                tableRow.appendChild(tableUntilCountCell);
-                let untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
-                untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name));
-                untilCount.style.width = "100%"; // Make it take the whole cell space
-                untilCount.style.margin = "0px";
-                untilCount.style.textAlign = "right";
-                tableUntilCountCell.appendChild(untilCount);
-
-                // Max price
-                let tableMaxPriceLabelCell = document.createElement("td");
-                tableMaxPriceLabelCell.style.paddingLeft = "4px";
-                tableMaxPriceLabelCell.style.paddingRight = "4px";
-                tableRow.appendChild(tableMaxPriceLabelCell);
-                label = document.createTextNode("at max base price");
-                tableMaxPriceLabelCell.appendChild(label);
-
-                let tableMaxPriceCell = document.createElement("td");
-                tableRow.appendChild(tableMaxPriceCell);
-                let maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
-                maxPrice.style.width = "100%"; // Make it take the whole cell space
-                maxPrice.style.margin = "0px";
-                maxPrice.style.textAlign = "right";
-                maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name));
-                tableMaxPriceCell.appendChild(maxPrice);
-
-                let tableLastCell = document.createElement("td");
-                tableRow.appendChild(tableLastCell);
-                let pokedollarsImage = document.createElement("img");
-                pokedollarsImage.src = "assets/images/currency/money.svg";
-                pokedollarsImage.style.height = "25px";
-                tableLastCell.appendChild(pokedollarsImage);
-
-                // The save status checkmark
-                let checkmark = Automation.Menu.createAnimatedCheckMarkElement();
-                tableLastCell.appendChild(checkmark);
-
-                parentDiv.appendChild(table);
-
-                // Set all oninput callbacks
-                buyCount.oninput = function()
+                    this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                }.bind(this);
+            maxPrice.oninput = function()
+                {
+                    if (maxPrice.innerText < item.basePrice)
                     {
-                        this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
-                    }.bind(this);
-                untilCount.oninput = function()
-                    {
-                        this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
-                    }.bind(this);
-                maxPrice.oninput = function()
-                    {
-                        if (maxPrice.innerText < item.basePrice)
-                        {
-                            maxPrice.classList.add("invalid");
-                            // Let the time to the user to edit the value before setting back the minimum possible value
-                            let timeout = setTimeout(function()
-                                {
-                                    // Only update the value if it's still under the minimum possible
-                                    if (maxPrice.innerText < item.basePrice)
-                                    {
-                                        maxPrice.innerText = item.basePrice;
-                                        maxPrice.classList.remove("invalid");
-
-                                        // Move the cursor at the end of the input if still focused
-                                        var range = document.createRange();
-
-                                        if (maxPrice === document.activeElement)
-                                        {
-                                            var set = window.getSelection();
-                                            range.setStart(maxPrice.childNodes[0], maxPrice.innerText.length);
-                                            range.collapse(true);
-                                            set.removeAllRanges();
-                                            set.addRange(range);
-                                        }
-                                    }
-                                    this.__internal__activeTimeouts.delete(item.name);
-                                }.bind(this), 1000);
-
-                            if (this.__internal__activeTimeouts.has(item.name))
+                        maxPrice.classList.add("invalid");
+                        // Let the time to the user to edit the value before setting back the minimum possible value
+                        let timeout = setTimeout(function()
                             {
-                                clearTimeout(this.__internal__activeTimeouts.get(item.name));
+                                // Only update the value if it's still under the minimum possible
+                                if (maxPrice.innerText < item.basePrice)
+                                {
+                                    maxPrice.innerText = item.basePrice;
+                                    maxPrice.classList.remove("invalid");
+
+                                    // Move the cursor at the end of the input if still focused
+                                    var range = document.createRange();
+
+                                    if (maxPrice === document.activeElement)
+                                    {
+                                        var set = window.getSelection();
+                                        range.setStart(maxPrice.childNodes[0], maxPrice.innerText.length);
+                                        range.collapse(true);
+                                        set.removeAllRanges();
+                                        set.addRange(range);
+                                    }
+                                }
                                 this.__internal__activeTimeouts.delete(item.name);
-                            }
-                            this.__internal__activeTimeouts.set(item.name, timeout);
-                        }
-                        else
+                            }.bind(this), 1000);
+
+                        if (this.__internal__activeTimeouts.has(item.name))
                         {
-                            maxPrice.classList.remove("invalid");
+                            clearTimeout(this.__internal__activeTimeouts.get(item.name));
+                            this.__internal__activeTimeouts.delete(item.name);
                         }
-                        this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
-                    }.bind(this);
-            }, this);
+                        this.__internal__activeTimeouts.set(item.name, timeout);
+                    }
+                    else
+                    {
+                        maxPrice.classList.remove("invalid");
+                    }
+                    this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                }.bind(this);
+        }
     }
 
     /**
@@ -374,21 +373,20 @@ class AutomationShop
         Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency, 1000000);
 
         // Set default value for all buyable items
-        pokeMartShop.items.forEach(
-            (item) =>
-            {
-                // Disable all items by default
-                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.ItemEnabled(item.name), false);
+        for (const item of pokeMartShop.items)
+        {
+            // Disable all items by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.ItemEnabled(item.name), false);
 
-                // By 10 items at a time by default
-                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(item.name), 10);
+            // By 10 items at a time by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(item.name), 10);
 
-                // Stop buying at a stock of 10'000 by default
-                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(item.name), 10000);
+            // Stop buying at a stock of 10'000 by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(item.name), 10000);
 
-                // Buy at the cheapest possible by default
-                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name), item.basePrice);
-            }, this);
+            // Buy at the cheapest possible by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name), item.basePrice);
+        }
     }
 
     /**
@@ -400,49 +398,48 @@ class AutomationShop
 
         let totalSpent = 0;
 
-        pokeMartShop.items.forEach(
-            (item) =>
+        for (const item of pokeMartShop.items)
+        {
+            // Skip any disabled item
+            if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.ItemEnabled(item.name)) !== "true")
             {
-                // Skip any disabled item
-                if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.ItemEnabled(item.name)) !== "true")
-                {
-                    return;
-                }
+                continue;
+            }
 
-                let itemData = ItemList[item.name];
-                let targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name)));
+            let itemData = ItemList[item.name];
+            let targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name)));
 
-                // Don't buy if the target quantity has been reached
-                if (this.__internal__getItemQuantity(item.name) > targetAmount)
-                {
-                    return;
-                }
+            // Don't buy if the target quantity has been reached
+            if (this.__internal__getItemQuantity(item.name) > targetAmount)
+            {
+                continue;
+            }
 
-                let buyAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name)));
+            let buyAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name)));
 
-                // Don't buy if it would bring the player under the set threshold
-                let totalPrice = itemData.totalPrice(buyAmount);
-                if (App.game.wallet.currencies[GameConstants.Currency.money]() < (minPlayerCurrency + totalPrice))
-                {
-                    return;
-                }
+            // Don't buy if it would bring the player under the set threshold
+            let totalPrice = itemData.totalPrice(buyAmount);
+            if (App.game.wallet.currencies[GameConstants.Currency.money]() < (minPlayerCurrency + totalPrice))
+            {
+                continue;
+            }
 
-                let maxUnitPrice = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name)));
+            let maxUnitPrice = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name)));
 
-                // Don't buy if the base price is over the set desired max price
-                if (itemData.totalPrice(1) > maxUnitPrice)
-                {
-                    return;
-                }
+            // Don't buy if the base price is over the set desired max price
+            if (itemData.totalPrice(1) > maxUnitPrice)
+            {
+                continue;
+            }
 
-                // Buy the item
-                itemData.buy(buyAmount);
-                totalSpent += totalPrice;
-            }, this);
+            // Buy the item
+            itemData.buy(buyAmount);
+            totalSpent += totalPrice;
+        }
 
         if (totalSpent > 0)
         {
-            let pokedollarsImage = `<img src="assets/images/currency/money.svg" height="25px">`;
+            let pokedollarsImage = '<img src="assets/images/currency/money.svg" height="25px">';
             Automation.Utils.sendNotif(`Bought some items for a total of ${totalSpent.toLocaleString('en-US')} ${pokedollarsImage}`, "Shop");
         }
     }

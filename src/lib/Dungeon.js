@@ -403,52 +403,48 @@ class AutomationDungeon
     {
         let startingTile = null;
 
-        DungeonRunner.map.board().forEach(
-            (row, rowIndex) =>
+        for (const [rowIndex, row] of DungeonRunner.map.board().entries())
+        {
+            for (const [columnIndex, tile] of row.entries())
             {
-                row.forEach(
-                    (tile, columnIndex) =>
+                // Ignore not visible tiles
+                if (!tile.isVisible) continue;
+
+                let currentLocation = { x: columnIndex, y: rowIndex };
+
+                if (DungeonRunner.map.hasAccessToTile(currentLocation))
+                {
+                    // Store chest positions
+                    if (tile.type() === GameConstants.DungeonTile.chest)
                     {
-                        // Ignore not visible tiles
-                        if (!tile.isVisible) return;
+                        this.__internal__addChestPosition(currentLocation);
+                    }
 
-                        let currentLocation = { x: columnIndex, y: rowIndex };
+                    if (tile.type() === GameConstants.DungeonTile.boss)
+                    {
+                        // Only tag the dungeon as completed if it's not the first move or any tile is visited apart from the entrance
+                        this.__internal__isCompleted = (!this.__internal__isFirstMove) || DungeonRunner.map.board().some(
+                            (row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
+                        this.__internal__bossPosition = currentLocation;
+                    }
+                }
 
-                        if (DungeonRunner.map.hasAccessToTile(currentLocation))
-                        {
-                            // Store chest positions
-                            if (tile.type() === GameConstants.DungeonTile.chest)
-                            {
-                                this.__internal__addChestPosition(currentLocation);
-                            }
+                // For the next part, ignore not visited tiles
+                if (!tile.isVisited) continue;
 
-                            if (tile.type() === GameConstants.DungeonTile.boss)
-                            {
-                                // Only tag the dungeon as completed if it's not the first move or any tile is visited apart from the entrance
-                                this.__internal__isCompleted =
-                                    (!this.__internal__isFirstMove)
-                                    || DungeonRunner.map.board().some(
-                                           (row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
-                                this.__internal__bossPosition = currentLocation;
-                            }
-                        }
+                if ((rowIndex === (DungeonRunner.map.size - 1))
+                    && (startingTile === null))
+                {
+                    startingTile = currentLocation;
+                }
 
-                        // For the next part, ignore not visited tiles
-                        if (!tile.isVisited) return;
-
-                        if ((rowIndex === (DungeonRunner.map.size - 1))
-                            && (startingTile === null))
-                        {
-                            startingTile = currentLocation;
-                        }
-
-                        if ((tile.type() !== GameConstants.DungeonTile.entrance)
-                            && this.__internal__isFirstMove)
-                        {
-                            this.__internal__playerActionOccured = true;
-                        }
-                    });
-            });
+                if ((tile.type() !== GameConstants.DungeonTile.entrance)
+                    && this.__internal__isFirstMove)
+                {
+                    this.__internal__playerActionOccured = true;
+                }
+            }
+        }
 
         if (!this.__internal__isFirstMove)
         {

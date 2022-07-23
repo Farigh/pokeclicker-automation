@@ -156,27 +156,26 @@ class AutomationUtilsRoute
             this.__internal__lastNextBestRouteRegion = 0;
 
             // Fortunately routes are sorted by region and by attack
-            Routes.regionRoutes.every(
-                (route) =>
+            for (const route of Routes.regionRoutes)
+            {
+                // Skip any route that we can't access
+                if (!this.canMoveToRegion(route.region))
                 {
-                    // Skip any route that we can't access
-                    if (!this.canMoveToRegion(route.region))
-                    {
-                        return true;
-                    }
+                    continue;
+                }
 
-                    if (this.__internal__routeMaxHealthMap.get(route.region).get(route.number) < playerClickAttack)
-                    {
-                        this.__internal__lastBestRoute = route.number;
-                        this.__internal__lastBestRouteRegion = route.region;
+                if (this.__internal__routeMaxHealthMap.get(route.region).get(route.number) < playerClickAttack)
+                {
+                    this.__internal__lastBestRoute = route.number;
+                    this.__internal__lastBestRouteRegion = route.region;
 
-                        return true;
-                    }
+                    continue;
+                }
 
-                    this.__internal__lastNextBestRoute = route.number;
-                    this.__internal__lastNextBestRouteRegion = route.region;
-                    return false;
-                }, this);
+                this.__internal__lastNextBestRoute = route.number;
+                this.__internal__lastNextBestRouteRegion = route.region;
+                break;
+            }
 
             // This can happen if the player is in a new region and the docks are not unlocked yet
             if (this.__internal__lastBestRoute == 0)
@@ -211,38 +210,31 @@ class AutomationUtilsRoute
         let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
         // Fortunately routes are sorted by attack
-        Routes.regionRoutes.every(
-            (route) =>
+        for (const route of Routes.regionRoutes)
+        {
+            // Skip any route that we can't access
+            if (!route.isUnlocked() || !this.canMoveToRegion(route.region))
             {
-                if (!route.isUnlocked())
-                {
-                    return false;
-                }
+                continue;
+            }
 
-                // Skip any route that we can't access
-                if (!this.canMoveToRegion(route.region))
-                {
-                    return true;
-                }
+            let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
 
-                let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
+            // Compute the bonus
+            routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
 
-                // Compute the bonus
-                routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
+            let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+            let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+            routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
 
-                let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-                let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
-                routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
-
-                if (routeIncome > bestRouteIncome)
-                {
-                    bestRoute = route.number;
-                    bestRouteRegion = route.region;
-                    bestRouteIncome = routeIncome;
-                }
-
-                return true;
-            }, this);
+            // Compare with a 1/1000 precision
+            if (Math.ceil(routeIncome * 1000) >= Math.ceil(bestRouteIncome * 1000))
+            {
+                bestRoute = route.number;
+                bestRouteRegion = route.region;
+                bestRouteIncome = routeIncome;
+            }
+        }
 
         this.moveToRoute(bestRoute, bestRouteRegion);
     }
@@ -270,50 +262,41 @@ class AutomationUtilsRoute
         let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
 
         // Fortunately routes are sorted by attack
-        Routes.regionRoutes.every(
-            (route) =>
+        for (const route of Routes.regionRoutes)
+        {
+            // Skip any route that we can't access
+            if (!route.isUnlocked() || !this.canMoveToRegion(route.region))
             {
-                if (!route.isUnlocked())
+                continue;
+            }
+
+            let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
+
+            let currentRouteCount = 0;
+            for (const pokemon of pokemons)
+            {
+                let pokemonData = pokemonMap[pokemon];
+
+                if (pokemonData.type.includes(pokemonType))
                 {
-                    return false;
+                    currentRouteCount++;
                 }
+            }
 
-                // Skip any route that we can't access
-                if (!this.canMoveToRegion(route.region))
-                {
-                    return true;
-                }
+            let currentRouteRate = currentRouteCount / pokemons.length;
 
-                let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
+            let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
+            let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+            currentRouteRate = currentRouteRate / nbGameTickToDefeat;
 
-                let currentRouteCount = 0;
-                pokemons.forEach(
-                    (pokemon) =>
-                    {
-                        let pokemonData = pokemonMap[pokemon];
-
-                        if (pokemonData.type.includes(pokemonType))
-                        {
-                            currentRouteCount++;
-                        }
-                    });
-
-                let currentRouteRate = currentRouteCount / pokemons.length;
-
-                let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-                let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
-                currentRouteRate = currentRouteRate / nbGameTickToDefeat;
-
-                // Compare with a 1/1000 precision
-                if (Math.ceil(currentRouteRate * 1000) >= Math.ceil(bestRouteRate * 1000))
-                {
-                    bestRoute = route.number;
-                    bestRouteRegion = route.region;
-                    bestRouteRate = currentRouteRate;
-                }
-
-                return true;
-            }, this);
+            // Compare with a 1/1000 precision
+            if (Math.ceil(currentRouteRate * 1000) >= Math.ceil(bestRouteRate * 1000))
+            {
+                bestRoute = route.number;
+                bestRouteRegion = route.region;
+                bestRouteRate = currentRouteRate;
+            }
+        }
 
         return { Route: bestRoute, Region: bestRouteRegion, Rate: bestRouteRate };
     }
@@ -388,11 +371,10 @@ class AutomationUtilsRoute
     static __internal__getRouteMaxHealth(route)
     {
         let routeMaxHealth = 0;
-        RouteHelper.getAvailablePokemonList(route.number, route.region).forEach(
-            (pokemonName) =>
-            {
-                routeMaxHealth = Math.max(routeMaxHealth, this.__internal__getPokemonMaxHealth(route, pokemonName));
-            }, this);
+        for (const pokemonName of RouteHelper.getAvailablePokemonList(route.number, route.region))
+        {
+            routeMaxHealth = Math.max(routeMaxHealth, this.__internal__getPokemonMaxHealth(route, pokemonName));
+        }
 
         return routeMaxHealth;
     }
@@ -430,16 +412,15 @@ class AutomationUtilsRoute
      */
     static __internal__buildRouteMaxHealthMap()
     {
-        Routes.regionRoutes.forEach(
-            (route) =>
+        for (const route of Routes.regionRoutes)
+        {
+            if (route.region >= this.__internal__routeMaxHealthMap.size)
             {
-                if (route.region >= this.__internal__routeMaxHealthMap.size)
-                {
-                    this.__internal__routeMaxHealthMap.set(route.region, new Map());
-                }
+                this.__internal__routeMaxHealthMap.set(route.region, new Map());
+            }
 
-                let routeMaxHealth = this.__internal__getRouteMaxHealth(route);
-                this.__internal__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
-            }, this);
+            let routeMaxHealth = this.__internal__getRouteMaxHealth(route);
+            this.__internal__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
+        }
     }
 }

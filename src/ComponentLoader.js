@@ -131,14 +131,13 @@ class AutomationComponentLoader
                 {
                     currentLoadingOrder += 1;
 
-                    this.__loadingList.forEach(
-                        (scriptData) =>
+                    for (const scriptData of this.__loadingList)
+                    {
+                        if (scriptData.order === currentLoadingOrder)
                         {
-                            if (scriptData.order === currentLoadingOrder)
-                            {
-                                this.__loadScript(scriptData.filePath);
-                            }
-                        });
+                            this.__loadScript(scriptData.filePath);
+                        }
+                    }
 
                     return;
                 }

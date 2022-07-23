@@ -214,7 +214,10 @@ class AutomationHatchery
     static __internal__hatcheryLoop()
     {
         // Attempt to hatch each egg. If the egg is at 100% it will succeed
-        [3, 2, 1, 0].forEach((index) => App.game.breeding.hatchPokemonEgg(index));
+        for (const index of [3, 2, 1, 0])
+        {
+            App.game.breeding.hatchPokemonEgg(index);
+        }
 
         // Try to use eggs first, if enabled
         if (Automation.Utils.LocalStorage.getValue(this.Settings.UseEggs) === "true")
@@ -273,29 +276,28 @@ class AutomationHatchery
     {
         let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player._itemList[eggType]());
 
-        eggList.forEach(
-            (eggTypeName) =>
+        for (const eggTypeName of eggList)
+        {
+            let eggType = ItemList[eggTypeName];
+            let pokemonType = PokemonType[eggTypeName.split('_')[0]];
+            // Use an egg only if:
+            //   - a slot is available
+            //   - the player has one
+            //   - a new pokemon can be caught that way
+            //   - the item actually can be used
+            //   - no other egg of that type is breeding
+            if (App.game.breeding.hasFreeEggSlot()
+                && player.itemList[eggType.name]()
+                && !eggType.getCaughtStatus()
+                && eggType.checkCanUse()
+                && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
+                                                && ((App.game.breeding.eggList[index]().pokemonType1 === pokemonType)
+                                                    || (App.game.breeding.eggList[index]().pokemonType2 === pokemonType))))
             {
-                let eggType = ItemList[eggTypeName];
-                let pokemonType = PokemonType[eggTypeName.split('_')[0]];
-                // Use an egg only if:
-                //   - a slot is available
-                //   - the player has one
-                //   - a new pokemon can be caught that way
-                //   - the item actually can be used
-                //   - no other egg of that type is breeding
-                if (App.game.breeding.hasFreeEggSlot()
-                    && player.itemList[eggType.name]()
-                    && !eggType.getCaughtStatus()
-                    && eggType.checkCanUse()
-                    && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
-                                                  && ((App.game.breeding.eggList[index]().pokemonType1 === pokemonType)
-                                                      || (App.game.breeding.eggList[index]().pokemonType2 === pokemonType))))
-                {
-                    eggType.use();
-                    Automation.Utils.sendNotif("Added a " + eggType.displayName + " to the Hatchery!", "Hatchery");
-                }
-            }, this);
+                eggType.use();
+                Automation.Utils.sendNotif("Added a " + eggType.displayName + " to the Hatchery!", "Hatchery");
+            }
+        }
     }
 
     /**
@@ -461,15 +463,13 @@ class AutomationHatchery
         let contagiousPokemonTypes = new Set();
 
         // Build the list of possible contagious types
-        contagiousPokemons.forEach(
-            (pokemon) =>
+        for (const pokemon of contagiousPokemons)
+        {
+            for (const type of pokemonMap[pokemon.id].type)
             {
-                pokemonMap[pokemon.id].type.forEach(
-                    type =>
-                    {
-                        contagiousPokemonTypes.add(type);
-                    });
-            });
+                contagiousPokemonTypes.add(type);
+            }
+        }
 
         // Pick the next best contagious pokémon candidate
         let bestPokemonMatchingAContagiousType = targetPokemons.find(
@@ -505,7 +505,10 @@ class AutomationHatchery
             {
                 pokemonToBreed.push(bestCandidate);
                 let hatchingContagiousTypes = new Set();
-                pokemonMap[bestCandidate.id].type.forEach(type => hatchingContagiousTypes.add(type));
+                for (const type of pokemonMap[bestCandidate.id].type)
+                {
+                    hatchingContagiousTypes.add(type);
+                }
                 pokemonToBreed = this.__internal__addBestPokemonWithTypes(hatchingContagiousTypes, targetPokemons, pokemonToBreed, availableEggSlot);
             }
         }

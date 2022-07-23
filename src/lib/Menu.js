@@ -515,7 +515,10 @@ class AutomationMenu
                     arrowDiv.classList.add("right");
 
                     // Hide all other settings panels
-                    Array.from(allSettingsPanels).forEach((el) => { el.setAttribute("automation-visible", "false"); });
+                    for (const el of Array.from(allSettingsPanels))
+                    {
+                        el.setAttribute("automation-visible", "false");
+                    }
                     placeholderDiv.removeAttribute("automation-visible");
                 }
                 else
@@ -524,7 +527,10 @@ class AutomationMenu
                     arrowDiv.classList.remove("right");
 
                     // Show all settings panels
-                    Array.from(allSettingsPanels).forEach((el) => { el.removeAttribute("automation-visible"); });
+                    for (const el of Array.from(allSettingsPanels))
+                    {
+                        el.removeAttribute("automation-visible");
+                    }
                 }
             };
 

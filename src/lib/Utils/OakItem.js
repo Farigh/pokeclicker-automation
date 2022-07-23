@@ -73,10 +73,9 @@ class AutomationUtilsOakItem
             }, this);
 
         App.game.oakItems.deactivateAll();
-        expectedLoadout.forEach(
-            (item) =>
-            {
-                App.game.oakItems.activate(item);
-            });
+        for (const item of expectedLoadout)
+        {
+            App.game.oakItems.activate(item);
+        }
     }
 }

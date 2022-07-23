@@ -153,11 +153,10 @@ class AutomationUnderground
                 let itemsState = this.__internal__getItemsState();
 
                 let areAllItemRevealed = true;
-                itemsState.forEach(
-                    (item) =>
-                    {
-                        areAllItemRevealed &= item.revealed;
-                    });
+                for (const item of itemsState.values())
+                {
+                    areAllItemRevealed &= item.revealed;
+                }
 
                 if (!areAllItemRevealed)
                 {
@@ -178,9 +177,9 @@ class AutomationUnderground
 
             if (nothingElseToDo)
             {
-                Automation.Utils.sendNotif("Performed mining actions " + this.__internal__actionCount.toString() + " times,"
-                                           + " energy left: " + Math.floor(App.game.underground.energy).toString() + "!",
-                                             "Mining");
+                Automation.Utils.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times,`
+                                         + ` energy left: ${Math.floor(App.game.underground.energy).toString()}!`,
+                                           "Mining");
                 clearInterval(this.__internal__innerMiningLoop);
                 this.__internal__innerMiningLoop = null;
                 return;
@@ -191,20 +190,21 @@ class AutomationUnderground
     /**
      * @brief Determines which tools to use according to @see __internal__miningLoop strategy, and tries to use it
      *
+     * @param {Map} itemsState: The map of item states
+     *
      * @returns True if some action are still possible after the current move, false otherwise (if the player does not have enough energy)
      */
     static __internal__tryUseTheBestItem(itemsState)
     {
         let nextTilesToMine = [];
 
-        itemsState.forEach(
-            (item) =>
+        for (const item of itemsState.values())
+        {
+            if (!item.completed)
             {
-                if (!item.completed)
-                {
-                    nextTilesToMine = nextTilesToMine.concat(item.tiles);
-                }
-            });
+                nextTilesToMine = nextTilesToMine.concat(item.tiles);
+            }
+        }
 
         // Only consider unrevealed tiles
         nextTilesToMine = nextTilesToMine.filter((tile) => !tile.revealed);
@@ -251,32 +251,30 @@ class AutomationUnderground
         let bestReachableTileX = 0;
         let bestReachableTileY = 0;
 
-        nextTilesToMine.forEach(
-            (tile) =>
+        for (const tile of nextTilesToMine)
+        {
+            // Compute the best tile for hammer
+            let reachableTilesAmount = 0;
+            for (const other of nextTilesToMine)
             {
-                // Compute the best tile for hammer
-                let reachableTilesAmount = 0;
-                nextTilesToMine.forEach(
-                    (other) =>
-                    {
-                        // Consider tiles in th range of the hammer only
-                        if (!other.revealed
-                            && other.x <= (tile.x + 1)
-                            && other.x >= (tile.x - 1)
-                            && other.y <= (tile.y + 1)
-                            && other.y >= (tile.y - 1))
-                        {
-                            reachableTilesAmount++;
-                        }
-                    });
-
-                if (reachableTilesAmount > bestReachableTilesAmount)
+                // Consider tiles in th range of the hammer only
+                if (!other.revealed
+                    && other.x <= (tile.x + 1)
+                    && other.x >= (tile.x - 1)
+                    && other.y <= (tile.y + 1)
+                    && other.y >= (tile.y - 1))
                 {
-                    bestReachableTilesAmount = reachableTilesAmount;
-                    bestReachableTileX = tile.x;
-                    bestReachableTileY = tile.y;
+                    reachableTilesAmount++;
                 }
-            });
+            }
+
+            if (reachableTilesAmount > bestReachableTilesAmount)
+            {
+                bestReachableTilesAmount = reachableTilesAmount;
+                bestReachableTileX = tile.x;
+                bestReachableTileY = tile.y;
+            }
+        }
 
         let useHammer = (bestReachableTilesAmount >= 3)
         let useToolX = useHammer ? bestReachableTileX : nextTilesToMine[0].x;
@@ -301,33 +299,31 @@ class AutomationUnderground
     {
         let itemsState = new Map();
 
-        [...Array(Mine.rewardGrid.length).keys()].forEach(
-            (row) =>
+        for (const row of Array(Mine.rewardGrid.length).keys())
+        {
+            for (const column of Array(Mine.rewardGrid[row].length).keys())
             {
-                [...Array(Mine.rewardGrid[row].length).keys()].forEach(
-                    (column) =>
+                let content = Mine.rewardGrid[row][column];
+                if (content !== 0)
+                {
+                    if (!itemsState.has(content.value))
                     {
-                        let content = Mine.rewardGrid[row][column];
-                        if (content !== 0)
-                        {
-                            if (!itemsState.has(content.value))
-                            {
-                                itemsState.set(content.value,
-                                               {
-                                                   id: content.value,
-                                                   completed: true,
-                                                   revealed: false,
-                                                   tiles: []
-                                               });
-                            }
+                        itemsState.set(content.value,
+                                       {
+                                           id: content.value,
+                                           completed: true,
+                                           revealed: false,
+                                           tiles: []
+                                       });
+                    }
 
-                            let itemData = itemsState.get(content.value);
-                            itemData.completed &= content.revealed;
-                            itemData.revealed |= content.revealed;
-                            itemData.tiles.push({ x: row, y: column, revealed: content.revealed });
-                        }
-                    });
-            });
+                    let itemData = itemsState.get(content.value);
+                    itemData.completed &= content.revealed;
+                    itemData.revealed |= content.revealed;
+                    itemData.tiles.push({ x: row, y: column, revealed: content.revealed });
+                }
+            }
+        }
 
         return itemsState;
     }
