@@ -120,6 +120,9 @@ class AutomationFocusQuests
         Automation.Farm.toggleAutoFarming();
         Automation.Underground.toggleAutoMining();
 
+        // Stop gym auto-fight
+        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
+
         // Re-enable other modes button
         Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
         Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, false);
