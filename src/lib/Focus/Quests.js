@@ -112,6 +112,7 @@ class AutomationFocusQuests
 
         // Reset demands
         Automation.Farm.ForcePlantBerriesAsked = false;
+        Automation.Underground.UseSmallRestoreAsked = false;
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         // Reset other modes status
@@ -119,6 +120,9 @@ class AutomationFocusQuests
         Automation.Hatchery.toggleAutoHatchery();
         Automation.Farm.toggleAutoFarming();
         Automation.Underground.toggleAutoMining();
+
+        // Stop gym auto-fight
+        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
 
         // Re-enable other modes button
         Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
@@ -311,6 +315,8 @@ class AutomationFocusQuests
 
         let isFarmingSpecificBerry = false;
 
+        let hasMiningQuest = false;
+
         // Filter the quests that do not need specific action
         for (const quest of currentQuests)
         {
@@ -328,9 +334,12 @@ class AutomationFocusQuests
             else if ((quest instanceof MineItemsQuest)
                      || (quest instanceof MineLayersQuest))
             {
-                this.__internal__restoreUndergroundEnergyIfUnderThreshold(5);
+                hasMiningQuest = true;
             }
         }
+
+        Automation.Underground.UseSmallRestoreAsked =
+            hasMiningQuest && (Automation.Utils.LocalStorage.getValue(this.Settings.UseSmallRestore) === "true");
     }
 
     /**
@@ -343,14 +352,13 @@ class AutomationFocusQuests
      */
     static __internal__workOnCapturePokemonTypesQuest(quest)
     {
-        let bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
-
         // Add a pokeball to the Caught type and set the PokemonCatch setup
         let hasBalls = this.__internal__selectBallToCatch(GameConstants.Pokeball.Ultraball);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         if (hasBalls)
         {
+            let bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
             Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
         }
     }
@@ -458,8 +466,7 @@ class AutomationFocusQuests
         this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
-        let bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
-        Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
+        Automation.Focus.__internal__goToBestGymOrRouteForGem(quest.type);
     }
 
     /**
@@ -654,45 +661,6 @@ class AutomationFocusQuests
             if (ballItem.totalPrice(amount) < App.game.wallet.currencies[ballItem.currency]())
             {
                 ballItem.buy(amount);
-            }
-        }
-    }
-
-    /**
-     * @brief Ties to buy some Small Restore if the player's amount goes under the provided @p amount
-     *
-     * @param amount: The minimum amount to have in stock at all time
-     */
-    static __internal__restoreUndergroundEnergyIfUnderThreshold(amount)
-    {
-        // Only use Small Restore item if:
-        //    - It can be bought (ie. the Cinnabar Island store is unlocked)
-        //    - The user allowed it
-        if (!TownList["Cinnabar Island"].isUnlocked()
-            && (Automation.Utils.LocalStorage.getValue(this.Settings.UseSmallRestore) === "true"))
-        {
-            return;
-        }
-
-        let currentEnergy = Math.floor(App.game.underground.energy);
-
-        if (currentEnergy < 20)
-        {
-            // Use the small restore since it's the one with best cost/value ratio
-            let smallRestoreCount = player.itemList[GameConstants.EnergyRestoreSize[0]]();
-            let item = ItemList[GameConstants.EnergyRestoreSize[0]];
-
-            if (smallRestoreCount < amount)
-            {
-                if (item.totalPrice(amount) < App.game.wallet.currencies[item.currency]())
-                {
-                    item.buy(amount);
-                    smallRestoreCount += 5;
-                }
-            }
-            if (smallRestoreCount > 0)
-            {
-                item.use();
             }
         }
     }

@@ -7,6 +7,7 @@
 class AutomationUnderground
 {
     static Settings = { FeatureEnabled: "Mining-Enabled" };
+    static UseSmallRestoreAsked = false;
 
     /**
      * @brief Builds the menu, and retores previous running state if needed
@@ -136,9 +137,8 @@ class AutomationUnderground
      */
     static __internal__miningLoop()
     {
-        // Don't run an additionnal loop if the player do not have enough energy
-        // or if a loop is already in progress
-        if ((this.__internal__innerMiningLoop !== null) || !this.__internal__isBombingPossible())
+        // Don't run an additionnal loop if another one is already in progress
+        if (this.__internal__innerMiningLoop !== null)
         {
             return;
         }
@@ -150,6 +150,9 @@ class AutomationUnderground
 
             if (this.__internal__autoMiningLoop !== null)
             {
+                // Restore energy if needed
+                this.__internal__restoreUndergroundEnergyIfUnderThreshold(5);
+
                 let itemsState = this.__internal__getItemsState();
 
                 let areAllItemRevealed = true;
@@ -177,14 +180,57 @@ class AutomationUnderground
 
             if (nothingElseToDo)
             {
-                Automation.Utils.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times,`
-                                         + ` energy left: ${Math.floor(App.game.underground.energy).toString()}!`,
-                                           "Mining");
+                if (this.__internal__actionCount > 0)
+                {
+                    Automation.Utils.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times,`
+                                             + ` energy left: ${Math.floor(App.game.underground.energy).toString()}!`,
+                                               "Mining");
+                }
                 clearInterval(this.__internal__innerMiningLoop);
                 this.__internal__innerMiningLoop = null;
                 return;
             }
         }.bind(this), 300); // Runs every 0.3s
+    }
+
+    /**
+     * @brief Tries to buy some Small Restore if the player's amount goes under the provided @p amount
+     *
+     * @param amount: The minimum amount to have in stock at all time
+     */
+    static __internal__restoreUndergroundEnergyIfUnderThreshold(amount)
+    {
+        // Only use Small Restore item if:
+        //    - The user allowed it
+        //    - It can be bought (ie. the Cinnabar Island store is unlocked)
+        if ((!this.UseSmallRestoreAsked)
+            || !TownList["Cinnabar Island"].isUnlocked())
+        {
+            return;
+        }
+
+        let currentEnergy = Math.floor(App.game.underground.energy);
+
+        if (currentEnergy < 20)
+        {
+            // Use the small restore since it's the one with best cost/value ratio
+            let smallRestoreItemName = GameConstants.EnergyRestoreSize[GameConstants.EnergyRestoreSize.SmallRestore];
+            let smallRestoreCount = player.itemList[smallRestoreItemName]();
+            let item = ItemList[smallRestoreItemName];
+
+            if (smallRestoreCount < amount)
+            {
+                if (item.totalPrice(amount) < App.game.wallet.currencies[item.currency]())
+                {
+                    item.buy(amount);
+                    smallRestoreCount += 5;
+                }
+            }
+            if (smallRestoreCount > 0)
+            {
+                item.use();
+            }
+        }
     }
 
     /**
