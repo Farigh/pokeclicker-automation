@@ -9,7 +9,8 @@ class AutomationFocus
 
     static Settings = {
                           FeatureEnabled: "Focus-Enabled",
-                          FocusedTopic: "Focus-SelectedTopic"
+                          FocusedTopic: "Focus-SelectedTopic",
+                          OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate"
                       };
 
     /**
@@ -94,7 +95,7 @@ class AutomationFocus
         }
 
         // Equip the Oak item catch loadout
-        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+        this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.Ultraball;
@@ -192,8 +193,34 @@ class AutomationFocus
         // Toggle the 'Focus on' loop on click
         focusButton.addEventListener("click", this.__internal__toggleFocus.bind(this), false);
 
-        // Add the quests-specific menu
-        this.Quests.__buildSpecificMenu(focusContainer);
+        // Build advanced settings
+        this.__internal__buildAdvancedSettings(focusContainer);
+    }
+
+    /**
+     * @brief Builds the 'Focus on' feature advanced settings panel
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __internal__buildAdvancedSettings(parent)
+    {
+        // Build advanced settings panel
+        let focusSettingPanel = Automation.Menu.addSettingPanel(parent);
+        focusSettingPanel.style.textAlign = "right";
+
+        let titleDiv = Automation.Menu.createTitleElement("'Focus on' advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        focusSettingPanel.appendChild(titleDiv);
+
+        // OakItem loadout setting
+        let disableOakItemTooltip = "Modifies the oak item loadout automatically";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Optimize oak item loadout",
+                                                               this.Settings.OakItemLoadoutUpdate,
+                                                               disableOakItemTooltip,
+                                                               focusSettingPanel);
+
+        // Add the quests-specific settings
+        this.Quests.__addAdvancedSettings(focusSettingPanel);
     }
 
     /**
@@ -455,7 +482,7 @@ class AutomationFocus
         }
 
         // Equip the most effective Oak item loadout for XP farming
-        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         Automation.Utils.Route.moveToBestRouteForExp();
     }
@@ -479,7 +506,7 @@ class AutomationFocus
         }
 
         // Equip the 'money' Oak loadout
-        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.Money);
+        this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
         // Fallback to the exp route if no gym can be found
         if (this.__internal__lastFocusData.bestGymTown === null)
@@ -517,6 +544,23 @@ class AutomationFocus
         else
         {
             Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
+        }
+    }
+
+    /**
+     * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
+     *
+     * @note The loadout will only be modified if the OakItemLoadoutUpdate is enabled
+     *
+     * @see Automation.Utils.OakItem.equipLoadout()
+     *
+     * @param {Array} loadoutCandidates: The wanted loadout composition
+     */
+    static __internal__equipLoadout(loadoutCandidates)
+    {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
+        {
+            Automation.Utils.OakItem.equipLoadout(loadoutCandidates);
         }
     }
 }

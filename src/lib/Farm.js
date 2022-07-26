@@ -8,7 +8,8 @@ class AutomationFarm
 {
     static Settings = {
                           FeatureEnabled: "Farming-Enabled",
-                          FocusOnUnlocks: "Farming-FocusOnUnlocks"
+                          FocusOnUnlocks: "Farming-FocusOnUnlocks",
+                          OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate"
                       };
 
     static ForcePlantBerriesAsked = false;
@@ -140,6 +141,14 @@ class AutomationFarm
                                                                this.Settings.FocusOnUnlocks,
                                                                unlockTooltip,
                                                                farmingSettingPanel);
+
+        let disableOakItemTooltip = "Modifies the oak item loadout when required for a mutation to occur"
+                                  + Automation.Menu.TooltipSeparator
+                                  + "⚠️ Disabling this functionality will prevent some berries from being unlocked";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Update oak item loadout when needed",
+                                                               this.Settings.OakItemLoadoutUpdate,
+                                                               disableOakItemTooltip,
+                                                               farmingSettingPanel);
     }
 
     /**
@@ -177,8 +186,8 @@ class AutomationFarm
         if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
             && !this.ForcePlantBerriesAsked)
         {
-            this.__internal__equipOakItemIfNeeded();
             this.__internal__removeOakItemIfNeeded();
+            this.__internal__equipOakItemIfNeeded();
             this.__internal__currentStrategy.action();
         }
         else
@@ -189,30 +198,35 @@ class AutomationFarm
 
     static __internal__equipOakItemIfNeeded()
     {
-        if (this.__internal__currentStrategy.oakItemToEquip === null)
+        if ((this.__internal__currentStrategy.oakItemToEquip === null)
+            || (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true"))
         {
             return;
         }
 
         // Equip the right oak item if not already equipped
-        let customOakLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
+        let currentLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
 
-        if (!customOakLoadout.includes(this.__internal__currentStrategy.oakItemToEquip.oakItemToEquip))
+        if (!currentLoadout.some(item => (item.name == this.__internal__currentStrategy.oakItemToEquip)))
         {
-            // Prepend the item if it's not part of the current loadout
-            customOakLoadout.unshift(this.__internal__currentStrategy.oakItemToEquip.oakItemToEquip);
-
-            App.game.oakItems.deactivateAll();
-
-            for (const item of customOakLoadout)
+            // Remove the last item of the current loadout if needed
+            if (currentLoadout.length === App.game.oakItems.maxActiveCount())
             {
-                App.game.oakItems.activate(item);
+                App.game.oakItems.deactivate(currentLoadout.reverse()[0].name);
             }
+
+            // Equip the needed item
+            App.game.oakItems.activate(this.__internal__currentStrategy.oakItemToEquip);
         }
     }
 
     static __internal__removeOakItemIfNeeded()
     {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true")
+        {
+            return;
+        }
+
         Automation.Utils.OakItem.ForbiddenItem = this.__internal__currentStrategy.forbiddenOakItem;
 
         if (this.__internal__currentStrategy.forbiddenOakItem !== null)
@@ -1421,6 +1435,28 @@ class AutomationFarm
         }
 
         let oakItem = App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip];
+
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true")
+            && !oakItem.isActive)
+        {
+            this.__internal__disableAutoUnlock("The next unlock requires the '" + oakItem.displayName + "' Oak item\n"
+                                             + "and loadout auto-update was disabled.\n"
+                                             + "You can either equip it manually or turn auto-equip back on.");
+
+            // Set a watcher to re-enable the feature once the item is equipped or the option was re-enabled
+            let watcher = setInterval(function()
+                {
+                    if ((Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
+                        || App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isActive)
+                    {
+                        Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
+                        clearInterval(watcher);
+                    }
+                }.bind(this), 5000); // Check every 5s
+
+            return;
+        }
+
         if (oakItem.isUnlocked())
         {
             return;
@@ -1428,7 +1464,7 @@ class AutomationFarm
 
         this.__internal__disableAutoUnlock("The '" + oakItem.displayName + "' Oak item is required for the next unlock");
 
-        // Set a watcher to re-enable the feature once the item is purchased
+        // Set a watcher to re-enable the feature once the item is unlocked
         let watcher = setInterval(function()
             {
                 if (App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isUnlocked())
