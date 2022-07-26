@@ -177,8 +177,8 @@ class AutomationFarm
         if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
             && !this.ForcePlantBerriesAsked)
         {
-            this.__internal__equipOakItemIfNeeded();
             this.__internal__removeOakItemIfNeeded();
+            this.__internal__equipOakItemIfNeeded();
             this.__internal__currentStrategy.action();
         }
         else
@@ -195,19 +195,18 @@ class AutomationFarm
         }
 
         // Equip the right oak item if not already equipped
-        let customOakLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
+        let currentLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
 
-        if (!customOakLoadout.includes(this.__internal__currentStrategy.oakItemToEquip.oakItemToEquip))
+        if (!currentLoadout.some(item => (item.name == this.__internal__currentStrategy.oakItemToEquip)))
         {
-            // Prepend the item if it's not part of the current loadout
-            customOakLoadout.unshift(this.__internal__currentStrategy.oakItemToEquip.oakItemToEquip);
-
-            App.game.oakItems.deactivateAll();
-
-            for (const item of customOakLoadout)
+            // Remove the last item of the current loadout if needed
+            if (currentLoadout.length === App.game.oakItems.maxActiveCount())
             {
-                App.game.oakItems.activate(item);
+                App.game.oakItems.deactivate(currentLoadout.reverse()[0].name);
             }
+
+            // Equip the needed item
+            App.game.oakItems.activate(this.__internal__currentStrategy.oakItemToEquip);
         }
     }
 
