@@ -130,7 +130,7 @@ class AutomationUtilsRoute
 
         // We need to find a new road if:
         //    - The highest region changed
-        //    - The player attack decreased (this can happen if the rocky helmet item was unequiped)
+        //    - The player attack decreased (this can happen if the rocky helmet item was unequipped)
         //    - We are currently on the highest route of the map
         //    - The next best route is still over-powered
         let needsNewRoad = (this.__internal__lastHighestRegion !== player.highestRegion())

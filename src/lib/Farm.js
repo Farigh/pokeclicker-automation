@@ -8,7 +8,8 @@ class AutomationFarm
 {
     static Settings = {
                           FeatureEnabled: "Farming-Enabled",
-                          FocusOnUnlocks: "Farming-FocusOnUnlocks"
+                          FocusOnUnlocks: "Farming-FocusOnUnlocks",
+                          OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate"
                       };
 
     static ForcePlantBerriesAsked = false;
@@ -140,6 +141,14 @@ class AutomationFarm
                                                                this.Settings.FocusOnUnlocks,
                                                                unlockTooltip,
                                                                farmingSettingPanel);
+
+        let disableOakItemTooltip = "Modifies the oak item loadout when required for a mutation to occur"
+                                  + Automation.Menu.TooltipSeparator
+                                  + "⚠️ Disabling this functionality will prevent some berries from being unlocked";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Update oak item loadout when needed",
+                                                               this.Settings.OakItemLoadoutUpdate,
+                                                               disableOakItemTooltip,
+                                                               farmingSettingPanel);
     }
 
     /**
@@ -189,7 +198,8 @@ class AutomationFarm
 
     static __internal__equipOakItemIfNeeded()
     {
-        if (this.__internal__currentStrategy.oakItemToEquip === null)
+        if ((this.__internal__currentStrategy.oakItemToEquip === null)
+            || (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true"))
         {
             return;
         }
@@ -212,6 +222,11 @@ class AutomationFarm
 
     static __internal__removeOakItemIfNeeded()
     {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true")
+        {
+            return;
+        }
+
         Automation.Utils.OakItem.ForbiddenItem = this.__internal__currentStrategy.forbiddenOakItem;
 
         if (this.__internal__currentStrategy.forbiddenOakItem !== null)
@@ -1420,6 +1435,28 @@ class AutomationFarm
         }
 
         let oakItem = App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip];
+
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true")
+            && !oakItem.isActive)
+        {
+            this.__internal__disableAutoUnlock("The next unlock requires the '" + oakItem.displayName + "' Oak item\n"
+                                             + "and loadout auto-update was disabled.\n"
+                                             + "You can either equip it manually or turn auto-equip back on.");
+
+            // Set a watcher to re-enable the feature once the item is equipped or the option was re-enabled
+            let watcher = setInterval(function()
+                {
+                    if ((Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
+                        || App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isActive)
+                    {
+                        Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
+                        clearInterval(watcher);
+                    }
+                }.bind(this), 5000); // Check every 5s
+
+            return;
+        }
+
         if (oakItem.isUnlocked())
         {
             return;
@@ -1427,7 +1464,7 @@ class AutomationFarm
 
         this.__internal__disableAutoUnlock("The '" + oakItem.displayName + "' Oak item is required for the next unlock");
 
-        // Set a watcher to re-enable the feature once the item is purchased
+        // Set a watcher to re-enable the feature once the item is unlocked
         let watcher = setInterval(function()
             {
                 if (App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isUnlocked())
