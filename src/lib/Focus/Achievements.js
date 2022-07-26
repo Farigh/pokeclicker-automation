@@ -146,7 +146,7 @@ class AutomationFocusAchievements
     static __internal__workOnRouteKillRequirement()
     {
         // Equip the Oak item Exp loadout
-        Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        Automation.Focus.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         // Move to the selected route
         Automation.Utils.Route.moveToRoute(this.__internal__currentAchievement.property.route, this.__internal__currentAchievement.property.region);

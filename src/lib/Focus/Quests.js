@@ -42,13 +42,13 @@ class AutomationFocusQuests
     }
 
     /**
-     * @brief Builds the menu
+     * @brief Adds the Quest-specific advanced settings
      *
-     * The 'Use/buy Small Restore' functionality is disabled by default (if never set in a previous session)
+     * The 'Use/buy Small Restore' setting is disabled by default (if never set in a previous session)
      *
-     * @param parent: The div container to insert the menu to
+     * @param parent: The div container to insert the settings to
      */
-    static __buildSpecificMenu(parent)
+    static __addAdvancedSettings(parent)
     {
         // Disable use/buy small restore mode by default
         Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseSmallRestore, false);
@@ -57,11 +57,13 @@ class AutomationFocusQuests
                                 + Automation.Menu.TooltipSeparator
                                 + "This will only be used when a mining quest is active.\n"
                                 + "⚠️ This can be cost-heavy during early game";
-        let smallRestoreLabel = 'Use/buy<img src="assets/images/items/SmallRestore.png" height="26px">:';
-        let buttonContainer =
-            Automation.Menu.addAutomationButton(smallRestoreLabel, this.Settings.UseSmallRestore, smallRestoreTooltip, parent).parentElement;
-        buttonContainer.style.textAlign = "right";
-        buttonContainer.style.merginTop = "2px";
+        let smallRestoreLabel = 'Automatically buy and use<img src="assets/images/items/SmallRestore.png"'
+                              // Set the width smaller than the actual image one, and set it to preserve the image ratio to shrink the image margins
+                              + ' style="height: 26px; width: 19px; object-fit: cover; object-position: left top;">';
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(smallRestoreLabel,
+                                                               this.Settings.UseSmallRestore,
+                                                               smallRestoreTooltip,
+                                                               parent);
     }
 
     /*********************************************************************\
@@ -571,7 +573,7 @@ class AutomationFocusQuests
             {
                 // No more balls, go farm to buy some
                 App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
-                Automation.Utils.OakItem.equipLoadout(Automation.Utils.OakItem.Setup.Money);
+                Automation.Focus.__internal__equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
                 let bestGym = Automation.Utils.Gym.findBestGymForMoney();
 
@@ -768,6 +770,6 @@ class AutomationFocusQuests
             }
         }
 
-        Automation.Utils.OakItem.equipLoadout(resultLoadout);
+        Automation.Focus.__internal__equipLoadout(resultLoadout);
     }
 }
