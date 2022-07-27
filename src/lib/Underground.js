@@ -334,7 +334,7 @@ class AutomationUnderground
 
         // only use the hammer if it is efficient to do so
         // that is the case if we manage to hit tiles equal to or higher than the amount of chisel hits it would require
-        let hammerEfficiency = 2 x (Underground.HAMMER_ENERGY / Underground.CHISEL_ENERGY)
+        let hammerEfficiency = 2 * (Underground.HAMMER_ENERGY / Underground.CHISEL_ENERGY)
         let useHammer = (bestReachableTilesAmount >= hammerEfficiency)
         let useToolX = useHammer ? bestReachableTileX : nextTilesToMine[0].x;
         let useToolY = useHammer ? bestReachableTileY : nextTilesToMine[0].y;
