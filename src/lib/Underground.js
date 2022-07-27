@@ -283,7 +283,7 @@ class AutomationUnderground
     }
 
     /**
-     * @brief Determines if using the hammer is relevant (at least 3 tiles reachable in one use)
+     * @brief Determines if using the hammer is more efficient then using the chisel
      *
      * @param nextTilesToMine: The list of tiles left to mine
      *
@@ -310,7 +310,17 @@ class AutomationUnderground
                     && other.y <= (tile.y + 1)
                     && other.y >= (tile.y - 1))
                 {
-                    reachableTilesAmount++;
+                    if(other.layers % 2 == 1)
+                    {
+                        // if the tile is covered by an uneven amount of layers the hammer hit
+                        // is equivalent to a chisel hit
+                        reachableTilesAmount += 2;
+                    }
+                    else
+                    {
+                        // otherwise the hammer hit is less (half as) efficient
+                        reachableTilesAmount ++;
+                    }
                 }
             }
 
@@ -322,7 +332,10 @@ class AutomationUnderground
             }
         }
 
-        let useHammer = (bestReachableTilesAmount >= 3)
+        // only use the hammer if it is efficient to do so
+        // that is the case if we manage to hit tiles equal to or higher than the amount of chisel hits it would require
+        let hammerEfficiency = 2 x (Underground.HAMMER_ENERGY / Underground.CHISEL_ENERGY)
+        let useHammer = (bestReachableTilesAmount >= hammerEfficiency)
         let useToolX = useHammer ? bestReachableTileX : nextTilesToMine[0].x;
         let useToolY = useHammer ? bestReachableTileY : nextTilesToMine[0].y;
         return { useHammer, useToolX, useToolY };
@@ -338,6 +351,7 @@ class AutomationUnderground
      *    - The status of each tile of the item:
      *        - Its x and y coordinates
      *        - Wether it's revealed
+     *        - by how many layers its covered
      *
      * @returns The gathered information
      */
@@ -366,7 +380,7 @@ class AutomationUnderground
                     let itemData = itemsState.get(content.value);
                     itemData.completed &= content.revealed;
                     itemData.revealed |= content.revealed;
-                    itemData.tiles.push({ x: row, y: column, revealed: content.revealed });
+                    itemData.tiles.push({ x: row, y: column, revealed: content.revealed, layers: Mine.grid[row][column]() });
                 }
             }
         }
