@@ -351,7 +351,7 @@ class AutomationUnderground
      *    - The status of each tile of the item:
      *        - Its x and y coordinates
      *        - Wether it's revealed
-     *        - by how many layers its covered
+     *        - How many layers it's covered with
      *
      * @returns The gathered information
      */
