@@ -283,7 +283,8 @@ class AutomationUnderground
     }
 
     /**
-     * @brief Determines if using the hammer is more efficient then using the chisel
+     * @brief Determines if using the hammer is more efficient than using the chisel
+
      *
      * @param nextTilesToMine: The list of tiles left to mine
      *
@@ -310,17 +311,9 @@ class AutomationUnderground
                     && other.y <= (tile.y + 1)
                     && other.y >= (tile.y - 1))
                 {
-                    if(other.layers % 2 == 1)
-                    {
-                        // if the tile is covered by an uneven amount of layers the hammer hit
-                        // is equivalent to a chisel hit
-                        reachableTilesAmount += 2;
-                    }
-                    else
-                    {
-                        // otherwise the hammer hit is less (half as) efficient
-                        reachableTilesAmount ++;
-                    }
+                    // If the tile is covered by an odd amount of layers, the hammer hit is equivalent to a chisel hit,
+                    // otherwise the hammer hit is half as efficient
+                    reachableTilesAmount += (other.layers % 2 == 1) ? 2 : 1;
                 }
             }
 
@@ -332,10 +325,12 @@ class AutomationUnderground
             }
         }
 
-        // only use the hammer if it is efficient to do so
-        // that is the case if we manage to hit tiles equal to or higher than the amount of chisel hits it would require
+        // Only use the hammer if it is the most efficient move 
+        // (i.e. a hammer hit would save us more energy than attempting to clear the tiles using purely chisel hits)
+
         let hammerEfficiency = 2 * (Underground.HAMMER_ENERGY / Underground.CHISEL_ENERGY)
-        let useHammer = (bestReachableTilesAmount >= hammerEfficiency)
+        let useHammer = (bestReachableTilesAmount > hammerEfficiency)
+
         let useToolX = useHammer ? bestReachableTileX : nextTilesToMine[0].x;
         let useToolY = useHammer ? bestReachableTileY : nextTilesToMine[0].y;
         return { useHammer, useToolX, useToolY };
