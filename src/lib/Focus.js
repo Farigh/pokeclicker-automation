@@ -11,7 +11,8 @@ class AutomationFocus
                           FeatureEnabled: "Focus-Enabled",
                           FocusedTopic: "Focus-SelectedTopic",
                           OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate",
-                          BallToUseToCatch: "Focus-BallToUseToCatch"
+                          BallToUseToCatch: "Focus-BallToUseToCatch",
+                          DefaultCaughtBall: "Focus-DefaultCaughtBall"
                       };
 
     /**
@@ -144,6 +145,7 @@ class AutomationFocus
     static __internal__activeFocus = null;
     static __internal__focusSelectElem = null;
     static __internal__pokeballToUseSelectElem = null;
+    static __internal__defaultCaughtPokeballSelectElem = null;
 
     static __internal__functionalities = [];
     static __internal__lockedFunctionalities = [];
@@ -202,7 +204,7 @@ class AutomationFocus
         // Build advanced settings
         this.__internal__buildAdvancedSettings(focusContainer);
 
-        // Set unlock watcher if needed
+        // Set an unlock watcher if needed
         if ((this.__internal__lockedFunctionalities.length != 0) || (this.__internal__lockedBalls.length != 0))
         {
             this.__internal__setUnlockWatcher();
@@ -229,28 +231,16 @@ class AutomationFocus
         \**********************/
 
         // Pokeball to use for catching
-        let pokeballToUseContainer = document.createElement("div");
-        pokeballToUseContainer.style.paddingLeft = "10px";
-        pokeballToUseContainer.style.paddingRight = "10px";
-        focusSettingPanel.appendChild(pokeballToUseContainer);
+        this.__internal__pokeballToUseSelectElem = this.__internal__addPokeballList(
+            "focusPokeballToUseSelection", focusSettingPanel, this.Settings.BallToUseToCatch, "Pokeball to use for catching :");
 
-        let pokeballToUseLabel = document.createTextNode("Pokeball to use for catching :");
-        pokeballToUseContainer.appendChild(pokeballToUseLabel);
-
-        this.__internal__pokeballToUseSelectElem = Automation.Menu.createDropDownListElement("pokeballToUseSelection");
-        this.__internal__pokeballToUseSelectElem.style.position = "relative";
-        this.__internal__pokeballToUseSelectElem.style.bottom = "2px";
-        this.__internal__pokeballToUseSelectElem.style.width = "100px";
-        this.__internal__pokeballToUseSelectElem.style.marginLeft = "4px";
-        this.__internal__pokeballToUseSelectElem.style.paddingLeft = "3px";
-        pokeballToUseContainer.appendChild(this.__internal__pokeballToUseSelectElem);
-
-        this.__internal__populatePokeballOptions();
-
-        this.__internal__pokeballToUseSelectElem.onchange = function()
-            {
-                Automation.Utils.LocalStorage.setValue(this.Settings.BallToUseToCatch, this.__internal__pokeballToUseSelectElem.value);
-            }.bind(this);
+        // Default Pokeball for caught pokémons value
+        this.__internal__defaultCaughtPokeballSelectElem =
+            this.__internal__addPokeballList("focusDefaultCaughtBallSelection",
+                                             focusSettingPanel,
+                                             this.Settings.DefaultCaughtBall,
+                                             "Default value for caught pokémon pokéball :",
+                                             true);
 
         /**********************\
         |*  Toggles settings  *|
@@ -268,6 +258,61 @@ class AutomationFocus
 
         // Add the quests-specific settings
         this.Quests.__addAdvancedSettings(focusSettingPanel);
+    }
+
+    /**
+     * @brief Adds a pokeball selection setting
+     *
+     * @param {string}  id: The id to set to the drop-down list
+     * @param {Element} parent: The element to add the list to
+     * @param {string}  setting: The local storage setting id
+     * @param {string}  textLabel: The text to display before the list
+     * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
+     *
+     * @returns The created drop-down list element
+     */
+    static __internal__addPokeballList(id, parent, setting, textLabel, addNoneOption = false)
+    {
+        let container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        parent.appendChild(container);
+
+        let label = document.createTextNode(textLabel);
+        container.appendChild(label);
+
+        let selectElem = Automation.Menu.createDropDownListElement(id);
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "100px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        container.appendChild(selectElem);
+
+        let savedValue = Automation.Utils.LocalStorage.getValue(setting);
+
+        // Don't consider the saved value if the user does not have access to the corresponding ball yet
+        if ((savedValue != null)
+            && (savedValue != GameConstants.Pokeball.None)
+            && !this.__internal__isBallPurchasable(savedValue))
+        {
+            Automation.Utils.LocalStorage.unsetValue(setting);
+            savedValue = null;
+        }
+
+        // Default to None if the value was not set and the option is available
+        if (addNoneOption && (savedValue === null))
+        {
+            Automation.Utils.LocalStorage.setDefaultValue(setting, GameConstants.Pokeball.None);
+            savedValue = GameConstants.Pokeball.None;
+        }
+
+        this.__internal__populatePokeballOptions(savedValue, selectElem, addNoneOption);
+
+        // Update the local storage if the value is changed by the user
+        selectElem.onchange = function() { Automation.Utils.LocalStorage.setValue(setting, selectElem.value); }.bind(this);
+
+        return selectElem;
     }
 
     /**
@@ -364,8 +409,8 @@ class AutomationFocus
                                         stop: function ()
                                               {
                                                   Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-                                                  App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
-                                              },
+                                                  App.game.pokeballs.alreadyCaughtSelection = this.__internal__defaultCaughtPokeballSelectElem.value;
+                                              }.bind(this),
                                         refreshRateAsMs: 3000 // Refresh every 3s
                                     });
 
@@ -419,7 +464,6 @@ class AutomationFocus
      * @brief Populates the drop-down list based on the registered functionalities
      *
      * If any functionality is locked, the corresponding focus topic will be hidden to the player.
-     * A watcher will be set to show it in the list, once it has been unlocked by the player.
      */
     static __internal__populateFocusOptions()
     {
@@ -459,31 +503,36 @@ class AutomationFocus
     /**
      * @brief Populates the drop-down list with the pokeballs that can be bought at the Poké Mart
      *
-     * If any functionality is locked, the corresponding focus topic will be hidden to the player.
-     * A watcher will be set to show it in the list, once it has been unlocked by the player.
+     * If any pokeball can't be bought yet, it will be hidden to the player.
+     *
+     * @param {any}               selectedValue: The saved value
+     * @param {HTMLSelectElement} listElem: The list to populate the values of
+     * @param {boolean}           addNoneOption: If set to true, the none option will be added at the beginning of the list
      */
-    static __internal__populatePokeballOptions()
+    static __internal__populatePokeballOptions(selectedValue, listElem, addNoneOption)
     {
-        let lastBallToUseToCatch = Automation.Utils.LocalStorage.getValue(this.Settings.BallToUseToCatch);
+        let options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ];
 
-        // Don't consider the saved value if the user does not have access to it yet
-        if (!this.__internal__isBallPurchasable(lastBallToUseToCatch))
+        if (addNoneOption)
         {
-            Automation.Utils.LocalStorage.unsetValue(this.Settings.BallToUseToCatch)
-            lastBallToUseToCatch = null;
+            options.unshift(GameConstants.Pokeball.None);
         }
 
         // Populate the list
-        for (const ball of [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ])
+        for (const ball of options)
         {
             let opt = document.createElement("option");
 
             // Set the ball name as the content
             opt.textContent = GameConstants.Pokeball[ball];
 
-            if (!this.__internal__isBallPurchasable(ball))
+            if ((ball != GameConstants.Pokeball.None)
+                && !this.__internal__isBallPurchasable(ball))
             {
-                this.__internal__lockedBalls.push(ball);
+                if (!this.__internal__lockedBalls.includes(ball))
+                {
+                    this.__internal__lockedBalls.push(ball);
+                }
                 opt.hidden = true;
             }
 
@@ -491,13 +540,13 @@ class AutomationFocus
             opt.id = ball;
 
             // Select the most efficient catching rate if no ball settings was
-            if (!opt.hidden && ((lastBallToUseToCatch == ball) || (lastBallToUseToCatch === null)))
+            if (!opt.hidden && ((selectedValue == ball) || (selectedValue === null)))
             {
                 // Restore previous session selected element
                 opt.selected = true;
             }
 
-            this.__internal__pokeballToUseSelectElem.options.add(opt);
+            listElem.options.add(opt);
         }
     }
 
@@ -530,6 +579,7 @@ class AutomationFocus
                     {
                         // Make the element visible
                         this.__internal__pokeballToUseSelectElem.options[ballValue].hidden = false;
+                        this.__internal__defaultCaughtPokeballSelectElem.options[ballValue + 1].hidden = false;
 
                         // Remove the functionality from the locked list
                         this.__internal__lockedBalls.splice(i, 1);

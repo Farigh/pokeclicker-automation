@@ -133,8 +133,8 @@ class AutomationFocusQuests
         Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
-        // Remove the ball to catch
-        this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
+        // Restore the ball to catch default value
+        this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
     }
 
     /**
