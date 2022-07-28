@@ -10,7 +10,9 @@ class AutomationFocus
     static Settings = {
                           FeatureEnabled: "Focus-Enabled",
                           FocusedTopic: "Focus-SelectedTopic",
-                          OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate"
+                          OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate",
+                          BallToUseToCatch: "Focus-BallToUseToCatch",
+                          DefaultCaughtBall: "Focus-DefaultCaughtBall"
                       };
 
     /**
@@ -81,27 +83,30 @@ class AutomationFocus
         }
 
         // Buy some balls if needed
-        if (App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Ultraball) === 0)
+        if (App.game.pokeballs.getBallQuantity(this.__internal__pokeballToUseSelectElem.value) === 0)
         {
+            let pokeballName = GameConstants.Pokeball[this.__internal__pokeballToUseSelectElem.value];
+            let pokeballItem = ItemList[pokeballName];
+
             // No more money, or too expensive, go farm some money
-            if ((App.game.wallet.currencies[Currency.money]() < ItemList["Ultraball"].totalPrice(10))
-                || (ItemList["Ultraball"].totalPrice(1) !== ItemList["Ultraball"].basePrice))
+            if ((App.game.wallet.currencies[Currency.money]() < pokeballItem.totalPrice(10))
+                || (pokeballItem.totalPrice(1) !== pokeballItem.basePrice))
             {
                 this.__internal__goToBestGymForMoney();
                 return;
             }
 
-            ItemList["Ultraball"].buy(10);
+            pokeballItem.buy(10);
         }
 
         // Equip the Oak item catch loadout
         this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
-        App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.Ultraball;
+        App.game.pokeballs.alreadyCaughtSelection = this.__internal__pokeballToUseSelectElem.value;
 
         // Move to the highest unlocked route
-        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__internal__pokeballToUseSelectElem.value);
     }
 
     /**
@@ -139,9 +144,12 @@ class AutomationFocus
     static __internal__focusLoop = null;
     static __internal__activeFocus = null;
     static __internal__focusSelectElem = null;
+    static __internal__pokeballToUseSelectElem = null;
+    static __internal__defaultCaughtPokeballSelectElem = null;
 
     static __internal__functionalities = [];
     static __internal__lockedFunctionalities = [];
+    static __internal__lockedBalls = [];
 
     static __internal__lastFocusData = null;
 
@@ -195,6 +203,12 @@ class AutomationFocus
 
         // Build advanced settings
         this.__internal__buildAdvancedSettings(focusContainer);
+
+        // Set an unlock watcher if needed
+        if ((this.__internal__lockedFunctionalities.length != 0) || (this.__internal__lockedBalls.length != 0))
+        {
+            this.__internal__setUnlockWatcher();
+        }
     }
 
     /**
@@ -212,6 +226,41 @@ class AutomationFocus
         titleDiv.style.marginBottom = "10px";
         focusSettingPanel.appendChild(titleDiv);
 
+        /**********************\
+        |*   Balls settings   *|
+        \**********************/
+
+        let disclaimer = Automation.Menu.TooltipSeparator + "⚠️ Equipping higher pokéballs can be cost-heavy during early game";
+
+        // Pokeball to use for catching
+        let pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
+                                 + "already caught pokémon, when needed"
+                                 + disclaimer;
+        this.__internal__pokeballToUseSelectElem = this.__internal__addPokeballList(
+            "focusPokeballToUseSelection", focusSettingPanel, this.Settings.BallToUseToCatch, "Pokeball to use for catching :", pokeballToUseTooltip);
+
+        // Default Pokeball for caught pokémons
+        let defaultCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
+                                         + "already caught pokémon, when no catching is needed"
+                                         + Automation.Menu.TooltipSeparator
+                                         + "This setting will not be taken into account while focusing on quests.\n"
+                                         + "In this case no pokéball will be equipped to complete quests faster"
+                                         + disclaimer;
+        this.__internal__defaultCaughtPokeballSelectElem =
+            this.__internal__addPokeballList("focusDefaultCaughtBallSelection",
+                                             focusSettingPanel,
+                                             this.Settings.DefaultCaughtBall,
+                                             "Default value for caught pokémon pokéball :",
+                                             defaultCaughtPokeballTooltip,
+                                             true);
+
+        /**********************\
+        |*  Toggles settings  *|
+        \**********************/
+
+        // Add some space
+        focusSettingPanel.appendChild(document.createElement("br"));
+
         // OakItem loadout setting
         let disableOakItemTooltip = "Modifies the oak item loadout automatically";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Optimize oak item loadout",
@@ -221,6 +270,64 @@ class AutomationFocus
 
         // Add the quests-specific settings
         this.Quests.__addAdvancedSettings(focusSettingPanel);
+    }
+
+    /**
+     * @brief Adds a pokeball selection setting
+     *
+     * @param {string}  id: The id to set to the drop-down list
+     * @param {Element} parent: The element to add the list to
+     * @param {string}  setting: The local storage setting id
+     * @param {string}  textLabel: The text to display before the list
+     * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
+     * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
+     *
+     * @returns The created drop-down list element
+     */
+    static __internal__addPokeballList(id, parent, setting, textLabel, tooltip, addNoneOption = false)
+    {
+        let container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+        parent.appendChild(container);
+
+        let label = document.createTextNode(textLabel);
+        container.appendChild(label);
+
+        let selectElem = Automation.Menu.createDropDownListElement(id);
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "100px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        container.appendChild(selectElem);
+
+        let savedValue = Automation.Utils.LocalStorage.getValue(setting);
+
+        // Don't consider the saved value if the user does not have access to the corresponding ball yet
+        if ((savedValue != null)
+            && (savedValue != GameConstants.Pokeball.None)
+            && !this.__internal__isBallPurchasable(savedValue))
+        {
+            Automation.Utils.LocalStorage.unsetValue(setting);
+            savedValue = null;
+        }
+
+        // Default to None if the value was not set and the option is available
+        if (addNoneOption && (savedValue === null))
+        {
+            Automation.Utils.LocalStorage.setDefaultValue(setting, GameConstants.Pokeball.None);
+            savedValue = GameConstants.Pokeball.None;
+        }
+
+        this.__internal__populatePokeballOptions(savedValue, selectElem, addNoneOption);
+
+        // Update the local storage if the value is changed by the user
+        selectElem.onchange = function() { Automation.Utils.LocalStorage.setValue(setting, selectElem.value); }.bind(this);
+
+        return selectElem;
     }
 
     /**
@@ -312,13 +419,13 @@ class AutomationFocus
                                                + "The most efficient route is the one giving\n"
                                                + "the most token per game tick.\n"
                                                + "The most efficient Oak items loadout will be equipped.\n"
-                                               + "Ultraballs will automatically be used and bought if needed.",
+                                               + "The configured balls will automatically be used and bought if needed.",
                                         run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
                                         stop: function ()
                                               {
                                                   Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-                                                  App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
-                                              },
+                                                  App.game.pokeballs.alreadyCaughtSelection = this.__internal__defaultCaughtPokeballSelectElem.value;
+                                              }.bind(this),
                                         refreshRateAsMs: 3000 // Refresh every 3s
                                     });
 
@@ -372,7 +479,6 @@ class AutomationFocus
      * @brief Populates the drop-down list based on the registered functionalities
      *
      * If any functionality is locked, the corresponding focus topic will be hidden to the player.
-     * A watcher will be set to show it in the list, once it has been unlocked by the player.
      */
     static __internal__populateFocusOptions()
     {
@@ -407,18 +513,63 @@ class AutomationFocus
 
             this.__internal__focusSelectElem.options.add(opt);
         }
+    }
 
-        if (this.__internal__lockedFunctionalities.length != 0)
+    /**
+     * @brief Populates the drop-down list with the pokeballs that can be bought at the Poké Mart
+     *
+     * If any pokeball can't be bought yet, it will be hidden to the player.
+     *
+     * @param {any}               selectedValue: The saved value
+     * @param {HTMLSelectElement} listElem: The list to populate the values of
+     * @param {boolean}           addNoneOption: If set to true, the none option will be added at the beginning of the list
+     */
+    static __internal__populatePokeballOptions(selectedValue, listElem, addNoneOption)
+    {
+        let options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ];
+
+        if (addNoneOption)
         {
-            this.__internal__setFunctionalityWatcher();
+            options.unshift(GameConstants.Pokeball.None);
+        }
+
+        // Populate the list
+        for (const ball of options)
+        {
+            let opt = document.createElement("option");
+
+            // Set the ball name as the content
+            opt.textContent = GameConstants.Pokeball[ball];
+
+            if ((ball != GameConstants.Pokeball.None)
+                && !this.__internal__isBallPurchasable(ball))
+            {
+                if (!this.__internal__lockedBalls.includes(ball))
+                {
+                    this.__internal__lockedBalls.push(ball);
+                }
+                opt.hidden = true;
+            }
+
+            opt.value = ball;
+            opt.id = ball;
+
+            // Select the most efficient catching rate if no ball settings was
+            if (!opt.hidden && ((selectedValue == ball) || (selectedValue === null)))
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            listElem.options.add(opt);
         }
     }
 
     /**
-     * @brief Watches for the in-game functionalities to be unlocked.
-     *        Once unlocked, the drop-down list item will be displayed to the user
+     * @brief Watches for the in-game functionalities and balls to be available.
+     *        Once available, the corresponding drop-down list item will be displayed to the user
      */
-    static __internal__setFunctionalityWatcher()
+    static __internal__setUnlockWatcher()
     {
         let watcher = setInterval(function()
             {
@@ -435,9 +586,24 @@ class AutomationFocus
                     }
                 }
 
-                if (this.__internal__lockedFunctionalities.length == 0)
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__internal__lockedBalls.length - 1; i >= 0; i--)
                 {
-                    // No more missing focus, unregister the loop
+                    let ballValue = this.__internal__lockedBalls[i];
+                    if (this.__internal__isBallPurchasable(ballValue))
+                    {
+                        // Make the element visible
+                        this.__internal__pokeballToUseSelectElem.options[ballValue].hidden = false;
+                        this.__internal__defaultCaughtPokeballSelectElem.options[ballValue + 1].hidden = false;
+
+                        // Remove the functionality from the locked list
+                        this.__internal__lockedBalls.splice(i, 1);
+                    }
+                }
+
+                if ((this.__internal__lockedFunctionalities.length == 0) && (this.__internal__lockedBalls.length == 0))
+                {
+                    // No more missing element, unregister the loop
                     clearInterval(watcher);
                 }
             }.bind(this), 5000); // Refresh every 5s
@@ -562,5 +728,19 @@ class AutomationFocus
         {
             Automation.Utils.OakItem.equipLoadout(loadoutCandidates);
         }
+    }
+
+    /**
+     * @brief Determines if the provided @p ball can be bought by the user
+     *
+     * @param ball: The ball to check
+     *
+     * @return True if the ball can be bought, false otherwise
+     */
+    static __internal__isBallPurchasable(ball)
+    {
+        return ((ball == GameConstants.Pokeball.Pokeball) && TownList["Viridian City"].isUnlocked())
+            || ((ball == GameConstants.Pokeball.Greatball) && TownList["Lavender Town"].isUnlocked())
+            || ((ball == GameConstants.Pokeball.Ultraball) && TownList["Fuchsia City"].isUnlocked());
     }
 }
