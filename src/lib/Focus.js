@@ -10,7 +10,8 @@ class AutomationFocus
     static Settings = {
                           FeatureEnabled: "Focus-Enabled",
                           FocusedTopic: "Focus-SelectedTopic",
-                          OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate"
+                          OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate",
+                          BallToUseToCatch: "Focus-BallToUseToCatch"
                       };
 
     /**
@@ -81,27 +82,30 @@ class AutomationFocus
         }
 
         // Buy some balls if needed
-        if (App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Ultraball) === 0)
+        if (App.game.pokeballs.getBallQuantity(this.__internal__pokeballToUseSelectElem.value) === 0)
         {
+            let pokeballName = GameConstants.Pokeball[this.__internal__pokeballToUseSelectElem.value];
+            let pokeballItem = ItemList[pokeballName];
+
             // No more money, or too expensive, go farm some money
-            if ((App.game.wallet.currencies[Currency.money]() < ItemList["Ultraball"].totalPrice(10))
-                || (ItemList["Ultraball"].totalPrice(1) !== ItemList["Ultraball"].basePrice))
+            if ((App.game.wallet.currencies[Currency.money]() < pokeballItem.totalPrice(10))
+                || (pokeballItem.totalPrice(1) !== pokeballItem.basePrice))
             {
                 this.__internal__goToBestGymForMoney();
                 return;
             }
 
-            ItemList["Ultraball"].buy(10);
+            pokeballItem.buy(10);
         }
 
         // Equip the Oak item catch loadout
         this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
-        App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.Ultraball;
+        App.game.pokeballs.alreadyCaughtSelection = this.__internal__pokeballToUseSelectElem.value;
 
         // Move to the highest unlocked route
-        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__internal__pokeballToUseSelectElem.value);
     }
 
     /**
@@ -139,9 +143,11 @@ class AutomationFocus
     static __internal__focusLoop = null;
     static __internal__activeFocus = null;
     static __internal__focusSelectElem = null;
+    static __internal__pokeballToUseSelectElem = null;
 
     static __internal__functionalities = [];
     static __internal__lockedFunctionalities = [];
+    static __internal__lockedBalls = [];
 
     static __internal__lastFocusData = null;
 
@@ -195,6 +201,12 @@ class AutomationFocus
 
         // Build advanced settings
         this.__internal__buildAdvancedSettings(focusContainer);
+
+        // Set unlock watcher if needed
+        if ((this.__internal__lockedFunctionalities.length != 0) || (this.__internal__lockedBalls.length != 0))
+        {
+            this.__internal__setUnlockWatcher();
+        }
     }
 
     /**
@@ -211,6 +223,41 @@ class AutomationFocus
         let titleDiv = Automation.Menu.createTitleElement("'Focus on' advanced settings");
         titleDiv.style.marginBottom = "10px";
         focusSettingPanel.appendChild(titleDiv);
+
+        /**********************\
+        |*   Balls settings   *|
+        \**********************/
+
+        // Pokeball to use for catching
+        let pokeballToUseContainer = document.createElement("div");
+        pokeballToUseContainer.style.paddingLeft = "10px";
+        pokeballToUseContainer.style.paddingRight = "10px";
+        focusSettingPanel.appendChild(pokeballToUseContainer);
+
+        let pokeballToUseLabel = document.createTextNode("Pokeball to use for catching :");
+        pokeballToUseContainer.appendChild(pokeballToUseLabel);
+
+        this.__internal__pokeballToUseSelectElem = Automation.Menu.createDropDownListElement("pokeballToUseSelection");
+        this.__internal__pokeballToUseSelectElem.style.position = "relative";
+        this.__internal__pokeballToUseSelectElem.style.bottom = "2px";
+        this.__internal__pokeballToUseSelectElem.style.width = "100px";
+        this.__internal__pokeballToUseSelectElem.style.marginLeft = "4px";
+        this.__internal__pokeballToUseSelectElem.style.paddingLeft = "3px";
+        pokeballToUseContainer.appendChild(this.__internal__pokeballToUseSelectElem);
+
+        this.__internal__populatePokeballOptions();
+
+        this.__internal__pokeballToUseSelectElem.onchange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.BallToUseToCatch, this.__internal__pokeballToUseSelectElem.value);
+            }.bind(this);
+
+        /**********************\
+        |*  Toggles settings  *|
+        \**********************/
+
+        // Add some space
+        focusSettingPanel.appendChild(document.createElement("br"));
 
         // OakItem loadout setting
         let disableOakItemTooltip = "Modifies the oak item loadout automatically";
@@ -312,7 +359,7 @@ class AutomationFocus
                                                + "The most efficient route is the one giving\n"
                                                + "the most token per game tick.\n"
                                                + "The most efficient Oak items loadout will be equipped.\n"
-                                               + "Ultraballs will automatically be used and bought if needed.",
+                                               + "The configured balls will automatically be used and bought if needed.",
                                         run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
                                         stop: function ()
                                               {
@@ -407,18 +454,58 @@ class AutomationFocus
 
             this.__internal__focusSelectElem.options.add(opt);
         }
+    }
 
-        if (this.__internal__lockedFunctionalities.length != 0)
+    /**
+     * @brief Populates the drop-down list with the pokeballs that can be bought at the Poké Mart
+     *
+     * If any functionality is locked, the corresponding focus topic will be hidden to the player.
+     * A watcher will be set to show it in the list, once it has been unlocked by the player.
+     */
+    static __internal__populatePokeballOptions()
+    {
+        let lastBallToUseToCatch = Automation.Utils.LocalStorage.getValue(this.Settings.BallToUseToCatch);
+
+        // Don't consider the saved value if the user does not have access to it yet
+        if (!this.__internal__isBallPurchasable(lastBallToUseToCatch))
         {
-            this.__internal__setFunctionalityWatcher();
+            Automation.Utils.LocalStorage.unsetValue(this.Settings.BallToUseToCatch)
+            lastBallToUseToCatch = null;
+        }
+
+        // Populate the list
+        for (const ball of [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ])
+        {
+            let opt = document.createElement("option");
+
+            // Set the ball name as the content
+            opt.textContent = GameConstants.Pokeball[ball];
+
+            if (!this.__internal__isBallPurchasable(ball))
+            {
+                this.__internal__lockedBalls.push(ball);
+                opt.hidden = true;
+            }
+
+            opt.value = ball;
+            opt.id = ball;
+
+            // Select the most efficient catching rate if no ball settings was
+            if (!opt.hidden && ((lastBallToUseToCatch == ball) || (lastBallToUseToCatch === null)))
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            this.__internal__pokeballToUseSelectElem.options.add(opt);
         }
     }
 
     /**
-     * @brief Watches for the in-game functionalities to be unlocked.
-     *        Once unlocked, the drop-down list item will be displayed to the user
+     * @brief Watches for the in-game functionalities and balls to be available.
+     *        Once available, the corresponding drop-down list item will be displayed to the user
      */
-    static __internal__setFunctionalityWatcher()
+    static __internal__setUnlockWatcher()
     {
         let watcher = setInterval(function()
             {
@@ -435,9 +522,23 @@ class AutomationFocus
                     }
                 }
 
-                if (this.__internal__lockedFunctionalities.length == 0)
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__internal__lockedBalls.length - 1; i >= 0; i--)
                 {
-                    // No more missing focus, unregister the loop
+                    let ballValue = this.__internal__lockedBalls[i];
+                    if (this.__internal__isBallPurchasable(ballValue))
+                    {
+                        // Make the element visible
+                        this.__internal__pokeballToUseSelectElem.options[ballValue].hidden = false;
+
+                        // Remove the functionality from the locked list
+                        this.__internal__lockedBalls.splice(i, 1);
+                    }
+                }
+
+                if ((this.__internal__lockedFunctionalities.length == 0) && (this.__internal__lockedBalls.length == 0))
+                {
+                    // No more missing element, unregister the loop
                     clearInterval(watcher);
                 }
             }.bind(this), 5000); // Refresh every 5s
@@ -562,5 +663,19 @@ class AutomationFocus
         {
             Automation.Utils.OakItem.equipLoadout(loadoutCandidates);
         }
+    }
+
+    /**
+     * @brief Determines if the provided @p ball can be bought by the user
+     *
+     * @param ball: The ball to check
+     *
+     * @return True if the ball can be bought, false otherwise
+     */
+    static __internal__isBallPurchasable(ball)
+    {
+        return ((ball == GameConstants.Pokeball.Pokeball) && TownList["Viridian City"].isUnlocked())
+            || ((ball == GameConstants.Pokeball.Greatball) && TownList["Lavender Town"].isUnlocked())
+            || ((ball == GameConstants.Pokeball.Ultraball) && TownList["Fuchsia City"].isUnlocked());
     }
 }

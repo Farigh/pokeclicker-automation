@@ -59,7 +59,7 @@ class AutomationFocusAchievements
         this.__internal__achievementLoop = null;
 
         Automation.Dungeon.AutomationRequestedMode = Automation.Utils.isInInstanceState() ? Automation.Dungeon.InternalModes.StopAfterThisRun
-                                                                                            : Automation.Dungeon.InternalModes.None;
+                                                                                          : Automation.Dungeon.InternalModes.None;
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;

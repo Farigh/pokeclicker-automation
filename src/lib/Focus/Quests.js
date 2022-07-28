@@ -9,7 +9,7 @@ class AutomationFocusQuests
     static Settings = { UseSmallRestore: "Focus-Quest-UseSmallRestore" };
 
     /******************************************************************************\
-    |***    Focus specific members, should only be used by focus sub-classes    ***|
+    |***    Focus-specific members, should only be used by focus sub-classes    ***|
     \******************************************************************************/
 
     /**
@@ -147,7 +147,7 @@ class AutomationFocusQuests
     static __internal__questLoop()
     {
         // Make sure to always have some balls to catch pokemons
-        this.__internal__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
+        this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__internal__pokeballToUseSelectElem.value, 10);
 
         // Disable best route if needed
         Automation.Menu.forceAutomationState("bestRouteClickEnabled", false);
@@ -244,7 +244,7 @@ class AutomationFocusQuests
         if ((quest instanceof CapturePokemonsQuest)
             || (quest instanceof GainTokensQuest))
         {
-            this.__internal__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);
+            this.__internal__workOnUsePokeballQuest(Automation.Focus.__internal__pokeballToUseSelectElem.value);
         }
         else if (quest instanceof CapturePokemonTypesQuest)
         {
@@ -282,7 +282,7 @@ class AutomationFocusQuests
             if (currentQuests.some((quest) => quest instanceof CatchShiniesQuest))
             {
                 // Buy some ball to be prepared
-                this.__internal__tryBuyBallIfUnderThreshold(GameConstants.Pokeball.Ultraball, 10);
+                this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__internal__pokeballToUseSelectElem.value, 10);
                 this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             }
             else if (currentQuests.some((quest) => quest instanceof GainMoneyQuest))
@@ -355,7 +355,7 @@ class AutomationFocusQuests
     static __internal__workOnCapturePokemonTypesQuest(quest)
     {
         // Add a pokeball to the Caught type and set the PokemonCatch setup
-        let hasBalls = this.__internal__selectBallToCatch(GameConstants.Pokeball.Ultraball);
+        let hasBalls = this.__internal__selectBallToCatch(Automation.Focus.__internal__pokeballToUseSelectElem.value);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         if (hasBalls)
@@ -381,7 +381,7 @@ class AutomationFocusQuests
         // If we don't have enough tokens, go farm some
         if (TownList[quest.dungeon].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
         {
-            this.__internal__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);
+            this.__internal__workOnUsePokeballQuest(Automation.Focus.__internal__pokeballToUseSelectElem.value);
             return;
         }
 
@@ -483,7 +483,7 @@ class AutomationFocusQuests
     {
         if (quest.item == OakItemType.Magic_Ball)
         {
-            this.__internal__workOnUsePokeballQuest(GameConstants.Pokeball.Ultraball);
+            this.__internal__workOnUsePokeballQuest(Automation.Focus.__internal__pokeballToUseSelectElem.value);
         }
         else
         {
@@ -529,7 +529,7 @@ class AutomationFocusQuests
      */
     static __internal__selectBallToCatch(ballTypeToUse, enforceType = false)
     {
-        if (ballTypeToUse === GameConstants.Pokeball.None)
+        if (ballTypeToUse == GameConstants.Pokeball.None)
         {
             App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
             return;
