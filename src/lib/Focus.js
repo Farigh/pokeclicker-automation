@@ -230,16 +230,28 @@ class AutomationFocus
         |*   Balls settings   *|
         \**********************/
 
-        // Pokeball to use for catching
-        this.__internal__pokeballToUseSelectElem = this.__internal__addPokeballList(
-            "focusPokeballToUseSelection", focusSettingPanel, this.Settings.BallToUseToCatch, "Pokeball to use for catching :");
+        let disclaimer = Automation.Menu.TooltipSeparator + "⚠️ Equipping higher pokéballs can be cost-heavy during early game";
 
-        // Default Pokeball for caught pokémons value
+        // Pokeball to use for catching
+        let pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
+                                 + "already caught pokémon, when needed"
+                                 + disclaimer;
+        this.__internal__pokeballToUseSelectElem = this.__internal__addPokeballList(
+            "focusPokeballToUseSelection", focusSettingPanel, this.Settings.BallToUseToCatch, "Pokeball to use for catching :", pokeballToUseTooltip);
+
+        // Default Pokeball for caught pokémons
+        let defaultCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
+                                         + "already caught pokémon, when no catching is needed"
+                                         + Automation.Menu.TooltipSeparator
+                                         + "This setting will not be taken into account while focusing on quests.\n"
+                                         + "In this case no pokéball will be equipped to complete quests faster"
+                                         + disclaimer;
         this.__internal__defaultCaughtPokeballSelectElem =
             this.__internal__addPokeballList("focusDefaultCaughtBallSelection",
                                              focusSettingPanel,
                                              this.Settings.DefaultCaughtBall,
                                              "Default value for caught pokémon pokéball :",
+                                             defaultCaughtPokeballTooltip,
                                              true);
 
         /**********************\
@@ -267,15 +279,18 @@ class AutomationFocus
      * @param {Element} parent: The element to add the list to
      * @param {string}  setting: The local storage setting id
      * @param {string}  textLabel: The text to display before the list
+     * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
      * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
      *
      * @returns The created drop-down list element
      */
-    static __internal__addPokeballList(id, parent, setting, textLabel, addNoneOption = false)
+    static __internal__addPokeballList(id, parent, setting, textLabel, tooltip, addNoneOption = false)
     {
         let container = document.createElement("div");
         container.style.paddingLeft = "10px";
         container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
         parent.appendChild(container);
 
         let label = document.createTextNode(textLabel);
