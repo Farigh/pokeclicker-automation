@@ -324,8 +324,8 @@ class AutomationTrivia
                 {
                     let isLast = (index === (roamers.length - 1));
                     tooltip += (isLast ? "" : ",")
-                                + (((index % 3) === 0) ? "\n" : " ")
-                                + (isLast ? "and " : "");
+                             + (((index % 3) === 0) ? "\n" : " ")
+                             + (isLast ? "and " : "");
                 }
                 tooltip += pokemon.pokemon.name + " (#" + pokemon.pokemon.id + ")";
             }
