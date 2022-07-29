@@ -1493,7 +1493,7 @@ class AutomationFarm
         }
 
         this.__internal__disableAutoUnlock("You need to catch " + this.__internal__currentStrategy.requiredPokemon
-                               + " (#" + neededPokemonId.toString() + ") for the next unlock");
+                                         + " (#" + neededPokemonId.toString() + ") for the next unlock");
 
         // Set a watcher to re-enable the feature once the pokemon has been caught
         let watcher = setInterval(function()
@@ -1527,7 +1527,7 @@ class AutomationFarm
             }
 
             this.__internal__disableAutoUnlock("You need to collect the four hints from the Kanto Berry Master\n"
-                                     + "for the next unlock. He's located in Cerulean City.");
+                                             + "for the next unlock. He's located in Cerulean City.");
         }
         else
         {
