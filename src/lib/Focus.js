@@ -374,6 +374,9 @@ class AutomationFocus
             {
                 if (this.__internal__activeFocus.stop !== undefined)
                 {
+                    // Reset any dungeon request that might have occured using __ensureNoInstanceIsInProgress
+                    Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
+
                     this.__internal__activeFocus.stop();
                 }
                 this.__internal__activeFocus = null;

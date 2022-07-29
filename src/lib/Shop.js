@@ -54,7 +54,7 @@ class AutomationShop
         Automation.Menu.addSeparator(this.__internal__shoppingContainer);
 
         // Only display the menu when the Poké Mart is unlocked
-        if (!App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')])
+        if (!App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]())
         {
             this.__internal__shoppingContainer.hidden = true;
             this.__internal__setShoppingUnlockWatcher();
@@ -130,7 +130,7 @@ class AutomationShop
     {
         let watcher = setInterval(function()
             {
-                if (App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')])
+                if (App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]())
                 {
                     clearInterval(watcher);
                     this.__internal__shoppingContainer.hidden = false;
@@ -150,7 +150,7 @@ class AutomationShop
      */
     static __internal__toggleAutoBuy(enable)
     {
-        if (!App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')])
+        if (!App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]())
         {
             return;
         }

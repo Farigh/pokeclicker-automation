@@ -1,4 +1,5 @@
 {
+    "files.trimTrailingWhitespace": true,
     "editor.rulers": [ 150 ],
     "workbench.colorCustomizations": {
         "editorRuler.foreground": "#0b80ce"
