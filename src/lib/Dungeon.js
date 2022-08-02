@@ -403,9 +403,9 @@ class AutomationDungeon
     {
         let startingTile = null;
 
-        for (const [rowIndex, row] of DungeonRunner.map.board().entries())
+        for (const [ rowIndex, row ] of DungeonRunner.map.board().entries())
         {
-            for (const [columnIndex, tile] of row.entries())
+            for (const [ columnIndex, tile ] of row.entries())
             {
                 // Ignore not visible tiles
                 if (!tile.isVisible) continue;
