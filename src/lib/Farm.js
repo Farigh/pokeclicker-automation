@@ -88,6 +88,7 @@ class AutomationFarm
     // Collection of
     // {
     //     isNeeded: function(),
+    //     berryToUnlock: BerryType,
     //     harvestAsSoonAsPossible: boolean,
     //     oakItemToEquip: OakItemType,
     //     forbiddenOakItem: OakItemType,
@@ -278,10 +279,18 @@ class AutomationFarm
                 continue;
             }
 
+            // Harvest berry in any of those cases:
+            //   - The unlock feature is disabled
+            //   - Another feature required force harvesting
+            //   - The strategy requires to harvest as soon as possible
+            //   - The berry is the target one
+            //   - The berry is close to dying (less than 15s)
             if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
                 || this.ForcePlantBerriesAsked
                 || (this.__internal__currentStrategy === null)
                 || (this.__internal__currentStrategy.harvestAsSoonAsPossible === true)
+                || ((this.__internal__currentStrategy.berryToUnlock !== undefined)
+                    && (this.__internal__currentStrategy.berryToUnlock == plot.berry))
                 || ((plot.berryData.growthTime[4] - plot.age) < 15))
             {
                 App.game.farming.harvest(index);
@@ -545,7 +554,7 @@ class AutomationFarm
         |*     Gen 1 berries unlocks     *|
         \*********************************/
 
-        // #1 Unlock the slot requiring Cherry
+        // #1 Unlock the slot requiring Cheri
         this.__internal__addUnlockSlotStrategy(7, BerryType.Cheri);
 
         // #2 Unlock the slot requiring Chesto
@@ -1009,7 +1018,7 @@ class AutomationFarm
             },
             OakItemType.Blaze_Cassette);
 
-        // The next mutation need to grow berries while others are riped, so we need to start on a empty farm
+        // The next mutation need to grow berries while others are ripe, so we need to start on a empty farm
         this.__internal__unlockStrategySelection.push(
             {
                 isNeeded: function()
@@ -1201,6 +1210,7 @@ class AutomationFarm
                     return (!App.game.farming.unlockedBerries[BerryType.Lum]()
                             || (App.game.farming.berryList[BerryType.Lum]() < 24));
                 },
+                berryToUnlock: BerryType.Lum,
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: null,
                 forbiddenOakItem: null,
@@ -1249,6 +1259,7 @@ class AutomationFarm
             {
                 // Check if the berry is unlocked
                 isNeeded: function() { return !App.game.farming.unlockedBerries[BerryType.Enigma](); },
+                berryToUnlock: BerryType.Enigma,
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: null,
                 forbiddenOakItem: null,
@@ -1327,6 +1338,7 @@ class AutomationFarm
                         return (App.game.farming.berryList[berryType]() == 0)
                             && (this.__internal__getPlantedBerriesCount(berryType) == 0);
                     }.bind(this),
+                berryToUnlock: berryType,
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: oakItemNeeded,
                 forbiddenOakItem: oakItemToRemove,
