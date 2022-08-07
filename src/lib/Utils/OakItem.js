@@ -3,7 +3,7 @@
  */
 class AutomationUtilsOakItem
 {
-    static ForbiddenItem = null;
+    static ForbiddenItems = [];
 
     /**
      * @class The Setup class lists the different setup to use based on the current objectives
@@ -56,7 +56,7 @@ class AutomationUtilsOakItem
             (item) =>
             {
                 // Skip any forbidden item
-                if (item === this.ForbiddenItem)
+                if (this.ForbiddenItems.includes(item))
                 {
                     return false;
                 }

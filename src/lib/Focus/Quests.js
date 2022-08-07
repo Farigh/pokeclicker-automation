@@ -634,10 +634,10 @@ class AutomationFocusQuests
                 continue;
             }
 
-            let berryTime = (berryData.growthTime[3] * Math.ceil(quest.amount / availableSlotCount / berryData.farmValue));
+            let berryTime = (berryData.growthTime[PlotStage.Bloom] * Math.ceil(quest.amount / availableSlotCount / berryData.farmValue));
 
             // The time can't go below the berry growth time
-            let time = Math.max(berryData.growthTime[3], berryTime);
+            let time = Math.max(berryData.growthTime[PlotStage.Bloom], berryTime);
             if (time < bestTime)
             {
                 bestTime = time;
