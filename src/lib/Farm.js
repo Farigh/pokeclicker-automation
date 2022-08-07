@@ -1089,6 +1089,7 @@ class AutomationFarm
                     Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cornn);
                 }
             },
+            1,
             null,
             OakItemType.Cell_Battery);
 
@@ -1154,6 +1155,7 @@ class AutomationFarm
             {
                 Automation.Farm.__internal__plantFourBerriesForMutation(BerryType.Tamato, BerryType.Figy, BerryType.Spelon, BerryType.Razz);
             },
+            1,
             null,
             OakItemType.Blaze_Cassette);
 
@@ -1208,6 +1210,7 @@ class AutomationFarm
             {
                 Automation.Farm.__internal__plantFourBerriesForMutation(BerryType.Wiki, BerryType.Cornn, BerryType.Bluk, BerryType.Pamtre);
             },
+            1,
             null,
             OakItemType.Rocky_Helmet); // TODO : add Cell_Battery
 
@@ -1230,7 +1233,6 @@ class AutomationFarm
             });
 
         // #48 Unlock at least one Kasib berry through mutation
-        // TODO: Get at least 3 here, since this berry only produces 1 berry when planted
         this.__internal__addUnlockMutationStrategy(
             BerryType.Kasib,
             function()
@@ -1239,7 +1241,8 @@ class AutomationFarm
                 {
                     Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
                 }
-            });
+            },
+            4);
 
         // #49 Unlock at least one Haban berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1261,6 +1264,7 @@ class AutomationFarm
             {
                 Automation.Farm.__internal__plantFourBerriesForMutation(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel);
             },
+            1,
             null,
             OakItemType.Sprinklotad);
 
@@ -1277,6 +1281,7 @@ class AutomationFarm
                     Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Watmel);
                 }
             },
+            1,
             OakItemType.Sprinklotad);
 
         // #47 Unlock at least one Charti berry through mutation (moved this far to avoid any problem, since it uses Oak items)
@@ -1289,6 +1294,7 @@ class AutomationFarm
                     Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cornn);
                 }
             },
+            1,
             OakItemType.Cell_Battery);
 
         // #51 Unlock at least one Babiri berry through mutation
@@ -1323,6 +1329,7 @@ class AutomationFarm
                     Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Spelon);
                 }
             },
+            1,
             OakItemType.Blaze_Cassette);
 
         // The next mutation need to grow berries while others are ripe, so we need to start on a empty farm
@@ -1378,6 +1385,7 @@ class AutomationFarm
                     Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pamtre);
                 }
             },
+            1,
             OakItemType.Rocky_Helmet);
     }
 
@@ -1394,6 +1402,7 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(
             BerryType.Micle,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiringOver600Points(BerryType.Pamtre); },
+            1,
             null,
             OakItemType.Rocky_Helmet);
 
@@ -1401,6 +1410,7 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(
             BerryType.Custap,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiringOver600Points(BerryType.Watmel); },
+            1,
             null,
             OakItemType.Sprinklotad);
 
@@ -1416,19 +1426,19 @@ class AutomationFarm
         // The following mutations require the player to have caught legendary pokemons
 
         // #60 Unlock at least one Liechi berry through mutation
-        // TODO: Farm those until we get at least 4 of them
         this.__internal__addUnlockMutationStrategy(
             BerryType.Liechi,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Passho); },
+            4,
             null,
             null,
             "Kyogre");
 
         // #61 Unlock at least one Ganlon berry through mutation
-        // TODO: Farm those until we get at least 4 of them
         this.__internal__addUnlockMutationStrategy(
             BerryType.Ganlon,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Shuca); },
+            4,
             null,
             null,
             "Groudon");
@@ -1439,16 +1449,15 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantTwoBerriesForMutation(BerryType.Liechi, BerryType.Ganlon); });
 
         // #62 Unlock at least one Salac berry through mutation
-        // TODO: Farm those until we get at least 4 of them
         this.__internal__addUnlockMutationStrategy(
             BerryType.Salac,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Coba); },
+            4,
             null,
             null,
             "Rayquaza");
 
         // #63 Unlock at least one Petaya berry through mutation
-        // TODO: Farm those until we get at least 4 of them
         this.__internal__addUnlockMutationStrategy(BerryType.Petaya,
                                                    function()
                                                    {
@@ -1476,7 +1485,8 @@ class AutomationFarm
                                                        {
                                                            Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.None);
                                                        }
-                                                   });
+                                                   },
+                                                   4);
 
         // #59 Unlock at least one Maranga berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1487,6 +1497,7 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(
             BerryType.Apicot,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Chilan); },
+            1,
             null,
             null,
             "Palkia");
@@ -1495,6 +1506,7 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(
             BerryType.Lansat,
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Roseli); },
+            1,
             null,
             null,
             "Dialga");
@@ -1528,65 +1540,50 @@ class AutomationFarm
         \*************/
 
         // #20 Unlock and gather at least 24 Lum berry through mutation
-        this.__internal__unlockStrategySelection.push(
+        this.__internal__addUnlockMutationStrategy(BerryType.Lum,
+            function()
             {
-                // Check if the berry is unlocked
-                isNeeded: function()
+                for (const index of App.game.farming.plotList.keys())
                 {
-                    // The lum berry only produces one berry when harvested
-                    // Try to get at least 24 of those through mutation
-                    return (!App.game.farming.unlockedBerries[BerryType.Lum]()
-                            || (App.game.farming.berryList[BerryType.Lum]() < 24));
-                },
-                berryToUnlock: BerryType.Lum,
-                harvestAsSoonAsPossible: false,
-                oakItemToEquip: null,
-                forbiddenOakItem: null,
-                requiredPokemon: null,
-                requiresDiscord: false,
-                action: function()
+                    if ([ 0, 4, 20, 24 ].includes(index))
                     {
-                        for (const index of App.game.farming.plotList.keys())
-                        {
-                            if ([ 0, 4, 20, 24 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Sitrus);
-                            }
-                            else if ([ 1, 3, 21, 23 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Oran);
-                            }
-                            else if ([ 2, 22 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Aspear);
-                            }
-                            else if ([ 5, 9, 15, 19 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Leppa);
-                            }
-                            else if ([ 7, 17 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pecha);
-                            }
-                            else if ([ 10, 14 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rawst);
-                            }
-                            else if ([ 11, 13 ].includes(index))
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chesto);
-                            }
-                            else if (index == 12)
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
-                            }
-                            else
-                            {
-                                Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.None);
-                            }
-                        }
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Sitrus);
                     }
-            });
+                    else if ([ 1, 3, 21, 23 ].includes(index))
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Oran);
+                    }
+                    else if ([ 2, 22 ].includes(index))
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Aspear);
+                    }
+                    else if ([ 5, 9, 15, 19 ].includes(index))
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Leppa);
+                    }
+                    else if ([ 7, 17 ].includes(index))
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Pecha);
+                    }
+                    else if ([ 10, 14 ].includes(index))
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Rawst);
+                    }
+                    else if ([ 11, 13 ].includes(index))
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chesto);
+                    }
+                    else if (index == 12)
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
+                    }
+                    else
+                    {
+                        Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.None);
+                    }
+                }
+            },
+            24);
     }
 
     /**
@@ -1678,11 +1675,17 @@ class AutomationFarm
      *
      * @param berryType: The type of berry to unlock
      * @param actionCallback: The action to perform if it's locked
-     * @param oakItemNeeded: The Oak item needed for the mutation to work
-     * @param oakItemToRemove: The Oak item that might ruin the mutation and needs to be forbidden
-     * @param requiredPokemonName: The name of the Pokemon needed for the mutation to occur
+     * @param minimumRequiredBerry: The minimum of berries to hold required (Default: 1)
+     * @param oakItemNeeded: The Oak item needed for the mutation to work (Default: None)
+     * @param oakItemToRemove: The Oak item that might ruin the mutation and needs to be forbidden (Default: None)
+     * @param requiredPokemonName: The name of the Pokemon needed for the mutation to occur (Default: None)
      */
-    static __internal__addUnlockMutationStrategy(berryType, actionCallback, oakItemNeeded = null, oakItemToRemove = null, requiredPokemonName = null)
+    static __internal__addUnlockMutationStrategy(berryType,
+                                                 actionCallback,
+                                                 minimumRequiredBerry = 1,
+                                                 oakItemNeeded = null,
+                                                 oakItemToRemove = null,
+                                                 requiredPokemonName = null)
     {
         this.__internal__unlockStrategySelection.push(
             {
@@ -1694,8 +1697,8 @@ class AutomationFarm
                             return true;
                         }
 
-                        return (App.game.farming.berryList[berryType]() == 0)
-                            && (this.__internal__getPlantedBerriesCount(berryType) == 0);
+                        let totalCount = App.game.farming.berryList[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
+                        return (totalCount < minimumRequiredBerry);
                     }.bind(this),
                 berryToUnlock: berryType,
                 harvestAsSoonAsPossible: false,
@@ -1953,7 +1956,7 @@ class AutomationFarm
      */
     static __internal__disableAutoUnlock(reason)
     {
-        // TODO: Don't turn the feature off in most cases
+        // TODO (06/08/2022): Don't turn the feature off in most cases
         Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
         Automation.Utils.OakItem.ForbiddenItem = null;

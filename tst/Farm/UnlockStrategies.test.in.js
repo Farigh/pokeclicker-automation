@@ -139,6 +139,11 @@ function runBerryMutationTest(targetBerry,
     // Simulate a mutation in plot 8
     if (!dontMutateOrClean)
     {
+        if (!App.game.farming.plotList[8].isEmpty())
+        {
+            App.game.farming.plotList[8].die();
+        }
+
         App.game.farming.plotList[8].plant(targetBerry);
         let targetBerryData = App.game.farming.berryData[targetBerry];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
@@ -1951,6 +1956,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[62]);
 
+        // Give the player 3 Kasib berries, since this step requires to get 4 of them, it should still trigger if the player has some
+        App.game.farming.__berryListCount[BerryType.Kasib] = 3;
+
         runBerryMutationTest(
             BerryType.Kasib,
             function()
@@ -2018,9 +2026,6 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
     {
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[64]);
-
-        // Give the player enough Wacan berries (only 1 berry available out of 3 needed)
-        App.game.farming.__berryListCount[BerryType.Kasib] = 3;
 
         runBerryMutationTest(
             BerryType.Colbur,
@@ -2470,6 +2475,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
 
         checkPokemonNeededBehaviour("Kyogre");
 
+        // Give the player 3 Liechi berries, since this step requires to get 4 of them, it should still trigger if the player has some
+        App.game.farming.__berryListCount[BerryType.Liechi] = 3;
+
         runBerryMutationTest(
             BerryType.Liechi,
             function()
@@ -2502,6 +2510,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
 
         checkPokemonNeededBehaviour("Groudon");
 
+        // Give the player 3 Ganlon berries, since this step requires to get 4 of them, it should still trigger if the player has some
+        App.game.farming.__berryListCount[BerryType.Ganlon] = 3;
+
         runBerryMutationTest(
             BerryType.Ganlon,
             function()
@@ -2531,10 +2542,6 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
     {
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[79]);
-
-        // Give the player enough berries (only 1 berry available for each out of 4 needed)
-        App.game.farming.__berryListCount[BerryType.Liechi] = 4;
-        App.game.farming.__berryListCount[BerryType.Ganlon] = 4;
 
         runBerryMutationTest(
             BerryType.Kee,
@@ -2572,6 +2579,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
 
         checkPokemonNeededBehaviour("Rayquaza");
 
+        // Give the player 3 Salac berries, since this step requires to get 4 of them, it should still trigger if the player has some
+        App.game.farming.__berryListCount[BerryType.Salac] = 3;
+
         runBerryMutationTest(
             BerryType.Salac,
             function()
@@ -2601,6 +2611,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
     {
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[81]);
+
+        // Give the player 3 Petaya berries, since this step requires to get 4 of them, it should still trigger if the player has some
+        App.game.farming.__berryListCount[BerryType.Petaya] = 3;
 
         runBerryMutationTest(
             BerryType.Petaya,
@@ -2643,10 +2656,6 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
     {
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[82]);
-
-        // Give the player enough berries (only 1 berry available for each out of 4 needed)
-        App.game.farming.__berryListCount[BerryType.Salac] = 4;
-        App.game.farming.__berryListCount[BerryType.Petaya] = 4;
 
         runBerryMutationTest(
             BerryType.Maranga,
