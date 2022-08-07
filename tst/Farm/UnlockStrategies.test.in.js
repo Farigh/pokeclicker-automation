@@ -107,7 +107,7 @@ function runPlotUnlockTest(slotToBeUnlocked)
 function runBerryMutationTest(targetBerry,
                               expectedPlantationLayoutCallback,
                               expectedNeededItem = null,
-                              expectedForbiddenItem = null,
+                              expectedForbiddenItems = [],
                               dontMutateOrClean = false)
 {
     expect(Automation.Farm.__internal__currentStrategy.berryToUnlock).toBe(targetBerry);
@@ -126,9 +126,9 @@ function runBerryMutationTest(targetBerry,
     // The mutation layout should have been planted
     expectedPlantationLayoutCallback();
 
-    // Check the forbidden Oak item, if needed
-    expect(Automation.Farm.__internal__currentStrategy.forbiddenOakItem).toBe(expectedForbiddenItem);
-    expect(Automation.Utils.OakItem.ForbiddenItem).toBe(expectedForbiddenItem);
+    // Check the forbidden Oak items
+    expect(Automation.Farm.__internal__currentStrategy.forbiddenOakItems).toEqual(expectedForbiddenItems);
+    expect(Automation.Utils.OakItem.ForbiddenItems).toEqual(expectedForbiddenItems);
 
     // Expect the needed item to have been equipped
     if (expectedNeededItem != null)
@@ -1519,7 +1519,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
                 }
             },
             null,
-            OakItemType.Cell_Battery);
+            [ OakItemType.Cell_Battery ]);
     });
 
     // Test the 51st unlock
@@ -1691,7 +1691,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 }
             },
             null,
-            OakItemType.Blaze_Cassette);
+            [ OakItemType.Blaze_Cassette ]);
     });
 
     // Test the 56th unlock
@@ -1917,7 +1917,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 }
             },
             null,
-            OakItemType.Rocky_Helmet);
+            [ OakItemType.Rocky_Helmet, OakItemType.Cell_Battery ]);
     });
 
     // Test the 62nd unlock
@@ -2100,7 +2100,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 }
             },
             null,
-            OakItemType.Sprinklotad);
+            [ OakItemType.Sprinklotad ]);
     });
 
     // Test the 67th unlock
@@ -2263,7 +2263,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 }
             };
 
-        runBerryMutationTest(BerryType.Chilan, chilanUnlockFirstStep, null, null, true);
+        runBerryMutationTest(BerryType.Chilan, chilanUnlockFirstStep, null, [], true);
 
         // This should not change until the berries are ripe
         let chopleBerryData = App.game.farming.berryData[BerryType.Chople];
@@ -2272,7 +2272,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
             App.game.farming.plotList[index].age = chopleBerryData.growthTime[PlotStage.Bloom];
         }
         Automation.Farm.__internal__farmLoop();
-        runBerryMutationTest(BerryType.Chilan, chilanUnlockFirstStep, null, null, true);
+        runBerryMutationTest(BerryType.Chilan, chilanUnlockFirstStep, null, [], true);
 
         for (const index of [ 6, 8, 16, 18 ])
         {
@@ -2301,7 +2301,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 {
                     expect(plot.berry).toBe(BerryType.Chople);
                 }
-            }, null, null, true);
+            }, null, [], true);
 
         // Simulate a berry mutation in plot 8
         App.game.farming.plotList[8].plant(BerryType.Chilan);
@@ -2372,7 +2372,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
                 }
             },
             null,
-            OakItemType.Rocky_Helmet);
+            [ OakItemType.Rocky_Helmet ]);
     });
 
     // Test the 75th unlock
@@ -2404,7 +2404,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
                 }
             },
             null,
-            OakItemType.Sprinklotad);
+            [ OakItemType.Sprinklotad ]);
     });
 
     // Test the 76th unlock
@@ -2999,5 +2999,41 @@ describe(`${AutomationTestUtils.categoryPrefix}Edge cases:`, () =>
 
         // Restore the player's Shuca berries (for the next test)
         App.game.farming.__berryListCount[BerryType.Shuca] = 24;
+    });
+
+    // Make sure the automation removes items that are forbidden
+    test('Remove items that are forbidden', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Give the player 0 Payapa berries
+        App.game.farming.__berryListCount[BerryType.Payapa] = 0;
+
+        // Set the oak item loadout size to 2
+        App.game.oakItems.__maxActiveCount = 2;
+
+        // Equip the forbidden items
+        App.game.oakItems.deactivateAll();
+        App.game.oakItems.activate(OakItemType.Rocky_Helmet);
+        App.game.oakItems.activate(OakItemType.Cell_Battery);
+
+        // Simulate the player turning the auto-equip setting back on
+        Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.OakItemLoadoutUpdate, true);
+
+        // Simulate the player turning the unlock setting back on
+        Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.FocusOnUnlocks, true);
+
+        Automation.Farm.__internal__farmLoop();
+
+        // Expect the strategy to be pointing to the Shuca berry mutation
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[60]);
+
+        // The items should have been removed
+        expect(App.game.oakItems.itemList[OakItemType.Rocky_Helmet].isActive).toBe(false);
+        expect(App.game.oakItems.itemList[OakItemType.Cell_Battery].isActive).toBe(false);
+
+        // Restore the player's Shuca berries (for the next test)
+        App.game.farming.__berryListCount[BerryType.Payapa] = 24;
     });
 });

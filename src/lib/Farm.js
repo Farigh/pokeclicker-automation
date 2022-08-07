@@ -73,7 +73,7 @@ class AutomationFarm
             this.__internal__farmingLoop = null;
 
             // Restore setting
-            Automation.Utils.OakItem.ForbiddenItem = null;
+            Automation.Utils.OakItem.ForbiddenItems = [];
         }
     }
 
@@ -91,7 +91,7 @@ class AutomationFarm
     //     berryToUnlock: BerryType,
     //     harvestAsSoonAsPossible: boolean,
     //     oakItemToEquip: OakItemType,
-    //     forbiddenOakItem: OakItemType,
+    //     forbiddenOakItems: Array of OakItemType,
     //     requiredPokemon: String,
     //     requiresDiscord: boolean,
     //     action: function()
@@ -228,11 +228,11 @@ class AutomationFarm
             return;
         }
 
-        Automation.Utils.OakItem.ForbiddenItem = this.__internal__currentStrategy.forbiddenOakItem;
+        Automation.Utils.OakItem.ForbiddenItems = this.__internal__currentStrategy.forbiddenOakItems;
 
-        if (this.__internal__currentStrategy.forbiddenOakItem !== null)
+        for (const item of this.__internal__currentStrategy.forbiddenOakItems)
         {
-            App.game.oakItems.deactivate(this.__internal__currentStrategy.forbiddenOakItem);
+            App.game.oakItems.deactivate(item);
         }
     }
 
@@ -1091,7 +1091,7 @@ class AutomationFarm
             },
             1,
             null,
-            OakItemType.Cell_Battery);
+            [ OakItemType.Cell_Battery ]);
 
         // #33 Unlock at least one Watmel berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1157,7 +1157,7 @@ class AutomationFarm
             },
             1,
             null,
-            OakItemType.Blaze_Cassette);
+            [ OakItemType.Blaze_Cassette ]);
 
         // #44 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
         this.__internal__addUnlockMutationStrategy(
@@ -1212,7 +1212,7 @@ class AutomationFarm
             },
             1,
             null,
-            OakItemType.Rocky_Helmet); // TODO : add Cell_Battery
+            [ OakItemType.Rocky_Helmet, OakItemType.Cell_Battery ]);
 
         // #46 Unlock at least one Tanga berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1266,7 +1266,7 @@ class AutomationFarm
             },
             1,
             null,
-            OakItemType.Sprinklotad);
+            [ OakItemType.Sprinklotad ]);
 
         /////
         // Perform mutations requiring Oak items last to avoid any problem du to the player not having unlocked those
@@ -1346,7 +1346,7 @@ class AutomationFarm
                     },
                 harvestAsSoonAsPossible: true,
                 oakItemToEquip: null,
-                forbiddenOakItem: null,
+                forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
                 action: function() {}
@@ -1404,7 +1404,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiringOver600Points(BerryType.Pamtre); },
             1,
             null,
-            OakItemType.Rocky_Helmet);
+            [ OakItemType.Rocky_Helmet ]);
 
         // #55 Unlock at least one Custap berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1412,7 +1412,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiringOver600Points(BerryType.Watmel); },
             1,
             null,
-            OakItemType.Sprinklotad);
+            [ OakItemType.Sprinklotad ]);
 
         // #56 Unlock at least one Jaboca berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1431,7 +1431,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Passho); },
             4,
             null,
-            null,
+            [],
             "Kyogre");
 
         // #61 Unlock at least one Ganlon berry through mutation
@@ -1440,7 +1440,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Shuca); },
             4,
             null,
-            null,
+            [],
             "Groudon");
 
         // #58 Unlock at least one Kee berry through mutation
@@ -1454,7 +1454,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Coba); },
             4,
             null,
-            null,
+            [],
             "Rayquaza");
 
         // #63 Unlock at least one Petaya berry through mutation
@@ -1499,7 +1499,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Chilan); },
             1,
             null,
-            null,
+            [],
             "Palkia");
 
         // #65 Unlock at least one Lansat berry through mutation
@@ -1508,7 +1508,7 @@ class AutomationFarm
             function() { Automation.Farm.__internal__plantABerryForMutationRequiring23Berries(BerryType.Roseli); },
             1,
             null,
-            null,
+            [],
             "Dialga");
 
         // #66 Unlock at least one Starf berry through mutation
@@ -1598,7 +1598,7 @@ class AutomationFarm
                 berryToUnlock: BerryType.Enigma,
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: null,
-                forbiddenOakItem: null,
+                forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: true,
                 action: function()
@@ -1650,7 +1650,7 @@ class AutomationFarm
                 isNeeded: function() { return !App.game.farming.plotList[slotIndex].isUnlocked; },
                 harvestAsSoonAsPossible: true,
                 oakItemToEquip: null,
-                forbiddenOakItem: null,
+                forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
                 // If not unlocked, then farm some needed berries
@@ -1677,14 +1677,14 @@ class AutomationFarm
      * @param actionCallback: The action to perform if it's locked
      * @param minimumRequiredBerry: The minimum of berries to hold required (Default: 1)
      * @param oakItemNeeded: The Oak item needed for the mutation to work (Default: None)
-     * @param oakItemToRemove: The Oak item that might ruin the mutation and needs to be forbidden (Default: None)
+     * @param oakItemsToRemove: The Oak items list that might ruin the mutation and needs to be forbidden (Default: None)
      * @param requiredPokemonName: The name of the Pokemon needed for the mutation to occur (Default: None)
      */
     static __internal__addUnlockMutationStrategy(berryType,
                                                  actionCallback,
                                                  minimumRequiredBerry = 1,
                                                  oakItemNeeded = null,
-                                                 oakItemToRemove = null,
+                                                 oakItemsToRemove = [],
                                                  requiredPokemonName = null)
     {
         this.__internal__unlockStrategySelection.push(
@@ -1703,7 +1703,7 @@ class AutomationFarm
                 berryToUnlock: berryType,
                 harvestAsSoonAsPossible: false,
                 oakItemToEquip: oakItemNeeded,
-                forbiddenOakItem: oakItemToRemove,
+                forbiddenOakItems: oakItemsToRemove,
                 requiredPokemon: requiredPokemonName,
                 requiresDiscord: false,
                 action: actionCallback
@@ -1734,7 +1734,7 @@ class AutomationFarm
                 },
                 harvestAsSoonAsPossible: true,
                 oakItemToEquip: null,
-                forbiddenOakItem: null,
+                forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
                 // If not, then farm some needed berries
@@ -1959,7 +1959,7 @@ class AutomationFarm
         // TODO (06/08/2022): Don't turn the feature off in most cases
         Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
-        Automation.Utils.OakItem.ForbiddenItem = null;
+        Automation.Utils.OakItem.ForbiddenItems = [];
     }
 
     /**
