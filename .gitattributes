@@ -1,0 +1,13 @@
+# Doc
+*.md             eol=lf
+
+# Desktop
+*.asar           -text
+
+# Config
+*.json           eol=lf
+*.yml            eol=lf
+
+# Scripts
+*.sh             eol=lf
+*.js             eol=lf

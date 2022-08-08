@@ -3,5 +3,6 @@
     "editor.rulers": [ 150 ],
     "workbench.colorCustomizations": {
         "editorRuler.foreground": "#0b80ce"
-    }
+    },
+    "files.eol": "\n"
 }
