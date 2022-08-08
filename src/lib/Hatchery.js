@@ -274,7 +274,7 @@ class AutomationHatchery
      */
     static __internal__addEggsToHatchery()
     {
-        let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player._itemList[eggType]());
+        let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player.itemList[eggType]());
 
         for (const eggTypeName of eggList)
         {
@@ -287,7 +287,7 @@ class AutomationHatchery
             //   - the item actually can be used
             //   - no other egg of that type is breeding
             if (App.game.breeding.hasFreeEggSlot()
-                && player.itemList[eggType.name]()
+                && (player.itemList[eggType.name]() > 0)
                 && !eggType.getCaughtStatus()
                 && eggType.checkCanUse()
                 && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()

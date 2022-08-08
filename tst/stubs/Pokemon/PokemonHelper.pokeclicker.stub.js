@@ -9,20 +9,23 @@ class PokemonHelper
 
     static getPokemonByName(name)
     {
-        let pokemonData = pokemonMap[name];
-        if (pokemonData === undefined)
+        let basePokemon = pokemonMap[name];
+        if (basePokemon === undefined)
         {
             throw AutomationTestUtils.formatErrors(`Cound not find pokemon named '${name}'`);
         }
 
-        return new DataPokemon(pokemonData.id, pokemonData.name);
+        const type1 = basePokemon.type[0];
+        const type2 = basePokemon.type[1] ?? PokemonType.None;
+
+        return new DataPokemon(basePokemon.id, basePokemon.name, basePokemon.eggCycles, type1, type2);
     }
 
     /***************************\
     |*   Test-only interface   *|
     \***************************/
 
-    static __registerPokemon(name, id)
+    static __registerPokemon(name, id, base, type, eggCycles)
     {
         if (pokemonMap[name] !== undefined)
         {
@@ -34,7 +37,7 @@ class PokemonHelper
             throw AutomationTestUtils.formatErrors(`Trying to register pokemon with the id '${id}' twice`);
         }
 
-        pokemonMap[name] = new TmpPokemonListData(id, name);
+        pokemonMap[name] = new TmpPokemonListData(id, name, type, base, eggCycles);
         pokemonMap[id] = pokemonMap[name];
         App.game.statistics.__addPokemon(id);
     }

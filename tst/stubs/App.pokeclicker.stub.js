@@ -3,9 +3,11 @@ class App
 {
     static game =
         {
+            breeding: new Breeding(),
             discord: new Discord(),
             farming: new Farming(),
             oakItems: new OakItems(),
+            party: new Party(),
             statistics: new Statistics(),
             wallet: new Wallet()
         };

@@ -1,3 +1,5 @@
+import "tst/utils/tests.utils.js";
+
 // Import pokéclicker App
 import "tst/imports/Pokeclicker.import.js";
 
@@ -7,7 +9,7 @@ import "tst/stubs/Automation/Menu.stub.js";
 import "tst/imports/AutomationUtils.import.js";
 import "src/lib/Farm.js";
 
-import "tst/utils/tests.utils.js";
+import "tst/utils/PokemonLoader.utils.js";
 import "tst/utils/farming.utils.js";
 
 /************************\
@@ -34,11 +36,8 @@ class Automation
     };
 }
 
-PokemonHelper.__registerPokemon("Kyogre", 382);
-PokemonHelper.__registerPokemon("Groudon", 383);
-PokemonHelper.__registerPokemon("Rayquaza", 384);
-PokemonHelper.__registerPokemon("Dialga", 483);
-PokemonHelper.__registerPokemon("Palkia", 484);
+// Load the needed pokemons
+PokemonLoader.loadFarmingUnlockPokemons();
 
 /**************************\
 |***    TEST-HELPERS    ***|
@@ -255,7 +254,7 @@ beforeAll(() =>
         expect(Automation.Utils.LocalStorage.getValue(Automation.Farm.Settings.OakItemLoadoutUpdate)).toBe("true");
     });
 
-// Test when player does not have enough berries to unclock anything
+// Test when player does not have enough berries to unlock anything
 test('Not enough berry to unlock anything', () =>
 {
     let cheriData = App.game.farming.berryData[BerryType.Cheri];
