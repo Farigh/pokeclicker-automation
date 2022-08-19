@@ -314,10 +314,10 @@ class AutomationHatchery
         let i = 0;
         while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
         {
-            let type = currentlyHeldFossils[i];
+            let fossil = currentlyHeldFossils[i];
 
-            let associatedPokemon = GameConstants.FossilToPokemon[type.name];
-            let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon))
+            let associatedPokemon = GameConstants.FossilToPokemon[fossil.name];
+            let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon));
 
             // Use an egg only if:
             //   - a slot is available
@@ -326,15 +326,15 @@ class AutomationHatchery
             //   - the pokemon associated to the fossil is not already held by the player
             //   - the fossil is not already in hatchery
             if (App.game.breeding.hasFreeEggSlot()
-                && (type.amount() > 0)
-                && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
+                && (fossil.amount() > 0)
+                && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[fossil.name]) <= player.highestRegion()
                 && !hasPokemon
                 && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
                                               && (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
             {
                 // Hatching a fossil is performed by selling it
-                Underground.sellMineItem(type.id);
-                Automation.Utils.sendNotif("Added a " + type.name + " to the Hatchery!", "Hatchery");
+                Underground.sellMineItem(fossil.id);
+                Automation.Utils.sendNotif("Added a " + fossil.name + " to the Hatchery!", "Hatchery");
             }
 
             i++;

@@ -38,17 +38,41 @@ class GameConstants
         };
 
     static FossilToPokemon =
-    {
-        'Helix Fossil': 'Omanyte',
-        'Dome Fossil': 'Kabuto',
-        'Old Amber': 'Aerodactyl',
-        'Root Fossil': 'Lileep',
-        'Claw Fossil': 'Anorith',
-        'Armor Fossil': 'Shieldon',
-        'Skull Fossil': 'Cranidos',
-        'Cover Fossil': 'Tirtouga',
-        'Plume Fossil': 'Archen',
-        'Jaw Fossil': 'Tyrunt',
-        'Sail Fossil': 'Amaura',
-    };
+        {
+            'Helix Fossil': 'Omanyte',
+            'Dome Fossil': 'Kabuto',
+            'Old Amber': 'Aerodactyl',
+            'Root Fossil': 'Lileep',
+            'Claw Fossil': 'Anorith',
+            'Armor Fossil': 'Shieldon',
+            'Skull Fossil': 'Cranidos',
+            'Cover Fossil': 'Tirtouga',
+            'Plume Fossil': 'Archen',
+            'Jaw Fossil': 'Tyrunt',
+            'Sail Fossil': 'Amaura',
+        };
+
+    static Region =
+        {
+            "-1": "none",
+            0: "kanto",
+            1: "johto",
+            2: "hoenn",
+            3: "sinnoh",
+            4: "unova",
+            5: "kalos",
+            6: "alola",
+            7: "galar",
+            8: "final",
+            alola: 6,
+            final: 8,
+            galar: 7,
+            hoenn: 2,
+            johto: 1,
+            kalos: 5,
+            kanto: 0,
+            none: -1,
+            sinnoh: 3,
+            unova: 4
+        };
 }

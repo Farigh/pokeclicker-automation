@@ -14,6 +14,7 @@ class Player
         this.__mineInventory = [];
 
         this.__initItemList();
+        this.__initMiningInventory();
     }
 
     highestRegion()
@@ -42,6 +43,29 @@ class Player
         {
             this.__itemListCount[i] = 0;
             this.itemList[i] = function() { return this.__itemListCount[i]; }.bind(this);
+        }
+    }
+
+    __initMiningInventory()
+    {
+        // Init fossil items
+        for (const fossilName of Object.keys(GameConstants.FossilToPokemon))
+        {
+            let undergroundItem = UndergroundItems.getByName(fossilName);
+
+            // Skipped: value, sellLocked
+            let tempItem =
+                {
+                    name: undergroundItem.name,
+                    amount: function() { return tempItem.__amount; },
+                    id: undergroundItem.id,
+                    valueType: undergroundItem.valueType,
+
+                    // For testing purpose
+                    __amount: 0
+                };
+
+            this.__mineInventory.push(tempItem);
         }
     }
 }

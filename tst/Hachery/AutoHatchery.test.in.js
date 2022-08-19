@@ -34,6 +34,7 @@ class Automation
 
 // Load the needed pokemons
 PokemonLoader.loadEggsPokemons();
+PokemonLoader.loadFossilsPokemons();
 
 /************************\
 |***    TEST-SUITE    ***|
@@ -180,5 +181,26 @@ describe(`${AutomationTestUtils.categoryPrefix}Egg breeding:`, () =>
         expect(App.game.breeding.__eggList[0].pokemon).toEqual(App.game.breeding.hatchList[EggType.Fire][0][1]);
         expect(App.game.breeding.__eggList[0].isNone()).toBe(false);
         expect(App.game.breeding.__eggList[0].type).toBe(EggType.Fire);
+    });
+});
+
+describe(`${AutomationTestUtils.categoryPrefix}Fossil breeding:`, () =>
+{
+    // Test when player has an egg that can hatch uncaught pokemon, for each handled types
+    let possibleFossils = Object.keys(GameConstants.FossilToPokemon);
+    test.each(possibleFossils)("Having a %s that can hatch uncaught pokemon", (fossilName) =>
+    {
+        // Set the player region to the highest possible (since fossil requires that the player have set foot to their region)
+        player.__highestRegion = GameConstants.Region.alola;
+
+        // Give the player an egg
+        player.mineInventory().find(i => i.name == fossilName).__amount = 1;
+
+        // Simulate the loop
+        Automation.Hatchery.__internal__hatcheryLoop();
+
+        expect(App.game.breeding.__eggList[0].pokemon).toEqual(GameConstants.FossilToPokemon[fossilName]);
+        expect(App.game.breeding.__eggList[0].isNone()).toBe(false);
+        expect(App.game.breeding.__eggList[0].type).toBe(EggType.Fossil);
     });
 });

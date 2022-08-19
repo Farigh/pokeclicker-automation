@@ -8,6 +8,7 @@ import "tst/stubs/Hatchery/EggType.pokeclicker.stub.js";
 import "tst/stubs/OakItems/OakItemType.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/CaughtStatus.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/PokemonType.pokeclicker.stub.js";
+import "tst/stubs/Underground/UndergroundItemValueType.pokeclicker.stub.js";
 
 // Import helpers
 import "tst/stubs/Farming/FarmController.pokeclicker.stub.js";
@@ -41,6 +42,11 @@ import "tst/stubs/Pokemon/DataPokemon.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/Party.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/PartyPokemon.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/TmpPokemonListData.pokeclicker.stub.js";
+
+// Import pokeclicker Underground types and classes
+import "tst/stubs/Underground/Underground.pokeclicker.stub.js";
+import "tst/stubs/Underground/UndergroundItem.pokeclicker.stub.js";
+import "tst/stubs/Underground/UndergroundItems.pokeclicker.stub.js";
 
 // Import pokeclicker classes
 import "tst/stubs/Discord.pokeclicker.stub.js";
