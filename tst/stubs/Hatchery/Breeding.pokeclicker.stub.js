@@ -9,6 +9,7 @@ class Breeding
     {
         this.hatchList = [];
         this.eggList = [];
+        this.eggSlots = 4;
 
         this.__canAccess = true;
         this.__eggList = [];
@@ -183,7 +184,7 @@ class Breeding
 
     __initEggList()
     {
-        for (let i = 0; i < 4; i++)
+        for (let i = 0; i < this.eggSlots; i++)
         {
             this.__eggList[i] = new Egg();
             this.eggList[i] = function() { return this.__eggList[i]; }.bind(this);

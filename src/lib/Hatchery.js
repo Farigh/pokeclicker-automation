@@ -402,7 +402,7 @@ class AutomationHatchery
     {
         let pokemonToBreed = [];
 
-        let targetPokemons = sortedPokemonCandidates.filter(pokemon => pokemon?.pokerus === GameConstants.Pokerus.None);
+        let targetPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Uninfected));
 
         // No more pokemon to infect, fallback to the default order
         if (targetPokemons.length == 0)
@@ -412,7 +412,7 @@ class AutomationHatchery
 
         // Both Contagious and Cured pokemon spread the Pokérus
         let contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
-                                                                        || (pokemon?.pokerus === GameConstants.Pokerus.Cured));
+                                                                        || (pokemon?.pokerus === GameConstants.Pokerus.Resistant));
         let availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
                              - (App.game.breeding.eggList.length - App.game.breeding.eggSlots);
 
@@ -422,7 +422,7 @@ class AutomationHatchery
         {
             let currentEgg = egg();
             if ((currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Contagious)
-                || (currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Cured))
+                || (currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Resistant))
             {
                 for (const type of pokemonMap[currentEgg.partyPokemon.id].type)
                 {

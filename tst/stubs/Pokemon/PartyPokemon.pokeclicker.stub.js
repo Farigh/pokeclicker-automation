@@ -4,10 +4,15 @@ class PartyPokemon
     // Stripped: evolutions
     constructor(id, name, baseAttack, shiny)
     {
-        this.id = id;
-        this.name = name;
-        this.baseAttack = baseAttack;
-        this.shiny = shiny;
         this.breading = false;
+        this.baseAttack = baseAttack;
+        this.id = id;
+        this.level = 1;
+        this.pokerus = GameConstants.Pokerus.Uninfected;
+        this.name = name;
+        this.shiny = shiny;
+        this.proteinsUsed = function() { return this.__proteinsUsed; }.bind(this);
+
+        this.__proteinsUsed = 0;
     }
 }
