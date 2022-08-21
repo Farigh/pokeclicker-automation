@@ -1,8 +1,6 @@
 // Stub of https://github.com/pokeclicker/pokeclicker/blob/cbeab9a0e658aa84ee2ba028f6ae83421c92776a/src/modules/GameConstants.ts
 class GameConstants
 {
-    static BREEDING_ATTACK_BONUS = 25;
-
     static Currency =
         {
             0: "money",
@@ -89,4 +87,7 @@ class GameConstants
             sinnoh: 3,
             unova: 4
         };
+
+    static BREEDING_ATTACK_BONUS = 25;
+    static MAX_AVAILABLE_REGION = this.Region.alola;
 }

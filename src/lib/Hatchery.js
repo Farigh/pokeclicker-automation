@@ -11,7 +11,8 @@ class AutomationHatchery
                           NotShinyFirst: "Hatchery-NotShinyFirst",
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UseFossils: "Hatchery-UseFossils",
-                          UseEggs: "Hatchery-UseEggs"
+                          UseEggs: "Hatchery-UseEggs",
+                          PrioritizedRegion: "Hatchery-PrioritizedRegion"
                       };
 
     /**
@@ -27,6 +28,9 @@ class AutomationHatchery
         {
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
+
+            // Set default priority to Any
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedRegion, GameConstants.Region.none);
 
             this.__internal__buildMenu();
         }
@@ -82,6 +86,8 @@ class AutomationHatchery
 
     static __internal__hatcheryContainer = null;
     static __internal__autoHatcheryLoop = null;
+    static __internal__regionSelectElem = null;
+    static __internal__lockedRegions = [];
 
     /**
      * @brief Builds the menu
@@ -103,10 +109,10 @@ class AutomationHatchery
 
         let autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
                                 + Automation.Menu.TooltipSeparator
-                                + "The higher beeding efficiency pokemon are added first\n"
-                                + "The queue is not used, as it would reduce the Pokemon Attack\n"
-                                + "It also enables you to manually add pokemons to the queue\n"
-                                + "The queued pokemon are hatched first";
+                                + "The higher beeding efficiency pokémon are added first\n"
+                                + "The queue is not used, as it would reduce the pokémon Attack\n"
+                                + "It also enables you to manually add pokémons to the queue\n"
+                                + "The queued pokémon are hatched first";
         let autoHatcheryButton =
             Automation.Menu.addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__internal__hatcheryContainer);
         autoHatcheryButton.addEventListener("click", this.toggleAutoHatchery.bind(this), false);
@@ -120,12 +126,12 @@ class AutomationHatchery
 
         let fossilTooltip = "Add fossils to the hatchery as well"
                           + Automation.Menu.TooltipSeparator
-                          + "Only fossils for which pokemon are not currently held are added";
+                          + "Only fossils for which pokémon are not currently held are added";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Hatch Fossils that can breed an uncaught pokémon", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
         let eggTooltip = "Add eggs to the hatchery as well"
                        + Automation.Menu.TooltipSeparator
-                       + "Only eggs for which some pokemon are not currently held are added\n"
+                       + "Only eggs for which some pokémon are not currently held are added\n"
                        + "Only one egg of a given type is used at the same time";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Hatch Eggs that can breed an uncaught pokémon", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
@@ -135,9 +141,14 @@ class AutomationHatchery
         this.__internal__disablePokerusSpreadingIfNotUnlocked();
     }
 
+    /**
+     * @brief Builds the 'Pokémon breeding order settings' catégory
+     *
+     * @param {Element} parentDiv: The parent element to add any child to
+     */
     static __internal__buildSortingAdvancedSettingCategory(parentDiv)
     {
-        let categoryContainer = Automation.Menu.createSettingCategory("Pokemon breeding order settings");
+        let categoryContainer = Automation.Menu.createSettingCategory("Pokémon breeding order settings");
         parentDiv.appendChild(categoryContainer);
 
         // For now only Breeding efficiency is possible
@@ -146,11 +157,15 @@ class AutomationHatchery
         sortingOrder.textContent = "Sorting order: Breeding efficiency";
         categoryContainer.appendChild(sortingOrder);
 
+        // Add region selector
+        let regionSelector = this.__internal__buildRegionSelectorList();
+        categoryContainer.appendChild(regionSelector);
+
         // Add the shiny setting
-        let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
+        let shinyTooltip = "Only add shinies to the hatchery if no other pokémon is available"
                          + Automation.Menu.TooltipSeparator
                          + "This is useful to farm shinies you don't have yet";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider shiny pokemons last",
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider shiny pokémons last",
                                                                this.Settings.NotShinyFirst,
                                                                shinyTooltip,
                                                                categoryContainer);
@@ -158,9 +173,81 @@ class AutomationHatchery
         // Add the pokérus setting
         let pokerusTooltip = "Spread the Pokérus in priority"
                            + Automation.Menu.TooltipSeparator
-                           + "This will try to infect as many pokemon as possible with the Pokérus";
+                           + "This will try to infect as many pokémon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
+    }
+
+    /**
+     * @brief Builds the region selector drop-down list
+     *
+     * @returns the created element
+     */
+    static __internal__buildRegionSelectorList()
+    {
+        let tooltip = "The pokémons from the selected region will be added in priority";
+
+        let container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+
+        let label = document.createTextNode("Prioritize pokémon from the following region:");
+        container.appendChild(label);
+
+        this.__internal__regionSelectElem = Automation.Menu.createDropDownListElement("selectedRegion");
+        this.__internal__regionSelectElem.style.position = "relative";
+        this.__internal__regionSelectElem.style.bottom = "2px";
+        this.__internal__regionSelectElem.style.width = "85px";
+        this.__internal__regionSelectElem.style.marginLeft = "4px";
+        this.__internal__regionSelectElem.style.paddingLeft = "3px";
+        container.appendChild(this.__internal__regionSelectElem);
+
+        // Add the "Any" region
+        let opt = document.createElement("option");
+        opt.textContent = "Any";
+        opt.value = GameConstants.Region.none;
+        opt.id = GameConstants.Region.none;
+        this.__internal__regionSelectElem.options.add(opt);
+
+        let previouslySelectedRegion = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
+
+        // Populate the list
+        for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
+        {
+            opt = document.createElement("option");
+
+            // Set the region name as the content
+            let regionName = GameConstants.Region[regionId];
+            opt.textContent = regionName.charAt(0).toUpperCase() + regionName.slice(1);
+
+            if (regionId > player.highestRegion())
+            {
+                this.__internal__lockedRegions.push(regionId);
+                opt.hidden = true;
+            }
+
+            opt.value = regionId;
+            opt.id = regionId;
+
+            // Restore the previouly seletected item
+            if (!opt.hidden && (regionId == previouslySelectedRegion))
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            this.__internal__regionSelectElem.options.add(opt);
+        }
+
+        // Update the local storage if the value is changed by the user
+        this.__internal__regionSelectElem.onchange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.PrioritizedRegion, this.__internal__regionSelectElem.value);
+            }.bind(this);
+
+        return container;
     }
 
     /**
@@ -202,6 +289,7 @@ class AutomationHatchery
         {
             let hatcheryUnlocked = App.game.breeding.canAccess();
             let pokerusUnlocked = App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus);
+            let areAllRegionUnlocked = this.__internal__lockedRegions.length == 0;
 
             if (hatcheryUnlocked && this.__internal__hatcheryContainer.hidden)
             {
@@ -214,7 +302,24 @@ class AutomationHatchery
                 Automation.Menu.setButtonDisabledState(this.Settings.SpreadPokerus, false);
             }
 
-            if (hatcheryUnlocked && pokerusUnlocked)
+            if (!areAllRegionUnlocked)
+            {
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__internal__lockedRegions.length - 1; i >= 0; i--)
+                {
+                    let regionId = this.__internal__lockedRegions[i];
+                    if (regionId <= player.highestRegion())
+                    {
+                        // Make the element visible
+                        this.__internal__regionSelectElem.options[regionId + 1].hidden = false;
+
+                        // Remove the functionality from the locked list
+                        this.__internal__lockedRegions.splice(i, 1);
+                    }
+                }
+            }
+
+            if (hatcheryUnlocked && pokerusUnlocked && areAllRegionUnlocked)
             {
                 clearInterval(watcher);
             }
@@ -377,10 +482,28 @@ class AutomationHatchery
             });
 
         let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
+        let regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
 
         // Sort list by breeding efficiency
         pokemonToBreed.sort((a, b) =>
             {
+                // Region priority
+                if (regionPriority != GameConstants.Region.none)
+                {
+                    let isARegionValid = pokemonMap[a.name].nativeRegion == regionPriority;
+                    let isBRegionValid = pokemonMap[b.name].nativeRegion == regionPriority;
+
+                    if (isARegionValid && !isBRegionValid)
+                    {
+                        return -1;
+                    }
+                    if (!isARegionValid && isBRegionValid)
+                    {
+                        return 1;
+                    }
+                }
+
+                // Not shiny priority
                 if (notShinyFirst)
                 {
                     if (a.shiny && !b.shiny)
@@ -393,6 +516,7 @@ class AutomationHatchery
                     }
                 }
 
+                // Breeding efficiency order
                 let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
                 let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
 

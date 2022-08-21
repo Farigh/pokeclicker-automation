@@ -123,10 +123,10 @@ class AutomationDungeon
 
         // Add an on/off button to stop after pokedex completion
         let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
-                                   + "once all pokemon are caught in this dungeon."
+                                   + "once all pokémon are caught in this dungeon."
                                    + Automation.Menu.TooltipSeparator
-                                   + "You can switch between pokemon and shiny completion\n"
-                                   + "by clicking on the pokeball image.";
+                                   + "You can switch between pokémon and shiny completion\n"
+                                   + "by clicking on the pokéball image.";
 
         let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
         Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
@@ -507,7 +507,7 @@ class AutomationDungeon
                         disableReason += "shiny ";
                     }
 
-                    disableReason += "pokemons are already caught,\nand the option to stop in this case is enabled";
+                    disableReason += "pokémons are already caught,\nand the option to stop in this case is enabled";
                 }
 
                 // The player does not have enough dugeon token
