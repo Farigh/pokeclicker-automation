@@ -118,29 +118,49 @@ class AutomationHatchery
         titleDiv.style.marginBottom = "10px";
         hatcherySettingPanel.appendChild(titleDiv);
 
+        let fossilTooltip = "Add fossils to the hatchery as well"
+                          + Automation.Menu.TooltipSeparator
+                          + "Only fossils for which pokemon are not currently held are added";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Hatch Fossils that can breed an uncaught pokémon", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
+        let eggTooltip = "Add eggs to the hatchery as well"
+                       + Automation.Menu.TooltipSeparator
+                       + "Only eggs for which some pokemon are not currently held are added\n"
+                       + "Only one egg of a given type is used at the same time";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Hatch Eggs that can breed an uncaught pokémon", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
+
+        this.__internal__buildSortingAdvancedSettingCategory(hatcherySettingPanel);
+
+        this.__internal__disablePokerusSpreadingIfNotUnlocked();
+    }
+
+    static __internal__buildSortingAdvancedSettingCategory(parentDiv)
+    {
+        let categoryContainer = Automation.Menu.createSettingCategory("Pokemon breeding order settings");
+        parentDiv.appendChild(categoryContainer);
+
+        // For now only Breeding efficiency is possible
+        let sortingOrder = document.createElement("div");
+        sortingOrder.style.paddingRight = "12px";
+        sortingOrder.textContent = "Sorting order: Breeding efficiency";
+        categoryContainer.appendChild(sortingOrder);
+
+        // Add the shiny setting
         let shinyTooltip = "Only add shinies to the hatchery if no other pokemon is available"
                          + Automation.Menu.TooltipSeparator
                          + "This is useful to farm shinies you don't have yet";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider shiny pokemons last",
                                                                this.Settings.NotShinyFirst,
                                                                shinyTooltip,
-                                                               hatcherySettingPanel);
-        let fossilTooltip = "Add fossils to the hatchery as well"
-                          + Automation.Menu.TooltipSeparator
-                          + "Only fossils for which pokemon are not currently held are added";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Hatch Fossils", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
-        let eggTooltip = "Add eggs to the hatchery as well"
-                       + Automation.Menu.TooltipSeparator
-                       + "Only eggs for which some pokemon are not currently held are added\n"
-                       + "Only one egg of a given type is used at the same time";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Hatch Eggs", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
+                                                               categoryContainer);
+
+        // Add the pokérus setting
         let pokerusTooltip = "Spread the Pokérus in priority"
                            + Automation.Menu.TooltipSeparator
                            + "This will try to infect as many pokemon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-            "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, hatcherySettingPanel);
-
-        this.__internal__disablePokerusSpreadingIfNotUnlocked();
+            "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
     }
 
     /**

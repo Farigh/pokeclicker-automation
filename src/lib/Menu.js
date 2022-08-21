@@ -387,6 +387,20 @@ class AutomationMenu
     }
 
     /**
+     * @brief Creates a boxed category with the given @p title
+     *
+     * @returns The created div element
+     */
+    static createSettingCategory(title)
+    {
+        let categoryContainer = document.createElement("div");
+        categoryContainer.classList.add("automation-setting-category");
+        categoryContainer.setAttribute("automation-setting-category-title", title);
+
+        return categoryContainer;
+    }
+
+    /**
      * @brief Shows the animated checkmark
      *
      * @param {Element} checkmarkContainer: The element created using @see createAnimatedCheckMarkElement()
@@ -970,6 +984,28 @@ class AutomationMenu
                 outline: none;
                 border-radius: 5px;
                 background-color: #455d77;
+            }
+            .automation-setting-category
+            {
+                position: relative;
+                border: solid 1px #999999;
+                padding: 10px;
+                padding-right: 0px;
+                margin-top: 20px;
+                margin-bottom: 5px;
+                height: fit-content;
+                border-radius: 5px;
+            }
+            .automation-setting-category::after
+            {
+                content: attr(automation-setting-category-title);
+                position: absolute;
+                background-color: #2b3548;
+                color: #84b0f5;
+                width: fit-content;
+                padding: 0px 5px;
+                top: -13px;
+                right: 15px;
             }
             .automation-checkmark-container
             {
