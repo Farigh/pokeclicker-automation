@@ -193,36 +193,71 @@ class Breeding
 
     __initHatchList()
     {
-        // Only region 1 and 2 pokemons are set for the tests
         this.hatchList[EggType.Fire] =
             [
                 ['Charmander', 'Vulpix', 'Growlithe', 'Ponyta'],
-                ['Cyndaquil', 'Slugma', 'Houndour', 'Magby']
+                ['Cyndaquil', 'Slugma', 'Houndour', 'Magby'],
+                ['Torchic', 'Numel'],
+                ['Chimchar'],
+                ['Tepig', 'Pansear'],
+                ['Fennekin'],
+                ['Litten'],
+                ['Scorbunny', 'Sizzlipede'],
             ];
         this.hatchList[EggType.Water] =
             [
                 ['Squirtle', 'Lapras', 'Staryu', 'Psyduck'],
-                ['Totodile', 'Wooper', 'Marill', 'Qwilfish']
+                ['Totodile', 'Wooper', 'Marill', 'Qwilfish'],
+                ['Mudkip', 'Feebas', 'Clamperl'],
+                ['Piplup', 'Finneon', 'Buizel'],
+                ['Oshawott', 'Panpour'],
+                ['Froakie'],
+                ['Popplio', 'Wimpod'],
+                ['Sobble', 'Chewtle'],
             ];
         this.hatchList[EggType.Grass] =
             [
                 ['Bulbasaur', 'Oddish', 'Tangela', 'Bellsprout'],
-                ['Chikorita', 'Hoppip', 'Sunkern']
+                ['Chikorita', 'Hoppip', 'Sunkern'],
+                ['Treecko', 'Tropius', 'Roselia'],
+                ['Turtwig', 'Carnivine', 'Budew'],
+                ['Snivy', 'Pansage'],
+                ['Chespin'],
+                ['Rowlet', 'Morelull'],
+                ['Grookey', 'Gossifleur'],
             ];
         this.hatchList[EggType.Fighting] =
             [
                 ['Hitmonlee', 'Hitmonchan', 'Machop', 'Mankey'],
-                ['Tyrogue']
+                ['Tyrogue'],
+                ['Makuhita', 'Meditite'],
+                ['Riolu'],
+                ['Throh', 'Sawk'],
+                [],
+                ['Crabrawler'],
+                ['Falinks'],
             ];
         this.hatchList[EggType.Electric] =
             [
                 ['Magnemite', 'Pikachu', 'Voltorb', 'Electabuzz'],
-                ['Chinchou', 'Mareep', 'Elekid']
+                ['Chinchou', 'Mareep', 'Elekid'],
+                ['Plusle', 'Minun', 'Electrike'],
+                ['Pachirisu', 'Shinx'],
+                ['Blitzle'],
+                [],
+                [],
+                ['Toxel', 'Pincurchin'],
             ];
         this.hatchList[EggType.Dragon] =
             [
                 ['Dratini', 'Dragonair', 'Dragonite'],
-                []
+                [],
+                ['Bagon', 'Shelgon', 'Salamence'],
+                ['Gible', 'Gabite', 'Garchomp'],
+                ['Deino', 'Zweilous', 'Hydreigon'],
+                ['Goomy'],
+                ['Turtonator', 'Drampa', 'Jangmo-o', 'Hakamo-o', 'Kommo-o'],
+                ['Dreepy', 'Drakloak', 'Dragapult'],
             ];
     }
 }

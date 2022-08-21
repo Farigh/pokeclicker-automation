@@ -317,7 +317,7 @@ class AutomationTrivia
             textElem.textContent = "Roamers: " + routeName.replace(/ /g, '\u00a0');
 
             // Update the tooltip
-            let tooltip = "The following pokemons are roaming this route:\n";
+            let tooltip = "The following pokémons are roaming this route:\n";
             for (const [ index, pokemon ] of roamers.entries())
             {
                 if (index !== 0)
