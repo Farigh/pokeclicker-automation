@@ -5,7 +5,7 @@ class FarmController
     |*  Pokéclicker interface  *|
     \***************************/
 
-    static plotClick(index)
+    static plotClick(index, event = null)
     {
         let plot = App.game.farming.plotList[index];
 
