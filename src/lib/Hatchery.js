@@ -12,7 +12,8 @@ class AutomationHatchery
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
-                          PrioritizedRegion: "Hatchery-PrioritizedRegion"
+                          PrioritizedRegion: "Hatchery-PrioritizedRegion",
+                          RegionalDebuffRegion: "Hatchery-RegionalDebuffRegion"
                       };
 
     /**
@@ -29,8 +30,11 @@ class AutomationHatchery
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
 
-            // Set default priority to Any
+            // Set default region priority to Any
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedRegion, GameConstants.Region.none);
+
+            // Set default regional debuff to None
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.RegionalDebuffRegion, GameConstants.Region.none);
 
             this.__internal__buildMenu();
         }
@@ -154,12 +158,25 @@ class AutomationHatchery
         // For now only Breeding efficiency is possible
         let sortingOrder = document.createElement("div");
         sortingOrder.style.paddingRight = "12px";
-        sortingOrder.textContent = "Sorting order: Breeding efficiency";
+        sortingOrder.textContent = "Sorting on attribute: Breeding efficiency";
         categoryContainer.appendChild(sortingOrder);
 
         // Add region selector
-        let regionSelector = this.__internal__buildRegionSelectorList();
+        let tooltip = "The pokémons from the selected region will be added in priority";
+        let label = "Prioritize pokémon from the following region:";
+        let regionSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.PrioritizedRegion);
         categoryContainer.appendChild(regionSelector);
+
+        // Add regional debuff selector (only if the challenge is active)
+        if (App.game.challenges.list.regionalAttackDebuff.active())
+        {
+            tooltip = "The regional debuff will be considered while\n"
+                    + "sorting pokémon using the selected attribute\n"
+                    + "(for now only the Breeding efficiency is available)";
+            label = "Regional attack debuff to consider:";
+            let regionalDebuffSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.RegionalDebuffRegion);
+            categoryContainer.appendChild(regionalDebuffSelector);
+        }
 
         // Add the shiny setting
         let shinyTooltip = "Only add shinies to the hatchery if no other pokémon is available"
@@ -178,40 +195,42 @@ class AutomationHatchery
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
     }
 
+
     /**
-     * @brief Builds the region selector drop-down list
+     * @brief Builds a region selector drop-down list
+     *
+     * @param {string} tooltip: The tooltip to use
+     * @param {string} label: The label to put before the drop-down list
+     * @param {string} setting: The associated setting
      *
      * @returns the created element
      */
-    static __internal__buildRegionSelectorList()
+    static __internal__buildRegionSelectorList(tooltip, label, setting)
     {
-        let tooltip = "The pokémons from the selected region will be added in priority";
-
         let container = document.createElement("div");
         container.style.paddingLeft = "10px";
         container.style.paddingRight = "10px";
         container.classList.add("hasAutomationTooltip");
         container.setAttribute("automation-tooltip-text", tooltip);
 
-        let label = document.createTextNode("Prioritize pokémon from the following region:");
-        container.appendChild(label);
+        container.appendChild(document.createTextNode(label));
 
-        this.__internal__regionSelectElem = Automation.Menu.createDropDownListElement("selectedRegion");
-        this.__internal__regionSelectElem.style.position = "relative";
-        this.__internal__regionSelectElem.style.bottom = "2px";
-        this.__internal__regionSelectElem.style.width = "85px";
-        this.__internal__regionSelectElem.style.marginLeft = "4px";
-        this.__internal__regionSelectElem.style.paddingLeft = "3px";
-        container.appendChild(this.__internal__regionSelectElem);
+        let selectElem = Automation.Menu.createDropDownListElement("selectedRegion-" + setting);
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "85px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        container.appendChild(selectElem);
 
         // Add the "Any" region
         let opt = document.createElement("option");
-        opt.textContent = "Any";
+        opt.textContent = (setting === this.Settings.PrioritizedRegion) ? "Any" : "None";
         opt.value = GameConstants.Region.none;
         opt.id = GameConstants.Region.none;
-        this.__internal__regionSelectElem.options.add(opt);
+        selectElem.options.add(opt);
 
-        let previouslySelectedRegion = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
+        let previouslySelectedRegion = Automation.Utils.LocalStorage.getValue(setting);
 
         // Populate the list
         for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
@@ -222,7 +241,7 @@ class AutomationHatchery
             let regionName = GameConstants.Region[regionId];
             opt.textContent = regionName.charAt(0).toUpperCase() + regionName.slice(1);
 
-            if (regionId > player.highestRegion())
+            if ((setting === this.Settings.PrioritizedRegion) && (regionId > player.highestRegion()))
             {
                 this.__internal__lockedRegions.push(regionId);
                 opt.hidden = true;
@@ -238,14 +257,19 @@ class AutomationHatchery
                 opt.selected = true;
             }
 
-            this.__internal__regionSelectElem.options.add(opt);
+            selectElem.options.add(opt);
         }
 
         // Update the local storage if the value is changed by the user
-        this.__internal__regionSelectElem.onchange = function()
+        selectElem.onchange = function()
             {
-                Automation.Utils.LocalStorage.setValue(this.Settings.PrioritizedRegion, this.__internal__regionSelectElem.value);
+                Automation.Utils.LocalStorage.setValue(setting, selectElem.value);
             }.bind(this);
+
+        if (setting === this.Settings.PrioritizedRegion)
+        {
+            this.__internal__regionSelectElem = selectElem;
+        }
 
         return container;
     }
@@ -483,6 +507,7 @@ class AutomationHatchery
 
         let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
         let regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
+        let regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
 
         // Sort list by breeding efficiency
         pokemonToBreed.sort((a, b) =>
@@ -517,8 +542,10 @@ class AutomationHatchery
                 }
 
                 // Breeding efficiency order
-                let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles);
-                let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles);
+                let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles)
+                           * PartyController.calculateRegionalMultiplier(a, regionalDebuff);
+                let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles)
+                           * PartyController.calculateRegionalMultiplier(b, regionalDebuff);
 
                 if (aValue < bValue)
                 {

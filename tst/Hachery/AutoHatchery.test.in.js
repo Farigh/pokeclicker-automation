@@ -108,6 +108,10 @@ beforeAll(() =>
         // Simulate PrioritizedRegion setting being set to 'Any' by default (done in the Automation.InitSteps.BuildMenu)
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, GameConstants.Region.none);
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedRegion)).toBe("-1");
+
+        // Simulate RegionalDebuffRegion setting being set to 'None' by default (done in the Automation.InitSteps.BuildMenu)
+        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
+        expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.RegionalDebuffRegion)).toBe("-1");
     });
 
 beforeEach(() =>
@@ -128,6 +132,8 @@ beforeEach(() =>
         // Restore settings
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.NotShinyFirst, false);
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.SpreadPokerus, true);
+        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, GameConstants.Region.none);
+        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
     });
 
 // Test when an egg reached all the steps needed to hatch
@@ -444,7 +450,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
         expect(App.game.breeding.__eggList[3].pokemon).toEqual("Qwilfish");
         expect(App.game.breeding.__eggList[3].isNone()).toBe(false);
     });
+});
 
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order region filter`, () =>
+{
     /** @note Those orders might change if new pokemon were to be added, or their value changed */
     let regionTestCases =
         [
@@ -470,6 +479,45 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
 
         // Set the region filter
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, testCase.regionId);
+
+        // Simulate the loop
+        Automation.Hatchery.__internal__hatcheryLoop();
+
+        for (const i of testCase.expectedPokemons.keys())
+        {
+            expect(App.game.breeding.__eggList[i].pokemon).toEqual(testCase.expectedPokemons[i]);
+            expect(App.game.breeding.__eggList[i].isNone()).toBe(false);
+        }
+    });
+});
+
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order regional debuff filter`, () =>
+{
+    /** @note Those orders might change if new pokemon were to be added, or their value changed */
+    let regionTestCases =
+        [
+            { regionId: GameConstants.Region.kanto, regionName: "Kanto", expectedPokemons: [ "Pikachu", "Hitmonlee", "Sawk", "Ponyta" ] },
+            { regionId: GameConstants.Region.johto, regionName: "Johto", expectedPokemons: [ "Qwilfish", "Sawk", "Pikachu", "Magby" ] },
+            { regionId: GameConstants.Region.hoenn, regionName: "Hoenn", expectedPokemons: [ "Sawk", "Pikachu", "Mudkip", "Throh" ] },
+            { regionId: GameConstants.Region.sinnoh, regionName: "Sinnoh", expectedPokemons: [ "Pachirisu", "Sawk", "Carnivine", "Pikachu" ] },
+            { regionId: GameConstants.Region.unova, regionName: "Unova", expectedPokemons: [ "Sawk", "Throh", "Pikachu", "Hitmonlee" ] },
+            { regionId: GameConstants.Region.kalos, regionName: "Kalos", expectedPokemons: [ "Sawk", "Pikachu", "Throh", "Hitmonlee" ] },
+            { regionId: GameConstants.Region.alola, regionName: "Alola", expectedPokemons: [ "Sawk", "Litten", "Crabrawler", "Turtonator" ] }
+        ];
+
+    // Test the breeding order with infected and the SpreadPokerus setting enabled
+    test.each(regionTestCases)("Test breeding order with regional debuff set to $regionName", (testCase) =>
+    {
+        addSomePokemonsToThePlayersParty();
+
+        // Put the all pokemons to lvl100
+        for (const pokemon of App.game.party.caughtPokemon)
+        {
+            pokemon.level = 100;
+        }
+
+        // Set the regional debuff filter
+        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, testCase.regionId);
 
         // Simulate the loop
         Automation.Hatchery.__internal__hatcheryLoop();
