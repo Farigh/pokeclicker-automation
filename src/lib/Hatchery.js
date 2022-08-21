@@ -274,7 +274,7 @@ class AutomationHatchery
      */
     static __internal__addEggsToHatchery()
     {
-        let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player._itemList[eggType]());
+        let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player.itemList[eggType]());
 
         for (const eggTypeName of eggList)
         {
@@ -287,7 +287,7 @@ class AutomationHatchery
             //   - the item actually can be used
             //   - no other egg of that type is breeding
             if (App.game.breeding.hasFreeEggSlot()
-                && player.itemList[eggType.name]()
+                && (player.itemList[eggType.name]() > 0)
                 && !eggType.getCaughtStatus()
                 && eggType.checkCanUse()
                 && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
@@ -314,10 +314,10 @@ class AutomationHatchery
         let i = 0;
         while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
         {
-            let type = currentlyHeldFossils[i];
+            let fossil = currentlyHeldFossils[i];
 
-            let associatedPokemon = GameConstants.FossilToPokemon[type.name];
-            let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon))
+            let associatedPokemon = GameConstants.FossilToPokemon[fossil.name];
+            let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon));
 
             // Use an egg only if:
             //   - a slot is available
@@ -326,15 +326,15 @@ class AutomationHatchery
             //   - the pokemon associated to the fossil is not already held by the player
             //   - the fossil is not already in hatchery
             if (App.game.breeding.hasFreeEggSlot()
-                && (type.amount() > 0)
-                && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[type.name]) <= player.highestRegion()
+                && (fossil.amount() > 0)
+                && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[fossil.name]) <= player.highestRegion()
                 && !hasPokemon
                 && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
                                               && (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
             {
                 // Hatching a fossil is performed by selling it
-                Underground.sellMineItem(type.id);
-                Automation.Utils.sendNotif("Added a " + type.name + " to the Hatchery!", "Hatchery");
+                Underground.sellMineItem(fossil.id);
+                Automation.Utils.sendNotif("Added a " + fossil.name + " to the Hatchery!", "Hatchery");
             }
 
             i++;
@@ -402,7 +402,7 @@ class AutomationHatchery
     {
         let pokemonToBreed = [];
 
-        let targetPokemons = sortedPokemonCandidates.filter(pokemon => pokemon?.pokerus === GameConstants.Pokerus.None);
+        let targetPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Uninfected));
 
         // No more pokemon to infect, fallback to the default order
         if (targetPokemons.length == 0)
@@ -412,7 +412,7 @@ class AutomationHatchery
 
         // Both Contagious and Cured pokemon spread the Pokérus
         let contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
-                                                                        || (pokemon?.pokerus === GameConstants.Pokerus.Cured));
+                                                                        || (pokemon?.pokerus === GameConstants.Pokerus.Resistant));
         let availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
                              - (App.game.breeding.eggList.length - App.game.breeding.eggSlots);
 
@@ -422,7 +422,7 @@ class AutomationHatchery
         {
             let currentEgg = egg();
             if ((currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Contagious)
-                || (currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Cured))
+                || (currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Resistant))
             {
                 for (const type of pokemonMap[currentEgg.partyPokemon.id].type)
                 {

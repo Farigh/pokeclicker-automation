@@ -325,7 +325,7 @@ class AutomationUnderground
             }
         }
 
-        // Only use the hammer if it is the most efficient move 
+        // Only use the hammer if it is the most efficient move
         // (i.e. a hammer hit would save us more energy than attempting to clear the tiles using purely chisel hits)
 
         let hammerEfficiency = 2 * (Underground.HAMMER_ENERGY / Underground.CHISEL_ENERGY)

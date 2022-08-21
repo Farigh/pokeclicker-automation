@@ -6,7 +6,7 @@ class FarmingTestUtils
         berryLetters.set(BerryType.None, " ");
 
         let buffer = "";
-        for (let i = 0; i < 25; i++)
+        for (let i = 0; i < App.game.farming.plotList.length; i++)
         {
             if (!App.game.farming.plotList[i].isUnlocked)
             {
