@@ -245,7 +245,7 @@ class AutomationFarm
         {
             if (!plot.isUnlocked)
             {
-                FarmController.plotClick(index);
+                FarmController.plotClick(index, { shiftKey: false });
             }
         }
     }
