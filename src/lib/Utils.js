@@ -17,6 +17,7 @@ class AutomationUtils
      */
     static initialize(initStep)
     {
+        this.Battle.initialize(initStep);
         this.Gym.initialize(initStep);
         this.Route.initialize(initStep);
     }
