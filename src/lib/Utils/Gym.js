@@ -35,8 +35,7 @@ class AutomationUtilsGym
         let bestGymRate = 0;
 
         let playerClickAttack = App.game.party.calculateClickAttack();
-        let playerWorstPokemonAttack = Automation.Utils.Route.getPlayerWorstPokemonAttack();
-        let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
+        let totalAtkPerSecondByRegion = Automation.Utils.Route.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
         for (const gymData of this.__internal__gymGemTypeMap.get(pokemonType))
         {
@@ -58,8 +57,8 @@ class AutomationUtilsGym
                     continue;
                 }
 
-                let currentPokemonTickToDefeat =
-                    Automation.Utils.Route.getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, playerClickAttack, totalAtkPerSecond);
+                let currentPokemonTickToDefeat = Automation.Utils.Route.getGameTickCountNeededToDefeatPokemon(
+                    pokemon.maxHealth, playerClickAttack, totalAtkPerSecondByRegion[gymData.region]);
                 currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
             }
 

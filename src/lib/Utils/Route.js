@@ -206,8 +206,7 @@ class AutomationUtilsRoute
         let bestRouteIncome = 0;
 
         let playerClickAttack = App.game.party.calculateClickAttack();
-        let playerWorstPokemonAttack = this.getPlayerWorstPokemonAttack();
-        let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
+        let totalAtkPerSecondByRegion = this.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
         let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
         // Fortunately routes are sorted by attack
@@ -222,7 +221,8 @@ class AutomationUtilsRoute
             let routeIncome = this.__internal__routeIncomeMap.get(route.region).get(route.number);
 
             let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-            let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+            let nbGameTickToDefeat =
+                this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecondByRegion[route.region]);
             routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
 
             // Compare with a 1/1000 precision
@@ -256,8 +256,7 @@ class AutomationUtilsRoute
         let bestRouteRate = 0;
 
         let playerClickAttack = App.game.party.calculateClickAttack();
-        let playerWorstPokemonAttack = this.getPlayerWorstPokemonAttack();
-        let totalAtkPerSecond = (20 * playerClickAttack) + playerWorstPokemonAttack;
+        let totalAtkPerSecondByRegion = this.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
         // Fortunately routes are sorted by attack
         for (const route of Routes.regionRoutes)
@@ -284,7 +283,8 @@ class AutomationUtilsRoute
             let currentRouteRate = currentRouteCount / pokemons.length;
 
             let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-            let nbGameTickToDefeat = this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecond);
+            let nbGameTickToDefeat =
+                this.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecondByRegion[route.region]);
             currentRouteRate = currentRouteRate / nbGameTickToDefeat;
 
             // Compare with a 1/1000 precision
@@ -332,17 +332,46 @@ class AutomationUtilsRoute
     }
 
     /**
+     * @brief Computes the player's worst possible attack value against any pokemon for each region
+     *
+     * @param {number} playerClickAttack: The current player click attack
+     *
+     * @returns The list of lowest possible attack for each region
+     */
+    static getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack)
+    {
+        let worstAtks = [];
+
+        // Populate the list
+        for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
+        {
+            worstAtks.push((20 * playerClickAttack) + this.getPlayerWorstPokemonAttack(regionId));
+        }
+
+        return worstAtks;
+    }
+
+    /**
      * @brief Computes the player's worst possible pokemon attack value against any pokemon
+     *
+     * @param {number} region: The region to consider
      *
      * @returns The lowest possible pokemon attack
      */
-    static getPlayerWorstPokemonAttack()
+    static getPlayerWorstPokemonAttack(region)
     {
         let worstAtk = Number.MAX_SAFE_INTEGER
 
+        let ignoreDebuff = !App.game.challenges.list.regionalAttackDebuff.active();
+        let ignoreBreeding = true;
+        let ignoreLevel = true;
+        let useBaseAttack = false;
+        let weather = Weather.regionalWeather[region]();
+
         for (const type of Array(Gems.nTypes).keys())
         {
-            let pokemonAttack = App.game.party.calculatePokemonAttack(type);
+            let pokemonAttack = App.game.party.calculatePokemonAttack(
+                type, PokemonType.None, ignoreDebuff, region, ignoreBreeding, useBaseAttack, weather, ignoreLevel);
             if (pokemonAttack < worstAtk)
             {
                 worstAtk = pokemonAttack
