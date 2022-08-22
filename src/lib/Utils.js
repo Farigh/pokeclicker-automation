@@ -4,6 +4,7 @@
 class AutomationUtils
 {
     // Aliases on the other classes
+    static Battle = AutomationUtilsBattle;
     static Gym = AutomationUtilsGym;
     static LocalStorage = AutomationUtilsLocalStorage;
     static OakItem = AutomationUtilsOakItem;
