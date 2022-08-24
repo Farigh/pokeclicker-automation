@@ -88,6 +88,36 @@ class GameConstants
             unova: 4
         };
 
+    static TypeEffectiveness =
+        {
+            0: "Immune",
+            1: "NotVery",
+            2: "Neutral",
+            3: "Very",
+            Immune: 0,
+            Neutral: 2,
+            NotVery: 1,
+            Very: 3
+        }
+
+
+    static TypeEffectivenessValue =
+        {
+            0: "Immune",
+            "0.5": "NotVery",
+            1: "Neutral",
+            2: "Very",
+            Immune: 0,
+            Neutral: 1,
+            NotVery: 0.5,
+            Very: 2
+        }
+
+    static EP_CHALLENGE_MODIFIER = 10;
+    static EP_EV_RATIO = 1000;
+
     static BREEDING_ATTACK_BONUS = 25;
+    static FLUTE_TYPE_ATTACK_MULTIPLIER = 1.005;
+    static GEM_UPGRADE_STEP = 0.1;
     static MAX_AVAILABLE_REGION = this.Region.alola;
 }

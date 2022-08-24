@@ -4,8 +4,10 @@ class App
     static game =
         {
             breeding: new Breeding(),
+            challenges: new Challenges(),
             discord: new Discord(),
             farming: new Farming(),
+            gems: new Gems(),
             oakItems: new OakItems(),
             party: new Party(),
             statistics: new Statistics(),
