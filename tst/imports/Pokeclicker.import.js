@@ -9,6 +9,7 @@ import "tst/stubs/OakItems/OakItemType.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/CaughtStatus.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/PokemonType.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItemValueType.pokeclicker.stub.js";
+import "tst/stubs/Weather/WeatherType.pokeclicker.stub.js";
 
 // Import helpers
 import "tst/stubs/Farming/FarmController.pokeclicker.stub.js";
@@ -17,6 +18,7 @@ import "tst/stubs/Pokemon/PartyController.pokeclicker.stub.js";
 
 // Import pokeclicker Currency types and classes
 import "tst/stubs/Currency/Amount.pokeclicker.stub.js";
+import "tst/stubs/Currency/Gems.pokeclicker.stub.js";
 import "tst/stubs/Currency/Wallet.pokeclicker.stub.js";
 
 // Import pokeclicker Farming types and classes
@@ -32,6 +34,7 @@ import "tst/stubs/Hatchery/Egg.pokeclicker.stub.js";
 // Import pokeclicker Items types and classes
 import "tst/stubs/Items/Item.pokeclicker.stub.js"; // Base class, needs to be imported first
 import "tst/stubs/Items/EggItem.pokeclicker.stub.js";
+import "tst/stubs/Items/FluteEffectRunner.pokeclicker.stub.js";
 
 // Import pokeclicker OakItems types and classes
 import "tst/stubs/OakItems/OakItem.pokeclicker.stub.js";
@@ -39,16 +42,25 @@ import "tst/stubs/OakItems/OakItems.pokeclicker.stub.js";
 
 // Import pokeclicker Pokemon types and classes
 import "tst/stubs/Pokemon/DataPokemon.pokeclicker.stub.js";
+import "tst/stubs/Pokemon/Multiplier.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/Party.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/PartyPokemon.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/TmpPokemonListData.pokeclicker.stub.js";
+
+// Import pokeclicker Type types and classes
+import "tst/stubs/Type/TypeHelper.pokeclicker.stub.js";
 
 // Import pokeclicker Underground types and classes
 import "tst/stubs/Underground/Underground.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItem.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItems.pokeclicker.stub.js";
 
+// Import pokeclicker Weather types and classes
+import "tst/stubs/Weather/WeatherCondition.pokeclicker.stub.js"; // Used by Weather, needs to be imported first
+import "tst/stubs/Weather/Weather.pokeclicker.stub.js";
+
 // Import pokeclicker classes
+import "tst/stubs/Challenges.pokeclicker.stub.js";
 import "tst/stubs/Discord.pokeclicker.stub.js";
 import "tst/stubs/Player.pokeclicker.stub.js";
 import "tst/stubs/Save.pokeclicker.stub.js";

@@ -4,6 +4,7 @@
 class AutomationUtils
 {
     // Aliases on the other classes
+    static Battle = AutomationUtilsBattle;
     static Gym = AutomationUtilsGym;
     static LocalStorage = AutomationUtilsLocalStorage;
     static OakItem = AutomationUtilsOakItem;
@@ -16,6 +17,7 @@ class AutomationUtils
      */
     static initialize(initStep)
     {
+        this.Battle.initialize(initStep);
         this.Gym.initialize(initStep);
         this.Route.initialize(initStep);
     }

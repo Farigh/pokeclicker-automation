@@ -4,8 +4,11 @@ class PartyPokemon
     // Stripped: evolutions
     constructor(id, name, baseAttack, shiny)
     {
+        this.attackBonusPercent = 0;
+        this.attackBonusAmount = 0;
         this.breading = false;
         this.baseAttack = baseAttack;
+        this.effortPoints = 0;
         this.id = id;
         this.level = 1;
         this.pokerus = GameConstants.Pokerus.Uninfected;
@@ -14,5 +17,28 @@ class PartyPokemon
         this.proteinsUsed = function() { return this.__proteinsUsed; }.bind(this);
 
         this.__proteinsUsed = 0;
+    }
+
+    calculateAttack(ignoreLevel = false)
+    {
+        const attackBonusMultiplier = 1 + (this.attackBonusPercent / 100);
+        const levelMultiplier = ignoreLevel ? 1 : this.level / 100;
+        const evsMultiplier = this.calculateEVAttackBonus();
+        return Math.max(1, Math.floor((this.baseAttack * attackBonusMultiplier + this.attackBonusAmount) * levelMultiplier * evsMultiplier));
+    }
+
+    calculateEVAttackBonus()
+    {
+        if (this.pokerus < GameConstants.Pokerus.Contagious)
+        {
+            return 1;
+        }
+        return (this.evs() < 50) ? (1 + 0.01 * this.evs()) : (1 + Math.min(1, Math.pow((this.evs() - 30), 0.075) - 0.75));
+    }
+
+    evs()
+    {
+        const power = App.game.challenges.list.slowEVs.active() ? GameConstants.EP_CHALLENGE_MODIFIER : 1;
+        return Math.floor(this.effortPoints / GameConstants.EP_EV_RATIO / power);
     }
 }
