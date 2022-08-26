@@ -6,6 +6,19 @@ class AutomationClick
     static Settings = { FeatureEnabled: "Click-Enabled" };
 
     /**
+     * @brief Determines if the feature is currently active
+     *        (ie. The user turned it on, or another feature did)
+     *
+     * @returns True if the feature is active, false otherwise
+     */
+    static isFeatureActive()
+    {
+        // No-click challenge disables clicks
+        return !App.game.challenges.list.disableClickAttack.active()
+            && (this.__internal__autoClickLoop != null);
+    }
+
+    /**
      * @brief Builds the menu, and retores previous running state if needed
      *
      * @param initStep: The current automation init step

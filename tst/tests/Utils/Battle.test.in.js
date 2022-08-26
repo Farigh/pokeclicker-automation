@@ -142,16 +142,16 @@ test('Check pokemon attack map does not update more than once every second', () 
     expect(valueAfter).not.toEqual(valueBefore);
 });
 
-test('Check __internal__calculatePokemonAttack() output with weather change', () =>
+test('Check calculatePokemonAttack() output with weather change', () =>
 {
     Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
 
     let pokemonType = PokemonType.Grass;
     let region = GameConstants.Region.alola;
-    let resultWithNoWeather = Automation.Utils.Battle.__internal__calculatePokemonAttack(pokemonType, region, WeatherType.Clear);
+    let resultWithNoWeather = Automation.Utils.Battle.calculatePokemonAttack(pokemonType, region, WeatherType.Clear);
 
     // Compute with a different weather (Sunny weather boosts a lot of pokemon types)
-    let result = Automation.Utils.Battle.__internal__calculatePokemonAttack(pokemonType, region, WeatherType.Sunny);
+    let result = Automation.Utils.Battle.calculatePokemonAttack(pokemonType, region, WeatherType.Sunny);
 
     // Check consistency
     expect(result).not.toEqual(resultWithNoWeather);

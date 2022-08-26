@@ -126,7 +126,12 @@ class AutomationUtilsRoute
             return;
         }
 
-        let playerClickAttack = App.game.party.calculateClickAttack();
+        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
+
+        // In case click attack is 0, use the pokemon attack instead (no-click challenge)
+        let playerSingleAttackByRegion = (playerClickAttack == 0)
+                                       ? Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack)
+                                       : Array(GameConstants.MAX_AVAILABLE_REGION + 1).fill(playerClickAttack);
 
         // We need to find a new road if:
         //    - The highest region changed
@@ -134,9 +139,11 @@ class AutomationUtilsRoute
         //    - We are currently on the highest route of the map
         //    - The next best route is still over-powered
         let needsNewRoad = (this.__internal__lastHighestRegion !== player.highestRegion())
-                        || (this.__internal__routeMaxHealthMap.get(this.__internal__lastBestRouteRegion).get(this.__internal__lastBestRoute) > playerClickAttack)
+                        || (this.__internal__routeMaxHealthMap.get(this.__internal__lastBestRouteRegion)
+                                .get(this.__internal__lastBestRoute) > playerSingleAttackByRegion[this.__internal__lastBestRouteRegion])
                         || ((this.__internal__lastNextBestRoute !== this.__internal__lastBestRoute)
-                            && (this.__internal__routeMaxHealthMap.get(this.__internal__lastNextBestRouteRegion).get(this.__internal__lastNextBestRoute) < playerClickAttack));
+                            && (this.__internal__routeMaxHealthMap.get(this.__internal__lastNextBestRouteRegion)
+                                    .get(this.__internal__lastNextBestRoute) < playerSingleAttackByRegion[this.__internal__lastNextBestRouteRegion]));
 
         // Don't refresh if we already are on the best road
         if ((this.__internal__lastBestRoute === player.route())
@@ -165,7 +172,7 @@ class AutomationUtilsRoute
                     continue;
                 }
 
-                if (this.__internal__routeMaxHealthMap.get(route.region).get(route.number) < playerClickAttack)
+                if (this.__internal__routeMaxHealthMap.get(route.region).get(route.number) < playerSingleAttackByRegion[route.region])
                 {
                     this.__internal__lastBestRoute = route.number;
                     this.__internal__lastBestRouteRegion = route.region;
@@ -205,7 +212,7 @@ class AutomationUtilsRoute
         let bestRouteRegion = 0;
         let bestRouteIncome = 0;
 
-        let playerClickAttack = App.game.party.calculateClickAttack();
+        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
         let totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
         let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
@@ -255,7 +262,7 @@ class AutomationUtilsRoute
         let bestRouteRegion = 0;
         let bestRouteRate = 0;
 
-        let playerClickAttack = App.game.party.calculateClickAttack();
+        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
         let totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
         // Fortunately routes are sorted by attack
