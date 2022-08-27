@@ -3,9 +3,11 @@ import "tst/utils/tests.utils.js";
 // Import pokéclicker App
 import "tst/imports/Pokeclicker.import.js";
 
-// Import current lib elements
+// Import current lib stubs
 import "tst/stubs/localStorage.stub.js";
 import "tst/stubs/Automation/Menu.stub.js";
+
+// Import current lib elements
 import "tst/imports/AutomationUtils.import.js";
 import "src/lib/Hatchery.js";
 

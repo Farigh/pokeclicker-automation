@@ -52,6 +52,30 @@ class GameConstants
             'Sail Fossil': 'Amaura',
         };
 
+    static GameState =
+        {
+            0: "idle",
+            1: "paused",
+            2: "fighting",
+            3: "gym",
+            4: "dungeon",
+            5: "safari",
+            6: "town",
+            7: "shop",
+            8: "battleFrontier",
+            9: "temporaryBattle",
+            battleFrontier: 8,
+            dungeon: 4,
+            fighting: 2,
+            gym: 3,
+            idle: 0,
+            paused: 1,
+            safari: 5,
+            shop: 7,
+            temporaryBattle: 9,
+            town: 6
+        }
+
     static Pokerus =
     {
         0: "Uninfected",
@@ -119,5 +143,9 @@ class GameConstants
     static BREEDING_ATTACK_BONUS = 25;
     static FLUTE_TYPE_ATTACK_MULTIPLIER = 1.005;
     static GEM_UPGRADE_STEP = 0.1;
+    static GYM_GEMS = 5;
     static MAX_AVAILABLE_REGION = this.Region.alola;
 }
+
+// Aliases
+let Currency = GameConstants.Currency;

@@ -20,6 +20,7 @@ class Challenges
     {
         this.list.regionalAttackDebuff = new Challenge(true);
         this.list.disableGems = new Challenge(false);
+        this.list.disableClickAttack = new Challenge(false);
     }
 }
 

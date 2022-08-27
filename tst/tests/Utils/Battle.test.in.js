@@ -4,10 +4,13 @@ import "tst/utils/jest.extensions.utils.js";
 // Import pokéclicker App
 import "tst/imports/Pokeclicker.import.js";
 
-// Import current lib elements
+// Import current lib stubs
 import "tst/stubs/localStorage.stub.js";
 import "tst/stubs/Automation/Menu.stub.js";
+
+// Import current lib elements
 import "tst/imports/AutomationUtils.import.js";
+import "src/lib/Click.js";
 
 import "tst/utils/PokemonLoader.utils.js";
 
@@ -19,6 +22,7 @@ import "tst/utils/PokemonLoader.utils.js";
 class Automation
 {
     static Menu = AutomationMenu;
+    static Click = AutomationClick;
     static Utils = AutomationUtils;
 
     static Settings = { Notifications: "Notifications" };
@@ -60,6 +64,8 @@ beforeEach(() =>
 {
     App.game.party.__reset();
     Automation.Utils.Battle.__internal__PokemonAttackMap = new Map();
+    Automation.Click.__internal__autoClickLoop = null;
+    App.game.challenges.list.disableClickAttack.__active = false;
 
     // Simulate the player getting all the available pokemons
     for (const entry in pokemonMap)
@@ -67,85 +73,105 @@ beforeEach(() =>
         let pokemonData = pokemonMap[entry];
         App.game.party.gainPokemonById(pokemonData.id);
     }
-});
 
-// Test the __internal__buildPokemonAttackMap initialization
-test('Check pokemon attack map initialization', () =>
-{
+    // Initialize the battle utils
     Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
-
-    // Expect the map to have the same size as the caught pokemon list
-    expect(Automation.Utils.Battle.__internal__PokemonAttackMap.size).toEqual(App.game.party.caughtPokemon.length);
-
-    // TODO (25/08/2022): Check the output content
 });
 
-// Test the __internal__buildPokemonAttackMap update on effortPoints property change
-test('Check pokemon attack map update => effortPoints changed', () =>
+describe(`${AutomationTestUtils.categoryPrefix}Check pokemon attack internal map`, () =>
 {
-    Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
+    // Test the __internal__buildPokemonAttackMap initialization
+    test('Check pokemon attack map initialization', () =>
+    {
+        // Expect the map to have the same size as the caught pokemon list
+        expect(Automation.Utils.Battle.__internal__PokemonAttackMap.size).toEqual(App.game.party.caughtPokemon.length);
 
-    let pokemon = App.game.party.caughtPokemon[0];
+        // TODO (25/08/2022): Check the output content
+    });
 
-    // Update a value of the first pokemon on the list
-    pokemon.effortPoints = 100;
+    // Test the __internal__buildPokemonAttackMap update on effortPoints property change
+    test('Check pokemon attack map update => effortPoints changed', () =>
+    {
+        let pokemon = App.game.party.caughtPokemon[0];
 
-    expectMapValueToBeUpdatedForPokemon(pokemon);
+        // Update a value of the first pokemon on the list
+        pokemon.effortPoints = 100;
 
-    // The new value should have been saved
-    let newValue = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
-    expect(newValue.lastEffortPoints).toBe(100);
-    expect(newValue.lastAttackBonusAmount).toBe(0);
+        expectMapValueToBeUpdatedForPokemon(pokemon);
+
+        // The new value should have been saved
+        let newValue = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
+        expect(newValue.lastEffortPoints).toBe(100);
+        expect(newValue.lastAttackBonusAmount).toBe(0);
+    });
+
+    // Test the __internal__buildPokemonAttackMap update on attackBonusAmount property change
+    test('Check pokemon attack map update => attackBonusAmount changed', () =>
+    {
+        let pokemon = App.game.party.caughtPokemon[0];
+
+        // Update a value of the first pokemon on the list
+        pokemon.attackBonusAmount = 1;
+
+        expectMapValueToBeUpdatedForPokemon(pokemon);
+
+        // The new value should have been saved
+        let newValue = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
+        expect(newValue.lastEffortPoints).toBe(0);
+        expect(newValue.lastAttackBonusAmount).toBe(1);
+    });
+
+    // Test the __internal__buildPokemonAttackMap update delay
+    test('Check pokemon attack map does not update more than once every second', () =>
+    {
+        let pokemon = App.game.party.caughtPokemon[0];
+        let valueBefore = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
+
+        // Update a value of the first pokemon on the list
+        pokemon.attackBonusAmount += 1;
+
+        Automation.Utils.Battle.__internal__updatePokemonAttackMap();
+
+        // The map should not have been updated
+        let valueAfter = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
+        expect(valueAfter).toEqual(valueBefore);
+
+        // Simulate time passing
+        Automation.Utils.Battle.__internal__lastPokemonAttackMapUpdate -= 1000;
+        Automation.Utils.Battle.__internal__updatePokemonAttackMap();
+
+        // The value should have been updated
+        valueAfter = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
+        expect(valueAfter).not.toEqual(valueBefore);
+    });
 });
 
-// Test the __internal__buildPokemonAttackMap update on attackBonusAmount property change
-test('Check pokemon attack map update => attackBonusAmount changed', () =>
+// Test calculateClickAttack() method
+test('Check calculateClickAttack() output', () =>
 {
-    Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
+    App.game.party.__clickAttack = 1000;
 
-    let pokemon = App.game.party.caughtPokemon[0];
+    // If the click feature is not running, the click attack should be 0
+    expect(Automation.Utils.Battle.calculateClickAttack()).toEqual(0);
 
-    // Update a value of the first pokemon on the list
-    pokemon.attackBonusAmount = 1;
+    // Simulate the click loop being active by setting the loop to something different from null
+    Automation.Click.__internal__autoClickLoop = "dummy";
+    expect(Automation.Utils.Battle.calculateClickAttack()).toEqual(App.game.party.calculateClickAttack());
 
-    expectMapValueToBeUpdatedForPokemon(pokemon);
+    // Simulate the no-click challenge being enabled
+    App.game.challenges.list.disableClickAttack.__active = true;
 
-    // The new value should have been saved
-    let newValue = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
-    expect(newValue.lastEffortPoints).toBe(0);
-    expect(newValue.lastAttackBonusAmount).toBe(1);
+    // If the no-click challenge is active, the click attack should be 0, even if the feature is enabled (should never happen though)
+    expect(Automation.Utils.Battle.calculateClickAttack()).toEqual(0);
+
+    // Turning the feature off should still return 0
+    Automation.Click.__internal__autoClickLoop = null;
+    expect(Automation.Utils.Battle.calculateClickAttack()).toEqual(0);
 });
 
-// Test the __internal__buildPokemonAttackMap update delay
-test('Check pokemon attack map does not update more than once every second', () =>
-{
-    Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
-
-    let pokemon = App.game.party.caughtPokemon[0];
-    let valueBefore = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
-
-    // Update a value of the first pokemon on the list
-    pokemon.attackBonusAmount += 1;
-
-    Automation.Utils.Battle.__internal__updatePokemonAttackMap();
-
-    // The map should not have been updated
-    let valueAfter = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
-    expect(valueAfter).toEqual(valueBefore);
-
-    // Simulate time passing
-    Automation.Utils.Battle.__internal__lastPokemonAttackMapUpdate -= 1000;
-    Automation.Utils.Battle.__internal__updatePokemonAttackMap();
-
-    // The value should have been updated
-    valueAfter = Automation.Utils.Battle.__internal__PokemonAttackMap.get(pokemon.id);
-    expect(valueAfter).not.toEqual(valueBefore);
-});
-
+// Test calculatePokemonAttack() method
 test('Check calculatePokemonAttack() output with weather change', () =>
 {
-    Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
-
     let pokemonType = PokemonType.Grass;
     let region = GameConstants.Region.alola;
     let resultWithNoWeather = Automation.Utils.Battle.calculatePokemonAttack(pokemonType, region, WeatherType.Clear);
@@ -157,11 +183,56 @@ test('Check calculatePokemonAttack() output with weather change', () =>
     expect(result).not.toEqual(resultWithNoWeather);
 });
 
+// Test getGameTickCountNeededToDefeatPokemon() method
+describe(`${AutomationTestUtils.categoryPrefix}Check getGameTickCountNeededToDefeatPokemon() method`, () =>
+{
+    let testCases =
+        [
+            {
+                testDesc: "Click attack high enough to defeat pokemon in a single click attack",
+                clickAttack: 10000,
+                pokemonAtkPerSecond: 8000,
+                expectedResult: 1
+            },
+            {
+                testDesc: "Click attack high enough to defeat pokemon in a 3 click attacks",
+                clickAttack: 4000,
+                pokemonAtkPerSecond: 8000,
+                expectedResult: 3
+            },
+            {
+                testDesc: "Click attack not high enough to defeat pokemon without pokemons",
+                clickAttack: 195,
+                pokemonAtkPerSecond: 6000,
+                expectedResult: 21
+            },
+            {
+                testDesc: "Both click and pokemons attack not high enough to defeat pokemon in a single turn",
+                clickAttack: 20,
+                pokemonAtkPerSecond: 1000,
+                expectedResult: 150
+            },
+            {
+                testDesc: "Click attack equals zero",
+                clickAttack: 0,
+                pokemonAtkPerSecond: 8000,
+                expectedResult: 40
+            }
+        ];
+
+    test.each(testCases)('$testDesc', (testCase) =>
+    {
+        let totalAtkPerSecond = (testCase.clickAttack * 20) + testCase.pokemonAtkPerSecond;
+        let pokemonHp = 10000;
+        let result = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(pokemonHp, testCase.clickAttack, totalAtkPerSecond);
+
+        expect(result).toEqual(testCase.expectedResult);
+    });
+});
+
 // Test getPlayerWorstAttackPerSecondForAllRegions() method
 test('Check getPlayerWorstAttackPerSecondForAllRegions() output', () =>
 {
-    Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
-
     let playerClickAttack = 1000;
     let result = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
@@ -189,8 +260,6 @@ describe(`${AutomationTestUtils.categoryPrefix}Check getPlayerWorstPokemonAttack
     // Test getPlayerWorstPokemonAttack() method
     test.each(Array(GameConstants.MAX_AVAILABLE_REGION + 1).fill().map((_, i) => i))('Check getPlayerWorstPokemonAttack for region %d', (regionId) =>
     {
-        Automation.Utils.Battle.initialize(Automation.InitSteps.Finalize);
-
         // Compute expected result
         let expectedResult = Number.MAX_SAFE_INTEGER;
         let ignoreDebuff = false;

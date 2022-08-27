@@ -27,6 +27,14 @@ import "tst/stubs/Farming/EnigmaMutation.pokeclicker.stub.js";
 import "tst/stubs/Farming/Farming.pokeclicker.stub.js";
 import "tst/stubs/Farming/Plot.pokeclicker.stub.js";
 
+import "tst/stubs/Town/TownContent.pokeclicker.stub.js"; // Base class of Gym, needs to be imported first
+
+// Import pokeclicker Gym types and classes
+import "tst/stubs/Gym/Gym.pokeclicker.stub.js"; // Base class of Champion, needs to be imported first
+import "tst/stubs/Gym/Champion.pokeclicker.stub.js";
+import "tst/stubs/Gym/GymPokemon.pokeclicker.stub.js";
+import "tst/stubs/Gym/GymList.pokeclicker.stub.js"; // Import last, uses the other elements
+
 // Import pokeclicker Hatchery types and classes
 import "tst/stubs/Hatchery/Breeding.pokeclicker.stub.js";
 import "tst/stubs/Hatchery/Egg.pokeclicker.stub.js";
@@ -45,7 +53,19 @@ import "tst/stubs/Pokemon/DataPokemon.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/Multiplier.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/Party.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/PartyPokemon.pokeclicker.stub.js";
+import "tst/stubs/Pokemon/PokemonFactory.pokeclicker.stub.js";
 import "tst/stubs/Pokemon/TmpPokemonListData.pokeclicker.stub.js";
+
+// Import pokeclicker Route types and classes
+import "tst/stubs/Route/RegionRoute.pokeclicker.stub.js";
+import "tst/stubs/Route/RouteHelper.pokeclicker.stub.js";
+import "tst/stubs/Route/RoutePokemon.pokeclicker.stub.js";
+import "tst/stubs/Route/Routes.pokeclicker.stub.js";
+
+// Import pokeclicker Town types and classes
+import "tst/stubs/Town/Town.pokeclicker.stub.js"; // Base class of DungeonTown, needs to be imported first
+import "tst/stubs/Town/DungeonTown.pokeclicker.stub.js";
+import "tst/stubs/Town/TownList.pokeclicker.stub.js";
 
 // Import pokeclicker Type types and classes
 import "tst/stubs/Type/TypeHelper.pokeclicker.stub.js";
