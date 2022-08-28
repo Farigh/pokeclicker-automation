@@ -6,6 +6,12 @@ class Wallet
         this.__currencies = [ 0, 0, 0, 0, 0, 0 ];
     }
 
+    calcBonus(amount)
+    {
+        // Skipped bonuses
+        return 1;
+    }
+
     hasAmount(amount)
     {
         return this.__currencies[amount.currency] >= amount.amount;

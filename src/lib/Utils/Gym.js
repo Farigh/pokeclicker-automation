@@ -34,7 +34,7 @@ class AutomationUtilsGym
         let bestGymTown = null;
         let bestGymRate = 0;
 
-        let playerClickAttack = App.game.party.calculateClickAttack();
+        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
         let totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
         for (const gymData of this.__internal__gymGemTypeMap.get(pokemonType))
@@ -90,7 +90,7 @@ class AutomationUtilsGym
         let bestGym = null;
         let bestGymTown = null;
         let bestGymRatio = 0;
-        let playerClickAttack = App.game.party.calculateClickAttack();
+        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
         for (const key of Object.keys(GymList))
         {
             let gym = GymList[key];
@@ -114,8 +114,10 @@ class AutomationUtilsGym
                 continue;
             }
 
+            let townRegion = TownList[gymTown].region;
+
             // Don't consider town that the player can't move to either
-            if (!Automation.Utils.Route.canMoveToRegion(gymTown.region))
+            if (!Automation.Utils.Route.canMoveToRegion(townRegion))
             {
                 continue;
             }
@@ -123,10 +125,22 @@ class AutomationUtilsGym
             // Some champion have a team that depends on the player's starter pick
             if (gym instanceof Champion)
             {
-                gym.setPokemon(player.regionStarters[player.region]());
+                gym.setPokemon(player.regionStarters[townRegion]());
             }
 
-            let ticksToWin = gym.pokemons.reduce((count, pokemon) => count + Math.ceil(pokemon.maxHealth / playerClickAttack), 0);
+            let weatherType = Weather.regionalWeather[townRegion]();
+
+            let ticksToWin = gym.pokemons.reduce(
+                (count, pokemon) =>
+                {
+                    let partyAttack =
+                        Automation.Utils.Battle.calculatePokemonAttack(pokemonMap[pokemon.name].type[0], townRegion, weatherType);
+                    let nbGameTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
+                        pokemon.maxHealth, playerClickAttack, partyAttack);
+
+                    return count + nbGameTickToDefeat;
+                }, 0);
+
             let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
 
             if (rewardRatio > bestGymRatio)

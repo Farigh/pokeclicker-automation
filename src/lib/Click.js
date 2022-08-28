@@ -6,6 +6,19 @@ class AutomationClick
     static Settings = { FeatureEnabled: "Click-Enabled" };
 
     /**
+     * @brief Determines if the feature is currently active
+     *        (ie. The user turned it on, or another feature did)
+     *
+     * @returns True if the feature is active, false otherwise
+     */
+    static isFeatureActive()
+    {
+        // No-click challenge disables clicks
+        return !App.game.challenges.list.disableClickAttack.active()
+            && (this.__internal__autoClickLoop != null);
+    }
+
+    /**
      * @brief Builds the menu, and retores previous running state if needed
      *
      * @param initStep: The current automation init step
@@ -14,12 +27,7 @@ class AutomationClick
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
-            // Add auto click button
-            let autoClickTooltip = "Attack clicks are performed every 50ms"
-                                + Automation.Menu.TooltipSeparator
-                                + "Applies to battle, gym and dungeon";
-            let autoClickButton = Automation.Menu.addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip);
-            autoClickButton.addEventListener("click", this.toggleAutoClick.bind(this), false);
+           this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
@@ -39,6 +47,12 @@ class AutomationClick
      */
     static toggleAutoClick(enable)
     {
+        // If the no-click challenge is enabled, never run the feature
+        if (App.game.challenges.list.disableClickAttack.active())
+        {
+            return;
+        }
+
         // If we got the click event, use the button status
         if ((enable !== true) && (enable !== false))
         {
@@ -67,6 +81,53 @@ class AutomationClick
     \*********************************************************************/
 
     static __internal__autoClickLoop = null;
+    static __internal__container = null;
+
+    /**
+     * @brief Builds the menu
+     */
+    static __internal__buildMenu()
+    {
+        this.__internal__container = document.createElement('div');
+
+        // Add auto click button
+        let autoClickTooltip = "Attack clicks are performed every 50ms"
+                             + Automation.Menu.TooltipSeparator
+                             + "Applies to battle, gym and dungeon";
+        let autoClickButton =
+            Automation.Menu.addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip, this.__internal__container);
+        autoClickButton.addEventListener("click", this.toggleAutoClick.bind(this), false);
+
+        Automation.Menu.addSeparator(this.__internal__container);
+
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__container);
+
+        // Hide the menu if the no-click challenge is enabled
+        if (App.game.challenges.list.disableClickAttack.active())
+        {
+            this.__internal__container.hidden = true;
+        }
+
+        // Add a watcher, in case the player changes the challenge configuration at some point
+        if (this.__internal__container.hidden || (player.starter() === GameConstants.Starter.None))
+        {
+            let watcher = setInterval(function()
+                {
+                    if (App.game.challenges.list.disableClickAttack.active())
+                    {
+                        this.__internal__container.hidden = true;
+                        return;
+                    }
+
+                    this.__internal__container.hidden = false;
+
+                    if (player.starter() !== GameConstants.Starter.None)
+                    {
+                        clearInterval(watcher);
+                    }
+                }.bind(this), 10000); // Check every 10s
+        }
+    }
 
     /**
      * @brief Automatically clicks according to the current game state
@@ -78,6 +139,14 @@ class AutomationClick
      */
     static __internal__autoClick()
     {
+        // If the no-click challenge is enabled, turn off the feature and hide the menu
+        if (App.game.challenges.list.disableClickAttack.active())
+        {
+            this.__internal__container.hidden = true;
+            clearInterval(this.__internal__autoClickLoop);
+            return;
+        }
+
         // Click while in a normal battle
         if (App.game.gameState == GameConstants.GameState.fighting)
         {

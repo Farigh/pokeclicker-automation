@@ -7,6 +7,7 @@ class App
             challenges: new Challenges(),
             discord: new Discord(),
             farming: new Farming(),
+            gameState: GameConstants.GameState.town,
             gems: new Gems(),
             oakItems: new OakItems(),
             party: new Party(),

@@ -165,8 +165,6 @@ class AutomationFocus
         focusContainer.style.textAlign = "center";
         Automation.Menu.AutomationButtonsDiv.appendChild(focusContainer);
 
-        Automation.Menu.addSeparator(focusContainer);
-
         // Add the title
         let titleDiv = Automation.Menu.createTitleElement("Focus on");
         focusContainer.appendChild(titleDiv);
