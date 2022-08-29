@@ -8,10 +8,12 @@ class Player
     constructor()
     {
         this.itemList = [];
+        this.region = GameConstants.Region.kanto;
         this.__itemListCount = [];
 
         this.__highestRegion = 0;
         this.__mineInventory = [];
+        this.__route = 0;
 
         this.__initItemList();
         this.__initMiningInventory();
@@ -30,6 +32,11 @@ class Player
     mineInventory()
     {
         return this.__mineInventory;
+    }
+
+    route()
+    {
+        return this.__route;
     }
 
     /***************************\

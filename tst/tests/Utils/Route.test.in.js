@@ -44,6 +44,8 @@ for (const entry in pokemonMap)
     App.game.party.gainPokemonById(pokemonData.id);
 }
 
+let onlyEggsPokemons = App.game.party.caughtPokemon;
+
 // Load route pokémons
 PokemonLoader.loadRoutePokemons();
 
@@ -64,6 +66,60 @@ beforeEach(() =>
     Automation.Click.__internal__autoClickLoop = "dummy";
 
     App.game.challenges.list.disableClickAttack.__active = false;
+
+    App.game.party.__reset();
+    App.game.party.caughtPokemon = onlyEggsPokemons;
+    player.region = -1;
+    player.__route = -1;
+});
+
+// Test moveToHighestDungeonTokenIncomeRoutes() method
+describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIncomeRoute() method`, () =>
+{
+    test('Low click attack > Pokeball', () =>
+    {
+        // Put a reduced team to make sure changing the ball would change the route (pokemon defeat takes time)
+        App.game.party.__reset();
+        App.game.party.gainPokemonById(4); // Give the player Charmander
+
+        App.game.party.__clickAttack = 5;
+
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Pokeball);
+        expect(player.route()).toEqual(2);
+        expect(player.region).toEqual(GameConstants.Region.kanto);
+    });
+
+    test('Low click attack > Ultraball', () =>
+    {
+        // Put a reduced team to make sure changing the ball would change the route (pokemon defeat takes time)
+        App.game.party.__reset();
+        App.game.party.gainPokemonById(4); // Give the player Charmander
+
+        App.game.party.__clickAttack = 5;
+
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
+        expect(player.route()).toEqual(22);
+        expect(player.region).toEqual(GameConstants.Region.kanto);
+    });
+
+    test('Higher click attack', () =>
+    {
+        App.game.party.__clickAttack = 10000;
+
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
+        expect(player.route()).toEqual(41);
+        expect(player.region).toEqual(GameConstants.Region.johto);
+    });
+
+    test('No-click challenge active', () =>
+    {
+        App.game.party.__clickAttack = 10000; // Whatever number we put here shouldn't change anything
+        App.game.challenges.list.disableClickAttack.__active = true;
+
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
+        expect(player.route()).toEqual(25);
+        expect(player.region).toEqual(GameConstants.Region.kanto);
+    });
 });
 
 // Test findBestRouteForFarmingType() method
