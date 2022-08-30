@@ -1,6 +1,13 @@
 // Stub of https://github.com/pokeclicker/pokeclicker/blob/26fe119da094d14cb263c229549d9aeb2e6180bb/src/scripts/pokemons/PokemonFactory.ts#L4
 class PokemonFactory
 {
+    static catchRateHelper(baseCatchRate, noVariation = false)
+    {
+        const catchVariation = noVariation ? 0 : Rand.intBetween(-3, 3);
+        const catchRateRaw = Math.floor(Math.pow(baseCatchRate, 0.75)) + catchVariation;
+        return GameConstants.clipNumber(catchRateRaw, 0, 100);
+    }
+
     static routeHealth(route, region)
     {
         const regionRoute = Routes.regionRoutes.find((routeData) => routeData.region === region && routeData.number === route);

@@ -15,4 +15,9 @@ class Pokeballs
     {
         return this.pokeballs[ball].catchTime;
     }
+
+    getCatchBonus(ball)
+    {
+        return this.pokeballs[ball].catchBonus();
+    }
 }

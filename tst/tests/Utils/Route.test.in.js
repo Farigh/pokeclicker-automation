@@ -107,7 +107,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIn
         App.game.party.__clickAttack = 10000;
 
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
-        expect(player.route()).toEqual(41);
+        expect(player.route()).toEqual(29);
         expect(player.region).toEqual(GameConstants.Region.johto);
     });
 

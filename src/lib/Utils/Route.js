@@ -216,6 +216,12 @@ class AutomationUtilsRoute
         let totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
         let catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
+        // The bonus is the same, no matter the amount
+        const dungeonTokenBonus = App.game.wallet.calcBonus(new Amount(1, Currency.dungeonToken));
+
+        const pokeballBonus = App.game.pokeballs.getCatchBonus(ballTypeToUse);
+        const oakBonus = App.game.oakItems.calculateBonus(OakItemType.Magic_Ball);
+
         // Fortunately routes are sorted by attack
         for (const route of Routes.regionRoutes)
         {
@@ -225,7 +231,18 @@ class AutomationUtilsRoute
                 continue;
             }
 
-            let routeIncome = this.__internal__routeIncomeMap.get(route.region).get(route.number);
+            let pokemons = RouteHelper.getAvailablePokemonList(route.number, route.region);
+
+            let currentRouteRate = 0;
+            for (const pokemon of pokemons)
+            {
+                currentRouteRate += PokemonFactory.catchRateHelper(pokemonMap[pokemon].catchRate, true);
+            }
+
+            currentRouteRate /= pokemons.length;
+            currentRouteRate += pokeballBonus + oakBonus;
+
+            let routeIncome = this.__internal__routeRawIncomeMap.get(route.region).get(route.number) * dungeonTokenBonus * (currentRouteRate / 100);
 
             let routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
             let nbGameTickToDefeat =
@@ -318,7 +335,7 @@ class AutomationUtilsRoute
     static __internal__lastBestRoute = null;
     static __internal__lastNextBestRoute = null;
     static __internal__lastNextBestRouteRegion = null;
-    static __internal__routeIncomeMap = new Map();
+    static __internal__routeRawIncomeMap = new Map();
 
     /**
      * @brief Gets the highest HP amount that a pokemon can have on the given @p route
@@ -387,17 +404,14 @@ class AutomationUtilsRoute
     {
         for (const route of Routes.regionRoutes)
         {
-            if (route.region >= this.__internal__routeIncomeMap.size)
+            if (route.region >= this.__internal__routeRawIncomeMap.size)
             {
-                this.__internal__routeIncomeMap.set(route.region, new Map());
+                this.__internal__routeRawIncomeMap.set(route.region, new Map());
             }
 
             let routeIncome = PokemonFactory.routeDungeonTokens(route.number, route.region);
 
-            // Compute the bonus
-            routeIncome = Math.floor(routeIncome * App.game.wallet.calcBonus(new Amount(routeIncome, Currency.dungeonToken)));
-
-            this.__internal__routeIncomeMap.get(route.region).set(route.number, routeIncome);
+            this.__internal__routeRawIncomeMap.get(route.region).set(route.number, routeIncome);
         }
     }
 }

@@ -23,6 +23,13 @@ class OakItems
         }
     }
 
+    calculateBonus(oakItem)
+    {
+        // Skipped oak item use
+
+        return this.itemList[oakItem].calculateBonus();
+    }
+
     deactivate(oakItem)
     {
         this.itemList[oakItem].isActive = false;
