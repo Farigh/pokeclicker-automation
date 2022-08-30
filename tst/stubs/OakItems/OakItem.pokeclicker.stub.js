@@ -5,9 +5,10 @@ class OakItem
     |*  Pokéclicker interface  *|
     \***************************/
 
-    constructor(id, displayName)
+    // Skipped: description, increasing, bonusList, inactiveBonus, unlockReq, expGain, expList, maxLevel, costList, bonusSymbol
+    constructor(name, displayName)
     {
-        this.name = id;
+        this.name = name;
         this.displayName = displayName;
         this.isActive = false;
 
@@ -17,6 +18,12 @@ class OakItem
     /***************************\
     |*   Test-only interface   *|
     \***************************/
+
+    calculateBonus()
+    {
+        // For now, not needed so we return the default value
+        return 1;
+    }
 
     isUnlocked()
     {

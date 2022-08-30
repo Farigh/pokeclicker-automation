@@ -43,6 +43,8 @@ import "tst/stubs/Hatchery/Egg.pokeclicker.stub.js";
 import "tst/stubs/Items/Item.pokeclicker.stub.js"; // Base class, needs to be imported first
 import "tst/stubs/Items/EggItem.pokeclicker.stub.js";
 import "tst/stubs/Items/FluteEffectRunner.pokeclicker.stub.js";
+import "tst/stubs/Items/Pokeball.pokeclicker.stub.js";
+import "tst/stubs/Items/Pokeballs.pokeclicker.stub.js";
 
 // Import pokeclicker OakItems types and classes
 import "tst/stubs/OakItems/OakItem.pokeclicker.stub.js";
@@ -82,6 +84,7 @@ import "tst/stubs/Weather/Weather.pokeclicker.stub.js";
 // Import pokeclicker classes
 import "tst/stubs/Challenges.pokeclicker.stub.js";
 import "tst/stubs/Discord.pokeclicker.stub.js";
+import "tst/stubs/MapHelper.pokeclicker.stub.js";
 import "tst/stubs/Player.pokeclicker.stub.js";
 import "tst/stubs/Save.pokeclicker.stub.js";
 import "tst/stubs/Statistics.pokeclicker.stub.js";

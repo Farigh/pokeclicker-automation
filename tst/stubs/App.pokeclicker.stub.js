@@ -11,6 +11,7 @@ class App
             gems: new Gems(),
             oakItems: new OakItems(),
             party: new Party(),
+            pokeballs: new Pokeballs(),
             statistics: new Statistics(),
             wallet: new Wallet()
         };

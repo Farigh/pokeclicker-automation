@@ -1,6 +1,11 @@
 // Stub of https://github.com/pokeclicker/pokeclicker/blob/cbeab9a0e658aa84ee2ba028f6ae83421c92776a/src/modules/GameConstants.ts
 class GameConstants
 {
+    static clipNumber(num, min, max)
+    {
+        return Math.min(Math.max(num, min), max);
+    }
+
     static Currency =
         {
             0: "money",
@@ -16,6 +21,18 @@ class GameConstants
             money: 0,
             questPoint: 1
         };
+
+    static DockTowns =
+        [
+            'Vermilion City', // Kanto
+            'Olivine City', // Johto
+            'Slateport City', // Hoenn
+            'Canalave City', // Sinnoh
+            'Castelia City', // Unova
+            'Coumarine City', // Kalos
+            'Hau\'oli City', // Alola
+            'Hulbury' // Galar
+        ];
 
     static EggItemType =
         {
@@ -74,19 +91,53 @@ class GameConstants
             shop: 7,
             temporaryBattle: 9,
             town: 6
-        }
+        };
+
+    static Pokeball =
+        {
+            "-1": "None",
+            0: "Pokeball",
+            1: "Greatball",
+            2: "Ultraball",
+            3: "Masterball",
+            4: "Fastball",
+            5: "Quickball",
+            6: "Timerball",
+            7: "Duskball",
+            8: "Luxuryball",
+            9: "Diveball",
+            10: "Lureball",
+            11: "Nestball",
+            12: "Repeatball",
+            13: "Beastball",
+            Beastball: 13,
+            Diveball: 9,
+            Duskball: 7,
+            Fastball: 4,
+            Greatball: 1,
+            Lureball: 10,
+            Luxuryball: 8,
+            Masterball: 3,
+            Nestball: 11,
+            None: -1,
+            Pokeball: 0,
+            Quickball: 5,
+            Repeatball: 12,
+            Timerball: 6,
+            Ultraball: 2
+        };
 
     static Pokerus =
-    {
-        0: "Uninfected",
-        1: "Infected",
-        2: "Contagious",
-        3: "Resistant",
-        Contagious: 2,
-        Infected: 1,
-        Resistant: 3,
-        Uninfected: 0
-    };
+        {
+            0: "Uninfected",
+            1: "Infected",
+            2: "Contagious",
+            3: "Resistant",
+            Contagious: 2,
+            Infected: 1,
+            Resistant: 3,
+            Uninfected: 0
+        };
 
     static Region =
         {
@@ -122,8 +173,7 @@ class GameConstants
             Neutral: 2,
             NotVery: 1,
             Very: 3
-        }
-
+        };
 
     static TypeEffectivenessValue =
         {
@@ -135,7 +185,7 @@ class GameConstants
             Neutral: 1,
             NotVery: 0.5,
             Very: 2
-        }
+        };
 
     static EP_CHALLENGE_MODIFIER = 10;
     static EP_EV_RATIO = 1000;

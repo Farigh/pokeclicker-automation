@@ -18,7 +18,7 @@ class PokemonHelper
         const type1 = basePokemon.type[0];
         const type2 = basePokemon.type[1] ?? PokemonType.None;
 
-        return new DataPokemon(basePokemon.id, basePokemon.name, basePokemon.eggCycles, type1, type2);
+        return new DataPokemon(basePokemon.id, basePokemon.name, basePokemon.catchRate, basePokemon.eggCycles, type1, type2);
     }
 
     static calcNativeRegion(pokemonName)
@@ -39,7 +39,7 @@ class PokemonHelper
     |*   Test-only interface   *|
     \***************************/
 
-    static __registerPokemon(name, id, nativeRegion, base, type, eggCycles)
+    static __registerPokemon(name, id, nativeRegion, catchRate, base, type, eggCycles)
     {
         if (pokemonMap[name] !== undefined)
         {
@@ -51,7 +51,7 @@ class PokemonHelper
             throw AutomationTestUtils.formatErrors(`Trying to register pokemon with the id '${id}' twice`);
         }
 
-        pokemonMap[name] = new TmpPokemonListData(id, name, nativeRegion, type, base, eggCycles);
+        pokemonMap[name] = new TmpPokemonListData(id, name, nativeRegion, catchRate, type, base, eggCycles);
         pokemonMap[id] = pokemonMap[name];
         App.game.statistics.__addPokemon(id);
     }

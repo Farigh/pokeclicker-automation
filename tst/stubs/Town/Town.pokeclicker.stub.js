@@ -8,9 +8,16 @@ class Town
         this.region = region;
         this.content = content;
 
+        this.__isUnlocked = true;
+
         for (const contentElem of this.content)
         {
             contentElem.addParent(this);
         }
+    }
+
+    isUnlocked()
+    {
+        return this.__isUnlocked;
     }
 }
