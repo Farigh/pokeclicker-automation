@@ -16,6 +16,7 @@ class AutomationShop
     {
         if (initStep === Automation.InitSteps.BuildMenu)
         {
+            this.__internal__buildShopItemList();
             this.__internal__setDefaultSettingValues();
             this.__internal__buildMenu();
         }
@@ -30,8 +31,8 @@ class AutomationShop
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
-    static __internal__shoppingContainer = null;
     static __internal__shopLoop = null;
+    static __internal__shopItems = [];
     static __internal__activeTimeouts = new Map();
 
     static __internal__advancedSettings = {
@@ -48,23 +49,16 @@ class AutomationShop
     static __internal__buildMenu()
     {
         // Add the related buttons to the automation menu
-        this.__internal__shoppingContainer = document.createElement("div");
-        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__shoppingContainer);
+        let shoppingContainer = document.createElement("div");
+        Automation.Menu.AutomationButtonsDiv.appendChild(shoppingContainer);
 
-        Automation.Menu.addSeparator(this.__internal__shoppingContainer);
-
-        // Only display the menu when the Poké Mart is unlocked
-        if (!App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]())
-        {
-            this.__internal__shoppingContainer.hidden = true;
-            this.__internal__setShoppingUnlockWatcher();
-        }
+        Automation.Menu.addSeparator(shoppingContainer);
 
         let autoShopTooltip = "Automatically buys the configured items (see advanced settings)"
                             + Automation.Menu.TooltipSeparator
                             + "⚠️ This can be cost-heavy";
         let autoShopButton =
-            Automation.Menu.addAutomationButton("Auto Shop", this.Settings.FeatureEnabled, autoShopTooltip, this.__internal__shoppingContainer);
+            Automation.Menu.addAutomationButton("Auto Shop", this.Settings.FeatureEnabled, autoShopTooltip, shoppingContainer);
         autoShopButton.addEventListener("click", this.__internal__toggleAutoBuy.bind(this), false);
 
         // Build advanced settings panel
@@ -119,22 +113,28 @@ class AutomationShop
 
         shoppingSettingPanel.appendChild(minPokedollarsInputContainer);
 
-        this.__internal__buildShopItemList(shoppingSettingPanel);
+        this.__internal__buildShopItemListMenu(shoppingSettingPanel);
     }
 
     /**
-     * @brief Watches for the in-game functionality to be unlocked.
+     * @brief Watches for the in-game items to be unlocked (ie. a shop selling it was unlocked).
      *        Once unlocked, the menu will be displayed to the user
      */
     static __internal__setShoppingUnlockWatcher()
     {
         let watcher = setInterval(function()
             {
-                if (App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]())
+                for (const itemData of this.__internal__shopItems)
+                {
+                    if (itemData.rowElem.hidden && itemData.isUnlocked())
+                    {
+                        itemData.rowElem.hidden = false;
+                    }
+                }
+
+                if (this.__internal__shopItems.every(data => !data.rowElem.hidden))
                 {
                     clearInterval(watcher);
-                    this.__internal__shoppingContainer.hidden = false;
-                    this.__internal__toggleAutoBuy();
                 }
             }.bind(this), 10000); // Check every 10 seconds
     }
@@ -150,11 +150,6 @@ class AutomationShop
      */
     static __internal__toggleAutoBuy(enable)
     {
-        if (!App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]())
-        {
-            return;
-        }
-
         if ((enable !== true) && (enable !== false))
         {
             enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
@@ -179,21 +174,28 @@ class AutomationShop
      *
      * @param {Element} parentDiv: The div to add the list to
      */
-    static __internal__buildShopItemList(parentDiv)
+    static __internal__buildShopItemListMenu(parentDiv)
     {
         let table = document.createElement("table");
         table.style.textAlign = "left";
 
-        for (const item of pokeMartShop.items)
+        let isAnyItemHidden = false;
+
+        for (const itemData of this.__internal__shopItems)
         {
             let tableRow = document.createElement("tr");
             table.appendChild(tableRow);
             let tableFirstCell = document.createElement("td");
             tableFirstCell.style.paddingLeft = "7px";
             tableRow.appendChild(tableFirstCell);
+            tableRow.hidden = !itemData.isUnlocked(); // Hide the item row if needed
+
+            // Update the item data
+            itemData.rowElem = tableRow;
+            isAnyItemHidden |= tableRow.hidden;
 
             // Add the toggle button
-            let buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(item.name));
+            let buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(itemData.item.name));
             tableFirstCell.appendChild(buttonElem);
 
             // Buy count
@@ -208,7 +210,7 @@ class AutomationShop
             let tableBuyCountCell = document.createElement("td");
             tableRow.appendChild(tableBuyCountCell);
             let buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
-            buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name));
+            buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name));
             buyCount.style.width = "100%"; // Make it take the whole cell space
             buyCount.style.margin = "0px";
             buyCount.style.textAlign = "right";
@@ -218,13 +220,13 @@ class AutomationShop
             tableTargetLabelCell.style.paddingRight = "4px";
             tableRow.appendChild(tableTargetLabelCell);
             let itemImage = document.createElement("img");
-            if (item.imageDirectory !== undefined)
+            if (itemData.item.imageDirectory !== undefined)
             {
-                itemImage.src = `assets/images/items/${item.imageDirectory}/${item.name}.png`;
+                itemImage.src = `assets/images/items/${itemData.item.imageDirectory}/${itemData.item.name}.png`;
             }
             else
             {
-                itemImage.src = `assets/images/items/${item.name}.png`;
+                itemImage.src = `assets/images/items/${itemData.item.name}.png`;
             }
             itemImage.style.height = "25px";
             tableTargetLabelCell.appendChild(itemImage);
@@ -236,7 +238,7 @@ class AutomationShop
             let tableUntilCountCell = document.createElement("td");
             tableRow.appendChild(tableUntilCountCell);
             let untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
-            untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name));
+            untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name));
             untilCount.style.width = "100%"; // Make it take the whole cell space
             untilCount.style.margin = "0px";
             untilCount.style.textAlign = "right";
@@ -256,7 +258,7 @@ class AutomationShop
             maxPrice.style.width = "100%"; // Make it take the whole cell space
             maxPrice.style.margin = "0px";
             maxPrice.style.textAlign = "right";
-            maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name));
+            maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name));
             tableMaxPriceCell.appendChild(maxPrice);
 
             let tableLastCell = document.createElement("td");
@@ -275,24 +277,24 @@ class AutomationShop
             // Set all oninput callbacks
             buyCount.oninput = function()
                 {
-                    this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                    this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
                 }.bind(this);
             untilCount.oninput = function()
                 {
-                    this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                    this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
                 }.bind(this);
             maxPrice.oninput = function()
                 {
-                    if (maxPrice.innerText < item.basePrice)
+                    if (maxPrice.innerText < itemData.item.basePrice)
                     {
                         maxPrice.classList.add("invalid");
                         // Let the time to the user to edit the value before setting back the minimum possible value
                         let timeout = setTimeout(function()
                             {
                                 // Only update the value if it's still under the minimum possible
-                                if (maxPrice.innerText < item.basePrice)
+                                if (maxPrice.innerText < itemData.item.basePrice)
                                 {
-                                    maxPrice.innerText = item.basePrice;
+                                    maxPrice.innerText = itemData.item.basePrice;
                                     maxPrice.classList.remove("invalid");
 
                                     // Move the cursor at the end of the input if still focused
@@ -307,22 +309,103 @@ class AutomationShop
                                         set.addRange(range);
                                     }
                                 }
-                                this.__internal__activeTimeouts.delete(item.name);
+                                this.__internal__activeTimeouts.delete(itemData.item.name);
                             }.bind(this), 1000);
 
-                        if (this.__internal__activeTimeouts.has(item.name))
+                        if (this.__internal__activeTimeouts.has(itemData.item.name))
                         {
-                            clearTimeout(this.__internal__activeTimeouts.get(item.name));
-                            this.__internal__activeTimeouts.delete(item.name);
+                            clearTimeout(this.__internal__activeTimeouts.get(itemData.item.name));
+                            this.__internal__activeTimeouts.delete(itemData.item.name);
                         }
-                        this.__internal__activeTimeouts.set(item.name, timeout);
+                        this.__internal__activeTimeouts.set(itemData.item.name, timeout);
                     }
                     else
                     {
                         maxPrice.classList.remove("invalid");
                     }
-                    this.__internal_setSaveItemChangesTimeout(item.name, checkmark, buyCount, untilCount, maxPrice);
+                    this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
                 }.bind(this);
+        }
+
+        // Set an unlock watcher if needed
+        if (isAnyItemHidden)
+        {
+            this.__internal__setShoppingUnlockWatcher();
+        }
+    }
+
+    /**
+     * @brief Builds the internal list of purchasable items
+     */
+    static __internal__buildShopItemList()
+    {
+        for (const item of pokeMartShop.items)
+        {
+            let itemData = { item: item }
+
+            if ((item.name == "Pokeball") || (item.name == "xAttack") || (item.name == "xClick"))
+            {
+                // Those basic items are always purchasable
+                itemData.isUnlocked = function() { return true; };
+                itemData.isPurchasable = itemData.isUnlocked;
+            }
+            else if (item.name == "Greatball")
+            {
+                itemData.isUnlocked = function() { return TownList["Lavender Town"].isUnlocked(); };
+                itemData.isPurchasable = function()
+                    {
+                        return this.__internal__isPokeMarkUnlocked()
+                            || (TownList["Lavender Town"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
+                            || TownList["Ecruteak City"].isUnlocked();
+                    }.bind(this);
+            }
+            else if (item.name == "Ultraball")
+            {
+                itemData.isUnlocked = function() { return TownList["Fuchsia City"].isUnlocked(); };
+                itemData.isPurchasable = function()
+                    {
+                        return this.__internal__isPokeMarkUnlocked()
+                            || (TownList["Fuchsia City"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
+                            || TownList["Blackthorn City"].isUnlocked();
+                    }.bind(this);
+            }
+            else if ((item.name == "Lucky_egg") || (item.name == "Token_collector"))
+            {
+                itemData.isUnlocked = function() { return TownList["Pewter City"].isUnlocked(); };
+                itemData.isPurchasable = function()
+                    {
+                        return this.__internal__isPokeMarkUnlocked()
+                            || (TownList["Pewter City"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
+                            || TownList["Violet City"].isUnlocked();
+                    }.bind(this);
+            }
+            else if ((item.name == "Dowsing_machine") || (item.name == "Lucky_incense"))
+            {
+                itemData.isUnlocked = function() { return TownList["Lavender Town"].isUnlocked(); };
+                itemData.isPurchasable = function()
+                    {
+                        return this.__internal__isPokeMarkUnlocked()
+                            || (TownList["Lavender Town"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
+                            || TownList["Olivine City"].isUnlocked();
+                    }.bind(this);
+            }
+            else if (item.name == "SmallRestore")
+            {
+                itemData.isUnlocked = function() { return TownList["Cinnabar Island"].isUnlocked(); };
+                itemData.isPurchasable = itemData.isUnlocked;
+            }
+            else if (item.name == "MediumRestore")
+            {
+                itemData.isUnlocked = function() { return TownList["Violet City"].isUnlocked(); };
+                itemData.isPurchasable = itemData.isUnlocked;
+            }
+            else if (item.name == "LargeRestore")
+            {
+                itemData.isUnlocked = function() { return TownList["Blackthorn City"].isUnlocked(); };
+                itemData.isPurchasable = itemData.isUnlocked;
+            }
+
+            this.__internal__shopItems.push(itemData);
         }
     }
 
@@ -335,7 +418,7 @@ class AutomationShop
      * @param {Element} untilCount: The until count input element
      * @param {Element} maxPrice: The max price input element
      */
-    static __internal_setSaveItemChangesTimeout(itemName, checkmark, buyCount, untilCount, maxPrice)
+    static __internal__setSaveItemChangesTimeout(itemName, checkmark, buyCount, untilCount, maxPrice)
     {
         let mapKey = `${itemName}-Save`;
 
@@ -373,19 +456,20 @@ class AutomationShop
         Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency, 1000000);
 
         // Set default value for all buyable items
-        for (const item of pokeMartShop.items)
+        for (const itemData of this.__internal__shopItems)
         {
             // Disable all items by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.ItemEnabled(item.name), false);
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.ItemEnabled(itemData.item.name), false);
 
             // By 10 items at a time by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(item.name), 10);
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name), 10);
 
             // Stop buying at a stock of 10'000 by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(item.name), 10000);
+            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name), 10000);
 
             // Buy at the cheapest possible by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name), item.basePrice);
+            Automation.Utils.LocalStorage.setDefaultValue(
+                this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name), itemData.item.basePrice);
         }
     }
 
@@ -398,42 +482,47 @@ class AutomationShop
 
         let totalSpent = 0;
 
-        for (const item of pokeMartShop.items)
+        for (const itemData of this.__internal__shopItems)
         {
             // Skip any disabled item
-            if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.ItemEnabled(item.name)) !== "true")
+            if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.ItemEnabled(itemData.item.name)) !== "true")
             {
                 continue;
             }
 
-            let itemData = ItemList[item.name];
-            let targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(item.name)));
+            // Skip any not-purchasable item
+            if (!itemData.isPurchasable())
+            {
+                continue;
+            }
+
+            let targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name)));
 
             // Don't buy if the target quantity has been reached
-            if (this.__internal__getItemQuantity(item.name) > targetAmount)
+            if (this.__internal__getItemQuantity(itemData.item.name) > targetAmount)
             {
                 continue;
             }
 
-            let buyAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(item.name)));
+            let buyAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name)));
 
             // Don't buy if it would bring the player under the set threshold
-            let totalPrice = itemData.totalPrice(buyAmount);
+            let totalPrice = itemData.item.totalPrice(buyAmount);
             if (App.game.wallet.currencies[GameConstants.Currency.money]() < (minPlayerCurrency + totalPrice))
             {
                 continue;
             }
 
-            let maxUnitPrice = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(item.name)));
+            let maxUnitPrice = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name)));
 
             // Don't buy if the base price is over the set desired max price
-            if (itemData.totalPrice(1) > maxUnitPrice)
+            if (itemData.item.totalPrice(1) > maxUnitPrice)
             {
                 continue;
             }
 
             // Buy the item
-            itemData.buy(buyAmount);
+            itemData.item.buy(buyAmount);
             totalSpent += totalPrice;
         }
 
@@ -460,5 +549,15 @@ class AutomationShop
         }
 
         return player.itemList[itemName]();
+    }
+
+    /**
+     * @brief Determines if the Poké Mart is accessible to the player
+     *
+     * @returns True if the Poké Mart is unlocked, false otherwise
+     */
+    static __internal__isPokeMarkUnlocked()
+    {
+        return App.game.statistics.gymsDefeated[GameConstants.getGymIndex('Champion Lance')]() > 0;
     }
 }
