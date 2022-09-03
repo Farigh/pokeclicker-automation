@@ -6,8 +6,11 @@
  */
 class AutomationUnderground
 {
-    static Settings = { FeatureEnabled: "Mining-Enabled" };
-    static UseSmallRestoreAsked = false;
+    static Settings = {
+                          FeatureEnabled: "Mining-Enabled",
+                          UseRestoreItems: "Mining-UseRestoreItems",
+                          RestrictRestoreItemsToMiningQuests: "Mining-RestrictRestoreItemsToMiningQuests"
+                      };
 
     /**
      * @brief Builds the menu, and retores previous running state if needed
@@ -17,33 +20,15 @@ class AutomationUnderground
     static initialize(initStep)
     {
         // Only consider the BuildMenu init step
-        if (initStep != Automation.InitSteps.BuildMenu) return;
-
-        // Add the related button to the automation menu
-        this.__internal__undergroundContainer = document.createElement("div");
-        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__undergroundContainer);
-
-        Automation.Menu.addSeparator(this.__internal__undergroundContainer);
-
-        // Only display the menu when the underground is unlocked
-        if (!App.game.underground.canAccess())
+        if (initStep == Automation.InitSteps.BuildMenu)
         {
-            this.__internal__undergroundContainer.hidden = true;
-            this.__internal__setUndergroundUnlockWatcher();
+            this.__internal__buildMenu();
         }
-
-        let autoMiningTooltip = "Automatically mine in the Underground"
-                              + Automation.Menu.TooltipSeparator
-                              + "Bombs will be used until all items have at least one visible tile\n"
-                              + "The hammer will then be used if more than 3 blocks\n"
-                              + "can be destroyed on an item within its range\n"
-                              + "The chisel will then be used to finish the remaining blocks\n";
-        let miningButton =
-            Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
-        miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
-
-        // Restore previous session state
-        this.toggleAutoMining();
+        else
+        {
+            // Restore previous session state
+            this.toggleAutoMining();
+        }
     }
 
     /**
@@ -95,6 +80,72 @@ class AutomationUnderground
     static __internal__innerMiningLoop = null;
 
     static __internal__actionCount = 0;
+
+    /**
+     * @brief Builds the menu
+     */
+    static __internal__buildMenu()
+    {
+        // Add the related button to the automation menu
+        this.__internal__undergroundContainer = document.createElement("div");
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__undergroundContainer);
+
+        Automation.Menu.addSeparator(this.__internal__undergroundContainer);
+
+        // Only display the menu when the underground is unlocked
+        if (!App.game.underground.canAccess())
+        {
+            this.__internal__undergroundContainer.hidden = true;
+            this.__internal__setUndergroundUnlockWatcher();
+        }
+
+        let autoMiningTooltip = "Automatically mine in the Underground"
+                            + Automation.Menu.TooltipSeparator
+                            + "Bombs will be used until all items have at least one visible tile\n"
+                            + "The hammer will then be used if more than 3 blocks\n"
+                            + "can be destroyed on an item within its range\n"
+                            + "The chisel will then be used to finish the remaining blocks\n";
+        let miningButton =
+            Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
+        miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
+
+        this.__internal__buildAdvancedSettings(this.__internal__undergroundContainer);
+    }
+
+    /**
+     * @brief Adds the Underground advanced settings panel
+     *
+     * @param parent: The div container to insert the settings to
+     */
+    static __internal__buildAdvancedSettings(parent)
+    {
+        // Build advanced settings panel
+        let miningSettingPanel = Automation.Menu.addSettingPanel(parent);
+        miningSettingPanel.style.textAlign = "right";
+
+        let titleDiv = Automation.Menu.createTitleElement("Mining advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        miningSettingPanel.appendChild(titleDiv);
+
+        /*********************\
+        |* Use restore items *|
+        \*********************/
+
+        let useRestoreLabel = 'Automatically use restore items';
+        let useRestoreTooltip = "Allows the mining feature use Restore items if the mining energy goes under 10";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(useRestoreLabel, this.Settings.UseRestoreItems, useRestoreTooltip, miningSettingPanel);
+
+        /*************************************************\
+        |* Restict restore items to active mining quests *|
+        \*************************************************/
+
+        // Disable restore item usage option by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.RestrictRestoreItemsToMiningQuests, false);
+
+        let restrictRestoreLabel = 'Only use restore items when a mining quest is active';
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            restrictRestoreLabel, this.Settings.RestrictRestoreItemsToMiningQuests, "", miningSettingPanel);
+    }
 
     /**
      * @brief Watches for the in-game functionality to be unlocked.
@@ -151,7 +202,7 @@ class AutomationUnderground
             if (this.__internal__autoMiningLoop !== null)
             {
                 // Restore energy if needed
-                this.__internal__restoreUndergroundEnergyIfUnderThreshold(5);
+                this.__internal__restoreUndergroundEnergy();
 
                 let itemsState = this.__internal__getItemsState();
 
@@ -174,7 +225,7 @@ class AutomationUnderground
                 }
                 else
                 {
-                    nothingElseToDo = !this.__internal__tryUseTheBestItem(itemsState);
+                    nothingElseToDo = !this.__internal__tryToUseTheBestItem(itemsState);
                 }
             }
 
@@ -194,41 +245,41 @@ class AutomationUnderground
     }
 
     /**
-     * @brief Tries to buy some Small Restore if the player's amount goes under the provided @p amount
+     * @brief Tries to use available Restore pots if the player's energy goes under the provided @p amount
      *
-     * @param amount: The minimum amount to have in stock at all time
+     * @param amount: The energy minimum value before any restore pots should be used
      */
-    static __internal__restoreUndergroundEnergyIfUnderThreshold(amount)
+    static __internal__restoreUndergroundEnergy()
     {
-        // Only use Small Restore item if:
-        //    - The user allowed it
-        //    - It can be bought (ie. the Cinnabar Island store is unlocked)
-        if ((!this.UseSmallRestoreAsked)
-            || !TownList["Cinnabar Island"].isUnlocked())
+        let currentEnergy = Math.floor(App.game.underground.energy);
+
+        // Only use Small Restore item if the user allowed it, and it's under the provided threshold
+        if ((currentEnergy >= Underground.BOMB_ENERGY)
+            || Automation.Utils.LocalStorage.getValue(this.Settings.UseRestoreItems) !== "true")
         {
             return;
         }
 
-        let currentEnergy = Math.floor(App.game.underground.energy);
-
-        if (currentEnergy < 20)
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.RestrictRestoreItemsToMiningQuests) === "true")
         {
-            // Use the small restore since it's the one with best cost/value ratio
-            let smallRestoreItemName = GameConstants.EnergyRestoreSize[GameConstants.EnergyRestoreSize.SmallRestore];
-            let smallRestoreCount = player.itemList[smallRestoreItemName]();
-            let item = ItemList[smallRestoreItemName];
-
-            if (smallRestoreCount < amount)
+            let hasActiveMiningQuests = App.game.quests.currentQuests().some(
+                (quest) => ((quest instanceof MineItemsQuest) || (quest instanceof MineLayersQuest))
+                        && !quest.isCompleted());
+            if (!hasActiveMiningQuests)
             {
-                if (item.totalPrice(amount) < App.game.wallet.currencies[item.currency]())
-                {
-                    item.buy(amount);
-                    smallRestoreCount += 5;
-                }
+                return;
             }
+        }
+
+        for (const itemValue of Object.keys(GameConstants.EnergyRestoreSize).filter(x => !isNaN(x)))
+        {
+            let smallRestoreItemName = GameConstants.EnergyRestoreSize[itemValue];
+            let smallRestoreCount = player.itemList[smallRestoreItemName]();
+
             if (smallRestoreCount > 0)
             {
-                item.use();
+                ItemList[smallRestoreItemName].use();
+                break;
             }
         }
     }
@@ -240,7 +291,7 @@ class AutomationUnderground
      *
      * @returns True if some action are still possible after the current move, false otherwise (if the player does not have enough energy)
      */
-    static __internal__tryUseTheBestItem(itemsState)
+    static __internal__tryToUseTheBestItem(itemsState)
     {
         let nextTilesToMine = [];
 

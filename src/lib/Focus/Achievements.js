@@ -89,7 +89,10 @@ class AutomationFocusAchievements
         this.__internal__updateTheAchievementIfNeeded();
 
         // Work on the current achievement
-        this.__internal__workOnAchievement();
+        if (this.__internal__currentAchievement !== null)
+        {
+            this.__internal__workOnAchievement();
+        }
     }
 
     /**

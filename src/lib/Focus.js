@@ -265,9 +265,6 @@ class AutomationFocus
                                                                this.Settings.OakItemLoadoutUpdate,
                                                                disableOakItemTooltip,
                                                                focusSettingPanel);
-
-        // Add the quests-specific settings
-        this.Quests.__addAdvancedSettings(focusSettingPanel);
     }
 
     /**
