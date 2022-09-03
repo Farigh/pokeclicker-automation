@@ -13,7 +13,7 @@ class AutomationUtilsRoute
         // Only consider the Finalize init step
         if (initStep != Automation.InitSteps.Finalize) return;
 
-        this.__internal__buildRouteMaxHealthMap();
+        this.__internal__buildRouteMaxHealthData();
         this.__internal__buildRouteIncomeMap();
     }
 
@@ -139,64 +139,47 @@ class AutomationUtilsRoute
         //    - We are currently on the highest route of the map
         //    - The next best route is still over-powered
         let needsNewRoad = (this.__internal__lastHighestRegion !== player.highestRegion())
-                        || (this.__internal__routeMaxHealthMap.get(this.__internal__lastBestRouteRegion)
-                                .get(this.__internal__lastBestRoute) > playerSingleAttackByRegion[this.__internal__lastBestRouteRegion])
-                        || ((this.__internal__lastNextBestRoute !== this.__internal__lastBestRoute)
-                            && (this.__internal__routeMaxHealthMap.get(this.__internal__lastNextBestRouteRegion)
-                                    .get(this.__internal__lastNextBestRoute) < playerSingleAttackByRegion[this.__internal__lastNextBestRouteRegion]));
-
-        // Don't refresh if we already are on the best road
-        if ((this.__internal__lastBestRoute === player.route())
-            && (this.__internal__lastBestRouteRegion === player.region)
-            && !needsNewRoad)
-        {
-            return;
-        }
+                        || (this.__internal__lastBestRouteData.maxHealth > playerSingleAttackByRegion[this.__internal__lastBestRouteData.route.region])
+                        || ((this.__internal__lastNextBestRouteData != null)
+                            && (this.__internal__lastNextBestRouteData.maxHealth < playerSingleAttackByRegion[this.__internal__lastNextBestRouteData.route.region]));
 
         if (needsNewRoad)
         {
             this.__internal__lastHighestRegion = player.highestRegion();
 
-            // If no routes are below the user attack, just choose the 1st one
-            this.__internal__lastBestRoute = 0;
-            this.__internal__lastBestRouteRegion = 0;
-            this.__internal__lastNextBestRoute = 0;
-            this.__internal__lastNextBestRouteRegion = 0;
+            this.__internal__lastBestRouteData = null;
+            this.__internal__lastNextBestRouteData = null;
 
-            // Fortunately routes are sorted by region and by attack
-            for (const route of Routes.regionRoutes)
+            for (const routeData of this.__internal__routeMaxHealthData)
             {
                 // Skip any route that we can't access
-                if (!this.canMoveToRegion(route.region))
+                if (!this.canMoveToRegion(routeData.route.region))
                 {
                     continue;
                 }
 
-                if (this.__internal__routeMaxHealthMap.get(route.region).get(route.number) < playerSingleAttackByRegion[route.region])
+                if (routeData.maxHealth < playerSingleAttackByRegion[routeData.route.region])
                 {
-                    this.__internal__lastBestRoute = route.number;
-                    this.__internal__lastBestRouteRegion = route.region;
+                    this.__internal__lastBestRouteData = routeData;
 
                     continue;
                 }
 
-                this.__internal__lastNextBestRoute = route.number;
-                this.__internal__lastNextBestRouteRegion = route.region;
+                // Internal __internal__routeMaxHealthData routes are sorted by maxHealth so we can stop searching for better roads
+                this.__internal__lastNextBestRouteData = routeData;
                 break;
             }
 
             // This can happen if the player is in a new region and the docks are not unlocked yet
-            if (this.__internal__lastBestRoute == 0)
+            if (this.__internal__lastBestRouteData == null)
             {
-                let regionRoutes = Routes.getRoutesByRegion(player.region);
-                this.__internal__lastBestRoute = regionRoutes[0].number;
-                this.__internal__lastBestRouteRegion = regionRoutes[0].region;
-                this.__internal__lastNextBestRoute = regionRoutes[1].number;
-                this.__internal__lastNextBestRouteRegion = regionRoutes[1].region;
+                // If no routes are below the user attack, just choose the 1st ones
+                this.__internal__lastBestRouteData = this.__internal__routeMaxHealthData[0];
+                this.__internal__lastNextBestRouteData = this.__internal__routeMaxHealthData[1];
             }
         }
 
-        this.moveToRoute(this.__internal__lastBestRoute, this.__internal__lastBestRouteRegion);
+        this.moveToRoute(this.__internal__lastBestRouteData.route.number, this.__internal__lastBestRouteData.route.region);
     }
 
     /**
@@ -327,14 +310,13 @@ class AutomationUtilsRoute
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
-    // Map of Map [ region => [ route => maxHp ]]
-    static __internal__routeMaxHealthMap = new Map();
+    // List of { route, maxHealth }
+    static __internal__routeMaxHealthData = [];
 
     static __internal__lastHighestRegion = null;
-    static __internal__lastBestRouteRegion = null;
-    static __internal__lastBestRoute = null;
-    static __internal__lastNextBestRoute = null;
-    static __internal__lastNextBestRouteRegion = null;
+    static __internal__lastBestRouteData = null;
+    static __internal__lastNextBestRouteData = null;
+
     static __internal__routeRawIncomeMap = new Map();
 
     /**
@@ -382,22 +364,20 @@ class AutomationUtilsRoute
     }
 
     /**
-     * @brief Builds the [ region => [ route => maxHp ]] map of map for each existing routes
+     * @brief Builds the [ { route, maxHealth } ] list containing each existing routes
      *
-     * The resulting map is stored as a member of this class @c __internal__routeMaxHealthMap for further use
+     * The result is stored as a member of this class @c __internal__routeMaxHealthData for further use
      */
-    static __internal__buildRouteMaxHealthMap()
+    static __internal__buildRouteMaxHealthData()
     {
         for (const route of Routes.regionRoutes)
         {
-            if (route.region >= this.__internal__routeMaxHealthMap.size)
-            {
-                this.__internal__routeMaxHealthMap.set(route.region, new Map());
-            }
-
             let routeMaxHealth = this.__internal__getRouteMaxHealth(route);
-            this.__internal__routeMaxHealthMap.get(route.region).set(route.number, routeMaxHealth);
+            this.__internal__routeMaxHealthData.push({ route: route, maxHealth: routeMaxHealth });
         }
+
+        // Sort __internal__routeData by maxHealth
+        this.__internal__routeMaxHealthData.sort((a, b) => a.maxHealth - b.maxHealth);
     }
 
     static __internal__buildRouteIncomeMap()
