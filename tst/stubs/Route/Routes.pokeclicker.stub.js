@@ -15,6 +15,11 @@ class Routes
         return this.regionRoutes.find((routeData) => (routeData.region === region) && (routeData.number === route));
     }
 
+    static getRoutesByRegion(region)
+    {
+        return this.regionRoutes.filter((routeData) => routeData.region === region);
+    }
+
     static normalizedNumber(route, region, skipIgnoredRoutes = true)
     {
         if (region === GameConstants.Region.none)

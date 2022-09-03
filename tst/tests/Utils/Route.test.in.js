@@ -73,6 +73,41 @@ beforeEach(() =>
     player.__route = -1;
 });
 
+// Test moveToBestRouteForExp() method
+describe(`${AutomationTestUtils.categoryPrefix}Check moveToBestRouteForExp() method`, () =>
+{
+    test('Low click attack', () =>
+    {
+        player.region = 0;
+        App.game.party.__clickAttack = 500;
+
+        Automation.Utils.Route.moveToBestRouteForExp();
+        expect(player.route()).toEqual(3);
+        expect(player.region).toEqual(GameConstants.Region.kanto);
+    });
+
+    test('Higher click attack', () =>
+    {
+        player.region = 0;
+        App.game.party.__clickAttack = 95000;
+
+        Automation.Utils.Route.moveToBestRouteForExp();
+        expect(player.route()).toEqual(37);
+        expect(player.region).toEqual(GameConstants.Region.johto);
+    });
+
+    test('No-click challenge active', () =>
+    {
+        player.region = 0;
+        App.game.party.__clickAttack = 95000; // Whatever number we put here shouldn't change anything
+        App.game.challenges.list.disableClickAttack.__active = true;
+
+        Automation.Utils.Route.moveToBestRouteForExp();
+        expect(player.route()).toEqual(25);
+        expect(player.region).toEqual(GameConstants.Region.kanto);
+    });
+});
+
 // Test moveToHighestDungeonTokenIncomeRoutes() method
 describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIncomeRoute() method`, () =>
 {
