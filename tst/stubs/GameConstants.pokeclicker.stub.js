@@ -6,6 +6,21 @@ class GameConstants
         return Math.min(Math.max(num, min), max);
     }
 
+    static getGymIndex(gymName)
+    {
+        return this.RegionGyms.flat().findIndex((g) => g === gymName);
+    }
+
+    static BattleItemType =
+    {
+        Dowsing_machine: "Dowsing_machine",
+        Lucky_egg: "Lucky_egg",
+        Lucky_incense: "Lucky_incense",
+        Token_collector: "Token_collector",
+        xAttack: "xAttack",
+        xClick: "xClick"
+    };
+
     static Currency =
         {
             0: "money",
@@ -53,6 +68,16 @@ class GameConstants
             Pokemon_egg: 6,
             Water_egg: 1
         };
+
+    static EnergyRestoreSize =
+    {
+        0: "SmallRestore",
+        1: "MediumRestore",
+        2: "LargeRestore",
+        LargeRestore: 2,
+        MediumRestore: 1,
+        SmallRestore: 0
+    };
 
     static FossilToPokemon =
         {
@@ -186,6 +211,43 @@ class GameConstants
             NotVery: 0.5,
             Very: 2
         };
+
+    // RegionGym
+    static KantoGyms =
+        [
+            'Pewter City',
+            'Cerulean City',
+            'Vermilion City',
+            'Celadon City',
+            'Saffron City',
+            'Fuchsia City',
+            'Cinnabar Island',
+            'Viridian City',
+            'Elite Lorelei',
+            'Elite Bruno',
+            'Elite Agatha',
+            'Elite Lance',
+            'Champion Blue',
+        ];
+
+    static JohtoGyms =
+        [
+            'Violet City',
+            'Azalea Town',
+            'Goldenrod City',
+            'Ecruteak City',
+            'Cianwood City',
+            'Olivine City',
+            'Mahogany Town',
+            'Blackthorn City',
+            'Elite Will',
+            'Elite Koga',
+            'Elite Bruno2',
+            'Elite Karen',
+            'Champion Lance',
+        ];
+
+    static RegionGyms = [ this.KantoGyms, this.JohtoGyms ];
 
     static EP_CHALLENGE_MODIFIER = 10;
     static EP_EV_RATIO = 1000;

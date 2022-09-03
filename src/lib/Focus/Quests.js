@@ -6,8 +6,6 @@
  */
 class AutomationFocusQuests
 {
-    static Settings = { UseSmallRestore: "Focus-Quest-UseSmallRestore" };
-
     /******************************************************************************\
     |***    Focus-specific members, should only be used by focus sub-classes    ***|
     \******************************************************************************/
@@ -39,31 +37,6 @@ class AutomationFocusQuests
                 isUnlocked: function (){ return App.game.quests.isDailyQuestsUnlocked(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
-    }
-
-    /**
-     * @brief Adds the Quest-specific advanced settings
-     *
-     * The 'Use/buy Small Restore' setting is disabled by default (if never set in a previous session)
-     *
-     * @param parent: The div container to insert the settings to
-     */
-    static __addAdvancedSettings(parent)
-    {
-        // Disable use/buy small restore mode by default
-        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseSmallRestore, false);
-
-        let smallRestoreTooltip = "Allows the Quests focus topic to buy and use Small Restore items"
-                                + Automation.Menu.TooltipSeparator
-                                + "This will only be used when a mining quest is active.\n"
-                                + "⚠️ This can be cost-heavy during early game";
-        let smallRestoreLabel = 'Automatically buy and use<img src="assets/images/items/SmallRestore.png"'
-                              // Set the width smaller than the actual image one, and set it to preserve the image ratio to shrink the image margins
-                              + ' style="height: 26px; width: 19px; object-fit: cover; object-position: left top;">';
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(smallRestoreLabel,
-                                                               this.Settings.UseSmallRestore,
-                                                               smallRestoreTooltip,
-                                                               parent);
     }
 
     /*********************************************************************\
@@ -114,7 +87,6 @@ class AutomationFocusQuests
 
         // Reset demands
         Automation.Farm.ForcePlantBerriesAsked = false;
-        Automation.Underground.UseSmallRestoreAsked = false;
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         // Reset other modes status
@@ -317,8 +289,6 @@ class AutomationFocusQuests
 
         let isFarmingSpecificBerry = false;
 
-        let hasMiningQuest = false;
-
         // Filter the quests that do not need specific action
         for (const quest of currentQuests)
         {
@@ -333,15 +303,7 @@ class AutomationFocusQuests
                 let bestBerry = this.__internal__getMostSuitableBerryForQuest(quest);
                 this.__internal__enableFarmingForBerryType(bestBerry);
             }
-            else if ((quest instanceof MineItemsQuest)
-                     || (quest instanceof MineLayersQuest))
-            {
-                hasMiningQuest = true;
-            }
         }
-
-        Automation.Underground.UseSmallRestoreAsked =
-            hasMiningQuest && (Automation.Utils.LocalStorage.getValue(this.Settings.UseSmallRestore) === "true");
     }
 
     /**
