@@ -7,9 +7,16 @@ class Statistics
 
     constructor()
     {
-        this.pokemonCaptured = new Object();
+        this.gymsDefeated = [];
 
+        this.pokemonCaptured = new Object();
         this.__pokemonCapturedCount = new Object();
+
+        this.__gymsDefeated = GameConstants.RegionGyms.flat().map(_ => 0);
+        for (const index of this.__gymsDefeated.keys())
+        {
+            this.gymsDefeated[index] = function() { return this.__gymsDefeated[index]; }.bind(this);
+        }
     }
 
     /***************************\

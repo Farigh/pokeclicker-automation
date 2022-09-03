@@ -41,9 +41,12 @@ import "tst/stubs/Hatchery/Egg.pokeclicker.stub.js";
 
 // Import pokeclicker Items types and classes
 import "tst/stubs/Items/Item.pokeclicker.stub.js"; // Base class, needs to be imported first
+import "tst/stubs/Items/BattleItem.pokeclicker.stub.js";
 import "tst/stubs/Items/EggItem.pokeclicker.stub.js";
+import "tst/stubs/Items/EnergyRestore.pokeclicker.stub.js";
 import "tst/stubs/Items/FluteEffectRunner.pokeclicker.stub.js";
 import "tst/stubs/Items/Pokeball.pokeclicker.stub.js";
+import "tst/stubs/Items/PokeballItem.pokeclicker.stub.js";
 import "tst/stubs/Items/Pokeballs.pokeclicker.stub.js";
 
 // Import pokeclicker OakItems types and classes
@@ -66,7 +69,9 @@ import "tst/stubs/Route/Routes.pokeclicker.stub.js";
 
 // Import pokeclicker Town types and classes
 import "tst/stubs/Town/Town.pokeclicker.stub.js"; // Base class of DungeonTown, needs to be imported first
+import "tst/stubs/Town/Shop.pokeclicker.stub.js"; // Used by PokeMartShop, needs to be imported first
 import "tst/stubs/Town/DungeonTown.pokeclicker.stub.js";
+import "tst/stubs/Town/PokeMartShop.pokeclicker.stub.js";
 import "tst/stubs/Town/TownList.pokeclicker.stub.js";
 
 // Import pokeclicker Type types and classes
