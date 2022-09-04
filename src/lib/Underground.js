@@ -139,9 +139,6 @@ class AutomationUnderground
         |* Restict restore items to active mining quests *|
         \*************************************************/
 
-        // Disable restore item usage option by default
-        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.RestrictRestoreItemsToMiningQuests, false);
-
         let restrictRestoreLabel = 'Only use restore items when a mining quest is active';
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             restrictRestoreLabel, this.Settings.RestrictRestoreItemsToMiningQuests, "", miningSettingPanel);

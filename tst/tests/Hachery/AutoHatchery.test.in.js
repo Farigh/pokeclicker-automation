@@ -40,6 +40,7 @@ player.__highestRegion = GameConstants.Region.alola;
 // Load the needed pokemons
 PokemonLoader.loadEggsPokemons();
 PokemonLoader.loadFossilsPokemons();
+PokemonLoader.loadGymPokemons();
 
 /**************************\
 |***    TEST-HELPERS    ***|
@@ -75,6 +76,15 @@ function expectBreedingPokemonOrderedByBreedingEfficiencyOnly()
     expect(App.game.breeding.__eggList[3].isNone()).toBe(false);
 }
 
+function resetSettings()
+{
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.NotShinyFirst, false);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.SpreadPokerus, true);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, GameConstants.Region.none);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedType, PokemonType.None);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
+}
+
 /************************\
 |***    TEST-SUITE    ***|
 \************************/
@@ -99,20 +109,12 @@ beforeAll(() =>
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.UseFossils, true);
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.UseFossils)).toBe("true");
 
-        // Simulate SpreadPokerus setting being enabled by default (done in the Automation.InitSteps.BuildMenu)
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.SpreadPokerus, true);
+        // Filtering settings
+        resetSettings();
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.SpreadPokerus)).toBe("true");
-
-        // Simulate NotShinyFirst setting being disabled by default (done in the Automation.InitSteps.BuildMenu)
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.NotShinyFirst, false);
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.NotShinyFirst)).toBe("false");
-
-        // Simulate PrioritizedRegion setting being set to 'Any' by default (done in the Automation.InitSteps.BuildMenu)
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, GameConstants.Region.none);
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedRegion)).toBe("-1");
-
-        // Simulate RegionalDebuffRegion setting being set to 'None' by default (done in the Automation.InitSteps.BuildMenu)
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
+        expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedType)).toBe("-1");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.RegionalDebuffRegion)).toBe("-1");
     });
 
@@ -132,10 +134,7 @@ beforeEach(() =>
         }
 
         // Restore settings
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.NotShinyFirst, false);
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.SpreadPokerus, true);
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, GameConstants.Region.none);
-        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
+        resetSettings();
     });
 
 // Test when an egg reached all the steps needed to hatch
@@ -262,7 +261,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the 1st one to lvl100
+        // Put the 1st one to lvl 100
         App.game.party.caughtPokemon[0].level = 100;
 
         // Simulate the loop
@@ -277,7 +276,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -294,7 +293,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -315,7 +314,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -348,7 +347,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -371,7 +370,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -400,7 +399,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     {
         addSomePokemonsToThePlayersParty(GameConstants.Region.johto);
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -454,7 +453,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
     });
 });
 
-describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order region filter`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order > Region priority`, () =>
 {
     /** @note Those orders might change if new pokemon were to be added, or their value changed */
     let regionTestCases =
@@ -468,12 +467,12 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order reg
             { regionId: GameConstants.Region.alola, regionName: "Alola", expectedPokemons: [ "Litten", "Crabrawler", "Turtonator", "Rowlet" ] }
         ];
 
-    // Test the breeding order with infected and the SpreadPokerus setting enabled
+    // Test the breeding order with infected and the PrioritizedRegion setting enabled
     test.each(regionTestCases)("Test breeding order with region set to $regionName", (testCase) =>
     {
         addSomePokemonsToThePlayersParty();
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
@@ -493,7 +492,66 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order reg
     });
 });
 
-describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order regional debuff filter`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order > Type priority`, () =>
+{
+    /** @note Those orders might change if new pokemon were to be added, or their value changed */
+    let regionTestCases =
+        [
+            { typeId: PokemonType.Normal, typeName: "Normal", expectedPokemons: [ "Miltank", "Pidgey", "Drampa", "Pidgeotto" ] },
+            { typeId: PokemonType.Fire, typeName: "Fire", expectedPokemons: [ "Litten", "Ponyta", "Turtonator", "Magby" ] },
+            { typeId: PokemonType.Water, typeName: "Water", expectedPokemons: [ "Gyarados", "Qwilfish", "Popplio", "Mudkip" ] },
+            { typeId: PokemonType.Electric, typeName: "Electric", expectedPokemons: [ "Raichu", "Pikachu", "Pachirisu", "Electabuzz" ] },
+            { typeId: PokemonType.Grass, typeName: "Grass", expectedPokemons: [ "Carnivine", "Bellsprout", "Rowlet", "Turtwig" ] },
+            { typeId: PokemonType.Ice, typeName: "Ice", expectedPokemons: [ "Piloswine", "Cloyster", "Dewgong", "Lapras" ] },
+            { typeId: PokemonType.Fighting, typeName: "Fighting", expectedPokemons: [ "Sawk", "Throh", "Hitmonlee", "Hitmonchan" ] },
+            { typeId: PokemonType.Ground, typeName: "Ground", expectedPokemons: [ "Geodude", "Rhydon", "Rhyhorn", "Dugtrio" ] },
+            { typeId: PokemonType.Flying, typeName: "Flying", expectedPokemons: [ "Gyarados", "Scyther", "Murkrow", "Archen" ] },
+            { typeId: PokemonType.Psychic, typeName: "Psychic", expectedPokemons: [ "Exeggutor", "Slowbro", "Starmie", "Xatu" ] },
+            { typeId: PokemonType.Bug, typeName: "Bug", expectedPokemons: [ "Scyther", "Ariados", "Anorith", "Forretress" ] },
+            { typeId: PokemonType.Rock, typeName: "Rock", expectedPokemons: [ "Geodude", "Rhydon", "Rhyhorn", "Cranidos" ] },
+            { typeId: PokemonType.Ghost, typeName: "Ghost", expectedPokemons: [ "Gastly", "Haunter", "Gengar", "Gyarados" ] },
+            { typeId: PokemonType.Dragon, typeName: "Dragon", expectedPokemons: [ "Turtonator", "Drampa", "Tyrunt", "Kingdra" ] },
+            { typeId: PokemonType.Dark, typeName: "Dark", expectedPokemons: [ "Murkrow", "Houndour", "Houndoom", "Deino" ] },
+            { typeId: PokemonType.Steel, typeName: "Steel", expectedPokemons: [ "Forretress", "Steelix", "Magnemite", "Shieldon" ] },
+            { typeId: PokemonType.Fairy, typeName: "Fairy", expectedPokemons: [ "Clefairy", "Marill", "Mr. Mime", "Morelull" ] }
+        ];
+
+    // Test the breeding order with infected and the PrioritizedType setting enabled
+    test.each(regionTestCases)("Test breeding order with type set to $typeName", (testCase) =>
+    {
+        // Simulate the player getting all the available pokemons
+        for (const entry in pokemonMap)
+        {
+            let pokemonData = pokemonMap[entry];
+            App.game.party.gainPokemonById(pokemonData.id);
+        }
+
+        // Put the all pokemons to lvl 100
+        for (const pokemon of App.game.party.caughtPokemon)
+        {
+            pokemon.level = 100;
+        }
+
+        // Set the region filter
+        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedType, testCase.typeId);
+
+        // Simulate the loop
+        Automation.Hatchery.__internal__hatcheryLoop();
+
+        for (const i of testCase.expectedPokemons.keys())
+        {
+            expect(App.game.breeding.__eggList[i].pokemon).toEqual(testCase.expectedPokemons[i]);
+            expect(App.game.breeding.__eggList[i].isNone()).toBe(false);
+            let pokemeonData = pokemonMap[App.game.breeding.__eggList[i].pokemon];
+
+            // Only 3 Ghost pokemons are loaded
+            let expectMatchingType = !((i === 3) && (testCase.typeId === PokemonType.Ghost));
+            expect(pokemeonData.type.includes(testCase.typeId)).toBe(expectMatchingType);
+        }
+    });
+});
+
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order > Regional debuff`, () =>
 {
     /** @note Those orders might change if new pokemon were to be added, or their value changed */
     let regionTestCases =
@@ -512,13 +570,13 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order reg
     {
         addSomePokemonsToThePlayersParty();
 
-        // Put the all pokemons to lvl100
+        // Put the all pokemons to lvl 100
         for (const pokemon of App.game.party.caughtPokemon)
         {
             pokemon.level = 100;
         }
 
-        // Set the regional debuff filter
+        // Set the regional debuff
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, testCase.regionId);
 
         // Simulate the loop
