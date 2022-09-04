@@ -12,6 +12,7 @@ class AutomationHatchery
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
+                          PrioritizedType: "Hatchery-PrioritizedType",
                           PrioritizedRegion: "Hatchery-PrioritizedRegion",
                           RegionalDebuffRegion: "Hatchery-RegionalDebuffRegion"
                       };
@@ -161,11 +162,27 @@ class AutomationHatchery
         sortingOrder.textContent = "Sorting on attribute: Breeding efficiency";
         categoryContainer.appendChild(sortingOrder);
 
+        /***********************\
+        |* Region prioritizing *|
+        \***********************/
+
         // Add region selector
         let tooltip = "The pokémons from the selected region will be added in priority";
         let label = "Prioritize pokémon from the following region:";
         let regionSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.PrioritizedRegion);
         categoryContainer.appendChild(regionSelector);
+
+        /*********************\
+        |* Type prioritizing *|
+        \*********************/
+
+        // Add region selector
+        let typeSelector = this.__internal__buildTypeSelectorList();
+        categoryContainer.appendChild(typeSelector);
+
+        /*******************\
+        |* Regional debuff *|
+        \*******************/
 
         // Add regional debuff selector (only if the challenge is active)
         if (App.game.challenges.list.regionalAttackDebuff.active())
@@ -193,6 +210,76 @@ class AutomationHatchery
                            + "This will try to infect as many pokémon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
+    }
+
+
+    /**
+     * @brief Builds the type selector drop-down list
+     *
+     * @returns the created element
+     */
+    static __internal__buildTypeSelectorList()
+    {
+        let tooltip = "The pokémons of the selected type will be added in priority"
+                    + Automation.Menu.TooltipSeparator
+                    + "⚠️ If a region is set as well, and no pokémon of the selected\n"
+                    + "region and type can be hatched, the algorithm will select\n"
+                    + "pokémons from such region before ones matching the type.";
+
+        let container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+
+        let label = "Prioritize pokémon of the following type:";
+        container.appendChild(document.createTextNode(label));
+
+        let selectElem = Automation.Menu.createDropDownListElement("selectedType-Hatchery");
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "85px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        container.appendChild(selectElem);
+
+        // Add the "Any" region
+        let opt = document.createElement("option");
+        opt.textContent = "Any";
+        opt.value = PokemonType.None;
+        opt.id = PokemonType.None;
+        selectElem.options.add(opt);
+
+        let previouslySelectedType = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType);
+
+        // Populate the list
+        for (const gemType of Array(Gems.nTypes).keys())
+        {
+            opt = document.createElement("option");
+
+            // Set the type name as the content
+            opt.textContent = PokemonType[gemType];
+
+            opt.value = gemType;
+            opt.id = gemType;
+
+            // Restore the previouly seletected item
+            if (gemType == previouslySelectedType)
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            selectElem.options.add(opt);
+        }
+
+        // Update the local storage if the value is changed by the user
+        selectElem.onchange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.PrioritizedType, selectElem.value);
+            }.bind(this);
+
+        return container;
     }
 
 
@@ -508,6 +595,7 @@ class AutomationHatchery
         let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
         let regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
         let regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
+        let typePriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
 
         // Sort list by breeding efficiency
         pokemonToBreed.sort((a, b) =>
@@ -523,6 +611,22 @@ class AutomationHatchery
                         return -1;
                     }
                     if (!isARegionValid && isBRegionValid)
+                    {
+                        return 1;
+                    }
+                }
+
+                // Type priority
+                if (typePriority != PokemonType.None)
+                {
+                    let isATypeValid = pokemonMap[a.name].type.includes(typePriority);
+                    let isBTypeValid = pokemonMap[b.name].type.includes(typePriority);
+
+                    if (isATypeValid && !isBTypeValid)
+                    {
+                        return -1;
+                    }
+                    if (!isATypeValid && isBTypeValid)
                     {
                         return 1;
                     }
