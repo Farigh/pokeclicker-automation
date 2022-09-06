@@ -70,7 +70,7 @@ function clearTheFarm()
 
 function runPlotUnlockTest(slotToBeUnlocked)
 {
-    expect(Automation.Farm.__internal__currentStrategy.harvestAsSoonAsPossible).toBe(true);
+    expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.AsSoonAsPossible);
 
     let berryCost = App.game.farming.plotBerryCost(slotToBeUnlocked);
 
@@ -112,7 +112,7 @@ function runBerryMutationTest(targetBerry,
                               dontMutateOrClean = false)
 {
     expect(Automation.Farm.__internal__currentStrategy.berryToUnlock).toBe(targetBerry);
-    expect(Automation.Farm.__internal__currentStrategy.harvestAsSoonAsPossible).toBe(false);
+    expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.RightBeforeWithering);
 
     checkItemNeededBehaviour(expectedNeededItem);
 
@@ -1960,21 +1960,67 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Give the player 3 Kasib berries, since this step requires to get 4 of them, it should still trigger if the player has some
         App.game.farming.__berryListCount[BerryType.Kasib] = 3;
 
-        runBerryMutationTest(
-            BerryType.Kasib,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Cheri
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Cheri);
-                }
-            });
+        expect(Automation.Farm.__internal__currentStrategy.berryToUnlock).toBe(BerryType.Kasib);
+        expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.LetTheBerryDie);
+
+        checkItemNeededBehaviour(null);
+
+        // Cleanup the layout
+        setAllBerriesToRipe();
+
+        Automation.Farm.__internal__farmLoop();
+
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Cheri
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        for (const plot of App.game.farming.plotList)
+        {
+            expect(plot.berry).toBe(BerryType.Cheri);
+        }
+
+        // Check the forbidden Oak items
+        expect(Automation.Farm.__internal__currentStrategy.forbiddenOakItems).toEqual([]);
+        expect(Automation.Utils.OakItem.ForbiddenItems).toEqual([]);
+
+        // Simulate the berries being close to death
+        let cheriBerryData = App.game.farming.berryData[BerryType.Cheri];
+        for (const plot of App.game.farming.plotList)
+        {
+            plot.age = cheriBerryData.growthTime[PlotStage.Berry] - 1;
+        }
+        Automation.Farm.__internal__farmLoop();
+
+        // The berries should never be harvested
+        for (const plot of App.game.farming.plotList)
+        {
+            expect(plot.berry).toBe(BerryType.Cheri);
+            expect(plot.age).toBe(cheriBerryData.growthTime[PlotStage.Berry] - 1);
+        }
+
+        // Simulate the berries withering
+        clearTheFarm();
+        Automation.Farm.__internal__farmLoop();
+
+        // New berries should have been planted
+        for (const plot of App.game.farming.plotList)
+        {
+            expect(plot.berry).toBe(BerryType.Cheri);
+            expect(plot.age).toBe(0);
+        }
+
+        // Simulate a mutation in plot 8
+        App.game.farming.plotList[8].die();
+        App.game.farming.plotList[8].plant(BerryType.Kasib);
+        let targetBerryData = App.game.farming.berryData[BerryType.Kasib];
+        App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
+        Automation.Farm.__internal__farmLoop();
+
+        // The berry should have been harvested as soon as it reached the Berry stage, and thus be unlocked
+        expect(App.game.farming.unlockedBerries[BerryType.Kasib]()).toBe(true);
+        Automation.Farm.__internal__farmLoop();
     });
 
     // Test the 64th unlock

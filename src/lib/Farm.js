@@ -85,11 +85,13 @@ class AutomationFarm
 
     static __internal__farmingLoop = null;
 
+    static __internal__harvestTimingType = { AsSoonAsPossible: 0, RightBeforeWithering: 1, LetTheBerryDie: 2 };
+
     // Collection of
     // {
     //     isNeeded: function(),
     //     berryToUnlock: BerryType,
-    //     harvestAsSoonAsPossible: boolean,
+    //     harvestStrategy: this.__internal__harvestTimingType,
     //     oakItemToEquip: OakItemType,
     //     forbiddenOakItems: Array of OakItemType,
     //     requiredPokemon: String,
@@ -285,13 +287,14 @@ class AutomationFarm
             //   - The strategy requires to harvest as soon as possible
             //   - The berry is the target one
             //   - The berry is close to dying (less than 15s)
-            if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
-                || this.ForcePlantBerriesAsked
-                || (this.__internal__currentStrategy === null)
-                || (this.__internal__currentStrategy.harvestAsSoonAsPossible === true)
-                || ((this.__internal__currentStrategy.berryToUnlock !== undefined)
-                    && (this.__internal__currentStrategy.berryToUnlock == plot.berry))
-                || ((plot.berryData.growthTime[PlotStage.Berry] - plot.age) < 15))
+            if ((this.__internal__currentStrategy.harvestStrategy !== this.__internal__harvestTimingType.LetTheBerryDie)
+                && ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
+                    || this.ForcePlantBerriesAsked
+                    || (this.__internal__currentStrategy === null)
+                    || (this.__internal__currentStrategy.harvestStrategy === this.__internal__harvestTimingType.AsSoonAsPossible)
+                    || ((this.__internal__currentStrategy.berryToUnlock !== undefined)
+                        && (this.__internal__currentStrategy.berryToUnlock == plot.berry))
+                    || ((plot.berryData.growthTime[PlotStage.Berry] - plot.age) < 15)))
             {
                 App.game.farming.harvest(index);
                 this.__internal__harvestCount++;
@@ -1233,16 +1236,33 @@ class AutomationFarm
             });
 
         // #48 Unlock at least one Kasib berry through mutation
-        this.__internal__addUnlockMutationStrategy(
-            BerryType.Kasib,
-            function()
+        this.__internal__unlockStrategySelection.push(
             {
-                for (const index of App.game.farming.plotList.keys())
-                {
-                    Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
-                }
-            },
-            4);
+                // Check if the berry is unlocked and the player has at least 1 of them in stock or planted
+                isNeeded: function()
+                    {
+                        if (!App.game.farming.unlockedBerries[BerryType.Kasib]())
+                        {
+                            return true;
+                        }
+
+                        let totalCount = App.game.farming.berryList[BerryType.Kasib]() + this.__internal__getPlantedBerriesCount(BerryType.Kasib);
+                        return (totalCount < 4);
+                    }.bind(this),
+                berryToUnlock: BerryType.Kasib,
+                harvestStrategy: this.__internal__harvestTimingType.LetTheBerryDie,
+                oakItemToEquip: null,
+                forbiddenOakItems: [],
+                requiredPokemon: null,
+                requiresDiscord: false,
+                action: function ()
+                    {
+                        for (const index of App.game.farming.plotList.keys())
+                        {
+                            Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
+                        }
+                    }
+            });
 
         // #49 Unlock at least one Haban berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1344,7 +1364,7 @@ class AutomationFarm
                                         return plot.isEmpty() || (plot.berry === BerryType.Chople);
                                    });
                     },
-                harvestAsSoonAsPossible: true,
+                harvestStrategy: this.__internal__harvestTimingType.AsSoonAsPossible,
                 oakItemToEquip: null,
                 forbiddenOakItems: [],
                 requiredPokemon: null,
@@ -1596,7 +1616,7 @@ class AutomationFarm
                 // Check if the berry is unlocked
                 isNeeded: function() { return !App.game.farming.unlockedBerries[BerryType.Enigma](); },
                 berryToUnlock: BerryType.Enigma,
-                harvestAsSoonAsPossible: false,
+                harvestStrategy: this.__internal__harvestTimingType.RightBeforeWithering,
                 oakItemToEquip: null,
                 forbiddenOakItems: [],
                 requiredPokemon: null,
@@ -1648,7 +1668,7 @@ class AutomationFarm
             {
                 // Check if the slot is unlocked
                 isNeeded: function() { return !App.game.farming.plotList[slotIndex].isUnlocked; },
-                harvestAsSoonAsPossible: true,
+                harvestStrategy: this.__internal__harvestTimingType.AsSoonAsPossible,
                 oakItemToEquip: null,
                 forbiddenOakItems: [],
                 requiredPokemon: null,
@@ -1701,7 +1721,7 @@ class AutomationFarm
                         return (totalCount < minimumRequiredBerry);
                     }.bind(this),
                 berryToUnlock: berryType,
-                harvestAsSoonAsPossible: false,
+                harvestStrategy: this.__internal__harvestTimingType.RightBeforeWithering,
                 oakItemToEquip: oakItemNeeded,
                 forbiddenOakItems: oakItemsToRemove,
                 requiredPokemon: requiredPokemonName,
@@ -1732,7 +1752,7 @@ class AutomationFarm
                             return (App.game.farming.berryList[berryType]() >= (berriesMinAmount - (alreadyPlantedCount * berryHarvestAmount)))
                         });
                 },
-                harvestAsSoonAsPossible: true,
+                harvestStrategy: this.__internal__harvestTimingType.AsSoonAsPossible,
                 oakItemToEquip: null,
                 forbiddenOakItems: [],
                 requiredPokemon: null,
