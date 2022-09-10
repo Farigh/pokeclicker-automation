@@ -1622,12 +1622,42 @@ class AutomationFarm
                 this.__internal__removeAnyUnwantedBerry(index, berryType);
             }
 
+            let bloomTarget = 0;
             for (const berryType of berriesOrder)
             {
-                for (const index of berriesIndexes[berryType])
+                let currentBerryBloomDuration = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+
+                if (bloomTarget == 0)
                 {
-                    // We need to use parseInt here to convert the object key from string to int
-                    this.__internal__tryPlantBerryAtIndex(index, parseInt(berryType), false);
+                    bloomTarget = currentBerryBloomDuration;
+                    for (const index of berriesIndexes[berryType])
+                    {
+                        let plot = App.game.farming.plotList[index];
+
+                        if (!plot.isEmpty() && (plot.berry === berryType))
+                        {
+                            // Sync with the one with the lowest remaining time
+                            let remainingTime = currentBerryBloomDuration - plot.age;
+                            if (remainingTime < bloomTarget)
+                            {
+                                bloomTarget = remainingTime;
+                            }
+                        }
+                        this.__internal__tryPlantBerryAtIndex(index, berryType, false);
+                    }
+                }
+                else
+                {
+                    // Wait to sync riping
+                    if (currentBerryBloomDuration < bloomTarget)
+                    {
+                        break;
+                    }
+
+                    for (const index of berriesIndexes[berryType])
+                    {
+                        this.__internal__tryPlantBerryAtIndex(index, berryType, false);
+                    }
                 }
             }
         }.bind(this);

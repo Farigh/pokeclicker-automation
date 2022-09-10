@@ -106,15 +106,130 @@ function runPlotUnlockTest(slotToBeUnlocked)
 }
 
 function runBerryMutationTest(targetBerry,
-                              expectedPlantationLayoutCallback,
+                              expectedConfig,
+                              expectedOrder,
                               expectedNeededItem = null,
-                              expectedForbiddenItems = [],
-                              dontMutateOrClean = false)
+                              expectedForbiddenItems = [])
 {
     expect(Automation.Farm.__internal__currentStrategy.berryToUnlock).toBe(targetBerry);
     expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.RightBeforeWithering);
 
     checkItemNeededBehaviour(expectedNeededItem);
+
+    // Check the forbidden Oak items
+    expect(Automation.Farm.__internal__currentStrategy.forbiddenOakItems).toEqual(expectedForbiddenItems);
+    expect(Automation.Utils.OakItem.ForbiddenItems).toEqual(expectedForbiddenItems);
+
+    // Cleanup the layout
+    clearTheFarm();
+    Automation.Farm.__internal__farmLoop();
+
+    // Expect the needed item to have been equipped
+    if (expectedNeededItem != null)
+    {
+        expect(App.game.oakItems.itemList[expectedNeededItem].isActive).toBe(true);
+    }
+
+    // The mutation layout should have been planted
+    checkMutationLayoutRotation(expectedConfig, expectedOrder);
+
+    // Simulate a mutation in plot 8
+    if (!App.game.farming.plotList[8].isEmpty())
+    {
+        App.game.farming.plotList[8].die();
+    }
+
+    App.game.farming.plotList[8].plant(targetBerry);
+    let targetBerryData = App.game.farming.berryData[targetBerry];
+    App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
+    Automation.Farm.__internal__farmLoop();
+
+    // The berry should have been harvested as soon as it reached the Berry stage, and thus be unlocked
+    expect(App.game.farming.unlockedBerries[targetBerry]()).toBe(true);
+}
+
+function checkCurrentLayout(index, expectedConfig, expectedOrder)
+{
+    for (const [ plotIndex, plot ] of App.game.farming.plotList.entries())
+    {
+        let wasBerryFound = false;
+        for (let i = 0; i < index; i++)
+        {
+            if (expectedConfig[expectedOrder[i]].includes(plotIndex))
+            {
+                expect(plot.berry).toBe(expectedOrder[i]);
+                wasBerryFound = true;
+                break;
+            }
+        }
+
+        if (wasBerryFound)
+        {
+            continue;
+        }
+
+        // Expect any other slot to be empty
+        expect(plot.isEmpty()).toBe(true);
+    }
+}
+
+function checkMutationLayoutRotation(expectedConfig, expectedOrder)
+{
+    // Some berry might have the save riping time, those will be planted at the same time
+    let berryPlantOrder = [];
+    let lastBerryTime = 0;
+    for (const berryType of expectedOrder)
+    {
+        let currentBerryTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+        if (lastBerryTime == 0)
+        {
+            berryPlantOrder.push([]);
+        }
+        else if (currentBerryTime != lastBerryTime)
+        {
+            berryPlantOrder.push([...berryPlantOrder[berryPlantOrder.length - 1]]);
+        }
+        lastBerryTime = currentBerryTime;
+
+        berryPlantOrder[berryPlantOrder.length - 1].push(berryType);
+    }
+
+    let targetAge = App.game.farming.berryData[expectedOrder[0]].growthTime[PlotStage.Bloom];
+    let agingPlot = App.game.farming.plotList[expectedConfig[expectedOrder[0]][0]];
+    for (const index of expectedOrder.keys())
+    {
+        // Check the plot config based on the iteration
+        checkCurrentLayout(berryPlantOrder[index].length, expectedConfig, expectedOrder);
+
+        if (index == (berryPlantOrder.length - 1))
+        {
+            // All berries planted, nothing else to check
+            break;
+        }
+
+        let nextBerryGrowingTime = App.game.farming.berryData[expectedOrder[index + 1]].growthTime[PlotStage.Bloom];
+
+        // Simulate the berry age getting close to the next rotation
+        agingPlot.age = targetAge - nextBerryGrowingTime - 1;
+        Automation.Farm.__internal__farmLoop();
+
+        // The layout should not have changed
+        checkCurrentLayout(berryPlantOrder[index].length, expectedConfig, expectedOrder);
+
+        // Simulate the berry to have grown past the target age
+        agingPlot.age = targetAge - nextBerryGrowingTime;
+        Automation.Farm.__internal__farmLoop();
+    }
+}
+
+function runBerryMutationTestNoTiming(targetBerry,
+                                      expectedPlantationLayoutCallback,
+                                      dontMutateOrClean = false)
+{
+    expect(Automation.Farm.__internal__currentStrategy.berryToUnlock).toBe(targetBerry);
+    expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.RightBeforeWithering);
+
+    checkItemNeededBehaviour(null);
 
     // Cleanup the layout
     if (!dontMutateOrClean)
@@ -128,14 +243,8 @@ function runBerryMutationTest(targetBerry,
     expectedPlantationLayoutCallback();
 
     // Check the forbidden Oak items
-    expect(Automation.Farm.__internal__currentStrategy.forbiddenOakItems).toEqual(expectedForbiddenItems);
-    expect(Automation.Utils.OakItem.ForbiddenItems).toEqual(expectedForbiddenItems);
-
-    // Expect the needed item to have been equipped
-    if (expectedNeededItem != null)
-    {
-        expect(App.game.oakItems.itemList[expectedNeededItem].isActive).toBe(true);
-    }
+    expect(Automation.Farm.__internal__currentStrategy.forbiddenOakItems).toEqual([]);
+    expect(Automation.Utils.OakItem.ForbiddenItems).toEqual([]);
 
     // Simulate a mutation in plot 8
     if (!dontMutateOrClean)
@@ -458,90 +567,21 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
     // Test the 10th unlock
     test('Unlock Persim berry', () =>
     {
-        let expectPersimLayout = function()
-        {
-            // The layout should look like that
-            // |#|#|#|#|#|
-            // |#| |a| |#|  with:  a : Oran
-            // |#|b| |b|#|         b : Pecha
-            // |#| |a| |#|
-            // |#|#|#|#|#|
-            for (const [ index, plot ] of App.game.farming.plotList.entries())
-            {
-                if ([ 7, 17 ].includes(index))
-                {
-                    expect(plot.berry).toBe(BerryType.Oran);
-                }
-                else if ([ 11, 13 ].includes(index))
-                {
-                    expect(plot.berry).toBe(BerryType.Pecha);
-                }
-                else
-                {
-                    expect(plot.isEmpty()).toBe(true);
-                }
-            }
-        }
 
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[9]);
 
-        // The Persim mutation layout should already be in place
-        expectPersimLayout();
-
-        // Bring the player's berry stock to the bare minimum to pass the previous requirement
-        // (ie. having exactly 20 of each needed berries before planting)
-        for (const berryType of [ BerryType.Pecha, BerryType.Oran ])
-        {
-            let berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
-            App.game.farming.__berryListCount[berryType] = 20 - (2 * (berryHarvestAmount));
-        }
-
-        // Going to the next loop should not change anything
-        Automation.Farm.__internal__farmLoop();
-        expectPersimLayout();
-
-        // Expect the strategy to still be pointing to the tenth one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[9]);
-        expect(Automation.Farm.__internal__currentStrategy.berryToUnlock).toBe(BerryType.Persim);
-
-        // Simulate the Oran berries being ripe
-        let oranBerryData = App.game.farming.berryData[BerryType.Oran];
-        App.game.farming.plotList[7].age = oranBerryData.growthTime[PlotStage.Bloom] + 1;
-        App.game.farming.plotList[17].age = oranBerryData.growthTime[PlotStage.Bloom] + 1;
-        let berryInitialCount = App.game.farming.__berryListCount[BerryType.Oran];
-        Automation.Farm.__internal__farmLoop();
-
-        // No berry should have been harvested (need to wait the last moment)
-        expect(App.game.farming.__berryListCount[BerryType.Oran]).toBe(berryInitialCount);
-        expectPersimLayout();
-
-        // Simulate the Oran berries being close to withering (less than 15s)
-        App.game.farming.plotList[7].age = oranBerryData.growthTime[PlotStage.Berry] - 14;
-        App.game.farming.plotList[17].age = oranBerryData.growthTime[PlotStage.Berry] - 14;
-        Automation.Farm.__internal__farmLoop();
-
-        // The cheri berry should have been harvested, and a new one planted
-        expectPersimLayout();
-        expect(App.game.farming.__berryListCount[BerryType.Oran]).toBe(18); // 20 - 2 planted berries
-
-        // Simulate a mutation
-        App.game.farming.plotList[8].plant(BerryType.Persim);
-        Automation.Farm.__internal__farmLoop();
-
-        // The Persim should be here, but nothing should happen until it's ripe
-        expect(App.game.farming.plotList[8].isEmpty()).toBe(false);
-        expect(App.game.farming.plotList[8].berry).toBe(BerryType.Persim);
-        expect(App.game.farming.plotList[8].stage()).toBe(PlotStage.Seed);
-
-        // Simulate a Persim berry to be ripe
-        let persimBerryData = App.game.farming.berryData[BerryType.Persim];
-        App.game.farming.plotList[8].age = persimBerryData.growthTime[PlotStage.Bloom] + 1;
-        expect(App.game.farming.unlockedBerries[BerryType.Persim]()).toBe(false);
-        Automation.Farm.__internal__farmLoop();
-
-        // The Persim should have been harvested as soon as it reached the Berry stage, and thus be unlocked
-        expect(App.game.farming.unlockedBerries[BerryType.Persim]()).toBe(true);
+        // The layout should look like that
+        // |#|#|#|#|#|
+        // |#| |a| |#|  with:  a : Oran
+        // |#|b| |b|#|         b : Pecha
+        // |#| |a| |#|
+        // |#|#|#|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Oran] = [ 7, 17 ];
+        expectedConfig[BerryType.Pecha] = [ 11, 13 ];
+        let expectedOrder = [ BerryType.Oran, BerryType.Pecha ];
+        runBerryMutationTest(BerryType.Persim, expectedConfig, expectedOrder);
     });
 
     // Test the 11th unlock
@@ -559,32 +599,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[11]);
 
-        runBerryMutationTest(
-            BerryType.Razz,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|#|#|
-                // |#| | | |#|  with:  a : Leppa
-                // |#| |b| |#|         b : Cheri
-                // |#| |a| |#|
-                // |#|#|#|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Leppa);
-                    }
-                    else if (index == 12)
-                    {
-                        expect(plot.berry).toBe(BerryType.Cheri);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|#|#|
+        // |#| | | |#|  with:  a : Leppa
+        // |#| |b| |#|         b : Cheri
+        // |#| |a| |#|
+        // |#|#|#|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Leppa] = [ 2, 17 ];
+        expectedConfig[BerryType.Cheri] = [ 12 ];
+        let expectedOrder = [ BerryType.Leppa, BerryType.Cheri ];
+        runBerryMutationTest(BerryType.Razz, expectedConfig, expectedOrder);
     });
 
     // Test the 13th unlock
@@ -602,32 +627,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[13]);
 
-        runBerryMutationTest(
-            BerryType.Bluk,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|#|#|
-                // |#| | | |#|  with:  a : Leppa
-                // |#| |b| | |         b : Chesto
-                // |#| |a| |#|
-                // |#|#|#|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Leppa);
-                    }
-                    else if (index == 12)
-                    {
-                        expect(plot.berry).toBe(BerryType.Chesto);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|#|#|
+        // |#| | | |#|  with:  a : Leppa
+        // |#| |b| | |         b : Chesto
+        // |#| |a| |#|
+        // |#|#|#|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Leppa] = [ 2, 17 ];
+        expectedConfig[BerryType.Chesto] = [ 12 ];
+        let expectedOrder = [ BerryType.Leppa, BerryType.Chesto ];
+        runBerryMutationTest(BerryType.Bluk, expectedConfig, expectedOrder);
     });
 
     // Test the 15th unlock
@@ -645,32 +655,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[15]);
 
-        runBerryMutationTest(
-            BerryType.Nanab,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|#|#|
-                // |#| | | |#|  with:  a : Aspear
-                // |#| |b| | |         b : Pecha
-                // |#| |a| |#|
-                // |#|#| |#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aspear);
-                    }
-                    else if (index == 12)
-                    {
-                        expect(plot.berry).toBe(BerryType.Pecha);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|#|#|
+        // |#| | | |#|  with:  a : Aspear
+        // |#| |b| | |         b : Pecha
+        // |#| |a| |#|
+        // |#|#| |#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Aspear] = [ 2, 17 ];
+        expectedConfig[BerryType.Pecha] = [ 12 ];
+        let expectedOrder = [ BerryType.Aspear, BerryType.Pecha ];
+        runBerryMutationTest(BerryType.Nanab, expectedConfig, expectedOrder);
     });
 
     // Test the 17th unlock
@@ -688,32 +683,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[17]);
 
-        runBerryMutationTest(
-            BerryType.Wepear,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|#|#|
-                // |#| | | |#|  with:  a : Oran
-                // |a| |b| |a|         b : Rawst
-                // |#| | | |#|
-                // |#|#|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 10, 14, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Oran);
-                    }
-                    else if (index == 12)
-                    {
-                        expect(plot.berry).toBe(BerryType.Rawst);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|#|#|
+        // |#| | | |#|  with:  a : Oran
+        // |a| |b| |a|         b : Rawst
+        // |#| | | |#|
+        // |#|#|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Oran] = [ 2, 10, 14, 22 ];
+        expectedConfig[BerryType.Rawst] = [ 12 ];
+        let expectedOrder = [ BerryType.Oran, BerryType.Rawst ];
+        runBerryMutationTest(BerryType.Wepear, expectedConfig, expectedOrder);
     });
 
     // Test the 19th unlock
@@ -731,32 +711,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[19]);
 
-        runBerryMutationTest(
-            BerryType.Pinap,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a| |#|
-                // |#| | | |#|  with:  a : Sitrus
-                // |a| |b| |a|         b : Aspear
-                // |#| | | |#|
-                // |#|#|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 10, 14, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Sitrus);
-                    }
-                    else if (index == 12)
-                    {
-                        expect(plot.berry).toBe(BerryType.Aspear);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a| |#|
+        // |#| | | |#|  with:  a : Sitrus
+        // |a| |b| |a|         b : Aspear
+        // |#| | | |#|
+        // |#|#|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Sitrus] = [ 2, 10, 14, 22 ];
+        expectedConfig[BerryType.Aspear] = [ 12 ];
+        let expectedOrder = [ BerryType.Sitrus, BerryType.Aspear ];
+        runBerryMutationTest(BerryType.Pinap, expectedConfig, expectedOrder);
     });
 
     // Test the 21st unlock
@@ -774,28 +739,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[21]);
 
-        runBerryMutationTest(
-            BerryType.Figy,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|a|#|
-                // |#|a| | |#|  with:  a : Cheri
-                // |a| | | |a|
-                // |#|a| |a|a|
-                // |#|#|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 3, 6, 10, 14, 16, 18, 19, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Cheri);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|a|#|
+        // |#|a| | |#|  with:  a : Cheri
+        // |a| | | |a|
+        // |#|a| |a|a|
+        // |#|#|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Cheri] = [ 2, 3, 6, 10, 14, 16, 18, 19, 22 ];
+        let expectedOrder = [ BerryType.Cheri ];
+        runBerryMutationTest(BerryType.Figy, expectedConfig, expectedOrder);
     });
 
     // Test the 23rd unlock
@@ -813,28 +766,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[23]);
 
-        runBerryMutationTest(
-            BerryType.Wiki,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|a|#|
-                // |#|a| | |#|  with:  a : Chesto
-                // |a| |a| |a|
-                // |#| | | |a|
-                // |#|a|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 3, 6, 10, 12, 14, 19, 21, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Chesto);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|a|#|
+        // |#|a| | |#|  with:  a : Chesto
+        // |a| |a| |a|
+        // |#| | | |a|
+        // |#|a|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Chesto] = [ 2, 3, 6, 10, 12, 14, 19, 21, 22 ];
+        let expectedOrder = [ BerryType.Chesto ];
+        runBerryMutationTest(BerryType.Wiki, expectedConfig, expectedOrder);
     });
 
     // Test the 25th unlock
@@ -852,28 +793,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[25]);
 
-        runBerryMutationTest(
-            BerryType.Mago,
-            function()
-            {
-                // The layout should look like that
-                // |#|#|a|a|#|
-                // |a| | | |#|  with:  a : Pecha
-                // |a| |a| |a|
-                // |#| | | |a|
-                // |#|a|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pecha);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#|#|a|a|#|
+        // |a| | | |#|  with:  a : Pecha
+        // |a| |a| |a|
+        // |#| | | |a|
+        // |#|a|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Pecha] = [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ];
+        let expectedOrder = [ BerryType.Pecha ];
+        runBerryMutationTest(BerryType.Mago, expectedConfig, expectedOrder);
     });
 
     // Test the 27th unlock
@@ -891,28 +820,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[27]);
 
-        runBerryMutationTest(
-            BerryType.Aguav,
-            function()
-            {
-                // The layout should look like that
-                // |#| |a|a|#|
-                // |a| | | |#|  with:  a : Rawst
-                // |a| |a| |a|
-                // |#| | | |a|
-                // |#|a|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Rawst);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#| |a|a|#|
+        // |a| | | |#|  with:  a : Rawst
+        // |a| |a| |a|
+        // |#| | | |a|
+        // |#|a|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Rawst] = [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ];
+        let expectedOrder = [ BerryType.Rawst ];
+        runBerryMutationTest(BerryType.Aguav, expectedConfig, expectedOrder);
     });
 
     // Test the 29th unlock
@@ -930,28 +847,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[29]);
 
-        runBerryMutationTest(
-            BerryType.Iapapa,
-            function()
-            {
-                // The layout should look like that
-                // |#| |a|a|#|
-                // |a| | | |#|  with:  a : Aspear
-                // |a| |a| |a|
-                // |#| | | |a|
-                // |#|a|a|#|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 2, 3, 5, 10, 12, 14, 19, 21, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aspear);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#| |a|a|#|
+        // |a| | | |#|  with:  a : Aspear
+        // |a| |a| |a|
+        // |#| | | |a|
+        // |#|a|a|#|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Aspear] = [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ];
+        let expectedOrder = [ BerryType.Aspear ];
+        runBerryMutationTest(BerryType.Iapapa, expectedConfig, expectedOrder);
     });
 
     // Test the 31st unlock
@@ -1032,32 +937,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[32]);
 
-        runBerryMutationTest(
-            BerryType.Pomeg,
-            function()
-            {
-                // The layout should look like that
-                // |#| | | |#|
-                // |a|b| |a|b|  with:  a : Iapapa
-                // | | | | | |         b : Mago
-                // |#|a| | |a|
-                // |#| |b| |#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 5, 8, 16, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Iapapa);
-                    }
-                    else if ([ 6, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Mago);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#| | | |#|
+        // |a|b| |a|b|  with:  a : Iapapa
+        // | | | | | |         b : Mago
+        // |#|a| | |a|
+        // |#| |b| |#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Iapapa] = [ 5, 8, 16, 19 ];
+        expectedConfig[BerryType.Mago] = [ 6, 9, 22 ];
+        let expectedOrder = [ BerryType.Iapapa, BerryType.Mago ];
+        runBerryMutationTest(BerryType.Pomeg, expectedConfig, expectedOrder);
     });
 
     // Test the 34th unlock
@@ -1075,32 +965,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[34]);
 
-        runBerryMutationTest(
-            BerryType.Kelpsy,
-            function()
-            {
-                // The layout should look like that
-                // |#| | | |#|
-                // | |a|b|a| |  with:  a : Persim
-                // |b| | | |b|         b : Chesto
-                // | | | | | |
-                // |#|a|b|a|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 6, 8, 21, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Persim);
-                    }
-                    else if ([ 7, 10, 14, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Chesto);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |#| | | |#|
+        // | |a|b|a| |  with:  a : Persim
+        // |b| | | |b|         b : Chesto
+        // | | | | | |
+        // |#|a|b|a|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Persim] = [ 6, 8, 21, 23 ];
+        expectedConfig[BerryType.Chesto] = [ 7, 10, 14, 22 ];
+        let expectedOrder = [ BerryType.Persim, BerryType.Chesto ];
+        runBerryMutationTest(BerryType.Kelpsy, expectedConfig, expectedOrder);
     });
 
     // Test the 36th unlock
@@ -1118,32 +993,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[36]);
 
-        runBerryMutationTest(
-            BerryType.Qualot,
-            function()
-            {
-                // The layout should look like that
-                // |a| | | |#|
-                // | |b| |a|b|  with:  a : Pinap
-                // | | | | | |         b : Mago
-                // |a| | |a|b|
-                // |#|b| | |#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 8, 15, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pinap);
-                    }
-                    else if ([ 6, 9, 19, 21 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Mago);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| | | |#|
+        // | |b| |a|b|  with:  a : Pinap
+        // | | | | | |         b : Mago
+        // |a| | |a|b|
+        // |#|b| | |#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Mago] = [ 6, 9, 19, 21 ];
+        expectedConfig[BerryType.Pinap] = [ 0, 8, 15, 18 ];
+        let expectedOrder = [ BerryType.Mago, BerryType.Pinap ];
+        runBerryMutationTest(BerryType.Qualot, expectedConfig, expectedOrder);
     });
 
     // Test the 38th unlock
@@ -1161,36 +1021,18 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[38]);
 
-        runBerryMutationTest(
-            BerryType.Hondew,
-            function()
-            {
-                // The layout should look like that
-                // | |a| |b| |
-                // |b|c| |a|c|  with:  a : Figy
-                // | | | | | |         b : Wiki
-                // |a| |b| |b|         c : Aguav
-                // |#| |c|a|#|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 1, 8, 15, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Figy);
-                    }
-                    else if ([ 3, 5, 17, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Wiki);
-                    }
-                    else if ([ 6, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aguav);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // | |a| |b| |
+        // |b|c| |a|c|  with:  a : Figy
+        // | | | | | |         b : Wiki
+        // |a| |b| |b|         c : Aguav
+        // |#| |c|a|#|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Wiki] = [ 3, 5, 17, 19 ];
+        expectedConfig[BerryType.Figy] = [ 1, 8, 15, 23 ];
+        expectedConfig[BerryType.Aguav] = [ 6, 9, 22 ];
+        let expectedOrder = [ BerryType.Wiki, BerryType.Figy, BerryType.Aguav ];
+        runBerryMutationTest(BerryType.Hondew, expectedConfig, expectedOrder);
     });
 
     // Test the 40th unlock
@@ -1208,32 +1050,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[40]);
 
-        runBerryMutationTest(
-            BerryType.Grepa,
-            function()
-            {
-                // The layout should look like that
-                // |a| | |a| |
-                // | |b| | |b|  with:  a : Aguav
-                // | | | | | |         b : Figy
-                // |a| | |a| |
-                // |#|b| | |b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 3, 15, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aguav);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Figy);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| | |a| |
+        // | |b| | |b|  with:  a : Aguav
+        // | | | | | |         b : Figy
+        // |a| | |a| |
+        // |#|b| | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Aguav] = [ 0, 3, 15, 18 ];
+        expectedConfig[BerryType.Figy] = [ 6, 9, 21, 24 ];
+        let expectedOrder = [ BerryType.Aguav, BerryType.Figy ];
+        runBerryMutationTest(BerryType.Grepa, expectedConfig, expectedOrder);
     });
 
     // Test the 42nd unlock
@@ -1251,28 +1078,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[42]);
 
-        runBerryMutationTest(
-            BerryType.Tamato,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|b|a|a|b|  with:  a : Razz
-                // |a|a|a|a|a|         b : Pomeg
-                // |a|a|a|a|a|
-                // |a|b|a|a|b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pomeg);
-                    }
-                    else
-                    {
-                        expect(plot.berry).toBe(BerryType.Razz);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|b|a|a|b|  with:  a : Razz
+        // |a|a|a|a|a|         b : Pomeg
+        // |a|a|a|a|a|
+        // |a|b|a|a|b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Pomeg] = [ 6, 9, 21, 24 ];
+        expectedConfig[BerryType.Razz] = App.game.farming.plotList.map((_, index) => index).filter(x => !expectedConfig[BerryType.Pomeg].includes(x));
+        let expectedOrder = [ BerryType.Pomeg, BerryType.Razz ];
+        runBerryMutationTest(BerryType.Tamato, expectedConfig, expectedOrder);
     });
 
     // Test the 44th unlock
@@ -1281,36 +1097,18 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[43]);
 
-        runBerryMutationTest(
-            BerryType.Cornn,
-            function()
-            {
-                // The layout should look like that
-                // | |a| | |a|
-                // |b|c| |b|c|  with:  a : Leppa
-                // | | | | | |         b : Bluk
-                // | |a| | |a|         c : Wiki
-                // |b|c| |b|c|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 1, 4, 16, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Leppa);
-                    }
-                    else if ([ 5, 8, 20, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Bluk);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Wiki);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // | |a| | |a|
+        // |b|c| |b|c|  with:  a : Leppa
+        // | | | | | |         b : Bluk
+        // | |a| | |a|         c : Wiki
+        // |b|c| |b|c|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Wiki] = [ 6, 9, 21, 24 ];
+        expectedConfig[BerryType.Bluk] = [ 5, 8, 20, 23 ];
+        expectedConfig[BerryType.Leppa] = [ 1, 4, 16, 19 ];
+        let expectedOrder = [ BerryType.Wiki, BerryType.Bluk, BerryType.Leppa ];
+        runBerryMutationTest(BerryType.Cornn, expectedConfig, expectedOrder);
     });
 
     // Test the 45th unlock
@@ -1319,36 +1117,18 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[44]);
 
-        runBerryMutationTest(
-            BerryType.Magost,
-            function()
-            {
-                // The layout should look like that
-                // | |a| | |a|
-                // |b|c| |b|c|  with:  a : Pecha
-                // | | | | | |         b : Nanab
-                // | |a| | |a|         c : Mago
-                // |b|c| |b|c|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 1, 4, 16, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pecha);
-                    }
-                    else if ([ 5, 8, 20, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Nanab);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Mago);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // | |a| | |a|
+        // |b|c| |b|c|  with:  a : Pecha
+        // | | | | | |         b : Nanab
+        // | |a| | |a|         c : Mago
+        // |b|c| |b|c|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Mago] = [ 6, 9, 21, 24 ];
+        expectedConfig[BerryType.Nanab] = [ 5, 8, 20, 23 ];
+        expectedConfig[BerryType.Pecha] = [ 1, 4, 16, 19 ];
+        let expectedOrder = [ BerryType.Mago, BerryType.Nanab, BerryType.Pecha ];
+        runBerryMutationTest(BerryType.Magost, expectedConfig, expectedOrder);
     });
 
     // Test the 46th unlock
@@ -1357,28 +1137,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[45]);
 
-        runBerryMutationTest(
-            BerryType.Rabuta,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|b|a|a|b|  with:  a : Aspear
-                // |a|a|a|a|a|         b : Aguav
-                // |a|a|a|a|a|
-                // |a|b|a|a|b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aguav);
-                    }
-                    else
-                    {
-                        expect(plot.berry).toBe(BerryType.Aspear);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|b|a|a|b|  with:  a : Aspear
+        // |a|a|a|a|a|         b : Aguav
+        // |a|a|a|a|a|
+        // |a|b|a|a|b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Aguav] = [ 6, 9, 21, 24 ];
+        expectedConfig[BerryType.Aspear] = App.game.farming.plotList.map((_, index) => index).filter(x => !expectedConfig[BerryType.Aguav].includes(x));
+        let expectedOrder = [ BerryType.Aguav, BerryType.Aspear ];
+        runBerryMutationTest(BerryType.Rabuta, expectedConfig, expectedOrder);
     });
 
     // Test the 47th unlock
@@ -1387,28 +1156,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[46]);
 
-        runBerryMutationTest(
-            BerryType.Nomel,
-            function()
-            {
-                // The layout should look like that
-                // | | | | | |
-                // | |a| | |a|  with:  a : Pinap
-                // | | | | | |
-                // | | | | | |
-                // | |a| | |a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pinap);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // | | | | | |
+        // | |a| | |a|  with:  a : Pinap
+        // | | | | | |
+        // | | | | | |
+        // | |a| | |a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Pinap] = [ 6, 9, 21, 24 ];
+        let expectedOrder = [ BerryType.Pinap ];
+        runBerryMutationTest(BerryType.Nomel, expectedConfig, expectedOrder);
     });
 
     // Test the next steps needed berry gathering
@@ -1481,21 +1238,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[48]);
 
-        runBerryMutationTest(
-            BerryType.Spelon,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Tamato
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Tamato);
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Tamato
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Tamato] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Tamato ];
+        runBerryMutationTest(BerryType.Spelon, expectedConfig, expectedOrder);
     });
 
     // Test the 50th unlock
@@ -1504,23 +1256,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[49]);
 
-        runBerryMutationTest(
-            BerryType.Pamtre,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Cornn
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Cornn);
-                }
-            },
-            null,
-            [ OakItemType.Cell_Battery ]);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Cornn
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Cornn] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Cornn ];
+        runBerryMutationTest(BerryType.Pamtre, expectedConfig, expectedOrder, null, [ OakItemType.Cell_Battery ]);
     });
 
     // Test the 51st unlock
@@ -1529,21 +1274,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[50]);
 
-        runBerryMutationTest(
-            BerryType.Watmel,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Magost
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Magost);
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Magost
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Magost] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Magost ];
+        runBerryMutationTest(BerryType.Watmel, expectedConfig, expectedOrder);
     });
 
     // Test the 52nd unlock
@@ -1552,21 +1292,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[51]);
 
-        runBerryMutationTest(
-            BerryType.Durin,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Magost
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Rabuta);
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Rabuta
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Rabuta] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Rabuta ];
+        runBerryMutationTest(BerryType.Durin, expectedConfig, expectedOrder);
     });
 
     // Test the 53rd unlock
@@ -1575,21 +1310,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[52]);
 
-        runBerryMutationTest(
-            BerryType.Belue,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Nomel
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Nomel);
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Nomel
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Nomel] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Nomel ];
+        runBerryMutationTest(BerryType.Belue, expectedConfig, expectedOrder);
     });
 
     // Test the Gen 3 berry gathering
@@ -1657,42 +1387,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[54]);
 
-        runBerryMutationTest(
-            BerryType.Occa,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |a|
-                // |c| |d| |c|  with:  a : Tamato  c : Spelon
-                // | | | | | |         b : Figy    d : Razz
-                // |b| |a| |b|
-                // |d| |c| |d|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Tamato);
-                    }
-                    else if ([ 2, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Figy);
-                    }
-                    else if ([ 5, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Spelon);
-                    }
-                    else if ([ 7, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Razz);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            },
-            null,
-            [ OakItemType.Blaze_Cassette ]);
+        // The layout should look like that
+        // |a| |b| |a|
+        // |c| |d| |c|  with:  a : Tamato  c : Spelon
+        // | | | | | |         b : Figy    d : Razz
+        // |b| |a| |b|
+        // |d| |c| |d|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Spelon] = [ 5, 9, 22 ];
+        expectedConfig[BerryType.Tamato] = [ 0, 4, 17 ];
+        expectedConfig[BerryType.Figy] = [ 2, 15, 19 ];
+        expectedConfig[BerryType.Razz] = [ 7, 20, 24 ];
+        let expectedOrder = [ BerryType.Spelon, BerryType.Tamato, BerryType.Figy, BerryType.Razz ];
+        runBerryMutationTest(BerryType.Occa, expectedConfig, expectedOrder, null, [ OakItemType.Blaze_Cassette ]);
     });
 
     // Test the 56th unlock
@@ -1701,32 +1408,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[55]);
 
-        runBerryMutationTest(
-            BerryType.Coba,
-            function()
-            {
-                // The layout should look like that
-                // |a| | |a| |
-                // | |b| | |b|  with:  a : Wiki
-                // | | | | | |         b : Aguav
-                // |a| | |a| |
-                // | |b| | |b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 3, 15, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Wiki);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aguav);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| | |a| |
+        // | |b| | |b|  with:  a : Wiki
+        // | | | | | |         b : Aguav
+        // |a| | |a| |
+        // | |b| | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Wiki] = [ 0, 3, 15, 18 ];
+        expectedConfig[BerryType.Aguav] = [ 6, 9, 21, 24 ];
+        let expectedOrder = [ BerryType.Wiki, BerryType.Aguav ];
+        runBerryMutationTest(BerryType.Coba, expectedConfig, expectedOrder);
     });
 
     // Test the 57th unlock
@@ -1735,40 +1427,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[56]);
 
-        runBerryMutationTest(
-            BerryType.Passho,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |a|
-                // |c| |d| |c|  with:  a : Oran     c : Chesto
-                // | | | | | |         b : Kelpsy   d : Coba
-                // |b| |a| |b|
-                // |d| |c| |d|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Oran);
-                    }
-                    else if ([ 2, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Kelpsy);
-                    }
-                    else if ([ 5, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Chesto);
-                    }
-                    else if ([ 7, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Coba);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| |b| |a|
+        // |c| |d| |c|  with:  a : Oran     c : Chesto
+        // | | | | | |         b : Kelpsy   d : Coba
+        // |b| |a| |b|
+        // |d| |c| |d|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Coba] = [ 7, 20, 24 ];
+        expectedConfig[BerryType.Kelpsy] = [ 2, 15, 19 ];
+        expectedConfig[BerryType.Oran] = [ 0, 4, 17 ];
+        expectedConfig[BerryType.Chesto] = [ 5, 9, 22 ];
+        let expectedOrder = [ BerryType.Coba, BerryType.Kelpsy, BerryType.Oran, BerryType.Chesto ];
+        runBerryMutationTest(BerryType.Passho, expectedConfig, expectedOrder);
     });
 
     // Test the 58th unlock
@@ -1777,40 +1448,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[57]);
 
-        runBerryMutationTest(
-            BerryType.Wacan,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |a|
-                // |c| |d| |c|  with:  a : Iapapa   c : Qualot
-                // | | | | | |         b : Pinap    d : Grepa
-                // |b| |a| |b|
-                // |d| |c| |d|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Iapapa);
-                    }
-                    else if ([ 2, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pinap);
-                    }
-                    else if ([ 5, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Qualot);
-                    }
-                    else if ([ 7, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Grepa);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| |b| |a|
+        // |c| |d| |c|  with:  a : Iapapa   c : Qualot
+        // | | | | | |         b : Pinap    d : Grepa
+        // |b| |a| |b|
+        // |d| |c| |d|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Grepa] = [ 7, 20, 24 ];
+        expectedConfig[BerryType.Qualot] = [ 5, 9, 22 ];
+        expectedConfig[BerryType.Iapapa] = [ 0, 4, 17 ];
+        expectedConfig[BerryType.Pinap] = [ 2, 15, 19 ];
+        let expectedOrder = [ BerryType.Grepa, BerryType.Qualot, BerryType.Iapapa, BerryType.Pinap ];
+        runBerryMutationTest(BerryType.Wacan, expectedConfig, expectedOrder);
     });
 
     // Test the 59th unlock
@@ -1819,32 +1469,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[58]);
 
-        runBerryMutationTest(
-            BerryType.Rindo,
-            function()
-            {
-                // The layout should look like that
-                // |a| | |a| |
-                // | |b| | |b|  with:  a : Figy
-                // | | | | | |         b : Aguav
-                // |a| | |a| |
-                // | |b| | |b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 3, 15, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Figy);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aguav);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| | |a| |
+        // | |b| | |b|  with:  a : Figy
+        // | | | | | |         b : Aguav
+        // |a| | |a| |
+        // | |b| | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Figy] = [ 0, 3, 15, 18 ];
+        expectedConfig[BerryType.Aguav] = [ 6, 9, 21, 24 ];
+        let expectedOrder = [ BerryType.Figy, BerryType.Aguav ];
+        runBerryMutationTest(BerryType.Rindo, expectedConfig, expectedOrder);
     });
 
     // Test the 60th unlock
@@ -1853,28 +1488,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[59]);
 
-        runBerryMutationTest(
-            BerryType.Yache,
-            function()
-            {
-                // The layout should look like that
-                // |a| |a| |a|
-                // | | | | | |  with:  a : Passho
-                // |a| |a| |a|
-                // | | | | | |
-                // |a| |a| |a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 2, 4, 10, 12, 14, 20, 22, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Passho);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| |a| |a|
+        // | | | | | |  with:  a : Passho
+        // |a| |a| |a|
+        // | | | | | |
+        // |a| |a| |a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Passho] = [ 0, 2, 4, 10, 12, 14, 20, 22, 24 ];
+        let expectedOrder = [ BerryType.Passho ];
+        runBerryMutationTest(BerryType.Yache, expectedConfig, expectedOrder);
     });
 
     // Test the 61st unlock
@@ -1883,42 +1506,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[60]);
 
-        runBerryMutationTest(
-            BerryType.Payapa,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |a|
-                // |c| |d| |c|  with:  a : Wiki    c : Bluk
-                // | | | | | |         b : Cornn   d : Pamtre
-                // |b| |a| |b|
-                // |d| |c| |d|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Wiki);
-                    }
-                    else if ([ 2, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Cornn);
-                    }
-                    else if ([ 5, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Bluk);
-                    }
-                    else if ([ 7, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pamtre);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            },
-            null,
-            [ OakItemType.Rocky_Helmet, OakItemType.Cell_Battery ]);
+        // The layout should look like that
+        // |a| |b| |a|
+        // |c| |d| |c|  with:  a : Wiki    c : Bluk
+        // | | | | | |         b : Cornn   d : Pamtre
+        // |b| |a| |b|
+        // |d| |c| |d|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Pamtre] = [ 7, 20, 24 ];
+        expectedConfig[BerryType.Bluk] = [ 5, 9, 22 ];
+        expectedConfig[BerryType.Wiki] = [ 0, 4, 17 ];
+        expectedConfig[BerryType.Cornn] = [ 2, 15, 19 ];
+        let expectedOrder = [ BerryType.Pamtre, BerryType.Cornn, BerryType.Wiki, BerryType.Bluk ];
+        runBerryMutationTest(BerryType.Payapa, expectedConfig, expectedOrder, null, [ OakItemType.Rocky_Helmet, OakItemType.Cell_Battery ]);
     });
 
     // Test the 62nd unlock
@@ -1927,28 +1527,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[61]);
 
-        runBerryMutationTest(
-            BerryType.Tanga,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a| |a| |a|  with:  a : Rindo
-                // |a|a|a|a|a|
-                // |a| |a| |a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 6, 8, 16, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Rindo);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a| |a| |a|  with:  a : Rindo
+        // |a|a|a|a|a|
+        // |a| |a| |a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Rindo] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 16, 18 ].includes(x));
+        let expectedOrder = [ BerryType.Rindo ];
+        runBerryMutationTest(BerryType.Tanga, expectedConfig, expectedOrder);
     });
 
     // Test the 63rd unlock
@@ -2032,40 +1620,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Give the player enough Wacan berries (only 2 berries available out of 3 needed)
         App.game.farming.__berryListCount[BerryType.Wacan] = 3;
 
-        runBerryMutationTest(
-            BerryType.Haban,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |a|
-                // |c| |d| |c|  with:  a : Occa     c : Wacan
-                // | | | | | |         b : Passho   d : Rindo
-                // |b| |a| |b|
-                // |d| |c| |d|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Occa);
-                    }
-                    else if ([ 2, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Passho);
-                    }
-                    else if ([ 5, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Wacan);
-                    }
-                    else if ([ 7, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Rindo);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| |b| |a|
+        // |c| |d| |c|  with:  a : Occa     c : Wacan
+        // | | | | | |         b : Passho   d : Rindo
+        // |b| |a| |b|
+        // |d| |c| |d|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
+        expectedConfig[BerryType.Occa] = [ 0, 4, 17 ];
+        expectedConfig[BerryType.Passho] = [ 2, 15, 19 ];
+        expectedConfig[BerryType.Wacan] = [ 5, 9, 22 ];
+        let expectedOrder = [ BerryType.Rindo, BerryType.Occa, BerryType.Passho, BerryType.Wacan ];
+        runBerryMutationTest(BerryType.Haban, expectedConfig, expectedOrder);
     });
 
     // Test the 65th unlock
@@ -2074,36 +1641,18 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[64]);
 
-        runBerryMutationTest(
-            BerryType.Colbur,
-            function()
-            {
-                // The layout should look like that
-                // | |a| | |a|
-                // |b|c| |b|c|  with:  a : Rabuta
-                // | | | | | |         b : Kasib
-                // | |a| | |a|         c : Payapa
-                // |b|c| |b|c|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 1, 4, 16, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Rabuta);
-                    }
-                    else if ([ 5, 8, 20, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Kasib);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Payapa);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // | |a| | |a|
+        // |b|c| |b|c|  with:  a : Rabuta
+        // | | | | | |         b : Kasib
+        // | |a| | |a|         c : Payapa
+        // |b|c| |b|c|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Payapa] = [ 6, 9, 21, 24 ];
+        expectedConfig[BerryType.Rabuta] = [ 1, 4, 16, 19 ];
+        expectedConfig[BerryType.Kasib] = [ 5, 8, 20, 23 ];
+        let expectedOrder = [ BerryType.Payapa, BerryType.Rabuta, BerryType.Kasib ];
+        runBerryMutationTest(BerryType.Colbur, expectedConfig, expectedOrder);
     });
 
     // Test the 66th unlock
@@ -2112,42 +1661,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[65]);
 
-        runBerryMutationTest(
-            BerryType.Roseli,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |a|
-                // |c| |d| |c|  with:  a : Mago     c : Nanab
-                // | | | | | |         b : Magost   d : Watmel
-                // |b| |a| |b|
-                // |d| |c| |d|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Mago);
-                    }
-                    else if ([ 2, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Magost);
-                    }
-                    else if ([ 5, 9, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Nanab);
-                    }
-                    else if ([ 7, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Watmel);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            },
-            null,
-            [ OakItemType.Sprinklotad ]);
+        // The layout should look like that
+        // |a| |b| |a|
+        // |c| |d| |c|  with:  a : Mago     c : Nanab
+        // | | | | | |         b : Magost   d : Watmel
+        // |b| |a| |b|
+        // |d| |c| |d|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Watmel] = [ 7, 20, 24 ];
+        expectedConfig[BerryType.Magost] = [ 2, 15, 19 ];
+        expectedConfig[BerryType.Mago] = [ 0, 4, 17 ];
+        expectedConfig[BerryType.Nanab] = [ 5, 9, 22 ];
+        let expectedOrder = [ BerryType.Watmel, BerryType.Magost, BerryType.Mago, BerryType.Nanab ];
+        runBerryMutationTest(BerryType.Roseli, expectedConfig, expectedOrder, null, [ OakItemType.Sprinklotad ]);
     });
 
     // Test the 67th unlock
@@ -2156,22 +1682,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[66]);
 
-        runBerryMutationTest(
-            BerryType.Shuca,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Watmel
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Watmel);
-                }
-            },
-            OakItemType.Sprinklotad);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Watmel
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Watmel] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Watmel ];
+        runBerryMutationTest(BerryType.Shuca, expectedConfig, expectedOrder, OakItemType.Sprinklotad);
     });
 
     // Test the 68th unlock
@@ -2180,22 +1700,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[67]);
 
-        runBerryMutationTest(
-            BerryType.Charti,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Cornn
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Cornn);
-                }
-            },
-            OakItemType.Cell_Battery);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Cornn
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Cornn] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Cornn ];
+        runBerryMutationTest(BerryType.Charti, expectedConfig, expectedOrder, OakItemType.Cell_Battery);
     });
 
     // Test the 69th unlock
@@ -2204,32 +1718,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[68]);
 
-        runBerryMutationTest(
-            BerryType.Babiri,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |b| |a| |b|  with:  a : Shuca
-                // |b|b|b|b|b|         b : Charti
-                // |b| |a| |b|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Shuca);
-                    }
-                    else if ([ 5, 9, 10, 11, 12, 13, 14, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Charti);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |b| |a| |b|  with:  a : Shuca
+        // |b|b|b|b|b|         b : Charti
+        // |b| |a| |b|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Shuca] = [ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ];
+        expectedConfig[BerryType.Charti] = [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ];
+        let expectedOrder = [ BerryType.Shuca, BerryType.Charti ];
+        runBerryMutationTest(BerryType.Babiri, expectedConfig, expectedOrder);
     });
 
     // Test the 70th unlock
@@ -2238,22 +1737,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[69]);
 
-        runBerryMutationTest(
-            BerryType.Chople,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Spelon
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Spelon);
-                }
-            },
-            OakItemType.Blaze_Cassette);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Spelon
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Spelon] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Spelon ];
+        runBerryMutationTest(BerryType.Chople, expectedConfig, expectedOrder, OakItemType.Blaze_Cassette);
     });
 
     // Wait for plots to be emptied
@@ -2310,7 +1803,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 }
             };
 
-        runBerryMutationTest(BerryType.Chilan, chilanUnlockFirstStep, null, [], true);
+        runBerryMutationTestNoTiming(BerryType.Chilan, chilanUnlockFirstStep, true);
 
         // This should not change until the berries are ripe
         let chopleBerryData = App.game.farming.berryData[BerryType.Chople];
@@ -2319,7 +1812,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
             App.game.farming.plotList[index].age = chopleBerryData.growthTime[PlotStage.Bloom];
         }
         Automation.Farm.__internal__farmLoop();
-        runBerryMutationTest(BerryType.Chilan, chilanUnlockFirstStep, null, [], true);
+        runBerryMutationTestNoTiming(BerryType.Chilan, chilanUnlockFirstStep, true);
 
         for (const index of [ 6, 8, 16, 18 ])
         {
@@ -2334,7 +1827,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[71]);
 
-        runBerryMutationTest(
+        runBerryMutationTestNoTiming(
             BerryType.Chilan,
             function()
             {
@@ -2348,7 +1841,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
                 {
                     expect(plot.berry).toBe(BerryType.Chople);
                 }
-            }, null, [], true);
+            }, true);
 
         // Simulate a berry mutation in plot 8
         App.game.farming.plotList[8].plant(BerryType.Chilan);
@@ -2366,22 +1859,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
 
-        runBerryMutationTest(
-            BerryType.Kebia,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Pamtre
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const plot of App.game.farming.plotList)
-                {
-                    expect(plot.berry).toBe(BerryType.Pamtre);
-                }
-            },
-            OakItemType.Rocky_Helmet);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Pamtre
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Pamtre] = App.game.farming.plotList.map((_, index) => index);
+        let expectedOrder = [ BerryType.Pamtre ];
+        runBerryMutationTest(BerryType.Kebia, expectedConfig, expectedOrder, OakItemType.Rocky_Helmet);
     });
 });
 
@@ -2396,30 +1883,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[73]);
 
-        runBerryMutationTest(
-            BerryType.Micle,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a| |a| |a|  with:  a : Pamtre
-                // |a| | | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 6, 8, 11, 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pamtre);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            },
-            null,
-            [ OakItemType.Rocky_Helmet ]);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a| |a| |a|  with:  a : Pamtre
+        // |a| | | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Pamtre] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Pamtre ];
+        runBerryMutationTest(BerryType.Micle, expectedConfig, expectedOrder, null, [ OakItemType.Rocky_Helmet ]);
     });
 
     // Test the 75th unlock
@@ -2428,30 +1901,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[74]);
 
-        runBerryMutationTest(
-            BerryType.Custap,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a| |a| |a|  with:  a : Watmel
-                // |a| | | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 6, 8, 11, 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Watmel);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            },
-            null,
-            [ OakItemType.Sprinklotad ]);
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a| |a| |a|  with:  a : Watmel
+        // |a| | | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Watmel] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Watmel ];
+        runBerryMutationTest(BerryType.Custap, expectedConfig, expectedOrder, null, [ OakItemType.Sprinklotad ]);
     });
 
     // Test the 76th unlock
@@ -2460,28 +1919,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[75]);
 
-        runBerryMutationTest(
-            BerryType.Jaboca,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a| |a| |a|  with:  a : Durin
-                // |a| | | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 6, 8, 11, 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Durin);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a| |a| |a|  with:  a : Durin
+        // |a| | | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Durin] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Durin ];
+        runBerryMutationTest(BerryType.Jaboca, expectedConfig, expectedOrder);
     });
 
     // Test the 77th unlock
@@ -2490,28 +1937,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[76]);
 
-        runBerryMutationTest(
-            BerryType.Rowap,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a| |a| |a|  with:  a : Belue
-                // |a| | | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 6, 8, 11, 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Belue);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a| |a| |a|  with:  a : Belue
+        // |a| | | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Belue] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Belue ];
+        runBerryMutationTest(BerryType.Rowap, expectedConfig, expectedOrder);
     });
 
     // Test the 78th unlock
@@ -2525,28 +1960,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Give the player 3 Liechi berries, since this step requires to get 4 of them, it should still trigger if the player has some
         App.game.farming.__berryListCount[BerryType.Liechi] = 3;
 
-        runBerryMutationTest(
-            BerryType.Liechi,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Passho
-                // |a|a| | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Passho);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Passho
+        // |a|a| | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Passho] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Passho ];
+        runBerryMutationTest(BerryType.Liechi, expectedConfig, expectedOrder);
     });
 
     // Test the 79th unlock
@@ -2560,28 +1983,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Give the player 3 Ganlon berries, since this step requires to get 4 of them, it should still trigger if the player has some
         App.game.farming.__berryListCount[BerryType.Ganlon] = 3;
 
-        runBerryMutationTest(
-            BerryType.Ganlon,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Shuca
-                // |a|a| | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Shuca);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Shuca
+        // |a|a| | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Shuca] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Shuca ];
+        runBerryMutationTest(BerryType.Ganlon, expectedConfig, expectedOrder);
     });
 
     // Test the 80th unlock
@@ -2590,32 +2001,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[79]);
 
-        runBerryMutationTest(
-            BerryType.Kee,
-            function()
-            {
-                // The layout should look like that
-                // |a| | |a| |
-                // | |b| | |b|  with:  a : Liechi
-                // | | | | | |         b : Ganlon
-                // |a| | |a| |
-                // | |b| | |b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 3, 15, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Liechi);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Ganlon);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| | |a| |
+        // | |b| | |b|  with:  a : Liechi
+        // | | | | | |         b : Ganlon
+        // |a| | |a| |
+        // | |b| | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Ganlon] = [ 6, 9, 21, 24 ];
+        expectedConfig[BerryType.Liechi] = [ 0, 3, 15, 18 ];
+        let expectedOrder = [ BerryType.Ganlon, BerryType.Liechi ];
+        runBerryMutationTest(BerryType.Kee, expectedConfig, expectedOrder);
     });
 
     // Test the 81st unlock
@@ -2629,28 +2025,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Give the player 3 Salac berries, since this step requires to get 4 of them, it should still trigger if the player has some
         App.game.farming.__berryListCount[BerryType.Salac] = 3;
 
-        runBerryMutationTest(
-            BerryType.Salac,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Coba
-                // |a|a| | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Coba);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Coba
+        // |a|a| | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Coba] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Coba ];
+        runBerryMutationTest(BerryType.Salac, expectedConfig, expectedOrder);
     });
 
     // Test the 82nd unlock
@@ -2662,40 +2046,35 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Give the player 3 Petaya berries, since this step requires to get 4 of them, it should still trigger if the player has some
         App.game.farming.__berryListCount[BerryType.Petaya] = 3;
 
-        runBerryMutationTest(
-            BerryType.Petaya,
-            function()
-            {
-                // The layout should look like that
-                // |a| |b| |c|  with: a : Kasib    f : Chople   k : Babiri   p : Passho
-                // |d| | | |e|        b : Payapa   g : Coba     l : Charti   q : Roseli
-                // |f|g|h| |i|        c : Yache    h : Kebia    m : Tanga    r : Chilan
-                // |j|k|l| |m|        d : Shuca    i : Haban    n : Occa
-                // |n|o|p|q|r|        e : Wacan    j : Colbur   o : Rindo
-                expect(App.game.farming.plotList[0].berry).toBe(BerryType.Kasib);
-                expect(App.game.farming.plotList[2].berry).toBe(BerryType.Payapa);
-                expect(App.game.farming.plotList[4].berry).toBe(BerryType.Yache);
-                expect(App.game.farming.plotList[5].berry).toBe(BerryType.Shuca);
-                expect(App.game.farming.plotList[9].berry).toBe(BerryType.Wacan);
-                expect(App.game.farming.plotList[10].berry).toBe(BerryType.Chople);
-                expect(App.game.farming.plotList[11].berry).toBe(BerryType.Coba);
-                expect(App.game.farming.plotList[12].berry).toBe(BerryType.Kebia);
-                expect(App.game.farming.plotList[14].berry).toBe(BerryType.Haban);
-                expect(App.game.farming.plotList[15].berry).toBe(BerryType.Colbur);
-                expect(App.game.farming.plotList[16].berry).toBe(BerryType.Babiri);
-                expect(App.game.farming.plotList[17].berry).toBe(BerryType.Charti);
-                expect(App.game.farming.plotList[19].berry).toBe(BerryType.Tanga);
-                expect(App.game.farming.plotList[20].berry).toBe(BerryType.Occa);
-                expect(App.game.farming.plotList[21].berry).toBe(BerryType.Rindo);
-                expect(App.game.farming.plotList[22].berry).toBe(BerryType.Passho);
-                expect(App.game.farming.plotList[23].berry).toBe(BerryType.Roseli);
-                expect(App.game.farming.plotList[24].berry).toBe(BerryType.Chilan);
-
-                for (const index of [ 1, 3, 6, 7, 8, 13, 18 ])
-                {
-                    expect(App.game.farming.plotList[index].isEmpty()).toBe(true);
-                }
-            });
+        // The layout should look like that
+        // |a| |b| |c|  with: a : Kasib    f : Chople   k : Babiri   p : Passho
+        // |d| | | |e|        b : Payapa   g : Coba     l : Charti   q : Roseli
+        // |f|g|h| |i|        c : Yache    h : Kebia    m : Tanga    r : Chilan
+        // |j|k|l| |m|        d : Shuca    i : Haban    n : Occa
+        // |n|o|p|q|r|        e : Wacan    j : Colbur   o : Rindo
+        let expectedConfig = {};
+        expectedConfig[BerryType.Kasib] = [ 0 ];
+        expectedConfig[BerryType.Payapa] = [ 2 ];
+        expectedConfig[BerryType.Yache] = [ 4 ];
+        expectedConfig[BerryType.Shuca] = [ 5 ];
+        expectedConfig[BerryType.Wacan] = [ 9 ];
+        expectedConfig[BerryType.Chople] = [ 10 ];
+        expectedConfig[BerryType.Coba] = [ 11 ];
+        expectedConfig[BerryType.Kebia] = [ 12 ];
+        expectedConfig[BerryType.Haban] = [ 14 ];
+        expectedConfig[BerryType.Colbur] = [ 15 ];
+        expectedConfig[BerryType.Babiri] = [ 16 ];
+        expectedConfig[BerryType.Charti] = [ 17 ];
+        expectedConfig[BerryType.Tanga] = [ 19 ];
+        expectedConfig[BerryType.Occa] = [ 20 ];
+        expectedConfig[BerryType.Rindo] = [ 21 ];
+        expectedConfig[BerryType.Passho] = [ 22 ];
+        expectedConfig[BerryType.Roseli] = [ 23 ];
+        expectedConfig[BerryType.Chilan] = [ 24 ];
+        let expectedOrder = [ BerryType.Haban, BerryType.Babiri, BerryType.Yache, BerryType.Shuca, BerryType.Charti, BerryType.Chople,
+                              BerryType.Payapa, BerryType.Rindo, BerryType.Colbur, BerryType.Roseli, BerryType.Occa, BerryType.Passho,
+                              BerryType.Coba, BerryType.Chilan, BerryType.Tanga, BerryType.Wacan, BerryType.Kebia, BerryType.Kasib ];
+        runBerryMutationTest(BerryType.Petaya, expectedConfig, expectedOrder);
     });
 
     // Test the 83rd unlock
@@ -2704,32 +2083,17 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[82]);
 
-        runBerryMutationTest(
-            BerryType.Maranga,
-            function()
-            {
-                // The layout should look like that
-                // |a| | |a| |
-                // | |b| | |b|  with:  a : Salac
-                // | | | | | |         b : Petaya
-                // |a| | |a| |
-                // | |b| | |b|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 3, 15, 18 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Salac);
-                    }
-                    else if ([ 6, 9, 21, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Petaya);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a| | |a| |
+        // | |b| | |b|  with:  a : Salac
+        // | | | | | |         b : Petaya
+        // |a| | |a| |
+        // | |b| | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Salac] = [ 0, 3, 15, 18 ];
+        expectedConfig[BerryType.Petaya] = [ 6, 9, 21, 24 ];
+        let expectedOrder = [ BerryType.Salac, BerryType.Petaya ];
+        runBerryMutationTest(BerryType.Maranga, expectedConfig, expectedOrder);
     });
 
     // Test the 84th unlock
@@ -2743,28 +2107,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Give the player enough berries (only 19 berry available out of 23 needed)
         App.game.farming.__berryListCount[BerryType.Chilan] = 23;
 
-        runBerryMutationTest(
-            BerryType.Apicot,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Chilan
-                // |a|a| | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Chilan);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Chilan
+        // |a|a| | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Chilan] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Chilan ];
+        runBerryMutationTest(BerryType.Apicot, expectedConfig, expectedOrder);
     });
 
     // Test the 85th unlock
@@ -2775,28 +2127,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
 
         checkPokemonNeededBehaviour("Dialga");
 
-        runBerryMutationTest(
-            BerryType.Lansat,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Roseli
-                // |a|a| | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Roseli);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Roseli
+        // |a|a| | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Roseli] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Roseli ];
+        runBerryMutationTest(BerryType.Lansat, expectedConfig, expectedOrder);
     });
 
     // Test the 86th unlock
@@ -2805,28 +2145,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[85]);
 
-        runBerryMutationTest(
-            BerryType.Starf,
-            function()
-            {
-                // The layout should look like that
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|  with:  a : Roseli
-                // |a| | | |a|
-                // |a|a|a|a|a|
-                // |a|a|a|a|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if (![ 11, 12, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Roseli);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Roseli
+        // |a| | | |a|
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Roseli] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 11, 12, 13 ].includes(x));
+        let expectedOrder = [ BerryType.Roseli ];
+        runBerryMutationTest(BerryType.Starf, expectedConfig, expectedOrder);
     });
 });
 
@@ -2844,56 +2172,24 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries:`, () =>
         // Give the player 23 Lum berries, since this step requires to get 24 of them, it would block the next test
         App.game.farming.__berryListCount[BerryType.Lum] = 23;
 
-        runBerryMutationTest(
-            BerryType.Lum,
-            function()
-            {
-                // The layout should look like that
-                // |a|b|c|b|a|
-                // |d| |e| |d|  with:  a : Sitrus    d : Leppa    g : Chesto
-                // |f|g|h|g|f|         b : Oran      e : Pecha    h : Cheri
-                // |d| |e| |d|         c : Aspear    f : Rawst
-                // |a|b|c|b|a|
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 0, 4, 20, 24 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Sitrus);
-                    }
-                    else if ([ 1, 3, 21, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Oran);
-                    }
-                    else if ([ 2, 22 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Aspear);
-                    }
-                    else if ([ 5, 9, 15, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Leppa);
-                    }
-                    else if ([ 7, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Pecha);
-                    }
-                    else if ([ 10, 14 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Rawst);
-                    }
-                    else if ([ 11, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(BerryType.Chesto);
-                    }
-                    else if (index == 12)
-                    {
-                        expect(plot.berry).toBe(BerryType.Cheri);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // |a|b|c|b|a|
+        // |d| |e| |d|  with:  a : Sitrus    d : Leppa    g : Chesto
+        // |f|g|h|g|f|         b : Oran      e : Pecha    h : Cheri
+        // |d| |e| |d|         c : Aspear    f : Rawst
+        // |a|b|c|b|a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Sitrus] = [ 0, 4, 20, 24 ];
+        expectedConfig[BerryType.Oran] = [ 1, 3, 21, 23 ];
+        expectedConfig[BerryType.Aspear] = [ 2, 22 ];
+        expectedConfig[BerryType.Leppa] = [ 5, 9, 15, 19 ];
+        expectedConfig[BerryType.Pecha] = [ 7, 17 ];
+        expectedConfig[BerryType.Rawst] = [ 10, 14 ];
+        expectedConfig[BerryType.Chesto] = [ 11, 13 ];
+        expectedConfig[BerryType.Cheri] = [ 12 ];
+        let expectedOrder = [ BerryType.Sitrus, BerryType.Oran, BerryType.Leppa, BerryType.Aspear,
+                              BerryType.Rawst, BerryType.Pecha, BerryType.Chesto, BerryType.Cheri ];
+        runBerryMutationTest(BerryType.Lum, expectedConfig, expectedOrder);
     });
 
     // Test the 88th unlock
@@ -2929,41 +2225,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries:`, () =>
                 return true;
             });
 
-        runBerryMutationTest(
-            BerryType.Enigma,
-            function()
-            {
-                // The layout should look like that
-                // | |a| | | |
-                // |b| |c| | |  with:  a : North berry
-                // | |d| |a| |         b : West berry
-                // | | |b| |c|         c : East berry
-                // | | | |d| |         d : South berry
-                let neededBerries = EnigmaMutation.getReqs();
-                for (const [ index, plot ] of App.game.farming.plotList.entries())
-                {
-                    if ([ 1, 13 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(neededBerries[0]);
-                    }
-                    else if ([ 5, 17 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(neededBerries[1]);
-                    }
-                    else if ([ 7, 19 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(neededBerries[2]);
-                    }
-                    else if ([ 11, 23 ].includes(index))
-                    {
-                        expect(plot.berry).toBe(neededBerries[3]);
-                    }
-                    else
-                    {
-                        expect(plot.isEmpty()).toBe(true);
-                    }
-                }
-            });
+        // The layout should look like that
+        // | |a| | | |
+        // |b| |c| | |  with:  a : North berry (Cheri)
+        // | |d| |a| |         b : West berry (Chesto)
+        // | | |b| |c|         c : East berry (Pecha)
+        // | | | |d| |         d : South berry (Rawst)
+        let expectedConfig = {};
+        expectedConfig[BerryType.Cheri] = [ 1, 13 ];
+        expectedConfig[BerryType.Chesto] = [ 5, 17 ];
+        expectedConfig[BerryType.Pecha] = [ 7, 19 ];
+        expectedConfig[BerryType.Rawst] = [ 11, 23 ];
+        let expectedOrder = [ BerryType.Rawst, BerryType.Pecha, BerryType.Chesto, BerryType.Cheri ];
+        runBerryMutationTest(BerryType.Enigma, expectedConfig, expectedOrder);
 
         // Nothing else to be unlocked, the feature should have been turned off
         expect(Automation.Menu.__disabledElements.has(Automation.Farm.Settings.FocusOnUnlocks)).toBe(true);
