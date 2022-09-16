@@ -68,6 +68,30 @@ function clearTheFarm()
     }
 }
 
+function getMutationStrategy(berryType)
+{
+    for (const strategy of Automation.Farm.__internal__unlockStrategySelection)
+    {
+        if (strategy.berryToUnlock && (strategy.berryToUnlock == berryType))
+        {
+            return strategy;
+        }
+    }
+
+    return undefined;
+}
+
+function simulateTimePassing(ageDiff)
+{
+    for (const plot of App.game.farming.plotList)
+    {
+        if (!plot.isEmpty())
+        {
+            plot.age += ageDiff;
+        }
+    }
+}
+
 function runPlotUnlockTest(slotToBeUnlocked)
 {
     expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.AsSoonAsPossible);
@@ -363,6 +387,8 @@ beforeAll(() =>
         // Simulate Unlock setting being enabled by default (done in the Automation.InitSteps.BuildMenu)
         Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.OakItemLoadoutUpdate, true);
         expect(Automation.Utils.LocalStorage.getValue(Automation.Farm.Settings.OakItemLoadoutUpdate)).toBe("true");
+
+        App.game.oakItems.deactivateAll();
     });
 
 // Test when player does not have enough berries to unlock anything
@@ -435,7 +461,7 @@ test('Not enough berry to unlock anything', () =>
 /*\
 |*| Gen 1 plot unlocks
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Gen 1 unlocks:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Gen 1 unlocks`, () =>
 {
     // Test the 1st unlock
     test('Unlock plot 7', () =>
@@ -562,7 +588,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 1 unlocks:`, () =>
 /*\
 |*| Gen 2 berry and plot unlocks
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
 {
     // Test the 10th unlock
     test('Unlock Persim berry', () =>
@@ -929,7 +955,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks:`, () =>
 /*\
 |*| Gen 3 berry and plot unlocks
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
 {
     // Test the 33rd unlock
     test('Unlock Pomeg berry', () =>
@@ -1379,7 +1405,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks:`, () =>
 /*\
 |*| Gen 4 berry unlocks
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
 {
     // Test the 55th unlock
     test('Unlock Occa berry', () =>
@@ -1875,7 +1901,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks:`, () =>
 /*\
 |*| Gen 5 berry unlocks
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
 {
     // Test the 74th unlock
     test('Unlock Micle berry', () =>
@@ -2161,7 +2187,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks:`, () =>
 /*\
 |*| Bonus berries
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Bonus berries:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
 {
     // Test the 87th unlock
     test('Unlock Lum berry', () =>
@@ -2248,7 +2274,166 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries:`, () =>
 /*\
 |*| Edge cases
 \*/
-describe(`${AutomationTestUtils.categoryPrefix}Edge cases:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied plot`, () =>
+{
+    test('Berries on strategy empty slots > Bloom time higher than the strategy one', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Get the Haban berry unlock strategy
+        let strategy = getMutationStrategy(BerryType.Haban);
+
+        // Set a berry to a slot not involved in the strategy if the riping time higher than the highest bloom time of the strategy
+        // (Rindo has 28800 riping time, where Micle has 31680)
+        App.game.farming.plotList[12].plant(BerryType.Micle);
+
+        // Simulate the strategy callback
+        strategy.action();
+
+        // The plots should look like this (the Rindo should NOT have been planted)
+        // | | | | | |
+        // | | | | | |   with:  a : Micle
+        // | | |a| | |
+        // | | | | | |
+        // | | | | | |
+        let expectedConfigBefore = {};
+        expectedConfigBefore[BerryType.Micle] = [ 12 ];
+        checkCurrentLayout(1, expectedConfigBefore, [ BerryType.Micle ]);
+
+        // The strategy should start as soon as the berry reaches the
+        App.game.farming.plotList[12].age = App.game.farming.berryData[BerryType.Micle].growthTime[PlotStage.Bloom]
+                                          - App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom];
+
+        strategy.action();
+
+        // The plots should look like this
+        // | | | | | |
+        // | | |a| | |   with:  a : Rindo
+        // | | |b| | |          b : Micle
+        // | | | | | |
+        // |a| | | |a|
+        let expectedBerries = [ BerryType.Micle, BerryType.Rindo ];
+        let expectedConfig = {};
+        expectedConfig[BerryType.Micle] = [ 12 ];
+        expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+    });
+
+    test('Berries on strategy empty slots > Bloom time lower than the strategy one', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Get the Haban berry unlock strategy
+        let strategy = getMutationStrategy(BerryType.Haban);
+
+        // Set a berry to a slot not involved in the strategy if the riping time lower than the highest bloom time of the strategy
+        // (Rindo has 28800 riping time, where Custap has 27360)
+        App.game.farming.plotList[12].plant(BerryType.Custap);
+
+        // Simulate the strategy callback
+        strategy.action();
+
+        // The plots should look like this (the Rindo should have been planted)
+        // | | | | | |
+        // | | |a| | |   with:  a : Rindo
+        // | | |b| | |          b : Custap
+        // | | | | | |
+        // |a| | | |a|
+        let expectedBerries = [ BerryType.Rindo, BerryType.Custap ];
+        let expectedConfig = {};
+        expectedConfig[BerryType.Custap] = [ 12 ];
+        expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        let occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
+        let ageDiff = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
+        simulateTimePassing(ageDiff + 1);
+
+        // The next step should proceed normally once berries reaches the matching age
+        strategy.action();
+        expectedConfig[BerryType.Occa] = [ 0, 4, 17 ];
+        expectedBerries.push(BerryType.Occa);
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        let passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        ageDiff = occaBloomTime - passhoBloomTime;
+        simulateTimePassing(ageDiff);
+
+        // The next step should proceed normally once berries reaches the matching age
+        strategy.action();
+        expectedConfig[BerryType.Passho] = [ 2, 15, 19 ];
+        expectedBerries.push(BerryType.Passho);
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        ageDiff = passhoBloomTime - App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
+        simulateTimePassing(ageDiff);
+
+        // The next step should proceed normally once berries reaches the matching age
+        strategy.action();
+        expectedConfig[BerryType.Wacan] = [ 5, 9, 22 ];
+        expectedBerries.push(BerryType.Wacan);
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        ageDiff = App.game.farming.berryData[BerryType.Custap].growthTime[PlotStage.Bloom] - App.game.farming.plotList[12].age;
+        simulateTimePassing(ageDiff + 1);
+
+        // As soon as the extra berry can be harvested, it should be
+        strategy.action();
+        expectedConfig[BerryType.Custap] = [ ];
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+    });
+
+    test('Berries on strategy needed slot', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Get the Haban berry unlock strategy
+        let strategy = getMutationStrategy(BerryType.Haban);
+
+        // Set a berry to a slot involved in the strategy
+        App.game.farming.plotList[7].plant(BerryType.Micle);
+
+        // Simulate the strategy callback
+        strategy.action();
+
+        // The plots should look like this (the Rindo should NOT have been planted)
+        // | | | | | |
+        // | | |a| | |   with:  a : Micle
+        // | | | | | |
+        // | | | | | |
+        // | | | | | |
+        let expectedConfigBefore = {};
+        expectedConfigBefore[BerryType.Micle] = [ 7 ];
+        checkCurrentLayout(1, expectedConfigBefore, [ BerryType.Micle ]);
+
+        // The strategy should start as soon as the berry can be harvested
+        App.game.farming.plotList[7].age = App.game.farming.berryData[BerryType.Micle].growthTime[PlotStage.Bloom] + 1;
+
+        strategy.action();
+
+        // The plots should look like this (the Micle should have been harvested and the Rindo should have been planted)
+        // | | | | | |
+        // | | |a| | |   with:  a : Rindo
+        // | | | | | |
+        // | | | | | |
+        // |a| | | |a|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
+        checkCurrentLayout(1, expectedConfig, [ BerryType.Rindo ]);
+    });
+});
+
+/*\
+|*| Edge cases
+\*/
+describe(`${AutomationTestUtils.categoryPrefix}Edge cases`, () =>
 {
     // Test going back to Gen 1 berry gathering if the player does not meet the requirements anymore
     test('Going back to Gen 1 berry gathering', () =>
