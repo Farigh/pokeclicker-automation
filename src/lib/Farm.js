@@ -1666,6 +1666,16 @@ class AutomationFarm
                             continue;
                         }
                     }
+                    else
+                    {
+                        let berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
+                        let expectedBerryTime = App.game.farming.berryData[expectedBerryType].growthTime[PlotStage.Bloom];
+                        if (berryBloomDuration <= (bloomTarget - expectedBerryTime))
+                        {
+                            // Berries that would bloom before the plot is required by the strategy are not a problem
+                            continue;
+                        }
+                    }
 
                     waitBeforeStartingStrategy = true;
                 }

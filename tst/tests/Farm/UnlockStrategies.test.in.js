@@ -2389,7 +2389,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
     });
 
-    test('Berries on strategy needed slot', () =>
+    test('Berries on strategy needed slot > Bloom time higher than the strategy one', () =>
     {
         // Clear the farm
         clearTheFarm();
@@ -2427,6 +2427,103 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         let expectedConfig = {};
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
         checkCurrentLayout(1, expectedConfig, [ BerryType.Rindo ]);
+    });
+
+    test('Berries on strategy needed slot > Bloom time lower than the strategy one', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Get the Haban berry unlock strategy
+        let strategy = getMutationStrategy(BerryType.Haban);
+
+        // Set a berry to a slot involved in the strategy
+        App.game.farming.plotList[2].plant(BerryType.Cheri);
+
+        // Simulate the strategy callback
+        strategy.action();
+
+        // The plots should look like this
+        // | | |a| | |
+        // | | |b| | |   with:  a : Cheri
+        // | | | | | |          b : Rindo
+        // | | | | | |
+        // |b| | | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Cheri] = [ 2 ];
+        expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
+        checkCurrentLayout(2, expectedConfig, [ BerryType.Cheri, BerryType.Rindo ]);
+    });
+
+    test('Berries on strategy needed slot > Berries on all strategy berry type slots', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Get the Haban berry unlock strategy
+        let strategy = getMutationStrategy(BerryType.Haban);
+
+        // Set a berry to a slot involved in the strategy
+        App.game.farming.plotList[0].plant(BerryType.Liechi);
+        App.game.farming.plotList[2].plant(BerryType.Liechi);
+        App.game.farming.plotList[5].plant(BerryType.Liechi);
+
+        // Set the berries just under the planting time
+        let rindoTime = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom];
+        let liechiDiffTime = App.game.farming.berryData[BerryType.Liechi].growthTime[PlotStage.Bloom] - rindoTime;
+        App.game.farming.plotList[0].age = liechiDiffTime + App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
+        App.game.farming.plotList[2].age = liechiDiffTime + App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        App.game.farming.plotList[5].age = liechiDiffTime + App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
+
+        // Simulate the strategy callback
+        strategy.action();
+
+        // The plots should look like this
+        // |a| |a| | |
+        // |a| |b| | |   with:  a : Liechi
+        // | | | | | |          b : Rindo
+        // | | | | | |
+        // |b| | | |b|
+        let expectedConfig = {};
+        expectedConfig[BerryType.Liechi] = [ 0, 2, 5 ];
+        expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
+        let expectedBerries = [ BerryType.Liechi, BerryType.Rindo ];
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        let occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
+        let ageDiff = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
+        simulateTimePassing(ageDiff + 1);
+
+        // The next step should proceed normally once berries reaches the matching age
+        strategy.action();
+        expectedConfig[BerryType.Liechi] = [ 2, 5 ];
+        expectedConfig[BerryType.Occa] = [ 0, 4, 17 ];
+        expectedBerries.push(BerryType.Occa);
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        let passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        ageDiff = occaBloomTime - passhoBloomTime;
+        simulateTimePassing(ageDiff);
+
+        // The next step should proceed normally once berries reaches the matching age
+        strategy.action();
+        expectedConfig[BerryType.Liechi] = [ 5 ];
+        expectedConfig[BerryType.Passho] = [ 2, 15, 19 ];
+        expectedBerries.push(BerryType.Passho);
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
+
+        // Simulate the berries aging
+        ageDiff = passhoBloomTime - App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
+        simulateTimePassing(ageDiff);
+
+        // The next step should proceed normally once berries reaches the matching age
+        strategy.action();
+        expectedConfig[BerryType.Liechi] = [ ];
+        expectedConfig[BerryType.Wacan] = [ 5, 9, 22 ];
+        expectedBerries.push(BerryType.Wacan);
+        checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
     });
 });
 
