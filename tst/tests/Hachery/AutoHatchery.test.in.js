@@ -168,7 +168,7 @@ test('Hatching any egg that completed its breeding period', () =>
     expect(App.game.breeding.__eggList[0].isNone()).toBe(true);
 });
 
-describe(`${AutomationTestUtils.categoryPrefix}Egg breeding:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Egg breeding`, () =>
 {
     // Test when player has an egg that can hatch uncaught pokemon, for each handled types
     let possibleEggs = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && (eggType != "Pokemon_egg"));
@@ -236,7 +236,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Egg breeding:`, () =>
     });
 });
 
-describe(`${AutomationTestUtils.categoryPrefix}Fossil breeding:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Fossil breeding`, () =>
 {
     // Test when player has an egg that can hatch uncaught pokemon, for each handled types
     let possibleFossils = Object.keys(GameConstants.FossilToPokemon);
@@ -254,7 +254,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Fossil breeding:`, () =>
     });
 });
 
-describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding:`, () =>
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding`, () =>
 {
     // Test when the player has a lvl 100 pokemon in his party
     test("Breed lvl 100 pokémons", () =>

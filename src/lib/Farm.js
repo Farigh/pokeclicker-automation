@@ -1593,6 +1593,9 @@ class AutomationFarm
     /**
      * @brief Sets the action callback of the provided @p step, according to @p berriesIndexes
      *
+     * @note The strategy wont start if any plot needed is already occupied by another berry,
+     *       or an unneeded slot contains a berry riping after the longest berry of the strategy
+     *
      * @param step: The step to set the action callback to
      * @param berriesIndexes: The berries to plant and their indexes ({ <berryType>: [ indexes... ], ... })
      */
@@ -1622,42 +1625,81 @@ class AutomationFarm
                 this.__internal__removeAnyUnwantedBerry(index, berryType);
             }
 
-            let bloomTarget = 0;
+            // Compute Bloom target time
+            let firstBerryType = berriesOrder[0];
+            let firstBerryBloomDuration = App.game.farming.berryData[firstBerryType].growthTime[PlotStage.Bloom];
+            let bloomTarget = firstBerryBloomDuration;
+            for (const index of berriesIndexes[firstBerryType])
+            {
+                let plot = App.game.farming.plotList[index];
+
+                if (!plot.isEmpty() && (plot.berry === firstBerryType))
+                {
+                    // Sync with the one with the lowest remaining time
+                    let remainingTime = firstBerryBloomDuration - plot.age;
+                    if (remainingTime < bloomTarget)
+                    {
+                        bloomTarget = remainingTime;
+                    }
+                }
+            }
+
+            // Don't start the strategy if any plot is occupied with an unwanted berry
+            let waitBeforeStartingStrategy = false;
+            for (const [ index, plot ] of App.game.farming.plotList.entries())
+            {
+                let expectedBerryType = config[index];
+                if (plot.isEmpty())
+                {
+                    continue;
+                }
+
+                // Any berry that is not part of the strategy should be removed before proceeding
+                if (plot.berry !== expectedBerryType)
+                {
+                    if (expectedBerryType === BerryType.None)
+                    {
+                        let berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
+                        if (berryBloomDuration <= bloomTarget)
+                        {
+                            // Berries that would bloom before any of the strategy's berries are not a problem
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        let berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
+                        let expectedBerryTime = App.game.farming.berryData[expectedBerryType].growthTime[PlotStage.Bloom];
+                        if (berryBloomDuration <= (bloomTarget - expectedBerryTime))
+                        {
+                            // Berries that would bloom before the plot is required by the strategy are not a problem
+                            continue;
+                        }
+                    }
+
+                    waitBeforeStartingStrategy = true;
+                }
+            }
+
+            if (waitBeforeStartingStrategy)
+            {
+                return;
+            }
+
+            // Plant berries, if the conditions are met
             for (const berryType of berriesOrder)
             {
                 let currentBerryBloomDuration = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
 
-                if (bloomTarget == 0)
+                // Wait to sync riping
+                if (currentBerryBloomDuration < bloomTarget)
                 {
-                    bloomTarget = currentBerryBloomDuration;
-                    for (const index of berriesIndexes[berryType])
-                    {
-                        let plot = App.game.farming.plotList[index];
-
-                        if (!plot.isEmpty() && (plot.berry === berryType))
-                        {
-                            // Sync with the one with the lowest remaining time
-                            let remainingTime = currentBerryBloomDuration - plot.age;
-                            if (remainingTime < bloomTarget)
-                            {
-                                bloomTarget = remainingTime;
-                            }
-                        }
-                        this.__internal__tryPlantBerryAtIndex(index, berryType, false);
-                    }
+                    break;
                 }
-                else
-                {
-                    // Wait to sync riping
-                    if (currentBerryBloomDuration < bloomTarget)
-                    {
-                        break;
-                    }
 
-                    for (const index of berriesIndexes[berryType])
-                    {
-                        this.__internal__tryPlantBerryAtIndex(index, berryType, false);
-                    }
+                for (const index of berriesIndexes[berryType])
+                {
+                    this.__internal__tryPlantBerryAtIndex(index, berryType, false);
                 }
             }
         }.bind(this);
