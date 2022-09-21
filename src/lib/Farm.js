@@ -851,6 +851,17 @@ class AutomationFarm
         belueConfig[BerryType.Nomel] = allSlotIndexes;
         this.__internal__addUnlockMutationStrategy(BerryType.Belue, belueConfig);
 
+        // #36 Unlock at least one Pinkan berry through mutation
+        let pinkanConfig = {};
+        pinkanConfig[BerryType.Nanab] = [ 0, 4, 20, 24 ];
+        pinkanConfig[BerryType.Pecha] = [ 2, 22 ];
+        pinkanConfig[BerryType.Mago] = [ 5, 9, 15, 19 ];
+        pinkanConfig[BerryType.Persim] = [ 7, 17 ];
+        pinkanConfig[BerryType.Qualot] = [ 10, 14 ];
+        pinkanConfig[BerryType.Magost] = [ 11, 13 ];
+        pinkanConfig[BerryType.Watmel] = [ 12 ];
+        this.__internal__addUnlockMutationStrategy(BerryType.Pinkan, pinkanConfig);
+
         /**********************************\
         |*   Harvest some Gen 3 berries   *|
         \**********************************/
@@ -873,35 +884,35 @@ class AutomationFarm
         |*     Gen 4 berries unlocks     *|
         \*********************************/
 
-        // #36 Unlock at least one Occa berry through mutation
+        // #37 Unlock at least one Occa berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Occa, this.__internal__plantFourBerriesForMutationConfig(BerryType.Tamato, BerryType.Figy, BerryType.Spelon, BerryType.Razz),
             1,
             null,
             [ OakItemType.Blaze_Cassette ]);
 
-        // #44 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
+        // #45 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
         this.__internal__addUnlockMutationStrategy(
             BerryType.Coba, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Wiki, BerryType.Aguav));
 
-        // #37 Unlock at least one Passho berry through mutation
+        // #38 Unlock at least one Passho berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Passho, this.__internal__plantFourBerriesForMutationConfig(BerryType.Oran, BerryType.Kelpsy, BerryType.Chesto, BerryType.Coba));
 
-        // #38 Unlock at least one Wacan berry through mutation
+        // #39 Unlock at least one Wacan berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Wacan, this.__internal__plantFourBerriesForMutationConfig(BerryType.Iapapa, BerryType.Pinap, BerryType.Qualot, BerryType.Grepa));
 
-        // #39 Unlock at least one Rindo berry through mutation
+        // #40 Unlock at least one Rindo berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Rindo, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Figy, BerryType.Aguav));
 
-        // #40 Unlock at least one Yache berry through mutation
+        // #41 Unlock at least one Yache berry through mutation
         let yacheConfig = {};
         yacheConfig[BerryType.Passho] = [ 0, 2, 4, 10, 12, 14, 20, 22, 24 ];
         this.__internal__addUnlockMutationStrategy(BerryType.Yache, yacheConfig);
 
-        // #45 Unlock at least one Payapa berry through mutation
+        // #46 Unlock at least one Payapa berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Payapa,
             this.__internal__plantFourBerriesForMutationConfig(BerryType.Wiki, BerryType.Cornn, BerryType.Bluk, BerryType.Pamtre),
@@ -909,12 +920,12 @@ class AutomationFarm
             null,
             [ OakItemType.Rocky_Helmet, OakItemType.Cell_Battery ]);
 
-        // #46 Unlock at least one Tanga berry through mutation
+        // #47 Unlock at least one Tanga berry through mutation
         let tangaConfig = {};
         tangaConfig[BerryType.Rindo] = App.game.farming.plotList.map((_, index) => index).filter(index => ![ 6, 8, 16, 18 ].includes(index));
         this.__internal__addUnlockMutationStrategy(BerryType.Tanga, tangaConfig);
 
-        // #48 Unlock at least four Kasib berries through mutation
+        // #49 Unlock at least four Kasib berries through mutation
         this.__internal__unlockStrategySelection.push(
             {
                 // Check if the berry is unlocked and the player has at least 1 of them in stock or planted
@@ -943,15 +954,15 @@ class AutomationFarm
                     }
             });
 
-        // #49 Unlock at least one Haban berry through mutation
+        // #50 Unlock at least one Haban berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Haban, this.__internal__plantFourBerriesForMutationConfig(BerryType.Occa, BerryType.Passho, BerryType.Wacan, BerryType.Rindo));
 
-        // #50 Unlock at least one Colbur berry through mutation
+        // #51 Unlock at least one Colbur berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Colbur, this.__internal__plantThreeBerriesForMutationConfig(BerryType.Rabuta, BerryType.Kasib, BerryType.Payapa));
 
-        // #53 Unlock at least one Roseli berry through mutation
+        // #54 Unlock at least one Roseli berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Roseli,
             this.__internal__plantFourBerriesForMutationConfig(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel),
@@ -962,24 +973,24 @@ class AutomationFarm
         /////
         // Perform mutations requiring Oak items last to avoid any problem du to the player not having unlocked those
 
-        // #43 Unlock at least one Shuca berry through mutation (moved this far to avoid any problem, since it uses Oak items)
+        // #44 Unlock at least one Shuca berry through mutation (moved this far to avoid any problem, since it uses Oak items)
         let allSlotIndexes = App.game.farming.plotList.map((_, index) => index)
         let shucaConfig = {};
         shucaConfig[BerryType.Watmel] = allSlotIndexes;
         this.__internal__addUnlockMutationStrategy(BerryType.Shuca, shucaConfig, 1, OakItemType.Sprinklotad);
 
-        // #47 Unlock at least one Charti berry through mutation (moved this far to avoid any problem, since it uses Oak items)
+        // #48 Unlock at least one Charti berry through mutation (moved this far to avoid any problem, since it uses Oak items)
         let chartiConfig = {};
         chartiConfig[BerryType.Cornn] = allSlotIndexes;
         this.__internal__addUnlockMutationStrategy(BerryType.Charti, chartiConfig, 1, OakItemType.Cell_Battery);
 
-        // #51 Unlock at least one Babiri berry through mutation
+        // #52 Unlock at least one Babiri berry through mutation
         let babiriConfig = {};
         babiriConfig[BerryType.Shuca] = [ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ];
         babiriConfig[BerryType.Charti] = [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ];
         this.__internal__addUnlockMutationStrategy(BerryType.Babiri, babiriConfig);
 
-        // #41 Unlock at least one Chople berry through mutation (moved this far to avoid any problem, since it uses Oak items)
+        // #42 Unlock at least one Chople berry through mutation (moved this far to avoid any problem, since it uses Oak items)
         let chopleConfig = {};
         chopleConfig[BerryType.Spelon] = allSlotIndexes;
         this.__internal__addUnlockMutationStrategy(BerryType.Chople, chopleConfig, 1, OakItemType.Blaze_Cassette);
@@ -1004,7 +1015,7 @@ class AutomationFarm
                 action: function() {}
             });
 
-        // #52 Unlock at least one Chilan berry through mutation
+        // #53 Unlock at least one Chilan berry through mutation
         this.__internal__unlockStrategySelection.push(
             {
                 // Check if the berry is unlocked and the player has at least 1 of them in stock or planted
@@ -1045,7 +1056,7 @@ class AutomationFarm
                 }
             });
 
-        // #42 Unlock at least one Kebia berry through mutation
+        // #43 Unlock at least one Kebia berry through mutation
         let kebiaConfig = {};
         kebiaConfig[BerryType.Pamtre] = allSlotIndexes;
         this.__internal__addUnlockMutationStrategy(BerryType.Kebia, kebiaConfig, 1, OakItemType.Rocky_Helmet);
@@ -1060,7 +1071,7 @@ class AutomationFarm
         |*     Gen 5 berries unlocks     *|
         \*********************************/
 
-        // #54 Unlock at least one Micle berry through mutation
+        // #55 Unlock at least one Micle berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Micle,
             this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Pamtre),
@@ -1068,7 +1079,7 @@ class AutomationFarm
             null,
             [ OakItemType.Rocky_Helmet ]);
 
-        // #55 Unlock at least one Custap berry through mutation
+        // #56 Unlock at least one Custap berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Custap,
             this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Watmel),
@@ -1076,18 +1087,18 @@ class AutomationFarm
             null,
             [ OakItemType.Sprinklotad ]);
 
-        // #56 Unlock at least one Jaboca berry through mutation
+        // #57 Unlock at least one Jaboca berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Jaboca, this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Durin));
 
-        // #57 Unlock at least one Rowap berry through mutation
+        // #58 Unlock at least one Rowap berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Rowap, this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Belue));
 
         //////
         // The following mutations require the player to have caught legendary pokemons
 
-        // #60 Unlock at least one Liechi berry through mutation
+        // #61 Unlock at least one Liechi berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Liechi,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Passho),
@@ -1096,7 +1107,7 @@ class AutomationFarm
             [],
             "Kyogre");
 
-        // #61 Unlock at least one Ganlon berry through mutation
+        // #62 Unlock at least one Ganlon berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Ganlon,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Shuca),
@@ -1105,11 +1116,11 @@ class AutomationFarm
             [],
             "Groudon");
 
-        // #58 Unlock at least one Kee berry through mutation
+        // #59 Unlock at least one Kee berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Kee, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Liechi, BerryType.Ganlon));
 
-        // #62 Unlock at least four Salac berries through mutation
+        // #63 Unlock at least four Salac berries through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Salac,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Coba),
@@ -1118,7 +1129,7 @@ class AutomationFarm
             [],
             "Rayquaza");
 
-        // #63 Unlock at least four Petaya berries through mutation
+        // #64 Unlock at least four Petaya berries through mutation
         let petayaConfig = {};
         petayaConfig[BerryType.Kasib] = [ 0 ];
         petayaConfig[BerryType.Payapa] = [ 2 ];
@@ -1140,11 +1151,11 @@ class AutomationFarm
         petayaConfig[BerryType.Chilan] = [ 24 ];
         this.__internal__addUnlockMutationStrategy(BerryType.Petaya, petayaConfig, 4);
 
-        // #59 Unlock at least one Maranga berry through mutation
+        // #60 Unlock at least one Maranga berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Maranga, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Salac, BerryType.Petaya));
 
-        // #64 Unlock at least one Apicot berry through mutation
+        // #65 Unlock at least one Apicot berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Apicot,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Chilan),
@@ -1153,7 +1164,7 @@ class AutomationFarm
             [],
             "Palkia");
 
-        // #65 Unlock at least one Lansat berry through mutation
+        // #66 Unlock at least one Lansat berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Lansat,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Roseli),
@@ -1162,7 +1173,7 @@ class AutomationFarm
             [],
             "Dialga");
 
-        // #66 Unlock at least one Starf berry through mutation
+        // #67 Unlock at least one Starf berry through mutation
         let starfConfig = {};
         starfConfig[BerryType.Roseli] = App.game.farming.plotList.map((_, index) => index).filter(index => ![ 11, 12, 13 ].includes(index));
         this.__internal__addUnlockMutationStrategy(BerryType.Starf, starfConfig);
@@ -1210,6 +1221,7 @@ class AutomationFarm
         enigmaConfig[neededBerries[2]] = [ 7, 19 ];
         enigmaConfig[neededBerries[3]] = [ 11, 23 ];
 
+        // #68 Unlock and gather at least 24 Lum berry through mutation
         this.__internal__addUnlockMutationStrategy(BerryType.Enigma, enigmaConfig);
         this.__internal__unlockStrategySelection[this.__internal__unlockStrategySelection.length - 1].requiresDiscord = true;
     }
