@@ -314,7 +314,10 @@ class AutomationDungeon
                 }
             }
 
-            let maxIndex = (DungeonRunner.map.board().length - 1);
+            // TODO: Handle multiple floors dungeons
+            let currentFloor = DungeonRunner.map.playerPosition().floor;
+
+            let maxIndex = (DungeonRunner.map.board()[currentFloor].length - 1);
             let isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
             let isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
                                   || (!isEvenRow && (playerCurrentPosition.x == 0));
@@ -331,7 +334,7 @@ class AutomationDungeon
             // Go full left at the beginning of the map
             if ((playerCurrentPosition.y == maxIndex)
                 && (playerCurrentPosition.x != 0)
-                && !DungeonRunner.map.board()[playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
+                && !DungeonRunner.map.board()[currentFloor][playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
             {
                 DungeonRunner.map.moveLeft();
             }
@@ -361,7 +364,7 @@ class AutomationDungeon
                 }
 
                 let positionToCheck = { x: playerCurrentPosition.x, y: playerCurrentPosition.y - 1 };
-                let tileToCheck = DungeonRunner.map.board()[positionToCheck.y][positionToCheck.x];
+                let tileToCheck = DungeonRunner.map.board()[currentFloor][positionToCheck.y][positionToCheck.x];
 
                 // Don't consider not-visible tiles
                 if (!tileToCheck.isVisible)
@@ -403,14 +406,17 @@ class AutomationDungeon
     {
         let startingTile = null;
 
-        for (const [ rowIndex, row ] of DungeonRunner.map.board().entries())
+        // TODO: Handle multiple floors dungeons
+        let currentFloor = DungeonRunner.map.playerPosition().floor;
+
+        for (const [ rowIndex, row ] of DungeonRunner.map.board()[currentFloor].entries())
         {
             for (const [ columnIndex, tile ] of row.entries())
             {
                 // Ignore not visible tiles
                 if (!tile.isVisible) continue;
 
-                let currentLocation = { x: columnIndex, y: rowIndex };
+                let currentLocation = { floor: currentFloor, x: columnIndex, y: rowIndex };
 
                 if (DungeonRunner.map.hasAccessToTile(currentLocation))
                 {
@@ -423,7 +429,7 @@ class AutomationDungeon
                     if (tile.type() === GameConstants.DungeonTile.boss)
                     {
                         // Only tag the dungeon as completed if it's not the first move or any tile is visited apart from the entrance
-                        this.__internal__isCompleted = (!this.__internal__isFirstMove) || DungeonRunner.map.board().some(
+                        this.__internal__isCompleted = (!this.__internal__isFirstMove) || DungeonRunner.map.board()[currentFloor].some(
                             (row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
                         this.__internal__bossPosition = currentLocation;
                     }
@@ -449,7 +455,7 @@ class AutomationDungeon
         if (!this.__internal__isFirstMove)
         {
             this.__internal__playerActionOccured = this.__internal__playerActionOccured
-                                                || !DungeonRunner.map.board().every((row) => row.every((tile) => tile.isVisited));
+                                                || !DungeonRunner.map.board()[currentFloor].every((row) => row.every((tile) => tile.isVisited));
         }
 
         // The boss was not found, reset the chest positions and move the player to the entrance, if not already there
