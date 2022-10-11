@@ -1098,7 +1098,7 @@ class AutomationFarm
         //////
         // The following mutations require the player to have caught legendary pokemons
 
-        // #61 Unlock at least one Liechi berry through mutation
+        // #61 Unlock at least four Liechi berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Liechi,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Passho),
@@ -1107,7 +1107,7 @@ class AutomationFarm
             [],
             "Kyogre");
 
-        // #62 Unlock at least one Ganlon berry through mutation
+        // #62 Unlock at least four Ganlon berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Ganlon,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Shuca),
