@@ -290,8 +290,10 @@ class AutomationFocusAchievements
                 (a, b) =>
                 {
                     // Favor lower region quests
-                    if (a.region < b.region) return -1;
-                    if (a.region > b.region) return 1;
+                    let aRegion = this.__internal__getRegionFromCategoryName(a.category.name);
+                    let bRegion = this.__internal__getRegionFromCategoryName(b.category.name);
+                    if (aRegion < bRegion) return -1;
+                    if (aRegion > bRegion) return 1;
 
                     // Then route kill
                     if ((a.property instanceof RouteKillRequirement) && (b.property instanceof RouteKillRequirement)) return 0;
@@ -307,10 +309,23 @@ class AutomationFocusAchievements
                     if ((a.property instanceof ClearDungeonRequirement) && (b.property instanceof ClearDungeonRequirement)) return 0;
                     if (a.property instanceof ClearDungeonRequirement) return -1;
                     if (b.property instanceof ClearDungeonRequirement) return 1;
-                }
-            )[0];
+                },
+                this)[0];
         }
 
         return result;
+    }
+
+    /**
+     * @brief Returns the region number based on an achievement category name
+     *
+     * @param {string} categoryName: The achievement category name
+     *
+     * @returns The corresponding region number
+     */
+    static __internal__getRegionFromCategoryName(categoryName)
+    {
+        // Handle Sevii Island content at the same time as Hoenn content
+        return (categoryName == "sevii") ? GameConstants.Region.hoenn : GameConstants.Region[categoryName];
     }
 }
