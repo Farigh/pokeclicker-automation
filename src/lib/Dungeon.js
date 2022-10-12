@@ -314,10 +314,7 @@ class AutomationDungeon
                 }
             }
 
-            // TODO: Handle multiple floors dungeons
-            let currentFloor = DungeonRunner.map.playerPosition().floor;
-
-            let maxIndex = (DungeonRunner.map.board()[currentFloor].length - 1);
+            let maxIndex = (DungeonRunner.map.board()[playerCurrentPosition.floor].length - 1);
             let isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
             let isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
                                   || (!isEvenRow && (playerCurrentPosition.x == 0));
@@ -334,7 +331,7 @@ class AutomationDungeon
             // Go full left at the beginning of the map
             if ((playerCurrentPosition.y == maxIndex)
                 && (playerCurrentPosition.x != 0)
-                && !DungeonRunner.map.board()[currentFloor][playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
+                && !DungeonRunner.map.board()[playerCurrentPosition.floor][playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
             {
                 DungeonRunner.map.moveLeft();
             }
@@ -363,8 +360,8 @@ class AutomationDungeon
                     return;
                 }
 
-                let positionToCheck = { x: playerCurrentPosition.x, y: playerCurrentPosition.y - 1 };
-                let tileToCheck = DungeonRunner.map.board()[currentFloor][positionToCheck.y][positionToCheck.x];
+                let positionToCheck = { floor: playerCurrentPosition.floor, x: playerCurrentPosition.x, y: playerCurrentPosition.y - 1 };
+                let tileToCheck = DungeonRunner.map.board()[positionToCheck.floor][positionToCheck.y][positionToCheck.x];
 
                 // Don't consider not-visible tiles
                 if (!tileToCheck.isVisible)
