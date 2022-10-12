@@ -274,7 +274,22 @@ class AutomationDungeon
                     && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) !== "true"))
                 {
                     let chestLocation = this.__internal__chestPositions.pop();
+
+                    // The player probably moved to the next floor manually, skip it
+                    if (chestLocation.floor != DungeonRunner.map.playerPosition().floor)
+                    {
+                        this.__internal__chestPositions = [];
+                        return;
+                    }
+
                     DungeonRunner.map.moveToTile(chestLocation);
+                }
+                else if (DungeonRunner.map.playerPosition().floor < (DungeonRunner.map.floorSizes.length - 1))
+                {
+                    // Reset current floor states before moving to the next one
+                    this.__internal__chestPositions = [];
+                    this.__internal__isCompleted = false;
+                    DungeonRunner.nextFloor();
                 }
                 else
                 {
@@ -284,7 +299,15 @@ class AutomationDungeon
 
             let playerCurrentPosition = DungeonRunner.map.playerPosition();
 
-            if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
+            if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.ladder)
+            {
+                if (Automation.Utils.LocalStorage.getValue(this.Settings.BossRush) === "true")
+                {
+                    this.__internal__isCompleted = true;
+                    return;
+                }
+            }
+            else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
             {
                 // Persist the boss position, to go back to it once the board has been cleared
                 this.__internal__bossPosition = playerCurrentPosition;
@@ -322,7 +345,9 @@ class AutomationDungeon
             // Detect board ending and move to the boss if it's the case
             if ((playerCurrentPosition.y == 0) && isLastTileOfTheRow)
             {
-                this.__internal__isCompleted = (this.__internal__bossPosition !== null);
+                // The dungeon is completed if the boss was encountered, or it's not the last floor
+                this.__internal__isCompleted = (this.__internal__bossPosition !== null)
+                                            || (DungeonRunner.map.playerPosition().floor < (DungeonRunner.map.floorSizes.length - 1));
                 this.__internal__ensureTheBoardIsInAnAcceptableState();
 
                 return;
@@ -403,7 +428,6 @@ class AutomationDungeon
     {
         let startingTile = null;
 
-        // TODO: Handle multiple floors dungeons
         let currentFloor = DungeonRunner.map.playerPosition().floor;
 
         for (const [ rowIndex, row ] of DungeonRunner.map.board()[currentFloor].entries())
@@ -435,7 +459,7 @@ class AutomationDungeon
                 // For the next part, ignore not visited tiles
                 if (!tile.isVisited) continue;
 
-                if ((rowIndex === (DungeonRunner.map.size - 1))
+                if ((rowIndex === (DungeonRunner.map.floorSizes[currentFloor] - 1))
                     && (startingTile === null))
                 {
                     startingTile = currentLocation;
