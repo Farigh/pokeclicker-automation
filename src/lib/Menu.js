@@ -759,9 +759,6 @@ class AutomationMenu
                 background-color: #222222;
                 color: #eeeeee;
                 text-align: center;
-                opacity: 0;
-                z-index: 9;
-                pointer-events: none;
             }
             .hasAutomationTooltip[automation-tooltip-disable-reason]::before
             {
@@ -778,9 +775,14 @@ class AutomationMenu
                 left: calc(100% - 30px);
                 border: 5px solid #222222;
                 border-color: transparent transparent #222222 transparent;
-                opacity: 0;
+            }
+            .hasAutomationTooltip::before, .hasAutomationTooltip::after
+            {
                 z-index: 9;
                 pointer-events: none;
+                transition-duration:.3s;
+                transition-property: opacity;
+                opacity: 0;
             }
             .hasAutomationTooltip:hover::before, .hasAutomationTooltip:hover::after
             {
@@ -789,6 +791,13 @@ class AutomationMenu
                 transition-property: opacity;
                 opacity: 1;
             }
+            .hasAutomationTooltip.shortTransitionAutomationTooltip::before,
+            .hasAutomationTooltip.shortTransitionAutomationTooltip::after,
+            .hasAutomationTooltip.shortTransitionAutomationTooltip:hover::before,
+            .hasAutomationTooltip.shortTransitionAutomationTooltip:hover::after
+            {
+                transition-delay: 0.5s;
+            }
             .hasAutomationTooltip.centeredAutomationTooltip::after
             {
                 left: calc(50%);
@@ -796,6 +805,10 @@ class AutomationMenu
             .hasAutomationTooltip.gotoAutomationTooltip::after
             {
                 left: calc(100% - 85px);
+            }
+            .hasAutomationTooltip.rightMostAutomationTooltip::after
+            {
+                left: calc(100% - 15px);
             }
             .hasAutomationTooltip.toggleAutomationTooltip::after
             {
@@ -901,7 +914,7 @@ class AutomationMenu
             .automation-setting-menu-container[automation-visible]
             {
                 max-width: 650px;
-                max-height: 500px;
+                max-height: 600px;
 
                 transition-property:        max-width, max-height;
                 transition-timing-function:   ease-in,    ease-in;
@@ -1201,6 +1214,15 @@ class AutomationMenu
                 overflow: unset;
                 padding: 10px;
                 border: 1px solid #526688;
+            }
+
+            .automationTabSubContent
+            {
+                margin-top: 4px;
+                border: 1px solid #6c7f9f;
+                background-color: #3e4c64;
+                border-radius: 5px;
+                padding: 4px;
             }`;
         document.head.append(style);
     }

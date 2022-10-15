@@ -39,11 +39,110 @@ class AutomationFocusQuests
             });
     }
 
+    /**
+     * @brief Builds the 'Focus on Quests' advanced settings tab, and initializes internal data
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __buildAdvancedSettings(parent)
+    {
+        this.__internal__initializeQuestData();
+        this.__internal__buildAdvancedSettings(parent);
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
     static __internal__autoQuestLoop = null;
+    static __internal__questLabels = {};
+
+    static __internal__advancedSettings = {
+                                              QuestEnabled: function(questName) { return `Focus-${questName}-Enabled`; }
+                                          };
+
+    /**
+     * @brief Initializes the internal quest data
+     */
+    static __internal__initializeQuestData()
+    {
+        this.__internal__questLabels["DefeatPokemonsQuest"] = "Defeat <n> Pokémon on <Route>.";
+        this.__internal__questLabels["CapturePokemonsQuest"] = "Capture <n> Pokémon.";
+        this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture <n> <Type> Pokémon.";
+        this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
+        this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
+        this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
+        this.__internal__questLabels["GainGemsQuest"] = "Gain <n> Fire gems.";
+        this.__internal__questLabels["HatchEggsQuest"] = "Hatch <n> Eggs.";
+        this.__internal__questLabels["MineLayersQuest"] = "Mine <n> layer in the Underground.";
+        this.__internal__questLabels["MineItemsQuest"] = "Mine <n> item in the Underground.";
+        this.__internal__questLabels["CatchShiniesQuest"] = "Catch 1 shiny Pokémon.";
+        this.__internal__questLabels["DefeatGymQuest"] = "Defeat <Gym leader> <n> times.";
+        this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon> <n> times.";
+        this.__internal__questLabels["UsePokeballQuest"] = "Use <n> <Balls type>.";
+        this.__internal__questLabels["UseOakItemQuest"] = "Equip the <Oak item> and <Action>.";
+        this.__internal__questLabels["HarvestBerriesQuest"] = "Harvest <n> <Berry type> Berries at the farm.";
+
+        // Generate default descriptions for any unknown quest
+        for (const quest in QuestHelper.quests)
+        {
+            if (!this.__internal__questLabels[quest])
+            {
+                let questClass = QuestHelper.quests[quest];
+                let args = questClass.generateData();
+                let questInstance = new questClass(...args);
+                this.__internal__questLabels[quest] = questInstance.description;
+            }
+        }
+    }
+
+    /**
+     * @brief Builds the 'Focus on Quests' advanced settings tab
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __internal__buildAdvancedSettings(parent)
+    {
+        let tooltip = "Skipping quests can be cost-heavy"
+        let descriptionElem = document.createElement("span");
+        descriptionElem.textContent = "Choose which quest should be performed, or skipped. ⚠️";
+        descriptionElem.classList.add("hasAutomationTooltip");
+        descriptionElem.classList.add("rightMostAutomationTooltip");
+        descriptionElem.classList.add("shortTransitionAutomationTooltip");
+        descriptionElem.style.cursor = "help";
+        descriptionElem.setAttribute("automation-tooltip-text", tooltip);
+        parent.appendChild(descriptionElem);
+
+        let tableContainer = document.createElement("div");
+        tableContainer.classList.add("automationTabSubContent");
+        parent.appendChild(tableContainer);
+
+        let tableElem = document.createElement("table");
+        tableElem.style.width = "100%";
+        tableContainer.appendChild(tableElem);
+
+        for (const quest in QuestHelper.quests)
+        {
+            let rowElem = document.createElement("tr");
+            tableElem.appendChild(rowElem);
+
+            let labelCellElem = document.createElement("td");
+            let label = this.__internal__questLabels[quest];
+            label = label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
+            labelCellElem.innerHTML = label;
+            rowElem.appendChild(labelCellElem);
+
+            let toggleCellElem = document.createElement("td");
+            rowElem.appendChild(toggleCellElem);
+
+            let storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
+            // Enable the quest by default
+            Automation.Utils.LocalStorage.setDefaultValue(storageKey, "true");
+
+            let toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+            toggleCellElem.appendChild(toggleButton);
+        }
+    }
 
     /**
      * @brief Starts the quests automation
