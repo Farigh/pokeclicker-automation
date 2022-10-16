@@ -39,11 +39,110 @@ class AutomationFocusQuests
             });
     }
 
+    /**
+     * @brief Builds the 'Focus on Quests' advanced settings tab, and initializes internal data
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __buildAdvancedSettings(parent)
+    {
+        this.__internal__initializeQuestData();
+        this.__internal__buildAdvancedSettings(parent);
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
     static __internal__autoQuestLoop = null;
+    static __internal__questLabels = {};
+
+    static __internal__advancedSettings = {
+                                              QuestEnabled: function(questName) { return `Focus-${questName}-Enabled`; }
+                                          };
+
+    /**
+     * @brief Initializes the internal quest data
+     */
+    static __internal__initializeQuestData()
+    {
+        this.__internal__questLabels["DefeatPokemonsQuest"] = "Defeat <n> Pokémon on <Route>.";
+        this.__internal__questLabels["CapturePokemonsQuest"] = "Capture <n> Pokémon.";
+        this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture <n> <Type> Pokémon.";
+        this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
+        this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
+        this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
+        this.__internal__questLabels["GainGemsQuest"] = "Gain <n> Fire gems.";
+        this.__internal__questLabels["HatchEggsQuest"] = "Hatch <n> Eggs.";
+        this.__internal__questLabels["MineLayersQuest"] = "Mine <n> layer in the Underground.";
+        this.__internal__questLabels["MineItemsQuest"] = "Mine <n> item in the Underground.";
+        this.__internal__questLabels["CatchShiniesQuest"] = "Catch 1 shiny Pokémon.";
+        this.__internal__questLabels["DefeatGymQuest"] = "Defeat <Gym leader> <n> times.";
+        this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon> <n> times.";
+        this.__internal__questLabels["UsePokeballQuest"] = "Use <n> <Balls type>.";
+        this.__internal__questLabels["UseOakItemQuest"] = "Equip the <Oak item> and <Action>.";
+        this.__internal__questLabels["HarvestBerriesQuest"] = "Harvest <n> <Berry type> Berries at the farm.";
+
+        // Generate default descriptions for any unknown quest
+        for (const quest in QuestHelper.quests)
+        {
+            if (!this.__internal__questLabels[quest])
+            {
+                let questClass = QuestHelper.quests[quest];
+                let args = questClass.generateData();
+                let questInstance = new questClass(...args);
+                this.__internal__questLabels[quest] = questInstance.description;
+            }
+        }
+    }
+
+    /**
+     * @brief Builds the 'Focus on Quests' advanced settings tab
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __internal__buildAdvancedSettings(parent)
+    {
+        let tooltip = "Skipping quests can be cost-heavy"
+        let descriptionElem = document.createElement("span");
+        descriptionElem.textContent = "Choose which quest should be performed, or skipped. ⚠️";
+        descriptionElem.classList.add("hasAutomationTooltip");
+        descriptionElem.classList.add("rightMostAutomationTooltip");
+        descriptionElem.classList.add("shortTransitionAutomationTooltip");
+        descriptionElem.style.cursor = "help";
+        descriptionElem.setAttribute("automation-tooltip-text", tooltip);
+        parent.appendChild(descriptionElem);
+
+        let tableContainer = document.createElement("div");
+        tableContainer.classList.add("automationTabSubContent");
+        parent.appendChild(tableContainer);
+
+        let tableElem = document.createElement("table");
+        tableElem.style.width = "100%";
+        tableContainer.appendChild(tableElem);
+
+        for (const quest in QuestHelper.quests)
+        {
+            let rowElem = document.createElement("tr");
+            tableElem.appendChild(rowElem);
+
+            let labelCellElem = document.createElement("td");
+            let label = this.__internal__questLabels[quest];
+            label = label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
+            labelCellElem.innerHTML = label;
+            rowElem.appendChild(labelCellElem);
+
+            let toggleCellElem = document.createElement("td");
+            rowElem.appendChild(toggleCellElem);
+
+            let storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
+            // Enable the quest by default
+            Automation.Utils.LocalStorage.setDefaultValue(storageKey, "true");
+
+            let toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+            toggleCellElem.appendChild(toggleButton);
+        }
+    }
 
     /**
      * @brief Starts the quests automation
@@ -127,8 +226,16 @@ class AutomationFocusQuests
         this.__internal__claimCompletedQuests();
         this.__internal__selectNewQuests();
 
-        this.__internal__workOnQuest();
-        this.__internal__workOnBackgroundQuests();
+        // Skip any unwanted quest
+        if (this.__internal__getFilteredCurrentQuests().length == 0)
+        {
+            this.__internal__skipRemainingQuests();
+        }
+        else
+        {
+            this.__internal__workOnQuest();
+            this.__internal__workOnBackgroundQuests();
+        }
     }
 
     /**
@@ -157,12 +264,17 @@ class AutomationFocusQuests
             return;
         }
 
+        // Only consider quests that:
+        //   - Are not already completed
+        //   - Are not already in progress
+        //   - Are not disabled by the user
         let availableQuests = App.game.quests.questList().filter(
-            (_, index) =>
+            quest =>
             {
-                return (!App.game.quests.questList()[index].isCompleted()
-                        && !App.game.quests.questList()[index].inProgress());
-            });
+                return (!quest.isCompleted()
+                        && !quest.inProgress()
+                        && (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled(quest.constructor.name)) == "true"));
+            }, this);
 
         // Sort quest to group the same type together
         availableQuests.sort(this.__internal__sortQuestByPriority, this);
@@ -174,6 +286,40 @@ class AutomationFocusQuests
                 quest.begin();
             }
         }
+    }
+
+    /**
+     * @brief Skips the remaining quest, if they were skipped by the user
+     */
+    static __internal__skipRemainingQuests()
+    {
+        // Make sure some quests were not completed (ie. excluded ones)
+        let availableQuests = App.game.quests.questList().filter(
+            (_, index) =>
+            {
+                let quest = App.game.quests.questList()[index];
+                return (!quest.isCompleted()
+                        && !quest.inProgress());
+            });
+        if (availableQuests.length == 0)
+        {
+            return;
+        }
+
+        // Make sure the player can afford the refresh
+        if (!App.game.quests.freeRefresh() && !App.game.quests.canAffordRefresh())
+        {
+            // Go farm some money
+            this.__internal__farmSomeMoney();
+            return;
+        }
+
+        let pokedollarsImage = '<img src="assets/images/currency/money.svg" height="25px">';
+        let refreshCost = App.game.quests.freeRefresh() ? "free" : `${App.game.quests.getRefreshCost().amount} ${pokedollarsImage}`;
+
+        App.game.quests.refreshQuests();
+
+        Automation.Utils.sendNotif(`Skipped disabled quests for ${refreshCost}`, "Focus > Quests");
     }
 
     /**
@@ -189,7 +335,7 @@ class AutomationFocusQuests
         }
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
-        let currentQuests = App.game.quests.currentQuests();
+        let currentQuests = this.__internal__getFilteredCurrentQuests();
         if (currentQuests.length == 0)
         {
             return;
@@ -259,15 +405,8 @@ class AutomationFocusQuests
             }
             else if (currentQuests.some((quest) => quest instanceof GainMoneyQuest))
             {
-                this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.Money);
-
-                let bestGym = Automation.Utils.Gym.findBestGymForMoney();
-                if (bestGym.bestGymTown !== null)
-                {
-                    Automation.Utils.Route.moveToTown(bestGym.bestGymTown);
-                    Automation.Focus.__enableAutoGymFight(bestGym.bestGym);
-                    return;
-                }
+                this.__internal__farmSomeMoney();
+                return;
             }
             else
             {
@@ -279,13 +418,31 @@ class AutomationFocusQuests
     }
 
     /**
+     * @brief Equips the Money loadout and move to the best place to farm money
+     */
+    static __internal__farmSomeMoney()
+    {
+        this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.Money);
+
+        let bestGym = Automation.Utils.Gym.findBestGymForMoney();
+        if (bestGym.bestGymTown !== null)
+        {
+            Automation.Utils.Route.moveToTown(bestGym.bestGymTown);
+            Automation.Focus.__enableAutoGymFight(bestGym.bestGym);
+            return;
+        }
+
+        Automation.Utils.Route.moveToBestRouteForExp();
+    }
+
+    /**
      * @brief Performs action related to quests that can be done while other quests are being worked on.
      *
      * For example, planting some crops, or restoring energy for the mine [if enabled].
      */
     static __internal__workOnBackgroundQuests()
     {
-        let currentQuests = App.game.quests.currentQuests();
+        let currentQuests = this.__internal__getFilteredCurrentQuests();
 
         let isFarmingSpecificBerry = false;
 
@@ -500,7 +657,7 @@ class AutomationFocusQuests
         if (!enforceType)
         {
             // Choose the most optimal pokeball, based on the other quests
-            for (const quest of App.game.quests.currentQuests())
+            for (const quest of this.__internal__getFilteredCurrentQuests())
             {
                 if (quest instanceof UsePokeballQuest)
                 {
@@ -704,7 +861,7 @@ class AutomationFocusQuests
     {
         let optimumItems = [];
 
-        let currentQuests = App.game.quests.currentQuests();
+        let currentQuests = this.__internal__getFilteredCurrentQuests();
 
         // Always equip UseOakItemQuest items 1st
         let useOakItemQuests = currentQuests.filter((quest) => quest instanceof UseOakItemQuest)
@@ -733,5 +890,15 @@ class AutomationFocusQuests
         }
 
         Automation.Focus.__internal__equipLoadout(resultLoadout);
+    }
+
+    /**
+     * @returns The current quests list, without the user disabled ones
+     */
+    static __internal__getFilteredCurrentQuests()
+    {
+        return App.game.quests.currentQuests().filter(
+                (quest) => (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled(quest.constructor.name)) == "true")
+            , this);
     }
 }

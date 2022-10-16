@@ -224,6 +224,9 @@ class AutomationFocus
         titleDiv.style.marginBottom = "10px";
         focusSettingPanel.appendChild(titleDiv);
 
+        let focusSettingsTabsGroup = "automationFocusSettings";
+        let generalTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "General", focusSettingsTabsGroup);
+
         /**********************\
         |*   Balls settings   *|
         \**********************/
@@ -235,7 +238,7 @@ class AutomationFocus
                                  + "already caught pokémon, when needed"
                                  + disclaimer;
         this.__internal__pokeballToUseSelectElem = this.__internal__addPokeballList(
-            "focusPokeballToUseSelection", focusSettingPanel, this.Settings.BallToUseToCatch, "Pokeball to use for catching :", pokeballToUseTooltip);
+            "focusPokeballToUseSelection", generalTabContainer, this.Settings.BallToUseToCatch, "Pokeball to use for catching :", pokeballToUseTooltip);
 
         // Default Pokeball for caught pokémons
         let defaultCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
@@ -246,7 +249,7 @@ class AutomationFocus
                                          + disclaimer;
         this.__internal__defaultCaughtPokeballSelectElem =
             this.__internal__addPokeballList("focusDefaultCaughtBallSelection",
-                                             focusSettingPanel,
+                                             generalTabContainer,
                                              this.Settings.DefaultCaughtBall,
                                              "Default value for caught pokémon pokéball :",
                                              defaultCaughtPokeballTooltip,
@@ -257,14 +260,21 @@ class AutomationFocus
         \**********************/
 
         // Add some space
-        focusSettingPanel.appendChild(document.createElement("br"));
+        generalTabContainer.appendChild(document.createElement("br"));
 
         // OakItem loadout setting
         let disableOakItemTooltip = "Modifies the oak item loadout automatically";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Optimize oak item loadout",
                                                                this.Settings.OakItemLoadoutUpdate,
                                                                disableOakItemTooltip,
-                                                               focusSettingPanel);
+                                                               generalTabContainer);
+
+        /*********************\
+        |*  Quests settings  *|
+        \*********************/
+
+        let questTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Quests", focusSettingsTabsGroup);
+        this.Quests.__buildAdvancedSettings(questTabContainer)
     }
 
     /**

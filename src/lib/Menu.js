@@ -562,6 +562,70 @@ class AutomationMenu
     }
 
     /**
+     * @brief Adds a new tab with the given @p label
+     *
+     * @param {Element} parentElem: The parent element to add the tab to
+     * @param {string} label: The tab's label
+     * @param {string} tabGroupName: The tab's group (needs to be unique for each menu)
+     *
+     * @returns The tab content div, where the user can add the new sub-menu content
+     */
+    static addTabElement(parentElem, label, tabGroupName)
+    {
+        let tabContainer = parentElem.getElementsByClassName("automationTabContainerDiv")[0];
+        let isFirstTab = !tabContainer;
+        let tabLabelContainer;
+        let tabContentContainer;
+
+        // Add the tab and content containers if not already added
+        if (isFirstTab)
+        {
+            tabContainer = document.createElement("div");
+            tabContainer.classList.add("automationTabContainerDiv");
+            parentElem.appendChild(tabContainer);
+
+            tabLabelContainer = document.createElement("div");
+            tabLabelContainer.classList.add("automationTabLabelContainer");
+            tabLabelContainer.style.textAlign = "left";
+            tabContainer.appendChild(tabLabelContainer);
+            tabContentContainer = document.createElement("div");
+            tabContentContainer.classList.add("automationTabContentContainer");
+            tabContainer.appendChild(tabContentContainer);
+        }
+        else
+        {
+            tabLabelContainer = tabContainer.getElementsByClassName("automationTabLabelContainer")[0];
+            tabContentContainer = tabContainer.getElementsByClassName("automationTabContentContainer")[0];
+        }
+
+        let currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
+        let currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
+
+        // Add the input (the magic lies here)
+        let labelInputElem = document.createElement("input");
+        labelInputElem.classList.add("automationTabLabelButton");
+        labelInputElem.type = "radio";
+        labelInputElem.name = tabGroupName;
+        labelInputElem.id = currentTabId;
+        labelInputElem.checked = isFirstTab;
+        tabContainer.insertBefore(labelInputElem, tabLabelContainer);
+
+        // Add the label
+        let labelElem = document.createElement("label");
+        labelElem.classList.add("automationTabLabel");
+        labelElem.textContent = label;
+        labelElem.setAttribute("for", currentTabId);
+        tabLabelContainer.appendChild(labelElem);
+
+        // Add the content
+        let contentContainer = document.createElement("div");
+        contentContainer.classList.add("automationTabContent");
+        tabContentContainer.appendChild(contentContainer);
+
+        return contentContainer;
+    }
+
+    /**
      * @brief Sets the disable state of the given button
      *
      * A disabled button will be greyed-out and its clic action will be inhibited
@@ -672,6 +736,11 @@ class AutomationMenu
 
         const style = document.createElement('style');
         style.textContent = `
+
+            /****************\
+            |*   Tooltips   *|
+            \****************/
+
             .hasAutomationTooltip
             {
                 position: relative;
@@ -690,9 +759,6 @@ class AutomationMenu
                 background-color: #222222;
                 color: #eeeeee;
                 text-align: center;
-                opacity: 0;
-                z-index: 9;
-                pointer-events: none;
             }
             .hasAutomationTooltip[automation-tooltip-disable-reason]::before
             {
@@ -709,9 +775,14 @@ class AutomationMenu
                 left: calc(100% - 30px);
                 border: 5px solid #222222;
                 border-color: transparent transparent #222222 transparent;
-                opacity: 0;
+            }
+            .hasAutomationTooltip::before, .hasAutomationTooltip::after
+            {
                 z-index: 9;
                 pointer-events: none;
+                transition-duration:.3s;
+                transition-property: opacity;
+                opacity: 0;
             }
             .hasAutomationTooltip:hover::before, .hasAutomationTooltip:hover::after
             {
@@ -719,6 +790,13 @@ class AutomationMenu
                 transition-duration:.3s;
                 transition-property: opacity;
                 opacity: 1;
+            }
+            .hasAutomationTooltip.shortTransitionAutomationTooltip::before,
+            .hasAutomationTooltip.shortTransitionAutomationTooltip::after,
+            .hasAutomationTooltip.shortTransitionAutomationTooltip:hover::before,
+            .hasAutomationTooltip.shortTransitionAutomationTooltip:hover::after
+            {
+                transition-delay: 0.5s;
             }
             .hasAutomationTooltip.centeredAutomationTooltip::after
             {
@@ -728,6 +806,10 @@ class AutomationMenu
             {
                 left: calc(100% - 85px);
             }
+            .hasAutomationTooltip.rightMostAutomationTooltip::after
+            {
+                left: calc(100% - 15px);
+            }
             .hasAutomationTooltip.toggleAutomationTooltip::after
             {
                 top: calc(100% - 4px);
@@ -736,6 +818,11 @@ class AutomationMenu
             {
                 top: calc(100% + 2px);
             }
+
+            /***************\
+            |*   Setting   *|
+            \***************/
+
             .automationCategorie
             {
                 max-height: 500px;
@@ -827,7 +914,7 @@ class AutomationMenu
             .automation-setting-menu-container[automation-visible]
             {
                 max-width: 650px;
-                max-height: 500px;
+                max-height: 600px;
 
                 transition-property:        max-width, max-height;
                 transition-timing-function:   ease-in,    ease-in;
@@ -879,6 +966,11 @@ class AutomationMenu
                 border-bottom-left-radius: 5px;
                 transition: left 0.3s;
             }
+
+            /*********************\
+            |*   Toogle button   *|
+            \*********************/
+
             .automation-toggle-button
             {
                 box-sizing: border-box;
@@ -962,6 +1054,11 @@ class AutomationMenu
                 right: 2px;
                 top: 6px;
             }
+
+            /*************\
+            |*   Input   *|
+            \*************/
+
             .automation-setting-input
             {
                 display: inline-block;
@@ -1007,6 +1104,11 @@ class AutomationMenu
                 top: -13px;
                 right: 15px;
             }
+
+            /*****************\
+            |*   Checkmark   *|
+            \*****************/
+
             .automation-checkmark-container
             {
                 display: inline-block;
@@ -1048,6 +1150,81 @@ class AutomationMenu
                     border-bottom: 4px solid #78b13f;
                     border-right: 4px solid #78b13f;
                 }
+            }
+
+            /***********\
+            |*   Tab   *|
+            \***********/
+
+            .automationTabLabelButton
+            {
+                display: none; /* hide radio buttons */
+            }
+            .automationTabContent
+            {
+                background-color: #333f55;
+                border-radius: 0 5px 5px 5px;
+
+                /* Hide but preserve width */
+                height: 0px;
+                overflow: hidden;
+                padding: 0px 10px;
+                border: 1px solid transparent;
+                border-bottom-width: 0px;
+                border-top-width: 0px;
+                margin-bottom: 0px;
+                margin-top: 0px;
+            }
+            .automationTabLabel
+            {
+                cursor: pointer;
+                color: #cccccc;
+                display: inline-block;
+                border: 1px solid #526688;
+                background-color: #273142;
+                padding: 4px 12px;
+                border-radius: 5px 5px 0 0;
+                position: relative;
+                top: 1px;
+                margin: 0px;
+            }
+            .automationTabContentContainer
+            {
+                background-color: #333f55;
+                margin-bottom: 5px;
+            }
+            .automationTabLabelButton:nth-of-type(1):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(1),
+            .automationTabLabelButton:nth-of-type(2):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(2),
+            .automationTabLabelButton:nth-of-type(3):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(3),
+            .automationTabLabelButton:nth-of-type(4):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(4),
+            .automationTabLabelButton:nth-of-type(5):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(5)
+            {
+                cursor: default;
+                border-bottom-color: #333f55;
+                background-color: #333f55;
+                color: #eeeeee;
+            }
+
+            /* The magic (up to 5 tabs) */
+            .automationTabLabelButton:nth-of-type(1):checked ~ .automationTabContentContainer .automationTabContent:nth-of-type(1),
+            .automationTabLabelButton:nth-of-type(2):checked ~ .automationTabContentContainer .automationTabContent:nth-of-type(2),
+            .automationTabLabelButton:nth-of-type(3):checked ~ .automationTabContentContainer .automationTabContent:nth-of-type(3),
+            .automationTabLabelButton:nth-of-type(4):checked ~ .automationTabContentContainer .automationTabContent:nth-of-type(4),
+            .automationTabLabelButton:nth-of-type(5):checked ~ .automationTabContentContainer .automationTabContent:nth-of-type(5)
+            {
+                height: unset;
+                overflow: unset;
+                padding: 10px;
+                border: 1px solid #526688;
+            }
+
+            .automationTabSubContent
+            {
+                margin-top: 4px;
+                border: 1px solid #6c7f9f;
+                background-color: #3e4c64;
+                border-radius: 5px;
+                padding: 4px;
             }`;
         document.head.append(style);
     }
