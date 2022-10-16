@@ -1177,6 +1177,7 @@ class AutomationMenu
             }
             .automationTabLabel
             {
+                cursor: pointer;
                 color: #cccccc;
                 display: inline-block;
                 border: 1px solid #526688;
@@ -1198,6 +1199,7 @@ class AutomationMenu
             .automationTabLabelButton:nth-of-type(4):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(4),
             .automationTabLabelButton:nth-of-type(5):checked ~ .automationTabLabelContainer .automationTabLabel:nth-of-type(5)
             {
+                cursor: default;
                 border-bottom-color: #333f55;
                 background-color: #333f55;
                 color: #eeeeee;
