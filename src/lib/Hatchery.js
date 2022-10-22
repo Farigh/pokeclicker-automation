@@ -696,10 +696,10 @@ class AutomationHatchery
         for (const egg of App.game.breeding.eggList)
         {
             let currentEgg = egg();
-            if ((currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Contagious)
-                || (currentEgg.partyPokemon?.pokerus === GameConstants.Pokerus.Resistant))
+            if ((currentEgg.partyPokemon()?.pokerus === GameConstants.Pokerus.Contagious)
+                || (currentEgg.partyPokemon()?.pokerus === GameConstants.Pokerus.Resistant))
             {
-                for (const type of pokemonMap[currentEgg.partyPokemon.id].type)
+                for (const type of pokemonMap[currentEgg.partyPokemon().id].type)
                 {
                     hatchingContagiousTypes.add(type);
                 }
