@@ -168,5 +168,10 @@ class AutomationClick
                 DungeonBattle.clickAttack();
             }
         }
+        // Click while in a temporary battle
+        else if (App.game.gameState === GameConstants.GameState.temporaryBattle)
+        {
+            TemporaryBattleBattle.clickAttack()
+        }
     }
 }
