@@ -137,7 +137,7 @@ class AutomationFocusQuests
 
             let storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
             // Enable the quest by default
-            Automation.Utils.LocalStorage.setDefaultValue(storageKey, "true");
+            Automation.Utils.LocalStorage.setDefaultValue(storageKey, true);
 
             let toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
             toggleCellElem.appendChild(toggleButton);
