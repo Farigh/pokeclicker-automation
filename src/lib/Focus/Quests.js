@@ -395,7 +395,7 @@ class AutomationFocusQuests
         else // Other type of quest don't need much
         {
             // Disable catching pokemons if enabled
-            this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
+            this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
 
             if (currentQuests.some((quest) => quest instanceof CatchShiniesQuest))
             {
@@ -504,7 +504,7 @@ class AutomationFocusQuests
             return;
         }
 
-        this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
+        this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
 
         // Move to dungeon if needed
         if (!Automation.Utils.Route.isPlayerInTown(quest.dungeon))
@@ -569,7 +569,7 @@ class AutomationFocusQuests
      */
     static __internal__workOnDefeatPokemonsQuest(quest)
     {
-        this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
+        this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         Automation.Utils.Route.moveToRoute(quest.route, quest.region);
@@ -584,7 +584,7 @@ class AutomationFocusQuests
      */
     static __internal__workOnGainGemsQuest(quest)
     {
-        this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
+        this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         Automation.Focus.__internal__goToBestGymOrRouteForGem(quest.type);
@@ -609,7 +609,7 @@ class AutomationFocusQuests
             this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
             // Go kill some pokemon
-            this.__internal__selectBallToCatch(GameConstants.Pokeball.None);
+            this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
             Automation.Utils.Route.moveToBestRouteForExp();
         }
     }
