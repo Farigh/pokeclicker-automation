@@ -28,8 +28,16 @@ class Automation
     /**************************/
     /*    PUBLIC INTERFACE    */
     /**************************/
-    static start()
+
+    /**
+     * @brief Automation entry point
+     *
+     * @param {boolean} disableFeaturesByDefault: True if every features needs to be disabeld by default, False otherwise
+     */
+    static start(disableFeaturesByDefault)
     {
+        this.Menu.DisableFeaturesByDefault = disableFeaturesByDefault;
+
         var timer = setInterval(function()
         {
             // Check if the game window has loaded

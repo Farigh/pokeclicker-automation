@@ -14,6 +14,9 @@
 // if you want to fix a set version of the script
 var releaseLabel = "master";
 
+// Set this to true if you want no feature to be enabled by default
+var disableFeaturesByDefault = false;
+
 var pokeclickerAutomationReleaseUrl = "https://raw.githubusercontent.com/Farigh/pokeclicker-automation/" + releaseLabel + "/";
 
 // Github only serves plain-text so we can't load it as a script object directly
@@ -28,7 +31,7 @@ xmlhttp.onreadystatechange = function()
             script.id = "pokeclicker-automation-component-loader";
             document.head.appendChild(script);
 
-            AutomationComponentLoader.loadFromUrl(pokeclickerAutomationReleaseUrl);
+            AutomationComponentLoader.loadFromUrl(pokeclickerAutomationReleaseUrl, disableFeaturesByDefault);
         }
     }
 

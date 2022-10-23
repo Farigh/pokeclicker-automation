@@ -15,11 +15,12 @@ class AutomationComponentLoader
     /**
      * @brief Loads the Automation classes from the given @p baseUrl
      *
-     * @param {string} baseUrl: The base URL to download the lib component files from
+     * @param {string}  baseUrl: The base URL to download the lib component files from
+     * @param {boolean} disableFeaturesByDefault: True if every features needs to be disabeld by default, False otherwise
      *
      * @warning This function should never change its prototype, otherwise it would break the API
      */
-    static loadFromUrl(baseUrl)
+    static loadFromUrl(baseUrl, disableFeaturesByDefault = false)
     {
         this.__baseUrl = baseUrl;
 
@@ -49,7 +50,7 @@ class AutomationComponentLoader
         this.__loadingOrder += 1;
         this.__addScript("src/Automation.js");
 
-        this.__setupAutomationRunner();
+        this.__setupAutomationRunner(disableFeaturesByDefault);
     }
 
     /**
@@ -112,8 +113,10 @@ class AutomationComponentLoader
     /**
      * @brief Sets a loading watcher which prevent loading the automation before the game components are fully up and running.
      *        Once all scripts are properly loaded, it runs the automation.
+     *
+     * @param {boolean} disableFeaturesByDefault: True if every features needs to be disabeld by default, False otherwise
      */
-    static __setupAutomationRunner()
+    static __setupAutomationRunner(disableFeaturesByDefault)
     {
         let currentLoadingOrder = -1;
 
@@ -146,7 +149,7 @@ class AutomationComponentLoader
                 clearInterval(watcher);
 
                 // Start the automation
-                Automation.start();
+                Automation.start(disableFeaturesByDefault);
             }.bind(this), 200); // Check every 200ms
     }
 }

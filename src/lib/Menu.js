@@ -3,6 +3,7 @@
  */
 class AutomationMenu
 {
+    static DisableFeaturesByDefault = false;
     static TooltipSeparator = "\n─────────\n";
 
     static AutomationButtonsDiv;
@@ -125,8 +126,8 @@ class AutomationMenu
         }
         else
         {
-            // Enable automation by default, if not already set in local storage
-            Automation.Utils.LocalStorage.setDefaultValue(id, true);
+            // Set the automation default behaviour, if not already set in local storage
+            Automation.Utils.LocalStorage.setDefaultValue(id, !this.DisableFeaturesByDefault);
         }
 
         let buttonMainContainer = document.createElement("span");
