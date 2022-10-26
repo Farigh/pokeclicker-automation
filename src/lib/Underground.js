@@ -66,6 +66,8 @@ class AutomationUnderground
             if (this.__internal__autoSellingLoop === null)
             {
                 this.__internal__autoSellingLoop = setInterval(this.__internal__tradeDiamondsLoop.bind(this), 5 * 60 * 1000); // Runs every 5 minutes
+                // Call it manually once to avoid waiting 5 minutes
+                this.__internal__tradeDiamondsLoop();
             }
         }
         else
@@ -168,8 +170,13 @@ class AutomationUnderground
                                  + Automation.Menu.TooltipSeparator
                                  + "Sell-locked items, in the Treasures tab, will never be sold,\n"
                                  + "but might be aquired through tradings.";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+        const tradeDiamondsButton = Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             tradeDiamondsLabel, this.Settings.TradeDiamonds, tradeDiamondsTooltip, miningSettingPanel);
+        tradeDiamondsButton.addEventListener("click",
+                                             function()
+                                             {
+                                                 this.__internal__tradeDiamondsIfMineEnabled(this.Settings.TradeDiamonds);
+                                             }.bind(this), false);
 
         /*******************************\
         |* Trade anything for diamonds *|
@@ -178,10 +185,15 @@ class AutomationUnderground
         // Disable this setting by default
         Automation.Utils.LocalStorage.setDefaultValue(this.Settings.TradeAnyToDiamonds, false);
 
-        let tradeAnythingDiamondsLabel = 'Enable trading items that do not have any diamond value';
-        let tradeAnythingDiamondsTooltip = "Enabling this will trade non-diamond-valued items for diamond-valued ones.";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-            tradeAnythingDiamondsLabel, this.Settings.TradeAnyToDiamonds, tradeAnythingDiamondsTooltip, miningSettingPanel);
+        let tradeAnyToDiamondsLabel = 'Enable trading items that do not have any diamond value';
+        let tradeAnyToDiamondsTooltip = "Enabling this will trade non-diamond-valued items for diamond-valued ones.";
+        const tradeAnyToDiamondsButton = Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            tradeAnyToDiamondsLabel, this.Settings.TradeAnyToDiamonds, tradeAnyToDiamondsTooltip, miningSettingPanel);
+        tradeAnyToDiamondsButton.addEventListener("click",
+                                                  function()
+                                                  {
+                                                      this.__internal__tradeDiamondsIfMineEnabled(this.Settings.TradeAnyToDiamonds);
+                                                  }.bind(this), false);
     }
 
     /**
@@ -477,6 +489,22 @@ class AutomationUnderground
         }
 
         return itemsState;
+    }
+
+    /**
+     * @brief Performs a daily deals run if the feature is enabled
+     *        This is used as an advanced settings toggle buttons callback
+     *
+     * @param {string} eventSource: The setting button that was clicked
+     */
+    static __internal__tradeDiamondsIfMineEnabled(eventSource)
+    {
+        // Only trigger the trade if the feature is enabled, and the setting was turned on
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true")
+            && (Automation.Utils.LocalStorage.getValue(eventSource) === "true"))
+        {
+            this.__internal__tradeDiamondsLoop();
+        }
     }
 
     /**
