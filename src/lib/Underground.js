@@ -10,7 +10,8 @@ class AutomationUnderground
                           FeatureEnabled: "Mining-Enabled",
                           UseRestoreItems: "Mining-UseRestoreItems",
                           RestrictRestoreItemsToMiningQuests: "Mining-RestrictRestoreItemsToMiningQuests",
-                          TradeDiamonds: "Mining-TradeDiamonds"
+                          TradeDiamonds: "Mining-TradeDiamonds",
+                          TradeAnyToDiamonds: "Mining-TradeAnyToDiamonds"
                       };
 
     /**
@@ -62,12 +63,18 @@ class AutomationUnderground
                 // Set auto-mine loop
                 this.__internal__autoMiningLoop = setInterval(this.__internal__miningLoop.bind(this), 10000); // Runs every 10 seconds
             }
+            if (this.__internal__autoSellingLoop === null)
+            {
+                this.__internal__autoSellingLoop = setInterval(this.__internal__tradeDiamondsLoop.bind(this), 5 * 60 * 1000); // Runs every 5 minutes
+            }
         }
         else
         {
-            // Unregister the loop
+            // Unregister the loops
             clearInterval(this.__internal__autoMiningLoop);
             this.__internal__autoMiningLoop = null;
+            clearInterval(this.__internal__autoSellingLoop);
+            this.__internal__autoSellingLoop = null;
         }
     }
 
@@ -79,6 +86,7 @@ class AutomationUnderground
 
     static __internal__autoMiningLoop = null;
     static __internal__innerMiningLoop = null;
+    static __internal__autoSellingLoop = null;
 
     static __internal__actionCount = 0;
 
@@ -144,15 +152,36 @@ class AutomationUnderground
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             restrictRestoreLabel, this.Settings.RestrictRestoreItemsToMiningQuests, "", miningSettingPanel);
 
+        // Split the two setting groups
+        miningSettingPanel.appendChild(document.createElement("br"))
+
         /********************************\
         |* Trade for increased diamonds *|
         \********************************/
 
-        let tradeDiamondsLabel = 'Automatically trade daily deals for increased diamonds';
-        let tradeDiamondsTooltip = "Enabling this feature will automatically check for daily\n"
-                                 + "deals that will grand item worth more diamonds";
+        let tradeDiamondsLabel = 'Automatically trade daily deals for increased diamond value';
+        let tradeDiamondsTooltip = "Enabling this feature will check for daily deals\n"
+                                 + "that will grand item worth more diamonds, and trade those."
+                                 + Automation.Menu.TooltipSeparator
+                                 + "Unless the below setting is enabled, only diamond-valued items\n"
+                                 + "will be exchanged."
+                                 + Automation.Menu.TooltipSeparator
+                                 + "Sell-locked items, in the Treasures tab, will never be sold,\n"
+                                 + "but might be aquired through tradings.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             tradeDiamondsLabel, this.Settings.TradeDiamonds, tradeDiamondsTooltip, miningSettingPanel);
+
+        /*******************************\
+        |* Trade anything for diamonds *|
+        \*******************************/
+
+        // Disable this setting by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.TradeAnyToDiamonds, false);
+
+        let tradeAnythingDiamondsLabel = 'Enable trading items that do not have any diamond value';
+        let tradeAnythingDiamondsTooltip = "Enabling this will trade non-diamond-valued items for diamond-valued ones.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            tradeAnythingDiamondsLabel, this.Settings.TradeAnyToDiamonds, tradeAnythingDiamondsTooltip, miningSettingPanel);
     }
 
     /**
@@ -200,12 +229,6 @@ class AutomationUnderground
         if (this.__internal__innerMiningLoop !== null)
         {
             return;
-        }
-
-        // Check for daily deals, if the player enabled the feature
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.TradeDiamonds) === "true")
-        {
-            this.__internal__tradeDiamonds();
         }
 
         this.__internal__actionCount = 0;
@@ -459,38 +482,53 @@ class AutomationUnderground
     /**
      * @brief Check for daily deals opportunities to make more diamonds and trade those that are beneficial
      */
-    static __internal__tradeDiamonds()
+    static __internal__tradeDiamondsLoop()
     {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.TradeDiamonds) !== "true")
+        {
+            return;
+        }
+
+        const shouldTradeAll = Automation.Utils.LocalStorage.getValue(this.Settings.TradeAnyToDiamonds) === "true";
+
         const deals = DailyDeal.list()
         let dealsDone = 0;
         let totalProfit = 0;
-        for (const [ i, deal ] of deals.entries())
+        for (const [ dealIndex, deal ] of deals.entries())
         {
             const item1Index = player.mineInventoryIndex(deal.item1.id);
             const item1 = player.mineInventory()[item1Index];
 
-            // Do not trade if the source is locked
-            if (item1.sellLocked())
+            // Do not trade if either:
+            //   - The source is locked
+            //   - The destination is not diamond-valued
+            //   - The source is not diamond-valued and the player did not allow such trade
+            if (item1.sellLocked()
+                || (deal.item2.valueType != UndergroundItemValueType.Diamond)
+                || (!shouldTradeAll && (deal.item1.valueType != UndergroundItemValueType.Diamond)))
             {
                 continue;
             }
 
-            // Only consider deals for items that both have a Diamond value
-            if ((deal.item1.valueType == UndergroundItemValueType.Diamond)
-                && (deal.item2.valueType == UndergroundItemValueType.Diamond))
-            {
-                const tradeProfit = (deal.amount2 * deal.item2.value) - (deal.amount1 * deal.item1.value);
-                if (tradeProfit > 0)
-                {
-                    const item1Owned = item1.amount();
-                    const maxPossibleTrades = Math.floor(item1Owned / deal.amount1);
+            let fromValue = 0;
+            let toValue = deal.amount2 * deal.item2.value;
 
-                    if (maxPossibleTrades > 0)
-                    {
-                        DailyDeal.use(i, maxPossibleTrades);
-                        dealsDone += maxPossibleTrades;
-                        totalProfit += tradeProfit * maxPossibleTrades;
-                    }
+            // Compute the diamond value, if any
+            if (deal.item1.valueType == UndergroundItemValueType.Diamond)
+            {
+                fromValue = deal.amount1 * deal.item1.value;
+            }
+
+            const tradeProfit = toValue - fromValue;
+            if (tradeProfit > 0)
+            {
+                const maxPossibleTrades = Math.floor(item1.amount() / deal.amount1);
+
+                if (maxPossibleTrades > 0)
+                {
+                    DailyDeal.use(dealIndex, maxPossibleTrades);
+                    dealsDone += maxPossibleTrades;
+                    totalProfit += tradeProfit * maxPossibleTrades;
                 }
             }
         }
