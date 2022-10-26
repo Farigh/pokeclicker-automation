@@ -10,6 +10,7 @@ import "tst/stubs/Automation/Menu.stub.js";
 // Import current lib elements
 import "tst/imports/AutomationUtils.import.js";
 import "src/lib/Hatchery.js";
+import "src/lib/Notifications.js";
 
 import "tst/utils/PokemonLoader.utils.js";
 import "tst/utils/hatchery.utils.js";
@@ -23,6 +24,7 @@ class Automation
 {
     static Hatchery = AutomationHatchery;
     static Menu = AutomationMenu;
+    static Notifications = AutomationNotifications;
     static Utils = AutomationUtils;
 
     static Settings = { Notifications: "Notifications" };

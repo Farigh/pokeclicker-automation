@@ -63,7 +63,7 @@ class AutomationFocus
         if (Automation.Utils.isInInstanceState())
         {
             Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-            Automation.Utils.sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
+            Automation.Notifications.sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
             return false;
         }
 

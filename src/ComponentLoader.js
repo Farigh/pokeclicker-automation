@@ -42,6 +42,7 @@ class AutomationComponentLoader
         this.__addScript("src/lib/Hatchery.js");
         this.__addScript("src/lib/Items.js");
         this.__addScript("src/lib/Menu.js");
+        this.__addScript("src/lib/Notifications.js");
         this.__addScript("src/lib/Shop.js");
         this.__addScript("src/lib/Trivia.js");
         this.__addScript("src/lib/Underground.js");
