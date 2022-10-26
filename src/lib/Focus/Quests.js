@@ -319,7 +319,7 @@ class AutomationFocusQuests
 
         App.game.quests.refreshQuests();
 
-        Automation.Utils.sendNotif(`Skipped disabled quests for ${refreshCost}`, "Focus > Quests");
+        Automation.Notifications.sendNotif(`Skipped disabled quests for ${refreshCost}`, "Focus", "Quests");
     }
 
     /**

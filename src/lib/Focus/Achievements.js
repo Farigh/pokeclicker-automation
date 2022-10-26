@@ -108,7 +108,7 @@ class AutomationFocusAchievements
             {
                 // No more achievements, stop the feature
                 Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
-                Automation.Utils.sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
+                Automation.Notifications.sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
 
                 return;
             }

@@ -11,6 +11,7 @@ class Automation
     static Gym = AutomationGym;
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
+    static Notifications = AutomationNotifications;
     static Menu = AutomationMenu;
     static Shop = AutomationShop;
     static Trivia = AutomationTrivia;
@@ -22,8 +23,6 @@ class Automation
         static BuildMenu = 0;
         static Finalize = 1;
     };
-
-    static Settings = { Notifications: "Notifications" };
 
     /**************************/
     /*    PUBLIC INTERFACE    */
@@ -63,6 +62,7 @@ class Automation
                     this.Farm.initialize(initStep);
                     this.Shop.initialize(initStep);
                     this.Items.initialize(initStep);
+                    this.Notifications.initialize(initStep);
 
                     // 'Trivia' panel
                     this.Trivia.initialize(initStep);
@@ -71,12 +71,6 @@ class Automation
                     this.Gym.initialize(initStep);
                     this.Dungeon.initialize(initStep);
                 }
-
-                // Add a notification button to the automation menu
-                this.Menu.addSeparator();
-
-                let notificationTooltip = "Enables automation-related notifications";
-                this.Menu.addAutomationButton("Notifications", this.Settings.Notifications, notificationTooltip);
 
                 // Log automation startup completion
                 console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");

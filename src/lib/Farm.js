@@ -1393,7 +1393,7 @@ class AutomationFarm
         if (this.__internal__currentStrategy === null)
         {
             this.__internal__disableAutoUnlock("No more automated unlock possible");
-            Automation.Utils.sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature", "Farming");
+            Automation.Notifications.sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature", "Farming");
             return;
         }
 
@@ -1564,7 +1564,7 @@ class AutomationFarm
     {
         if (this.__internal__plantedBerryCount > 0)
         {
-            Automation.Utils.sendNotif("Harvested " + this.__internal__harvestCount.toString() + " berries<br>" + details, "Farming");
+            Automation.Notifications.sendNotif("Harvested " + this.__internal__harvestCount.toString() + " berries<br>" + details, "Farming");
         }
     }
 

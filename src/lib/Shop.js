@@ -529,7 +529,7 @@ class AutomationShop
         if (totalSpent > 0)
         {
             let pokedollarsImage = '<img src="assets/images/currency/money.svg" height="25px">';
-            Automation.Utils.sendNotif(`Bought some items for a total of ${totalSpent.toLocaleString('en-US')} ${pokedollarsImage}`, "Shop");
+            Automation.Notifications.sendNotif(`Bought some items for a total of ${totalSpent.toLocaleString('en-US')} ${pokedollarsImage}`, "Shop");
         }
     }
 

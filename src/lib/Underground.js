@@ -230,9 +230,9 @@ class AutomationUnderground
             {
                 if (this.__internal__actionCount > 0)
                 {
-                    Automation.Utils.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times,`
-                                             + ` energy left: ${Math.floor(App.game.underground.energy).toString()}!`,
-                                               "Mining");
+                    Automation.Notifications.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times,`
+                                                     + ` energy left: ${Math.floor(App.game.underground.energy).toString()}!`,
+                                                       "Mining");
                 }
                 clearInterval(this.__internal__innerMiningLoop);
                 this.__internal__innerMiningLoop = null;

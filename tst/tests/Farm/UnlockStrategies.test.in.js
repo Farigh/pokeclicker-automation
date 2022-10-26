@@ -9,6 +9,7 @@ import "tst/stubs/Automation/Menu.stub.js";
 
 // Import current lib elements
 import "tst/imports/AutomationUtils.import.js";
+import "src/lib/Notifications.js";
 import "src/lib/Farm.js";
 
 import "tst/utils/PokemonLoader.utils.js";
@@ -27,6 +28,7 @@ class Automation
 {
     static Farm = AutomationFarm;
     static Menu = AutomationMenu;
+    static Notifications = AutomationNotifications;
     static Utils = AutomationUtils;
 
     static Settings = { Notifications: "Notifications" };

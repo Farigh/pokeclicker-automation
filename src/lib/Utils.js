@@ -23,58 +23,6 @@ class AutomationUtils
     }
 
     /**
-     * @brief Adds a pokeclicker notification using the given @p message
-     *        The notification is a blue one, without sound and with the "Automation" title
-     *
-     * @param {string} message: The notification message
-     * @param {string} module: [optional] The automation module name
-     */
-    static sendNotif(message, module = null)
-    {
-        if (Automation.Utils.LocalStorage.getValue(Automation.Settings.Notifications) == "true")
-        {
-            let titleStr = "Automation";
-            if (module !== null)
-            {
-                titleStr += " > " + module;
-            }
-
-            Notifier.notify({
-                                title: titleStr,
-                                message: message,
-                                type: NotificationConstants.NotificationOption.primary,
-                                timeout: 3000,
-                            });
-        }
-    }
-
-    /**
-     * @brief Adds a pokeclicker warning notification using the given @p message
-     *        The notification is a yellow one, without sound and with the "Automation" title
-     *
-     * @param {string} message: The warning notification message
-     * @param {string} module: [optional] The automation module name
-     */
-    static sendWarningNotif(message, module = null)
-    {
-        if (Automation.Utils.LocalStorage.getValue(Automation.Settings.Notifications) == "true")
-        {
-            let titleStr = "Automation";
-            if (module !== null)
-            {
-                titleStr += " > " + module;
-            }
-
-            Notifier.notify({
-                                title: titleStr,
-                                message: message,
-                                type: NotificationConstants.NotificationOption.warning,
-                                timeout: 10000,
-                            });
-        }
-    }
-
-    /**
      * @brief Checks if the player is in an instance states
      *
      * Is considered an instance any state in which the player can't acces the map anymore.
