@@ -9,7 +9,8 @@ class AutomationUnderground
     static Settings = {
                           FeatureEnabled: "Mining-Enabled",
                           UseRestoreItems: "Mining-UseRestoreItems",
-                          RestrictRestoreItemsToMiningQuests: "Mining-RestrictRestoreItemsToMiningQuests"
+                          RestrictRestoreItemsToMiningQuests: "Mining-RestrictRestoreItemsToMiningQuests",
+                          TradeDiamonds: "Mining-TradeDiamonds"
                       };
 
     /**
@@ -142,6 +143,16 @@ class AutomationUnderground
         let restrictRestoreLabel = 'Only use restore items when a mining quest is active';
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             restrictRestoreLabel, this.Settings.RestrictRestoreItemsToMiningQuests, "", miningSettingPanel);
+
+        /********************************\
+        |* Trade for increased diamonds *|
+        \********************************/
+
+        let tradeDiamondsLabel = 'Automatically trade daily deals for increased diamonds';
+        let tradeDiamondsTooltip = "Enabling this feature will automatically check for daily\n"
+                                 + "deals that will grand item worth more diamonds";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            tradeDiamondsLabel, this.Settings.TradeDiamonds, tradeDiamondsTooltip, miningSettingPanel);
     }
 
     /**
@@ -189,6 +200,12 @@ class AutomationUnderground
         if (this.__internal__innerMiningLoop !== null)
         {
             return;
+        }
+
+        // Check for daily deals, if the player enabled the feature
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.TradeDiamonds) === "true")
+        {
+            this.__internal__tradeDiamonds();
         }
 
         this.__internal__actionCount = 0;
@@ -437,5 +454,52 @@ class AutomationUnderground
         }
 
         return itemsState;
+    }
+
+    /**
+     * @brief Check for daily deals opportunities to make more diamonds and trade those that are beneficial
+     */
+    static __internal__tradeDiamonds()
+    {
+        const deals = DailyDeal.list()
+        let dealsDone = 0;
+        let totalProfit = 0;
+        for (const [ i, deal ] of deals.entries())
+        {
+            const item1Index = player.mineInventoryIndex(deal.item1.id);
+            const item1 = player.mineInventory()[item1Index];
+
+            // Do not trade if the source is locked
+            if (item1.sellLocked())
+            {
+                continue;
+            }
+
+            // Only consider deals for items that both have a Diamond value
+            if ((deal.item1.valueType == UndergroundItemValueType.Diamond)
+                && (deal.item2.valueType == UndergroundItemValueType.Diamond))
+            {
+                const tradeProfit = (deal.amount2 * deal.item2.value) - (deal.amount1 * deal.item1.value);
+                if (tradeProfit > 0)
+                {
+                    const item1Owned = item1.amount();
+                    const maxPossibleTrades = Math.floor(item1Owned / deal.amount1);
+
+                    if (maxPossibleTrades > 0)
+                    {
+                        DailyDeal.use(i, maxPossibleTrades);
+                        dealsDone += maxPossibleTrades;
+                        totalProfit += tradeProfit * maxPossibleTrades;
+                    }
+                }
+            }
+        }
+
+        if (dealsDone > 0)
+        {
+            let diamondImage = '<img src="assets/images/currency/diamond.svg" height="25px">';
+            Automation.Utils.sendNotif(`Performed ${dealsDone} underground daily deals for a total profit of ${totalProfit} ${diamondImage}`,
+                                       "Mining");
+        }
     }
 }
