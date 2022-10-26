@@ -242,17 +242,13 @@ class AutomationUnderground
     }
 
     /**
-     * @brief Tries to use available Restore pots if the player's energy goes under the provided @p amount
-     *
-     * @param amount: The energy minimum value before any restore pots should be used
+     * @brief Tries to use available Restore pots if the player's energy goes under the cost of a bomb
      */
     static __internal__restoreUndergroundEnergy()
     {
-        let currentEnergy = Math.floor(App.game.underground.energy);
-
-        // Only use Small Restore item if the user allowed it, and it's under the provided threshold
-        if ((currentEnergy >= Underground.BOMB_ENERGY)
-            || Automation.Utils.LocalStorage.getValue(this.Settings.UseRestoreItems) !== "true")
+        // Only use Restore items if the user allowed it, and it's under the provided threshold
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.UseRestoreItems) !== "true")
+            || (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY))
         {
             return;
         }
@@ -268,14 +264,26 @@ class AutomationUnderground
             }
         }
 
+        // Try to use any type of Restore item
         for (const itemValue of Object.keys(GameConstants.EnergyRestoreSize).filter(x => !isNaN(x)))
         {
-            let smallRestoreItemName = GameConstants.EnergyRestoreSize[itemValue];
-            let smallRestoreCount = player.itemList[smallRestoreItemName]();
+            let restoreItemName = GameConstants.EnergyRestoreSize[itemValue];
 
-            if (smallRestoreCount > 0)
+            // Restore at enough energy to use a bomb (which is the most expensive item)
+            while (Math.floor(App.game.underground.energy) < Underground.BOMB_ENERGY)
             {
-                ItemList[smallRestoreItemName].use();
+                // Don't try to consume item that the player doesn't have in stock
+                if (player.itemList[restoreItemName]() <= 0)
+                {
+                    break;
+                }
+
+                ItemList[restoreItemName].use();
+            }
+
+            // Don't restore more than needed
+            if (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
+            {
                 break;
             }
         }
