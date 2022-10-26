@@ -287,19 +287,20 @@ class AutomationFarm
             }
 
             // Harvest berry in any of those cases:
+            //   - No strategy is currently active
             //   - The unlock feature is disabled
             //   - Another feature required force harvesting
             //   - The strategy requires to harvest as soon as possible
             //   - The berry is the target one
             //   - The berry is close to dying (less than 15s)
-            if ((this.__internal__currentStrategy.harvestStrategy !== this.__internal__harvestTimingType.LetTheBerryDie)
-                && ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
-                    || this.ForcePlantBerriesAsked
-                    || (this.__internal__currentStrategy === null)
-                    || (this.__internal__currentStrategy.harvestStrategy === this.__internal__harvestTimingType.AsSoonAsPossible)
-                    || ((this.__internal__currentStrategy.berryToUnlock !== undefined)
-                        && (this.__internal__currentStrategy.berryToUnlock == plot.berry))
-                    || ((plot.berryData.growthTime[PlotStage.Berry] - plot.age) < 15)))
+            if ((this.__internal__currentStrategy === null)
+                || ((this.__internal__currentStrategy.harvestStrategy !== this.__internal__harvestTimingType.LetTheBerryDie)
+                    && ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
+                        || this.ForcePlantBerriesAsked
+                        || (this.__internal__currentStrategy.harvestStrategy === this.__internal__harvestTimingType.AsSoonAsPossible)
+                        || ((this.__internal__currentStrategy.berryToUnlock !== undefined)
+                            && (this.__internal__currentStrategy.berryToUnlock == plot.berry))
+                        || ((plot.berryData.growthTime[PlotStage.Berry] - plot.age) < 15))))
             {
                 App.game.farming.harvest(index);
                 this.__internal__harvestCount++;
