@@ -541,22 +541,20 @@ class AutomationFocusQuests
             townToGoTo = GymList[townToGoTo].parent.name;
         }
 
-        // Move to the associated gym if needed
+        // Move to the associated gym town if needed
         if (!Automation.Utils.Route.isPlayerInTown(townToGoTo))
         {
             Automation.Utils.Route.moveToTown(townToGoTo);
         }
+        // Select the right gym to fight
+        else if (document.getElementById("selectedAutomationGym").value != quest.gymTown)
+        {
+            document.getElementById("selectedAutomationGym").value = quest.gymTown;
+        }
+        // Enable gym auto-fight feature if not already done
         else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")
         {
             Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
-        }
-        else
-        {
-            // Select the right gym to fight
-            if (document.getElementById("selectedAutomationGym").value != quest.gymTown)
-            {
-                document.getElementById("selectedAutomationGym").value = quest.gymTown;
-            }
         }
     }
 
