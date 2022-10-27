@@ -500,10 +500,12 @@ class AutomationUnderground
             const item1 = player.mineInventory()[item1Index];
 
             // Do not trade if either:
+            //   - The player does not own the source item
             //   - The source is locked
             //   - The destination is not diamond-valued
             //   - The source is not diamond-valued and the player did not allow such trade
-            if ((item1.sellLocked && item1.sellLocked())
+            if (!item1
+                || (item1.sellLocked && item1.sellLocked())
                 || (deal.item2.valueType != UndergroundItemValueType.Diamond)
                 || (!shouldTradeAll && (deal.item1.valueType != UndergroundItemValueType.Diamond)))
             {
@@ -536,8 +538,8 @@ class AutomationUnderground
         if (dealsDone > 0)
         {
             let diamondImage = '<img src="assets/images/currency/diamond.svg" height="25px">';
-            Automation.Utils.sendNotif(`Performed ${dealsDone} underground daily deals for a total profit of ${totalProfit} ${diamondImage}`,
-                                       "Mining");
+            Automation.Notifications.sendNotif(`Performed ${dealsDone} underground daily deals for a total profit of ${totalProfit} ${diamondImage}`,
+                                               "Mining");
         }
     }
 }
