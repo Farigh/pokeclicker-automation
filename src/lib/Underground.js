@@ -503,7 +503,7 @@ class AutomationUnderground
             //   - The source is locked
             //   - The destination is not diamond-valued
             //   - The source is not diamond-valued and the player did not allow such trade
-            if (item1.sellLocked()
+            if ((item1.sellLocked && item1.sellLocked())
                 || (deal.item2.valueType != UndergroundItemValueType.Diamond)
                 || (!shouldTradeAll && (deal.item1.valueType != UndergroundItemValueType.Diamond)))
             {
