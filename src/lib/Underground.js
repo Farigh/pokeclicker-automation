@@ -360,9 +360,6 @@ class AutomationUnderground
             }
         }
 
-        // Only consider unrevealed tiles
-        nextTilesToMine = nextTilesToMine.filter((tile) => !tile.revealed);
-
         if (nextTilesToMine.length == 0)
         {
             return true;
@@ -378,8 +375,11 @@ class AutomationUnderground
         }
         else
         {
+            // Only consider unrevealed tiles
+            nextTilesToMine = nextTilesToMine.filter((tile) => !tile.revealed);
+
             result = (App.game.underground.energy >= Underground.CHISEL_ENERGY);
-            Mine.chisel(useToolX, useToolY);
+            Mine.chisel(nextTilesToMine[0].x, nextTilesToMine[0].y);
         }
 
         if (result)
@@ -412,12 +412,12 @@ class AutomationUnderground
             let reachableTilesAmount = 0;
             for (const other of nextTilesToMine)
             {
-                // Consider tiles in th range of the hammer only
+                // Consider tiles in the range of the hammer only
                 if (!other.revealed
-                    && other.x <= (tile.x + 1)
-                    && other.x >= (tile.x - 1)
-                    && other.y <= (tile.y + 1)
-                    && other.y >= (tile.y - 1))
+                    && (other.x <= (tile.x + 1))
+                    && (other.x >= (tile.x - 1))
+                    && (other.y <= (tile.y + 1))
+                    && (other.y >= (tile.y - 1)))
                 {
                     // If the tile is covered by an odd amount of layers, the hammer hit is equivalent to a chisel hit,
                     // otherwise the hammer hit is half as efficient
