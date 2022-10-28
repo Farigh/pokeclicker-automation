@@ -27,11 +27,15 @@ class AutomationTrivia
     \*********************************************************************/
 
     static __internal__previousRegion = null;
+    static __internal__displayedCaughtStatus = null;
     static __internal__displayedRoamingRoute = null;
     static __internal__displayedRoamingRegion = null;
     static __internal__displayedRoamingSubRegionGroup = null;
     static __internal__currentLocationListSize = 0;
     static __internal__lastEvoStone = null;
+
+    static __internal__roamersContainer = null;
+    static __internal__roamersCatchStatus = null;
 
     /**
      * @brief Builds the 'Trivia' menu panel
@@ -49,12 +53,23 @@ class AutomationTrivia
         containerDiv.id = "roamingRouteTriviaContainer";
         triviaDiv.appendChild(containerDiv);
 
-        let contentNode = document.createElement("div");
-        contentNode.id = "roamingRouteTriviaText";
-        contentNode.classList.add("hasAutomationTooltip");
-        contentNode.classList.add("centeredAutomationTooltip");
-        contentNode.style.textAlign = "center";
-        containerDiv.appendChild(contentNode);
+        this.__internal__roamersContainer = document.createElement("div");
+        this.__internal__roamersContainer.classList.add("hasAutomationTooltip");
+        containerDiv.appendChild(this.__internal__roamersContainer);
+
+        // Add the roamers label
+        this.__internal__roamersContainer.appendChild(document.createTextNode("Roamers"));
+        this.__internal__roamersCatchStatus = document.createElement("span");
+        this.__internal__roamersContainer.appendChild(this.__internal__roamersCatchStatus);
+
+        // Add go to roamers route button
+        let gotoButton = Automation.Menu.createButtonElement("moveToRoamersRouteButton");
+        gotoButton.textContent = "Go";
+        gotoButton.style.marginLeft = "10px";
+        gotoButton.style.marginRight = "10px";
+        gotoButton.classList.add("btn-primary");
+        gotoButton.onclick = this.__internal__moveToRoamersRoute.bind(this);
+        this.__internal__roamersContainer.appendChild(gotoButton);
 
         Automation.Menu.addSeparator(containerDiv);
 
@@ -158,32 +173,15 @@ class AutomationTrivia
      */
     static __internal__refreshGotoLocationTrivia()
     {
-        let button = document.getElementById("moveToLocationButton");
-
-        // Disable the button if the player is in an instance
-        if (Automation.Utils.isInInstanceState())
+        if (this.__internal__disableButtonIfNeeded(document.getElementById("moveToLocationButton")))
         {
-            if (!button.disabled)
-            {
-                button.disabled = true;
-                button.classList.remove("btn-primary");
-                button.classList.add("btn-secondary");
-                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\nThe player can't move while in an instance (dungeon, safari, battle frontier...)" + Automation.Menu.TooltipSeparator);
-            }
             return;
-        }
-        else if (button.disabled)
-        {
-            button.disabled = false;
-            button.classList.add("btn-primary");
-            button.classList.remove("btn-secondary");
-            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
         }
 
         let gotoList = document.getElementById("gotoSelectedLocation");
 
-        let filteredList = Object.entries(TownList).filter(([townName, town]) => (town.region === player.region));
-        let unlockedTownCount = filteredList.reduce((count, [townName, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
+        let filteredList = Object.entries(TownList).filter(([_, town]) => (town.region === player.region));
+        let unlockedTownCount = filteredList.reduce((count, [_, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
 
         // Clear the list if the player changed region
         if (this.__internal__previousRegion !== player.region)
@@ -261,6 +259,14 @@ class AutomationTrivia
     }
 
     /**
+     * @brief Moves the player to the roamers route
+     */
+    static __internal__moveToRoamersRoute()
+    {
+        Automation.Utils.Route.moveToRoute(this.__internal__displayedRoamingRoute, this.__internal__displayedRoamingRegion);
+    }
+
+    /**
      * @brief Initializes the 'Roamers' trivia content and set its watcher loop
      */
     static __internal__initializeRoamingRouteTrivia()
@@ -268,7 +274,8 @@ class AutomationTrivia
         // Set the initial value
         this.__internal__refreshRoamingRouteTrivia();
 
-        setInterval(this.__internal__refreshRoamingRouteTrivia.bind(this), 1000); // Refresh every 1s (changes every 8h, but the player might change map)
+        // Refresh every 1s (The route changes every 8h, but the player might change map)
+        setInterval(this.__internal__refreshRoamingRouteTrivia.bind(this), 1000);
     }
 
     /**
@@ -281,6 +288,11 @@ class AutomationTrivia
      */
     static __internal__refreshRoamingRouteTrivia()
     {
+        if (this.__internal__disableButtonIfNeeded(document.getElementById("moveToRoamersRouteButton")))
+        {
+            return;
+        }
+
         // Their can be no roamers at this time
         let subRegionGroup = RoamingPokemonList.findGroup(player.region, player.subregion);
         let roamers = RoamingPokemonList.getSubRegionalGroupRoamers(player.region, subRegionGroup);
@@ -289,15 +301,19 @@ class AutomationTrivia
         {
             if (this.__internal__displayedRoamingRoute !== -1)
             {
-                this.__internal__displayedRoamingRoute = -1;
                 // Hide the roaming info if there is no roamers
                 document.getElementById("roamingRouteTriviaContainer").hidden = true;
+                this.__internal__displayedRoamingRoute = -1;
             }
 
             return;
         }
 
-        let roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteBySubRegionGroup(player.region, subRegionGroup)();
+        this.__internal__updateRoamersCaughtStatus(roamers);
+
+        const caughtIndicator = { [CaughtStatus.NotCaught]: "U", [CaughtStatus.Caught]: "C", [CaughtStatus.CaughtShiny]: "S" };
+
+        const roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteBySubRegionGroup(player.region, subRegionGroup)();
         if ((this.__internal__displayedRoamingRoute !== roamingRouteData.number)
             || (this.__internal__displayedRoamingRegion !== player.region)
             || (this.__internal__displayedRoamingSubRegionGroup !== subRegionGroup))
@@ -305,33 +321,84 @@ class AutomationTrivia
             this.__internal__displayedRoamingRoute = roamingRouteData.number;
             this.__internal__displayedRoamingRegion = player.region;
             this.__internal__displayedRoamingSubRegionGroup = subRegionGroup;
+
+            // Remove the region from the displayed name
+            const regionName = GameConstants.camelCaseToString(GameConstants.Region[player.region]);
             let routeName = roamingRouteData.routeName;
-            // Remove the region from the displayed name and insert non-breaking spaces
-            let regionName = GameConstants.camelCaseToString(GameConstants.Region[player.region]);
             if (routeName.startsWith(regionName))
             {
                 routeName = routeName.substring(regionName.length + 1, routeName.length);
             }
 
-            let textElem = document.getElementById("roamingRouteTriviaText");
-            textElem.textContent = "Roamers: " + routeName.replace(/ /g, '\u00a0');
-
             // Update the tooltip
-            let tooltip = "The following pokémons are roaming this route:\n";
+            let tooltip = `The following pokémons are roaming '${routeName}':\n`;
             for (const [ index, pokemon ] of roamers.entries())
             {
-                if (index !== 0)
-                {
-                    let isLast = (index === (roamers.length - 1));
-                    tooltip += (isLast ? "" : ",")
-                             + (((index % 3) === 0) ? "\n" : " ")
-                             + (isLast ? "and " : "");
-                }
-                tooltip += pokemon.pokemon.name + " (#" + pokemon.pokemon.id + ")";
+                const caughtStatus = this.__internal__getPokemonCaughtStatus(pokemon.pokemon.id);
+                tooltip += `[${caughtIndicator[caughtStatus]}] ${pokemon.pokemon.name} (#${pokemon.pokemon.id})\n`;
             }
-            textElem.setAttribute("automation-tooltip-text", tooltip);
+
+            tooltip += '\nLegend: [U] Uncaught  [C] Caught  [S] Caught shiny'
+
+            this.__internal__roamersContainer.setAttribute("automation-tooltip-text", tooltip);
 
             document.getElementById("roamingRouteTriviaContainer").hidden = false;
+        }
+    }
+
+    /**
+     * @brief Gets the pokémon caught status
+     *
+     * @param {number} pokemonId: The pokemon id to get the status of
+     *
+     * @returns The caught status
+     */
+    static __internal__getPokemonCaughtStatus(pokemonId)
+    {
+        const partyPokemon = App.game.party.getPokemon(pokemonId);
+
+        if (!partyPokemon)
+        {
+            return CaughtStatus.NotCaught;
+        }
+
+        if (partyPokemon.shiny)
+        {
+            return CaughtStatus.CaughtShiny;
+        }
+
+        return CaughtStatus.Caught;
+    }
+
+    /**
+     * @brief Updates the roamers caught status image, if needed
+     *
+     * @param {Array} roamers: The current sub-region Roamers list
+     */
+    static __internal__updateRoamersCaughtStatus(roamers)
+    {
+        let overallCaughtStatus = CaughtStatus.CaughtShiny;
+        for (const data of roamers)
+        {
+            const caughtStatus = this.__internal__getPokemonCaughtStatus(data.pokemon.id);
+
+            overallCaughtStatus = Math.min(overallCaughtStatus, caughtStatus);
+
+            if (overallCaughtStatus == CaughtStatus.NotCaught)
+            {
+                break;
+            }
+        }
+
+        // Only update if the status changed
+        if (overallCaughtStatus !== this.__internal__displayedCaughtStatus)
+        {
+            const imageSwitch = { [CaughtStatus.NotCaught]: "None", [CaughtStatus.Caught]: "Pokeball", [CaughtStatus.CaughtShiny]: "Pokeball-shiny" };
+
+            this.__internal__roamersCatchStatus.innerHTML = '<img class="pokeball-smallest" style="position: relative; top: 1px;"'
+                                                          + ` src="assets/images/pokeball/${imageSwitch[overallCaughtStatus]}.svg">`;
+
+            this.__internal__displayedCaughtStatus = overallCaughtStatus;
         }
     }
 
@@ -358,7 +425,7 @@ class AutomationTrivia
         let triviaDiv = document.getElementById("availableEvolutionTrivia");
 
         let evoStones = Object.keys(GameConstants.StoneType).filter(
-            (stone) => isNaN(stone) && stone !== "None" && this.__internal__hasStoneEvolutionCandidate(stone));
+            (stone) => isNaN(stone) && (stone !== "None") && this.__internal__hasStoneEvolutionCandidate(stone));
 
         triviaDiv.hidden = (evoStones.length == 0);
 
@@ -424,5 +491,38 @@ class AutomationTrivia
         }
 
         return hasCandidate;
+    }
+
+    /**
+     * @brief Disabled the given @p button if the player is currently in an instance
+     *
+     * @param {Element} button: The button to disable
+     *
+     * @returns True if the button was disabled, false otherwise
+     */
+    static __internal__disableButtonIfNeeded(button)
+    {
+        // Disable the button if the player is in an instance
+        if (Automation.Utils.isInInstanceState())
+        {
+            if (!button.disabled)
+            {
+                button.disabled = true;
+                button.classList.remove("btn-primary");
+                button.classList.add("btn-secondary");
+                button.parentElement.setAttribute("automation-tooltip-disable-reason",
+                                                  "\nThe player can't move while in an instance (dungeon, safari, battle frontier...)"
+                                                + Automation.Menu.TooltipSeparator);
+            }
+            return true;
+        }
+        else if (button.disabled)
+        {
+            button.disabled = false;
+            button.classList.add("btn-primary");
+            button.classList.remove("btn-secondary");
+            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+        }
+        return false;
     }
 }
