@@ -27,11 +27,16 @@ class AutomationTrivia
     \*********************************************************************/
 
     static __internal__previousRegion = null;
+    static __internal__displayedCaughtStatus = null;
     static __internal__displayedRoamingRoute = null;
     static __internal__displayedRoamingRegion = null;
     static __internal__displayedRoamingSubRegionGroup = null;
     static __internal__currentLocationListSize = 0;
     static __internal__lastEvoStone = null;
+
+    static __internal__roamersContainer = null;
+    static __internal__roamersCatchStatus = null;
+    static __internal__roamersRouteName = null;
 
     /**
      * @brief Builds the 'Trivia' menu panel
@@ -49,12 +54,19 @@ class AutomationTrivia
         containerDiv.id = "roamingRouteTriviaContainer";
         triviaDiv.appendChild(containerDiv);
 
-        let contentNode = document.createElement("div");
-        contentNode.id = "roamingRouteTriviaText";
-        contentNode.classList.add("hasAutomationTooltip");
-        contentNode.classList.add("centeredAutomationTooltip");
-        contentNode.style.textAlign = "center";
-        containerDiv.appendChild(contentNode);
+        this.__internal__roamersContainer = document.createElement("div");
+        this.__internal__roamersContainer.classList.add("hasAutomationTooltip");
+        this.__internal__roamersContainer.classList.add("centeredAutomationTooltip");
+        this.__internal__roamersContainer.style.textAlign = "center";
+        containerDiv.appendChild(this.__internal__roamersContainer);
+
+        this.__internal__roamersContainer.appendChild(document.createTextNode("Roamers"));
+
+        this.__internal__roamersCatchStatus = document.createElement("span");
+        this.__internal__roamersContainer.appendChild(this.__internal__roamersCatchStatus);
+
+        this.__internal__roamersRouteName = document.createElement("div");
+        this.__internal__roamersContainer.appendChild(this.__internal__roamersRouteName);
 
         Automation.Menu.addSeparator(containerDiv);
 
@@ -289,15 +301,19 @@ class AutomationTrivia
         {
             if (this.__internal__displayedRoamingRoute !== -1)
             {
-                this.__internal__displayedRoamingRoute = -1;
                 // Hide the roaming info if there is no roamers
                 document.getElementById("roamingRouteTriviaContainer").hidden = true;
+                this.__internal__displayedRoamingRoute = -1;
             }
 
             return;
         }
 
-        let roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteBySubRegionGroup(player.region, subRegionGroup)();
+        this.__internal__updateRoamersCaughtStatus(roamers);
+
+        const caughtIndicator = { [CaughtStatus.NotCaught]: "U", [CaughtStatus.Caught]: "C", [CaughtStatus.CaughtShiny]: "S" };
+
+        const roamingRouteData = RoamingPokemonList.getIncreasedChanceRouteBySubRegionGroup(player.region, subRegionGroup)();
         if ((this.__internal__displayedRoamingRoute !== roamingRouteData.number)
             || (this.__internal__displayedRoamingRegion !== player.region)
             || (this.__internal__displayedRoamingSubRegionGroup !== subRegionGroup))
@@ -305,33 +321,86 @@ class AutomationTrivia
             this.__internal__displayedRoamingRoute = roamingRouteData.number;
             this.__internal__displayedRoamingRegion = player.region;
             this.__internal__displayedRoamingSubRegionGroup = subRegionGroup;
-            let routeName = roamingRouteData.routeName;
-            // Remove the region from the displayed name and insert non-breaking spaces
+
+            // Remove the region from the displayed name
             let regionName = GameConstants.camelCaseToString(GameConstants.Region[player.region]);
+            let routeName = roamingRouteData.routeName;
             if (routeName.startsWith(regionName))
             {
                 routeName = routeName.substring(regionName.length + 1, routeName.length);
             }
 
-            let textElem = document.getElementById("roamingRouteTriviaText");
-            textElem.textContent = "Roamers: " + routeName.replace(/ /g, '\u00a0');
+            this.__internal__roamersRouteName.textContent = routeName;
 
             // Update the tooltip
             let tooltip = "The following pokémons are roaming this route:\n";
             for (const [ index, pokemon ] of roamers.entries())
             {
-                if (index !== 0)
-                {
-                    let isLast = (index === (roamers.length - 1));
-                    tooltip += (isLast ? "" : ",")
-                             + (((index % 3) === 0) ? "\n" : " ")
-                             + (isLast ? "and " : "");
-                }
-                tooltip += pokemon.pokemon.name + " (#" + pokemon.pokemon.id + ")";
+                const caughtStatus = this.__internal__getPokemonCaughtStatus(pokemon.pokemon.id);
+                tooltip += `[${caughtIndicator[caughtStatus]}] ${pokemon.pokemon.name} (#${pokemon.pokemon.id})\n`;
             }
-            textElem.setAttribute("automation-tooltip-text", tooltip);
+
+            tooltip += '\nLegend: [U] Uncaught  [C] Caught  [S] Caught shiny'
+
+            this.__internal__roamersContainer.setAttribute("automation-tooltip-text", tooltip);
 
             document.getElementById("roamingRouteTriviaContainer").hidden = false;
+        }
+    }
+
+    /**
+     * @brief Gets the pokémon caught status
+     *
+     * @param {number} pokemonId: The pokemon id to get the status of
+     *
+     * @returns The caught status
+     */
+    static __internal__getPokemonCaughtStatus(pokemonId)
+    {
+        const partyPokemon = App.game.party.getPokemon(pokemonId);
+
+        if (!partyPokemon)
+        {
+            return CaughtStatus.NotCaught;
+        }
+
+        if (partyPokemon.shiny)
+        {
+            return CaughtStatus.CaughtShiny;
+        }
+
+        return CaughtStatus.Caught;
+    }
+
+    /**
+     * @brief Updates the roamers caught status image, if needed
+     *
+     * @param {Array} roamers: The current sub-region Roamers list
+     */
+    static __internal__updateRoamersCaughtStatus(roamers)
+    {
+        let overallCaughtStatus = CaughtStatus.CaughtShiny;
+        for (const data of roamers)
+        {
+            const caughtStatus = this.__internal__getPokemonCaughtStatus(data.pokemon.id);
+
+            overallCaughtStatus = Math.min(overallCaughtStatus, caughtStatus);
+
+            if (overallCaughtStatus == CaughtStatus.NotCaught)
+            {
+                break;
+            }
+        }
+
+        // Only update if the status changed
+        if (overallCaughtStatus !== this.__internal__displayedCaughtStatus)
+        {
+            const imageSwitch = { [CaughtStatus.NotCaught]: "None", [CaughtStatus.Caught]: "Pokeball", [CaughtStatus.CaughtShiny]: "Pokeball-shiny" };
+
+            this.__internal__roamersCatchStatus.innerHTML = '<img class="pokeball-smallest" style="position: relative; top: 1px;"'
+                                                          + ` src="assets/images/pokeball/${imageSwitch[overallCaughtStatus]}.svg">`;
+
+            this.__internal__displayedCaughtStatus = overallCaughtStatus;
         }
     }
 
