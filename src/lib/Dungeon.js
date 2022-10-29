@@ -7,7 +7,8 @@ class AutomationDungeon
                           FeatureEnabled: "Dungeon-FightEnabled",
                           StopOnPokedex: "Dungeon-FightStopOnPokedex",
                           AvoidEncounters: "Dungeon-AvoidEncounters",
-                          SkipChests: "Dungeon-SkipChests"
+                          SkipChests: "Dungeon-SkipChests",
+                          SkipBoss: "Dungeon-SkipBoss"
                       };
 
     static InternalModes = {
@@ -30,6 +31,7 @@ class AutomationDungeon
             // Disable encounters, chests and boss skipping by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AvoidEncounters, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipChests, false);
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipBoss, false);
 
             this.__internal__injectDungeonCss();
             this.__internal__buildMenu();
@@ -157,6 +159,13 @@ class AutomationDungeon
         let skipChestsTooltip = "Don't pick dungeon chests at all.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip chests pickup", this.Settings.SkipChests, skipChestsTooltip, dungeonSettingsPanel);
+
+        // Add the skip boss button
+        let skipBossTooltip = "Don't fight the dungeon boss at all."
+                            + Automation.Menu.TooltipSeparator
+                            + "It will exit the dungeon as soon as the other automation conditions are met";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Skip the boss fight", this.Settings.SkipBoss, skipBossTooltip, dungeonSettingsPanel);
     }
 
     /**
@@ -227,6 +236,15 @@ class AutomationDungeon
 
         const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true");
         const skipChests = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true");
+        const skipBoss = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true")
+                         && (this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion);
+
+        // Just to be safe, it should never happen, since the button should have been disabled
+        if (avoidFights && skipChests && skipBoss)
+        {
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+            return;
+        }
 
         // Only initialize dungeon if:
         //    - The player is in a town (dungeons are attached to town)
@@ -292,7 +310,7 @@ class AutomationDungeon
 
             // If all conditions are met, or all cells are visible clean up the map and move on
             // If all cells are visible, advance even if not all objectives are met, because there might be more on the next floor
-            if ((nonVisibleTiles.length === 0) || (areAllBattleDefeated && areAllChestsCollected && foundFloorEndTile))
+            if ((nonVisibleTiles.length === 0) || (areAllBattleDefeated && areAllChestsCollected && (skipBoss || foundFloorEndTile)))
             {
                 if (!avoidFights && (visibleEnemiesCount > 0))
                 {
@@ -332,6 +350,16 @@ class AutomationDungeon
                     }
                     return;
 
+                }
+                else if (skipBoss)
+                {
+                    // The only thing remaining is the boss, and we are skipping it, so simply leave the dungeon
+                    const floor = DungeonRunner.map.playerPosition().floor;
+                    const floorSize = DungeonRunner.map.floorSizes[floor];
+                    const entranceTile = { floor, x: Math.floor(floorSize / 2), y: (floorSize - 1) };
+                    this.__internal__moveToCell(entranceTile);
+                    DungeonRunner.dungeonLeave();
+                    return;
                 }
                 else
                 {
@@ -674,6 +702,16 @@ class AutomationDungeon
 
                     disableReason += (disableReason !== "") ? "\nAnd you " : "You ";
                     disableReason += "do not have enough Dungeon Token to enter";
+                }
+
+                // All objectives are marked to be skipped
+                if ((Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
+                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true")
+                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true"))
+                {
+                    disableNeeded = true;
+                    disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
+                    disableReason += "objectives are marked to be skipped"
                 }
             }
 
