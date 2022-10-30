@@ -19,6 +19,7 @@ class AutomationTrivia
             this.__internal__initializeGotoLocationTrivia();
             this.__internal__initializeRoamingRouteTrivia();
             this.__internal__initializeEvolutionTrivia();
+            this.__internal__initializeBulletinBoardTrivia();
         }
     }
 
@@ -33,6 +34,10 @@ class AutomationTrivia
     static __internal__displayedRoamingSubRegionGroup = null;
     static __internal__currentLocationListSize = 0;
     static __internal__lastEvoStone = null;
+    static __internal__displayedBulletinBoardTown = null;
+
+    static __internal__roamersContainer = null;
+    static __internal__roamersCatchStatus = null;
 
     static __internal__roamersContainer = null;
     static __internal__roamersCatchStatus = null;
@@ -48,7 +53,23 @@ class AutomationTrivia
                         + '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">';
         let triviaDiv = Automation.Menu.addCategory("automationTrivia", triviaTitle);
 
-        // Add roaming route div
+        this.__internal__addRoamingRouteContent(triviaDiv);
+
+        this.__internal__addAvailableEvolutionContent(triviaDiv);
+
+        this.__internal__addAvailableBulletinBoardContent(triviaDiv);
+
+        this.__internal__addGotoLocationContent(triviaDiv);
+    }
+
+
+    /**
+     * @brief Adds the 'Roaming route' trivia content to the given @p triviaDiv
+     *
+     * @param {Element} triviaDiv: The div element to add the created elements to
+     */
+     static __internal__addRoamingRouteContent(triviaDiv)
+     {
         let containerDiv = document.createElement("div");
         containerDiv.id = "roamingRouteTriviaContainer";
         triviaDiv.appendChild(containerDiv);
@@ -72,12 +93,7 @@ class AutomationTrivia
         this.__internal__roamersContainer.appendChild(gotoButton);
 
         Automation.Menu.addSeparator(containerDiv);
-
-        this.__internal__addAvailableEvolutionContent(triviaDiv);
-
-        this.__internal__addGotoLocationContent(triviaDiv);
-    }
-
+     }
     /**
      * @brief Adds the 'Available evolution' trivia content to the given @p triviaDiv
      *
@@ -108,6 +124,28 @@ class AutomationTrivia
 
         Automation.Menu.addSeparator(containerDiv);
     }
+
+    /**
+     * @brief Adds the 'Bulletin board' trivia content to the given @p triviaDiv
+     *
+     * @param {Element} triviaDiv: The div element to add the created elements to
+     */
+     static __internal__addAvailableBulletinBoardContent(triviaDiv)
+     {
+        let containerDiv = document.createElement("div");
+        containerDiv.id = "availableBulletinBoardTriviaContainer";
+        triviaDiv.appendChild(containerDiv);
+
+        let contentNode = document.createElement("div");
+        contentNode.id = "availableBulletinBoardTriviaText";
+        contentNode.classList.add("hasAutomationTooltip");
+        contentNode.classList.add("centeredAutomationTooltip");
+        contentNode.classList.add("shortTransitionAutomationTooltip");
+        contentNode.style.textAlign = "center";
+        containerDiv.appendChild(contentNode);
+
+        Automation.Menu.addSeparator(containerDiv);
+     }
 
     /**
      * @brief Adds the 'Go to' trivia content to the given @p triviaDiv
@@ -492,6 +530,76 @@ class AutomationTrivia
 
         return hasCandidate;
     }
+
+
+    /**
+     * @brief Initializes the 'Bulletin board' trivia content and set its watcher loop
+     */
+     static __internal__initializeBulletinBoardTrivia()
+     {
+         // Set the initial value
+         this.__internal__refreshBulletinBoardTrivia();
+
+         setInterval(this.__internal__refreshBulletinBoardTrivia.bind(this), 10000); // Refresh every 10s (changes does not occur that often)
+     }
+
+     /**
+      * @brief Refreshes the 'Bulletin board' trivia content
+      *
+      * The following elements will be refreshed
+      *   - Content visibility (will be hidden if no quest in a board is available)
+      *   - The town with the board
+      *   - The region with the board (in the tooltip)
+      */
+     static __internal__refreshBulletinBoardTrivia()
+     {
+
+        // Get the list of towns with bulletin board with a quest
+        const townsWithBoard = Object.entries(TownList).filter(([_, town]) => (town.content.some(content => content instanceof BulletinBoard)));
+        const townsQuests = townsWithBoard.map(([townName, town]) =>
+                                               {
+                                                   return { name: townName, quests: town.content.find(content => content.getQuests).getQuests() };
+                                               });
+        const townsWithInactiveQuest = townsQuests.filter((data) => data.quests.some(quest => quest.state() === QuestLineState.inactive));
+
+        if (townsWithInactiveQuest.length === 0)
+        {
+            if (this.__internal__displayedBulletinBoardTown !== null)
+            {
+                document.getElementById("availableBulletinBoardTriviaContainer").hidden = true;
+                this.__internal__displayedBulletinBoardTown = null;
+            }
+            return
+        }
+
+        let townNamesAmount = "";
+        let tooltip = "";
+        for (const town of townsWithInactiveQuest)
+        {
+            const townWithQuests = TownList[town.name];
+            const questCount = town.quests.filter(quest => quest.state() === QuestLineState.inactive).length;
+            const subregion = SubRegions.getSubRegionById(townWithQuests.region, townWithQuests.subRegion);
+            tooltip += (tooltip !== "") ? "\n" : "";
+            tooltip += `${questCount} quest${questCount === 1 ? "" : "s"} available in ${town.name} in ${subregion.name}`
+
+            // Only used to check if the UI needs to be updated
+            // Will never be displayed
+            townNamesAmount += `${town.name} ${questCount}`;
+        }
+
+        if (this.__internal__displayedBulletinBoardTown !== townNamesAmount)
+        {
+            this.__internal__displayedBulletinBoardTown = townNamesAmount;
+
+            let textElem = document.getElementById("availableBulletinBoardTriviaText");
+            textElem.textContent = "Quest available 📖";
+
+            textElem.setAttribute("automation-tooltip-text", tooltip);
+
+            document.getElementById("availableBulletinBoardTriviaContainer").hidden = false;
+        }
+    }
+
 
     /**
      * @brief Disabled the given @p button if the player is currently in an instance
