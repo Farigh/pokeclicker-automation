@@ -1103,19 +1103,23 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(
             BerryType.Liechi,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Passho),
-            4,
+            1,
             null,
             [],
             "Kyogre");
+
+        this.__internal__increaseHarvestRateStrategy(BerryType.Liechi, 4);
 
         // #62 Unlock at least four Ganlon berry through mutation
         this.__internal__addUnlockMutationStrategy(
             BerryType.Ganlon,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Shuca),
-            4,
+            1,
             null,
             [],
             "Groudon");
+
+        this.__internal__increaseHarvestRateStrategy(BerryType.Ganlon, 4);
 
         // #59 Unlock at least one Kee berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1125,10 +1129,12 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(
             BerryType.Salac,
             this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Coba),
-            4,
+            1,
             null,
             [],
             "Rayquaza");
+
+        this.__internal__increaseHarvestRateStrategy(BerryType.Salac, 4);
 
         // #64 Unlock at least four Petaya berries through mutation
         const petayaConfig = {};
@@ -1150,7 +1156,9 @@ class AutomationFarm
         petayaConfig[BerryType.Passho] = [ 22 ];
         petayaConfig[BerryType.Roseli] = [ 23 ];
         petayaConfig[BerryType.Chilan] = [ 24 ];
-        this.__internal__addUnlockMutationStrategy(BerryType.Petaya, petayaConfig, 4);
+        this.__internal__addUnlockMutationStrategy(BerryType.Petaya, petayaConfig, 1);
+
+        this.__internal__increaseHarvestRateStrategy(BerryType.Petaya, 4);
 
         // #60 Unlock at least one Maranga berry through mutation
         this.__internal__addUnlockMutationStrategy(
@@ -1280,16 +1288,10 @@ class AutomationFarm
     {
         const step =
             {
-                // Check if the berry is unlocked and the player has at least 1 of them in stock or planted
+                // Check if the berry is unlocked and the player has enough of them in stock or planted
                 isNeeded: function()
                     {
-                        if (!App.game.farming.unlockedBerries[berryType]())
-                        {
-                            return true;
-                        }
-
-                        const totalCount = App.game.farming.berryList[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
-                        return (totalCount < minimumRequiredBerry);
+                        return this.__internal__doesPlayerNeedMoreBerry(berryType, minimumRequiredBerry);
                     }.bind(this),
                 berryToUnlock: berryType,
                 harvestStrategy: this.__internal__harvestTimingType.RightBeforeWithering,
@@ -1301,6 +1303,107 @@ class AutomationFarm
 
         this.__internal__setSlotConfigStrategy(step, berriesIndexes);
         this.__internal__unlockStrategySelection.push(step);
+    }
+
+    /**
+     * @brief Some berries cannot be farmed by planting them, as they will only grant 1 berry that way
+     *        This strategy will plant the berry if none are present and will surround them with Passho berries to increase their harvest rate
+     *
+     * @param berryType: The type of berry to unlock
+     * @param minimumRequiredBerry: The minimum of berries to hold required
+     */
+    static __internal__increaseHarvestRateStrategy(berryType, minimumRequiredBerry)
+    {
+        let strategy =
+            {
+                // Check if the berry is unlocked and the player has enough of them in stock or planted
+                isNeeded: function()
+                    {
+                        return this.__internal__doesPlayerNeedMoreBerry(berryType, minimumRequiredBerry);
+                    }.bind(this),
+                berryToUnlock: berryType,
+                harvestStrategy: this.__internal__harvestTimingType.RightBeforeWithering, // Harvest will be handled manually
+                oakItemToEquip: null,
+                forbiddenOakItems: [],
+                requiredPokemon: null,
+                requiresDiscord: false,
+                // If not, then farm some needed berries
+                action: function()
+                {
+                    let berryLocations = [];
+                    for (const [ index, plot ] of App.game.farming.plotList.entries())
+                    {
+                        if (plot.berry === berryType)
+                        {
+                            // Harvest the berry with a little margin, so we are sure that the Passho aura is active
+                            if ((plot.age - plot.berryData.growthTime[PlotStage.Bloom]) > 30)
+                            {
+                                this.__internal__harvestCount++;
+                                App.game.farming.harvest(index);
+                            }
+                            else
+                            {
+                                berryLocations.push(index);
+                            }
+                        }
+                    }
+
+                    // If we are done collecting, just return
+                    if (!strategy.isNeeded())
+                    {
+                        return;
+                    }
+
+                    let passhoLocations = [];
+
+                    // If no berries were found, plant some
+                    if (berryLocations.length == 0)
+                    {
+                        berryLocations = [ 6, 8, 16, 18];
+                        passhoLocations = App.game.farming.plotList.map((_, index) => index).filter(index => !berryLocations.includes(index));
+                    }
+                    else
+                    {
+                        for (const index of berryLocations)
+                        {
+                            const isLeftMost = (index % 5) == 0;
+                            const isRightMost = (index % 5) == 4;
+
+                            passhoLocations.push(index - 5);
+                            passhoLocations.push(index + 5);
+
+                            if (!isLeftMost)
+                            {
+                                passhoLocations.push(index - 1);
+                                passhoLocations.push(index - 4);
+                                passhoLocations.push(index + 6);
+                            }
+                            if (!isRightMost)
+                            {
+                                passhoLocations.push(index + 1);
+                                passhoLocations.push(index - 6);
+                                passhoLocations.push(index + 4);
+                            }
+                        }
+
+                        // Remove any duplicates, or out of bound values
+                        passhoLocations = passhoLocations.filter((value, index) => ((passhoLocations.indexOf(value) === index)
+                                                                                    && (value >= 0) && (value < 25)));
+                    }
+
+                    // Configure the slots
+                    const config = {};
+                    config[berryType] = berryLocations;
+                    config[BerryType.Passho] = passhoLocations;
+                    const step = {};
+                    this.__internal__setSlotConfigStrategy(step, config);
+
+                    // Run the strategy
+                    step.action();
+                }.bind(this)
+            };
+
+        this.__internal__unlockStrategySelection.push(strategy);
     }
 
     /**
@@ -1715,5 +1818,24 @@ class AutomationFarm
                 }
             }
         }.bind(this);
+    }
+
+    /**
+     * @brief Determines if the player has enough berries of the given @p berryType
+     *
+     * @param berryType: The type of berry to unlock
+     * @param {number} targetCount: The minimum of berries to hold required
+     *
+     * @returns True is some farming is still needed, false otherwise
+     */
+    static __internal__doesPlayerNeedMoreBerry(berryType, targetCount)
+    {
+        if (!App.game.farming.unlockedBerries[berryType]())
+        {
+            return true;
+        }
+
+        const totalCount = App.game.farming.berryList[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
+        return (totalCount < targetCount);
     }
 }

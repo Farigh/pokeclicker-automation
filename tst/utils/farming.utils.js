@@ -6,15 +6,15 @@ class FarmingTestUtils
         berryLetters.set(BerryType.None, " ");
 
         let buffer = "";
-        for (let i = 0; i < App.game.farming.plotList.length; i++)
+        for (const [ plotIndex, plot ] of App.game.farming.plotList.entries())
         {
-            if (!App.game.farming.plotList[i].isUnlocked)
+            if (!plot.isUnlocked)
             {
                 buffer += `|#`;
             }
             else
             {
-                let berryType = App.game.farming.plotList[i].berry;
+                let berryType = plot.berry;
                 if (!berryLetters.has(berryType))
                 {
                     berryLetters.set(berryType, String.fromCharCode('a'.charCodeAt(0) + berryLetters.size - 1))
@@ -24,7 +24,7 @@ class FarmingTestUtils
                 buffer += `|${val}`;
             }
 
-            if (i % 5 == 4)
+            if (plotIndex % 5 == 4)
             {
                 buffer += '|\n';
             }
