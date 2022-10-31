@@ -103,8 +103,8 @@ class AutomationFocusQuests
      */
     static __internal__buildAdvancedSettings(parent)
     {
-        let tooltip = "Skipping quests can be cost-heavy"
-        let descriptionElem = document.createElement("span");
+        const tooltip = "Skipping quests can be cost-heavy"
+        const descriptionElem = document.createElement("span");
         descriptionElem.textContent = "Choose which quest should be performed, or skipped. ⚠️";
         descriptionElem.classList.add("hasAutomationTooltip");
         descriptionElem.classList.add("rightMostAutomationTooltip");
@@ -113,34 +113,40 @@ class AutomationFocusQuests
         descriptionElem.setAttribute("automation-tooltip-text", tooltip);
         parent.appendChild(descriptionElem);
 
-        let tableContainer = document.createElement("div");
+        const tableContainer = document.createElement("div");
         tableContainer.classList.add("automationTabSubContent");
         parent.appendChild(tableContainer);
 
-        let tableElem = document.createElement("table");
+        const tableElem = document.createElement("table");
         tableElem.style.width = "100%";
         tableContainer.appendChild(tableElem);
 
         for (const quest in QuestHelper.quests)
         {
-            let rowElem = document.createElement("tr");
+            const rowElem = document.createElement("tr");
             tableElem.appendChild(rowElem);
 
-            let labelCellElem = document.createElement("td");
+            const labelCellElem = document.createElement("td");
             let label = this.__internal__questLabels[quest];
             label = label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
             labelCellElem.innerHTML = label;
             rowElem.appendChild(labelCellElem);
 
-            let toggleCellElem = document.createElement("td");
+            const toggleCellElem = document.createElement("td");
             rowElem.appendChild(toggleCellElem);
 
-            let storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
+            const storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
             // Enable the quest by default
             Automation.Utils.LocalStorage.setDefaultValue(storageKey, true);
 
-            let toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+            const toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
             toggleCellElem.appendChild(toggleButton);
+
+            if ((quest == "GainFarmPointsQuest") || (quest == "HarvestBerriesQuest"))
+            {
+                // Every time the status of the farming quests changes, we need to refresh the farming takeover
+                toggleButton.addEventListener("click", this.__internal__takeOverFarmIfNeeded.bind(this), false);
+            }
         }
     }
 
@@ -156,22 +162,42 @@ class AutomationFocusQuests
             this.__internal__autoQuestLoop = setInterval(this.__internal__questLoop.bind(this), 1000); // Runs every second
 
             // Disable other modes button
-            let disableReason = "The 'Focus on Quests' feature is enabled";
+            const disableReason = "The 'Focus on Quests' feature is enabled";
             Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
             Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, true, disableReason);
-            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, true, disableReason);
-            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
             Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
 
-            // Select cheri berry to avoid long riping time
-            Automation.Farm.ForcePlantBerriesAsked = true;
-            FarmController.selectedBerry(BerryType.Cheri);
+            this.__internal__takeOverFarmIfNeeded();
 
             // Force enable other modes
             Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.toggleAutoHatchery(true);
             Automation.Farm.toggleAutoFarming(true);
             Automation.Underground.toggleAutoMining(true);
+        }
+    }
+
+    /**
+     * @brief Takes over the farming automation, only if any farming quest is enabled
+     */
+    static __internal__takeOverFarmIfNeeded()
+    {
+        if ((Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled("GainFarmPointsQuest")) == "true")
+            || (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled("HarvestBerriesQuest")) == "true"))
+        {
+            const disableReason = "The 'Focus on Quests' feature is enabled,\nand farming quests are enabled";
+            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
+
+            // Select cheri berry to avoid long riping time
+            Automation.Farm.ForcePlantBerriesAsked = true;
+            FarmController.selectedBerry(BerryType.Cheri);
+        }
+        else
+        {
+            Automation.Farm.ForcePlantBerriesAsked = false;
+            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
+            Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
         }
     }
 
