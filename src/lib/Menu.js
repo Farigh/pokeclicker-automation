@@ -68,7 +68,7 @@ class AutomationMenu
         newNode.style.color = "#eeeeee";
         newNode.style.borderRadius = "5px";
         newNode.style.paddingTop = "5px";
-        newNode.style.paddingBottom = "7px";
+        newNode.style.paddingBottom = "6px";
         newNode.style.borderColor = "#aaaaaa";
         newNode.style.borderStyle = "solid";
         newNode.style.borderWidth = "1px";
