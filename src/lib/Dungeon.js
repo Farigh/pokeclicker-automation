@@ -6,14 +6,15 @@ class AutomationDungeon
     static Settings = {
                           FeatureEnabled: "Dungeon-FightEnabled",
                           StopOnPokedex: "Dungeon-FightStopOnPokedex",
-                          BossRush: "Dungeon-BossRush",
-                          SkipChests: "Dungeon-SkipChests"
+                          AvoidEncounters: "Dungeon-AvoidEncounters",
+                          SkipChests: "Dungeon-SkipChests",
+                          SkipBoss: "Dungeon-SkipBoss"
                       };
 
     static InternalModes = {
                                None: 0,
                                StopAfterThisRun: 1,
-                               BypassUserSettings: 2
+                               ForceDungeonCompletion: 2
                            };
 
     static AutomationRequestedMode = this.InternalModes.None;
@@ -27,9 +28,10 @@ class AutomationDungeon
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
-            // Disable Boss rush and chesk skipping by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.BossRush, false);
+            // Disable encounters, chests and boss skipping by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AvoidEncounters, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipChests, false);
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipBoss, false);
 
             this.__internal__injectDungeonCss();
             this.__internal__buildMenu();
@@ -51,11 +53,11 @@ class AutomationDungeon
     static __internal__autoDungeonLoop = null;
 
     static __internal__isShinyCatchStopMode = false;
-    static __internal__isCompleted = false;
-    static __internal__bossPosition = null;
+    static __internal__floorEndPosition = null;
     static __internal__chestPositions = [];
     static __internal__isFirstMove = true;
     static __internal__playerActionOccured = false;
+    static __internal__isRecovering = false;
 
     /**
      * @brief Injects the Dungeon menu css to the document heading
@@ -131,7 +133,7 @@ class AutomationDungeon
         let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
         Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
 
-        // Add the button action
+        // Add the pokéball click action
         let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
         pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
 
@@ -142,22 +144,32 @@ class AutomationDungeon
         titleDiv.style.marginBottom = "10px";
         dungeonSettingsPanel.appendChild(titleDiv);
 
-        // Add boss rush button
-        let bossRushTooltip = "Fight the boss as soon as its tile was found."
-                            + Automation.Menu.TooltipSeparator
-                            + "It will still collect any chests found, before fighting\n"
-                            + "the boss, unless such setting was set as well.";
+        // Add the avoid encounters button
+        let avoidEncountersTooltip = "If enabled, it will only fight battles that are not avoidable."
+                                   + Automation.Menu.TooltipSeparator
+                                   + "This setting only applies when the torchlight has been unlocked\n"
+                                   + "(after 200 clears in the current dungeon)."
+                                   + Automation.Menu.TooltipSeparator
+                                   + "It will still collect any chests found, before fighting\n"
+                                   + "the boss, unless it was disabled as well.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-            "Complete as soon as the boss was found", this.Settings.BossRush, bossRushTooltip, dungeonSettingsPanel);
+            "Skip as many fights as possible", this.Settings.AvoidEncounters, avoidEncountersTooltip, dungeonSettingsPanel);
 
-        // Add skip chests button
+        // Add the skip chests button
         let skipChestsTooltip = "Don't pick dungeon chests at all.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip chests pickup", this.Settings.SkipChests, skipChestsTooltip, dungeonSettingsPanel);
+
+        // Add the skip boss button
+        let skipBossTooltip = "Don't fight the dungeon boss at all."
+                            + Automation.Menu.TooltipSeparator
+                            + "It will exit the dungeon as soon as the other automation conditions are met";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Skip the boss fight", this.Settings.SkipBoss, skipBossTooltip, dungeonSettingsPanel);
     }
 
     /**
-     * @brief Switched from Pokedex completion to Shiny pokedex completion mode
+     * @brief Switches between Pokedex completion and Shiny pokedex completion mode
      */
     static __internal__toggleCatchStopMode()
     {
@@ -221,6 +233,19 @@ class AutomationDungeon
      */
     static __internal__dungeonFightLoop()
     {
+
+        const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true");
+        const skipChests = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true");
+        const skipBoss = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true")
+                         && (this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion);
+
+        // Just to be safe, it should never happen, since the button should have been disabled
+        if (avoidFights && skipChests && skipBoss)
+        {
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+            return;
+        }
+
         // Only initialize dungeon if:
         //    - The player is in a town (dungeons are attached to town)
         //    - The player has bought the dungeon ticket
@@ -233,7 +258,7 @@ class AutomationDungeon
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if ((this.AutomationRequestedMode != this.InternalModes.BypassUserSettings)
+            if ((this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion)
                 && ((this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
                     || this.__internal__playerActionOccured
                     || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
@@ -249,7 +274,7 @@ class AutomationDungeon
             }
             else
             {
-                this.__internal__isCompleted = false;
+                this.__internal__resetSavedStates();
                 DungeonRunner.initializeDungeon(player.town().dungeon);
             }
         }
@@ -268,11 +293,32 @@ class AutomationDungeon
                 return;
             }
 
-            if (this.__internal__isCompleted)
+            const flatBoard = DungeonRunner.map.board()[DungeonRunner.map.playerPosition().floor].flat();
+            // If recovering, only end if all tiles are visited, otherwise, when all cells are visible
+            const nonVisibleTiles = this.__internal__isRecovering ? flatBoard.filter((tile) => !tile.isVisited)
+                                                                  : flatBoard.filter((tile) => !tile.isVisible);
+            const visibleEnemiesCount = flatBoard.filter((tile) => tile.isVisible && (tile.type() === GameConstants.DungeonTile.enemy)).length;
+            const visibleChestsCount = this.__internal__chestPositions.length;
+            const foundFloorEndTile = this.__internal__floorEndPosition != null;
+            // Check if all relevant tiles have been explored for each category
+            // Either we are skipping fights, or all fights are won
+            const areAllBattleDefeated = avoidFights || (visibleEnemiesCount === (DungeonRunner.map.totalFights() - DungeonRunner.encountersWon()));
+            // Either we are skipping chests, or all remaining chests are visible
+            const areAllChestsCollected = skipChests
+                                       || (visibleChestsCount === (DungeonRunner.map.totalChests() - DungeonRunner.chestsOpened()))
+                                       || (foundFloorEndTile && !DungeonRunner.map.flash && avoidFights);
+
+            // If all conditions are met, or all cells are visible clean up the map and move on
+            // If all cells are visible, advance even if not all objectives are met, because there might be more on the next floor
+            if ((nonVisibleTiles.length === 0) || (areAllBattleDefeated && areAllChestsCollected && (skipBoss || foundFloorEndTile)))
             {
-                if ((this.__internal__chestPositions.length > 0)
-                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) !== "true"))
+                if (!avoidFights && (visibleEnemiesCount > 0))
                 {
+                    // There are some enemies left to fight, the rest of the loop will handle them
+                }
+                else if (!skipChests && (visibleChestsCount > 0))
+                {
+                    // There are some chests left to collect, collect the first of them
                     let chestLocation = this.__internal__chestPositions.pop();
 
                     // The player probably moved to the next floor manually, skip it
@@ -282,128 +328,63 @@ class AutomationDungeon
                         return;
                     }
 
-                    DungeonRunner.map.moveToTile(chestLocation);
-                }
-                else if (DungeonRunner.map.playerPosition().floor < (DungeonRunner.map.floorSizes.length - 1))
-                {
-                    // Reset current floor states before moving to the next one
-                    this.__internal__chestPositions = [];
-                    this.__internal__isCompleted = false;
-                    DungeonRunner.nextFloor();
-                }
-                else
-                {
-                    DungeonRunner.map.moveToTile(this.__internal__bossPosition);
-                }
-            }
-
-            let playerCurrentPosition = DungeonRunner.map.playerPosition();
-
-            if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.ladder)
-            {
-                if (Automation.Utils.LocalStorage.getValue(this.Settings.BossRush) === "true")
-                {
-                    this.__internal__isCompleted = true;
-                    return;
-                }
-            }
-            else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.boss)
-            {
-                // Persist the boss position, to go back to it once the board has been cleared
-                this.__internal__bossPosition = playerCurrentPosition;
-
-                if (this.__internal__isCompleted)
-                {
-                    DungeonRunner.startBossFight();
-                    this.__internal__resetSavedStates();
-                    return;
-                }
-                if (Automation.Utils.LocalStorage.getValue(this.Settings.BossRush) === "true")
-                {
-                    this.__internal__isCompleted = true;
-                    return;
-                }
-            }
-            else if (DungeonRunner.map.currentTile().type() === GameConstants.DungeonTile.chest)
-            {
-                if (this.__internal__isCompleted)
-                {
+                    this.__internal__moveToCell(chestLocation);
                     DungeonRunner.openChest();
                     return;
                 }
+                else if (DungeonRunner.map.playerPosition().floor < (DungeonRunner.map.floorSizes.length - 1))
+                {
+                    if (foundFloorEndTile)
+                    {
+                        this.__internal__moveToCell(this.__internal__floorEndPosition);
+                        // Reset current floor states before moving to the next one
+                        this.__internal__chestPositions = [];
+                        this.__internal__floorEndPosition = null;
+                        // Do not call DungeonRunner.nextFloor() directly, as it has no checks
+                        DungeonRunner.handleClick();
+                    }
+                    else
+                    {
+                        // The player probably moved manually, reset the state to try again
+                        this.__internal__ensureTheBoardIsInAnAcceptableState();
+                    }
+                    return;
+
+                }
+                else if (skipBoss)
+                {
+                    // The only thing remaining is the boss, and we are skipping it, so simply leave the dungeon
+                    const floor = DungeonRunner.map.playerPosition().floor;
+                    const floorSize = DungeonRunner.map.floorSizes[floor];
+                    const entranceTile = { floor, x: Math.floor(floorSize / 2), y: (floorSize - 1) };
+                    this.__internal__moveToCell(entranceTile);
+                    DungeonRunner.dungeonLeave();
+                    return;
+                }
                 else
                 {
-                    this.__internal__addChestPosition(playerCurrentPosition);
+                    if (foundFloorEndTile)
+                    {
+                        this.__internal__moveToCell(this.__internal__floorEndPosition);
+                        DungeonRunner.startBossFight();
+                    }
+                    else
+                    {
+                        // The player probably moved manually, reset the state to try again
+                        this.__internal__ensureTheBoardIsInAnAcceptableState();
+                    }
+                    return;
                 }
             }
 
-            let maxIndex = (DungeonRunner.map.board()[playerCurrentPosition.floor].length - 1);
-            let isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
-            let isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
-                                  || (!isEvenRow && (playerCurrentPosition.x == 0));
-
-            // Detect board ending and move to the boss if it's the case
-            if ((playerCurrentPosition.y == 0) && isLastTileOfTheRow)
+            // If the flashight is unlocked, use it to avoid fighting every encounters
+            if (DungeonRunner.map.flash)
             {
-                // The dungeon is completed if the boss was encountered, or it's not the last floor
-                this.__internal__isCompleted = (this.__internal__bossPosition !== null)
-                                            || (DungeonRunner.map.playerPosition().floor < (DungeonRunner.map.floorSizes.length - 1));
-                this.__internal__ensureTheBoardIsInAnAcceptableState();
-
-                return;
-            }
-
-            // Go full left at the beginning of the map
-            if ((playerCurrentPosition.y == maxIndex)
-                && (playerCurrentPosition.x != 0)
-                && !DungeonRunner.map.board()[playerCurrentPosition.floor][playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
-            {
-                DungeonRunner.map.moveLeft();
-            }
-            // Move up once a row has been fully visited
-            else if (isLastTileOfTheRow)
-            {
-                DungeonRunner.map.moveUp();
-            }
-            // Move right on even rows, left otherwise
-            else if (isEvenRow)
-            {
-                DungeonRunner.map.moveRight();
+                this.__internal__handleFlashPathing();
             }
             else
             {
-                DungeonRunner.map.moveLeft();
-            }
-
-            if (Automation.Utils.LocalStorage.getValue(this.Settings.BossRush) === "true")
-            {
-                playerCurrentPosition = DungeonRunner.map.playerPosition();
-
-                // Don't consider the top row
-                if (playerCurrentPosition.y == 0)
-                {
-                    return;
-                }
-
-                let positionToCheck = { floor: playerCurrentPosition.floor, x: playerCurrentPosition.x, y: playerCurrentPosition.y - 1 };
-                let tileToCheck = DungeonRunner.map.board()[positionToCheck.floor][positionToCheck.y][positionToCheck.x];
-
-                // Don't consider not-visible tiles
-                if (!tileToCheck.isVisible)
-                {
-                    return;
-                }
-
-                // If the user has the flashlight, check for the boss or a chest presence on the tile above
-                if (tileToCheck.type() === GameConstants.DungeonTile.boss)
-                {
-                    this.__internal__bossPosition = positionToCheck;
-                    this.__internal__isCompleted = true;
-                }
-                else if (tileToCheck.type() === GameConstants.DungeonTile.chest)
-                {
-                    this.__internal__addChestPosition(positionToCheck);
-                }
+                this.__internal__handleNormalPathing();
             }
         }
         // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
@@ -416,7 +397,190 @@ class AutomationDungeon
     }
 
     /**
-     * @brief Ensure the board is in an acceptable state.
+     * @brief Handles the pathing when the player does not have the flashlight unlocked
+     *
+     * It will try to move back and forth on each row, from bottom to top
+     */
+    static __internal__handleNormalPathing()
+    {
+        let playerCurrentPosition = DungeonRunner.map.playerPosition();
+
+        let maxIndex = (DungeonRunner.map.board()[playerCurrentPosition.floor].length - 1);
+        let isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
+        let isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
+                              || (!isEvenRow && (playerCurrentPosition.x == 0));
+
+        if ((playerCurrentPosition.y == 0) && isLastTileOfTheRow)
+        {
+            // Nothing else to do
+            // If we get here, the player moved manually, so we need to check the state again
+            this.__internal__ensureTheBoardIsInAnAcceptableState();
+            return;
+        }
+
+        // Go full left at the beginning of the map
+        if ((playerCurrentPosition.y == maxIndex)
+            && (playerCurrentPosition.x != 0)
+            && !DungeonRunner.map.board()[playerCurrentPosition.floor][playerCurrentPosition.y][playerCurrentPosition.x - 1].isVisited)
+        {
+            DungeonRunner.map.moveLeft();
+        }
+        // Move up once a row has been fully visited
+        else if (isLastTileOfTheRow)
+        {
+            DungeonRunner.map.moveUp();
+        }
+        // Move right on even rows, left otherwise
+        else if (isEvenRow)
+        {
+            DungeonRunner.map.moveRight();
+        }
+        else
+        {
+            DungeonRunner.map.moveLeft();
+        }
+
+        // Mark the current cell features
+        const point = DungeonRunner.map.playerPosition();
+        this.__internal__markCell({ ...point, tile: DungeonRunner.map.board()[point.floor][point.y][point.x] });
+    }
+
+    /**
+     * @brief Handles the pathing when the player has the flashlight unlocked
+     *
+     * It will try to uncover all the tiles, avoiding as many encounters as possible
+     */
+    static __internal__handleFlashPathing()
+    {
+        const floor = DungeonRunner.map.playerPosition().floor;
+        const currentBoard = DungeonRunner.map.board()[floor];
+        // Transform the board into a flat array of cells (a cell is a tile + its position)
+        const allCells = currentBoard.flatMap((row, y) => row.map((tile, x) => ({ tile, x, y, floor })));
+        const visibleUnvisitedTiles = allCells.filter(({ tile }) => tile.isVisible && !tile.isVisited);
+        const nonEnemyCells = visibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTile.enemy);
+        const enemyCells = visibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTile.enemy);
+        if (nonEnemyCells.length > 0)
+        {
+            const bestEmptyCell = this.__internal__getCellWithMostNonVisibleNeightbours(nonEnemyCells);
+            // Only bother to move if it will reveal anything
+            if (bestEmptyCell.nonVisibleNeighborsCount > 0)
+            {
+                this.__internal__moveToCell(bestEmptyCell);
+                this.__internal__markAdjacentTiles();
+                return;
+            }
+        }
+
+        if (enemyCells.length > 0)
+        {
+            const bestEnemyCell = this.__internal__getCellWithMostNonVisibleNeightbours(enemyCells);
+            this.__internal__moveToCell(bestEnemyCell);
+            this.__internal__markAdjacentTiles();
+        }
+    }
+
+    /**
+     * @brief Returns the cell with the most non-visible neighbours
+     *
+     * @param {Array} cellsToChooseFrom: The list of cells to analyze
+     */
+    static __internal__getCellWithMostNonVisibleNeightbours(cellsToChooseFrom)
+    {
+        let cellWithMostNonVisibleNeighbors = { nonVisibleNeighborsCount: 0 };
+        for (const cell of cellsToChooseFrom)
+        {
+            const nonVisibleNeighborsCount = this.__internal__getNonVisibleNeighboursCount(cell);
+            if (nonVisibleNeighborsCount >= cellWithMostNonVisibleNeighbors.nonVisibleNeighborsCount)
+            {
+                cellWithMostNonVisibleNeighbors = { ...cell, nonVisibleNeighborsCount };
+            }
+        }
+        return cellWithMostNonVisibleNeighbors;
+    }
+
+    /**
+     * @brief Counts how many non-visible neighbours a cell has
+     *
+     * @param point: The coordinate of the cell to analyze, in the shape {x, y, floor}
+     *
+     * @returns The amount of non-visible neighbours
+     */
+    static __internal__getNonVisibleNeighboursCount(point)
+    {
+        const neighbors = DungeonRunner.map.nearbyTiles(point);
+        return neighbors.filter((tile) => !tile.isVisible).length;
+    }
+
+    /**
+     * @brief Marks boss and chest tiles in the given @p cell
+     *
+     * @param cell: The cell to analyze, in the shape {x, y, floor, tile}
+     */
+    static __internal__markCell(cell)
+    {
+        const cellType = cell.tile.type();
+        if ((cellType === GameConstants.DungeonTile.boss)
+            || (cellType === GameConstants.DungeonTile.ladder))
+        {
+            this.__internal__floorEndPosition = cell;
+        }
+        else if (cellType === GameConstants.DungeonTile.chest)
+        {
+            this.__internal__addChestPosition(cell);
+        }
+    }
+
+    /**
+     * @brief Marks relevant features for each adjacent tiles
+     *
+     * This should only be used if the player has flashlight unlocked, otherwise this info is not supposed to be known
+     */
+    static __internal__markAdjacentTiles()
+    {
+        const point = DungeonRunner.map.playerPosition();
+        // Cant use the map.nearbyTiles() function as it doesn't return the coordinates
+        const nearbyCells = this.__internal__nearbyCells(point);
+        for (const cell of nearbyCells)
+        {
+            this.__internal__markCell(cell);
+        }
+    }
+
+    /**
+     * @brief Returns the list of neighbouring cells
+     *
+     * This is similar to the map.nearbyTiles() function, but it returns the coordinates as well
+     *
+     * @param point: The coordinate of the cell to get the neighbors of, in the shape {x, y, floor}
+     */
+    static __internal__nearbyCells(point)
+    {
+        const neighbors = [];
+        const board = DungeonRunner.map.board()[point.floor];
+        neighbors.push({tile: board[point.y - 1]?.[point.x], y: point.y - 1, x: point.x, floor: point.floor});
+        neighbors.push({tile: board[point.y + 1]?.[point.x], y: point.y + 1, x: point.x, floor: point.floor});
+        neighbors.push({tile: board[point.y]?.[point.x - 1], y: point.y, x: point.x - 1, floor: point.floor});
+        neighbors.push({tile: board[point.y]?.[point.x + 1], y: point.y, x: point.x + 1, floor: point.floor});
+        return neighbors.filter(t => t.tile);
+    }
+
+    /**
+     * @brief Helper method to call moveToCoordinates given a cell
+     *
+     * This is used instead of moveToTile because calling moveToTile directly skips some code
+     * which will causes the loop to get stuck in some cases
+     *
+     * Calling moveToCoordinates is the same as clicking on the cell in the UI
+     *
+     * @param cell: The cell to move to, in the shape {x, y, floor}
+     */
+    static __internal__moveToCell(cell)
+    {
+        DungeonRunner.map.moveToCoordinates(cell.x, cell.y, cell.floor);
+    }
+
+    /**
+     * @brief Ensures that the board is in an acceptable state.
      *        If any chest or boss tile are visible, store them in the internal variables, if not already done.
      *        If any player interaction is detected, and the boss was not found, move the player to the left-most visited tile of the bottom-most row
      *
@@ -441,19 +605,7 @@ class AutomationDungeon
 
                 if (DungeonRunner.map.hasAccessToTile(currentLocation))
                 {
-                    // Store chest positions
-                    if (tile.type() === GameConstants.DungeonTile.chest)
-                    {
-                        this.__internal__addChestPosition(currentLocation);
-                    }
-
-                    if (tile.type() === GameConstants.DungeonTile.boss)
-                    {
-                        // Only tag the dungeon as completed if it's not the first move or any tile is visited apart from the entrance
-                        this.__internal__isCompleted = (!this.__internal__isFirstMove) || DungeonRunner.map.board()[currentFloor].some(
-                            (row) => row.some((tile) => tile.isVisited && (tile.type() !== GameConstants.DungeonTile.entrance)));
-                        this.__internal__bossPosition = currentLocation;
-                    }
+                    this.__internal__markCell({ ...currentLocation, tile });
                 }
 
                 // For the next part, ignore not visited tiles
@@ -479,10 +631,16 @@ class AutomationDungeon
                                                 || !DungeonRunner.map.board()[currentFloor].every((row) => row.every((tile) => tile.isVisited));
         }
 
-        // The boss was not found, reset the chest positions and move the player to the entrance, if not already there
-        if (!this.__internal__isCompleted && this.__internal__playerActionOccured)
+        // Every tile is visible, but the boss was not found (it is inaccessible). Check all squares
+        if (this.__internal__floorEndPosition == null && DungeonRunner.map.board()[currentFloor].flat().every(tile => tile.isVisible))
         {
-            DungeonRunner.map.moveToTile(startingTile);
+            this.__internal__isRecovering = true;
+        }
+
+        // The boss was not found, reset the chest positions and move the player to the entrance, if not already there
+        if (!this.__internal__floorEndPosition && this.__internal__playerActionOccured)
+        {
+            this.__internal__moveToCell(startingTile);
         }
     }
 
@@ -522,7 +680,7 @@ class AutomationDungeon
                 }
 
                 // The 'stop on pokedex' feature might be enable and the pokedex already completed
-                if ((this.AutomationRequestedMode != this.InternalModes.BypassUserSettings)
+                if ((this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion)
                     && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
                 {
@@ -545,6 +703,16 @@ class AutomationDungeon
                     disableReason += (disableReason !== "") ? "\nAnd you " : "You ";
                     disableReason += "do not have enough Dungeon Token to enter";
                 }
+
+                // All objectives are marked to be skipped
+                if ((Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
+                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true")
+                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true"))
+                {
+                    disableNeeded = true;
+                    disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
+                    disableReason += "objectives are marked to be skipped"
+                }
             }
 
             if (disableNeeded)
@@ -563,7 +731,7 @@ class AutomationDungeon
      */
     static __internal__addChestPosition(position)
     {
-        if (!this.__internal__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y)))
+        if (!this.__internal__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y) && (pos.floor == position.floor)))
         {
             this.__internal__chestPositions.push(position);
         }
@@ -574,9 +742,9 @@ class AutomationDungeon
      */
     static __internal__resetSavedStates()
     {
-        this.__internal__bossPosition = null;
+        this.__internal__floorEndPosition = null;
         this.__internal__chestPositions = [];
-        this.__internal__isCompleted = false;
         this.__internal__isFirstMove = true;
+        this.__internal__isRecovering = false;
     }
 }
