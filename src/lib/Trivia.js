@@ -134,6 +134,7 @@ class AutomationTrivia
      {
         let containerDiv = document.createElement("div");
         containerDiv.id = "availableBulletinBoardTriviaContainer";
+        containerDiv.hidden = true; // Hide it by default
         triviaDiv.appendChild(containerDiv);
 
         let contentNode = document.createElement("div");
@@ -556,10 +557,11 @@ class AutomationTrivia
 
         // Get the list of towns with bulletin board with a quest
         const townsWithBoard = Object.entries(TownList).filter(([_, town]) => (town.content.some(content => content instanceof BulletinBoard)));
-        const townsQuests = townsWithBoard.map(([townName, town]) =>
-                                               {
-                                                   return { name: townName, quests: town.content.find(content => content.getQuests).getQuests() };
-                                               });
+        const townsQuests = townsWithBoard.map(
+            ([townName, town]) =>
+            {
+                return { name: townName, quests: town.content.find(content => content instanceof BulletinBoard).getQuests() };
+            });
         const townsWithInactiveQuest = townsQuests.filter((data) => data.quests.some(quest => quest.state() === QuestLineState.inactive));
 
         if (townsWithInactiveQuest.length === 0)
