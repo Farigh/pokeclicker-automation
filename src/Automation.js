@@ -3,7 +3,8 @@
  */
 class Automation
 {
-    // Aliases on the other classes so every calls in the code can use the `Automation.Alias` form
+    // Aliases on the other classes so every calls in the code can use the `Automation.<Alias>` form
+    static BattleCafe = AutomationBattleCafe;
     static Click = AutomationClick;
     static Dungeon = AutomationDungeon;
     static Farm = AutomationFarm;
@@ -53,6 +54,12 @@ class Automation
 
                     this.Utils.initialize(initStep);
                     this.Menu.initialize(initStep);
+
+                    // Battle Café panel (Always put it first)
+                    this.BattleCafe.initialize(initStep);
+
+                    // Then add the main menu
+                    this.Menu.addMainAutomationPanel(initStep);
 
                     // 'Automation' panel
                     this.Click.initialize(initStep);

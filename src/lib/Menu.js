@@ -40,6 +40,15 @@ class AutomationMenu
         node.style.fontWeight = "400";
         node.id = "automationContainer";
         document.body.appendChild(node);
+    }
+
+    /**
+     * @brief Adds the Automation panel
+     */
+    static addMainAutomationPanel(initStep)
+    {
+        // Only consider the BuildMenu init step
+        if (initStep != Automation.InitSteps.BuildMenu) return;
 
         let boltImage = '<img src="assets/images/badges/Bolt.png" height="20px">';
         let automationTitle = `${boltImage}Automation${boltImage}`;
@@ -651,9 +660,28 @@ class AutomationMenu
         }
     }
 
+    /**
+     * @brief Gets the caught status image corresponding to the given @p caughtStatus
+     *
+     * @param caughtStatus: The pokeclicker's CaughtStatus
+     *
+     * @returns The corresponding image
+     */
+    static getCaughtStatusImage(caughtStatus)
+    {
+        return '<img class="pokeball-smallest" style="position: relative; top: 1px;"'
+             + ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`;
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
+
+    static __internal__caughtStatusImageSwitch = {
+                                                     [CaughtStatus.NotCaught]: "None",
+                                                     [CaughtStatus.Caught]: "Pokeball",
+                                                     [CaughtStatus.CaughtShiny]: "Pokeball-shiny"
+                                                 };
 
     /**
      * @brief Disables the given toggle @p button and updates its theme accordingly

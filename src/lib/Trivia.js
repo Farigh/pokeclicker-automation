@@ -1,5 +1,5 @@
 /**
- * @class The AutomationMenu regroups the Trivia panel elements
+ * @class The AutomationTrivia regroups the Trivia panel elements
  */
 class AutomationTrivia
 {
@@ -48,7 +48,7 @@ class AutomationTrivia
     static __internal__buildMenu()
     {
         // Hide the gym and dungeon fight menus by default and disable auto fight
-        let triviaTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" height="20px" style="position:relative; bottom: 3px;">'
+        let triviaTitle = '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">'
                         +     '&nbsp;Trivia&nbsp;'
                         + '<img src="assets/images/oakitems/Treasure_Scanner.png" style="position:relative; bottom: 3px;" height="20px">';
         let triviaDiv = Automation.Menu.addCategory("automationTrivia", triviaTitle);
@@ -373,7 +373,7 @@ class AutomationTrivia
             let tooltip = `The following pokémons are roaming '${routeName}':\n`;
             for (const [ index, pokemon ] of roamers.entries())
             {
-                const caughtStatus = this.__internal__getPokemonCaughtStatus(pokemon.pokemon.id);
+                const caughtStatus = Automation.Utils.getPokemonCaughtStatus(pokemon.pokemon.id);
                 tooltip += `[${caughtIndicator[caughtStatus]}] ${pokemon.pokemon.name} (#${pokemon.pokemon.id})\n`;
             }
 
@@ -386,30 +386,6 @@ class AutomationTrivia
     }
 
     /**
-     * @brief Gets the pokémon caught status
-     *
-     * @param {number} pokemonId: The pokemon id to get the status of
-     *
-     * @returns The caught status
-     */
-    static __internal__getPokemonCaughtStatus(pokemonId)
-    {
-        const partyPokemon = App.game.party.getPokemon(pokemonId);
-
-        if (!partyPokemon)
-        {
-            return CaughtStatus.NotCaught;
-        }
-
-        if (partyPokemon.shiny)
-        {
-            return CaughtStatus.CaughtShiny;
-        }
-
-        return CaughtStatus.Caught;
-    }
-
-    /**
      * @brief Updates the roamers caught status image, if needed
      *
      * @param {Array} roamers: The current sub-region Roamers list
@@ -419,7 +395,7 @@ class AutomationTrivia
         let overallCaughtStatus = CaughtStatus.CaughtShiny;
         for (const data of roamers)
         {
-            const caughtStatus = this.__internal__getPokemonCaughtStatus(data.pokemon.id);
+            const caughtStatus = Automation.Utils.getPokemonCaughtStatus(data.pokemon.id);
 
             overallCaughtStatus = Math.min(overallCaughtStatus, caughtStatus);
 
@@ -432,11 +408,7 @@ class AutomationTrivia
         // Only update if the status changed
         if (overallCaughtStatus !== this.__internal__displayedCaughtStatus)
         {
-            const imageSwitch = { [CaughtStatus.NotCaught]: "None", [CaughtStatus.Caught]: "Pokeball", [CaughtStatus.CaughtShiny]: "Pokeball-shiny" };
-
-            this.__internal__roamersCatchStatus.innerHTML = '<img class="pokeball-smallest" style="position: relative; top: 1px;"'
-                                                          + ` src="assets/images/pokeball/${imageSwitch[overallCaughtStatus]}.svg">`;
-
+            this.__internal__roamersCatchStatus.innerHTML = Automation.Menu.getCaughtStatusImage(overallCaughtStatus);
             this.__internal__displayedCaughtStatus = overallCaughtStatus;
         }
     }
