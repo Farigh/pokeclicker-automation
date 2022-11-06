@@ -78,4 +78,28 @@ class AutomationUtils
         let result = parseInt(str);
         return isNaN(result) ? defaultValue : result;
     }
+
+    /**
+     * @brief Gets the pokémon caught status from its given @p pokemonId
+     *
+     * @param {number} pokemonId: The pokemon id to get the status of
+     *
+     * @returns The caught status
+     */
+    static getPokemonCaughtStatus(pokemonId)
+    {
+        const partyPokemon = App.game.party.getPokemon(pokemonId);
+
+        if (!partyPokemon)
+        {
+            return CaughtStatus.NotCaught;
+        }
+
+        if (partyPokemon.shiny)
+        {
+            return CaughtStatus.CaughtShiny;
+        }
+
+        return CaughtStatus.Caught;
+    }
 }

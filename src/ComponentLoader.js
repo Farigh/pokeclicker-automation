@@ -34,6 +34,7 @@ class AutomationComponentLoader
         this.__addScript("src/lib/Utils/Route.js");
 
         this.__loadingOrder += 1;
+        this.__addScript("src/lib/BattleCafe.js");
         this.__addScript("src/lib/Click.js");
         this.__addScript("src/lib/Dungeon.js");
         this.__addScript("src/lib/Farm.js");
