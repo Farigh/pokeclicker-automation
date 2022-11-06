@@ -477,7 +477,7 @@ class AutomationShop
                                 const town = TownList[townName];
                                 return town.isUnlocked() && Automation.Utils.Route.canMoveToRegion(town.region);
                             });
-                };
+                }.bind(this);
 
             this.__internal__shopItems.push(shopItem);
         }
