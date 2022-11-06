@@ -261,11 +261,22 @@ class AutomationShop
         const tableTargetLabelCell = document.createElement("td");
         tableTargetLabelCell.style.paddingRight = "4px";
         tableRow.appendChild(tableTargetLabelCell);
-        const itemImage = document.createElement("img");
 
+        // Item image
+        const imageContainer = document.createElement("span");
+        const itemImage = document.createElement("img");
         itemImage.src = itemData.item.image;
         itemImage.style.height = "25px";
-        tableTargetLabelCell.appendChild(itemImage);
+        imageContainer.appendChild(itemImage);
+        tableTargetLabelCell.appendChild(imageContainer);
+
+        // Set the image tooltip
+        const tooltip = itemData.item.displayName;
+        imageContainer.classList.add("hasAutomationTooltip");
+        imageContainer.classList.add("shopItemAutomationTooltip");
+        imageContainer.classList.add("shortTransitionAutomationTooltip");
+        imageContainer.style.cursor = "help";
+        imageContainer.setAttribute("automation-tooltip-text", tooltip);
 
         // Until count
         tableTargetLabelCell.appendChild(document.createTextNode("until the player has"));
