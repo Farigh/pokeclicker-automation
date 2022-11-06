@@ -36,7 +36,7 @@ class AutomationShop
     static __internal__activeTimeouts = new Map();
 
     static __internal__advancedSettings = {
-                                              MinPlayerCurrency: "Shop-MinPlayerCurrency",
+                                              MinPlayerCurrency: function(currency) { return `Shop-${currency}-MinPlayerCurrency`; },
                                               ItemEnabled: function(itemName) { return `Shop-${itemName}-Enabled`; },
                                               BuyAmount: function(itemName) { return `Shop-${itemName}-BuyAmount`; },
                                               TargetAmount:  function(itemName) { return `Shop-${itemName}-TargetAmount`; },
@@ -49,71 +49,50 @@ class AutomationShop
     static __internal__buildMenu()
     {
         // Add the related buttons to the automation menu
-        let shoppingContainer = document.createElement("div");
+        const shoppingContainer = document.createElement("div");
         Automation.Menu.AutomationButtonsDiv.appendChild(shoppingContainer);
 
         Automation.Menu.addSeparator(shoppingContainer);
 
-        let autoShopTooltip = "Automatically buys the configured items (see advanced settings)"
-                            + Automation.Menu.TooltipSeparator
-                            + "⚠️ This can be cost-heavy";
-        let autoShopButton =
-            Automation.Menu.addAutomationButton("Auto Shop", this.Settings.FeatureEnabled, autoShopTooltip, shoppingContainer);
+        const autoShopTooltip = "Automatically buys the configured items (see advanced settings)"
+                              + Automation.Menu.TooltipSeparator
+                              + "⚠️ This can be cost-heavy";
+        const autoShopButton = Automation.Menu.addAutomationButton("Auto Shop", this.Settings.FeatureEnabled, autoShopTooltip, shoppingContainer);
         autoShopButton.addEventListener("click", this.__internal__toggleAutoBuy.bind(this), false);
 
-        // Build advanced settings panel
-        let shoppingSettingPanel = Automation.Menu.addSettingPanel(autoShopButton.parentElement.parentElement);
+        this.__internal__buildAdvancedSettings(shoppingContainer);
+    }
 
-        let titleDiv = Automation.Menu.createTitleElement("Auto shop advanced settings");
+    /**
+     * @brief Builds the 'Focus on' feature advanced settings panel
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __internal__buildAdvancedSettings(parent)
+    {
+        // Build advanced settings panel
+        const shoppingSettingPanel = Automation.Menu.addSettingPanel(parent);
+
+        const titleDiv = Automation.Menu.createTitleElement("Auto shop advanced settings");
         titleDiv.style.marginBottom = "10px";
         shoppingSettingPanel.appendChild(titleDiv);
 
-        // Add the min pokedolar limit input
-        let minPokedollarsInputContainer = document.createElement("div");
-        minPokedollarsInputContainer.style.textAlign = "left";
-        minPokedollarsInputContainer.style.marginBottom = "10px";
-        minPokedollarsInputContainer.style.paddingLeft = "7px";
+        const shopSettingsTabsGroup = "automationShopSettings";
 
-        let minPokedollarsText = document.createTextNode("Stop buying if the player has less than");
-        minPokedollarsInputContainer.appendChild(minPokedollarsText);
+        const mainShopTabContainer = Automation.Menu.addTabElement(shoppingSettingPanel, "Pokédolars", shopSettingsTabsGroup);
+        let isAnyItemHidden = this.__internal__buildShopItemListMenu(mainShopTabContainer, GameConstants.Currency.money);
 
-        let minPokedollarsInputElem = Automation.Menu.createTextInputElement(10, "[0-9]");
-        minPokedollarsInputElem.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MinPlayerCurrency);
-        minPokedollarsInputContainer.appendChild(minPokedollarsInputElem);
+        const questShopTabContainer = Automation.Menu.addTabElement(shoppingSettingPanel, "Eggs", shopSettingsTabsGroup);
+        isAnyItemHidden |= this.__internal__buildShopItemListMenu(questShopTabContainer, GameConstants.Currency.questPoint);
 
-        let minPokedollarsImage = document.createElement("img");
-        minPokedollarsImage.src = "assets/images/currency/money.svg";
-        minPokedollarsImage.style.height = "25px";
-        minPokedollarsInputContainer.appendChild(minPokedollarsImage);
+        const farmShopTabContainer = Automation.Menu.addTabElement(shoppingSettingPanel, "Farm tools", shopSettingsTabsGroup);
+        isAnyItemHidden |= this.__internal__buildShopItemListMenu(farmShopTabContainer, GameConstants.Currency.farmPoint);
 
-        // The save status checkmark
-        let checkmark = Automation.Menu.createAnimatedCheckMarkElement();
-        minPokedollarsInputContainer.appendChild(checkmark);
-
-        minPokedollarsInputElem.oninput = function()
+        // Set an unlock watcher if needed
+        if (isAnyItemHidden)
         {
-            let mapKey = "MinPlayerCurrency-Save";
-
-            if (this.__internal__activeTimeouts.has(mapKey))
-            {
-                clearTimeout(this.__internal__activeTimeouts.get(mapKey));
-                this.__internal__activeTimeouts.delete(mapKey);
-            }
-
-            let timeout = setTimeout(function()
-                {
-                    Automation.Menu.showCheckmark(checkmark, 2000);
-
-                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency,
-                                                           Automation.Utils.tryParseInt(minPokedollarsInputElem.innerText));
-                }.bind(this), 3000); // Save the changes after 3s without edition
-
-            this.__internal__activeTimeouts.set(mapKey, timeout);
-        }.bind(this);
-
-        shoppingSettingPanel.appendChild(minPokedollarsInputContainer);
-
-        this.__internal__buildShopItemListMenu(shoppingSettingPanel);
+            this.__internal__setShoppingUnlockWatcher();
+        }
     }
 
     /**
@@ -122,17 +101,17 @@ class AutomationShop
      */
     static __internal__setShoppingUnlockWatcher()
     {
-        let watcher = setInterval(function()
+        const watcher = setInterval(function()
             {
                 for (const itemData of this.__internal__shopItems)
                 {
-                    if (itemData.rowElem.hidden && itemData.isUnlocked())
+                    if (itemData.rowElem && itemData.rowElem.hidden && itemData.isUnlocked())
                     {
                         itemData.rowElem.hidden = false;
                     }
                 }
 
-                if (this.__internal__shopItems.every(data => !data.rowElem.hidden))
+                if (this.__internal__shopItems.every(data => !data.rowElem?.hidden))
                 {
                     clearInterval(watcher);
                 }
@@ -174,164 +153,246 @@ class AutomationShop
      *
      * @param {Element} parentDiv: The div to add the list to
      */
-    static __internal__buildShopItemListMenu(parentDiv)
+    static __internal__buildShopItemListMenu(parentDiv, currency)
     {
-        let table = document.createElement("table");
-        table.style.textAlign = "left";
+        // Add the min currency limit input
+        const minCurrencyInputContainer = document.createElement("div");
+        minCurrencyInputContainer.style.textAlign = "left";
+        minCurrencyInputContainer.style.marginBottom = "10px";
+        minCurrencyInputContainer.style.paddingLeft = "7px";
+
+        const minCurrencyText = document.createTextNode("Stop buying if the player has less than");
+        minCurrencyInputContainer.appendChild(minCurrencyText);
+
+        const minCurrencyInputElem = Automation.Menu.createTextInputElement(10, "[0-9]");
+        minCurrencyInputElem.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MinPlayerCurrency(currency));
+        minCurrencyInputContainer.appendChild(minCurrencyInputElem);
+
+        const minCurrencyImage = document.createElement("img");
+        minCurrencyImage.src = `assets/images/currency/${GameConstants.Currency[currency]}.svg`;
+        minCurrencyImage.style.height = "25px";
+        minCurrencyInputContainer.appendChild(minCurrencyImage);
+
+        // The save status checkmark
+        const checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+        minCurrencyInputContainer.appendChild(checkmark);
+
+        minCurrencyInputElem.oninput = function()
+        {
+            const mapKey = "MinPlayerCurrency-Save";
+
+            if (this.__internal__activeTimeouts.has(mapKey))
+            {
+                clearTimeout(this.__internal__activeTimeouts.get(mapKey));
+                this.__internal__activeTimeouts.delete(mapKey);
+            }
+
+            const timeout = setTimeout(function()
+                {
+                    Automation.Menu.showCheckmark(checkmark, 2000);
+
+                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency,
+                                                           Automation.Utils.tryParseInt(minCurrencyInputElem.innerText));
+                }.bind(this), 3000); // Save the changes after 3s without edition
+
+            this.__internal__activeTimeouts.set(mapKey, timeout);
+        }.bind(this);
+
+        parentDiv.appendChild(minCurrencyInputContainer);
+
+        // Add the shop item list
+        const table = document.createElement("table");
+        table.style.textAlign = "left"; // Align text to the left
+        table.style.marginLeft = "auto"; // Align table to the right
 
         let isAnyItemHidden = false;
 
-        for (const itemData of this.__internal__shopItems)
+        for (const itemData of this.__internal__shopItems.filter(data => data.item.currency === currency))
         {
-            let tableRow = document.createElement("tr");
-            table.appendChild(tableRow);
-            let tableFirstCell = document.createElement("td");
-            tableFirstCell.style.paddingLeft = "7px";
-            tableRow.appendChild(tableFirstCell);
-            tableRow.hidden = !itemData.isUnlocked(); // Hide the item row if needed
+            isAnyItemHidden |= this.__internal__addItemToTheList(table, itemData);
+        }
 
-            // Update the item data
-            itemData.rowElem = tableRow;
-            isAnyItemHidden |= tableRow.hidden;
+        parentDiv.appendChild(table);
 
-            // Add the toggle button
-            let buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(itemData.item.name));
-            tableFirstCell.appendChild(buttonElem);
+        return isAnyItemHidden;
+    }
 
-            // Buy count
-            let tableBuyLabelCell = document.createElement("td");
-            tableBuyLabelCell.style.paddingLeft = "4px";
-            tableBuyLabelCell.style.paddingRight = "4px";
-            tableRow.appendChild(tableBuyLabelCell);
+    /**
+     * @brief Adds an item row to the given @p table, ased on the given @p itemData
+     *
+     * @param {Element} table: The table element to add the item row to
+     * @param itemData: The item data
+     *
+     * @returns True if the item is hidden, false otherwise
+     */
+    static __internal__addItemToTheList(table, itemData)
+    {
+        const tableRow = document.createElement("tr");
+        table.appendChild(tableRow);
+        const tableFirstCell = document.createElement("td");
+        tableFirstCell.style.paddingLeft = "7px";
+        tableRow.appendChild(tableFirstCell);
+        tableRow.hidden = !itemData.isUnlocked(); // Hide the item row if needed
 
-            let label = document.createTextNode("Buy");
-            tableBuyLabelCell.appendChild(label);
+        // Update the item data
+        itemData.rowElem = tableRow;
 
-            let tableBuyCountCell = document.createElement("td");
-            tableRow.appendChild(tableBuyCountCell);
-            let buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
-            buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name));
-            buyCount.style.width = "100%"; // Make it take the whole cell space
-            buyCount.style.margin = "0px";
-            buyCount.style.textAlign = "right";
-            tableBuyCountCell.appendChild(buyCount);
+        // Add the toggle button
+        const buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(itemData.item.name));
+        tableFirstCell.appendChild(buttonElem);
 
-            let tableTargetLabelCell = document.createElement("td");
-            tableTargetLabelCell.style.paddingRight = "4px";
-            tableRow.appendChild(tableTargetLabelCell);
-            let itemImage = document.createElement("img");
-            if (itemData.item.imageDirectory !== undefined)
-            {
-                itemImage.src = `assets/images/items/${itemData.item.imageDirectory}/${itemData.item.name}.png`;
-            }
-            else
-            {
-                itemImage.src = `assets/images/items/${itemData.item.name}.png`;
-            }
-            itemImage.style.height = "25px";
-            tableTargetLabelCell.appendChild(itemImage);
+        // Buy count
+        const tableBuyLabelCell = document.createElement("td");
+        tableBuyLabelCell.style.paddingLeft = "4px";
+        tableBuyLabelCell.style.paddingRight = "4px";
+        tableRow.appendChild(tableBuyLabelCell);
 
-            // Until count
-            label = document.createTextNode("until the player has");
-            tableTargetLabelCell.appendChild(label);
+        tableBuyLabelCell.appendChild(document.createTextNode("Buy"));
 
-            let tableUntilCountCell = document.createElement("td");
-            tableRow.appendChild(tableUntilCountCell);
-            let untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
-            untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name));
-            untilCount.style.width = "100%"; // Make it take the whole cell space
-            untilCount.style.margin = "0px";
-            untilCount.style.textAlign = "right";
-            tableUntilCountCell.appendChild(untilCount);
+        const tableBuyCountCell = document.createElement("td");
+        tableRow.appendChild(tableBuyCountCell);
+        const buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
+        buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name));
+        buyCount.style.width = "100%"; // Make it take the whole cell space
+        buyCount.style.margin = "0px";
+        buyCount.style.textAlign = "right";
+        tableBuyCountCell.appendChild(buyCount);
 
-            // Max price
-            let tableMaxPriceLabelCell = document.createElement("td");
+        const tableTargetLabelCell = document.createElement("td");
+        tableTargetLabelCell.style.paddingRight = "4px";
+        tableRow.appendChild(tableTargetLabelCell);
+
+        // Item image
+        const imageContainer = document.createElement("span");
+        const itemImage = document.createElement("img");
+        itemImage.src = itemData.item.image;
+        itemImage.style.height = "25px";
+        imageContainer.appendChild(itemImage);
+        tableTargetLabelCell.appendChild(imageContainer);
+
+        // Set the image tooltip
+        const tooltip = itemData.item.displayName;
+        imageContainer.classList.add("hasAutomationTooltip");
+        imageContainer.classList.add("shopItemAutomationTooltip");
+        imageContainer.classList.add("shortTransitionAutomationTooltip");
+        imageContainer.style.cursor = "help";
+        imageContainer.setAttribute("automation-tooltip-text", tooltip);
+
+        // Until count
+        tableTargetLabelCell.appendChild(document.createTextNode("until the player has"));
+
+        const tableUntilCountCell = document.createElement("td");
+        tableRow.appendChild(tableUntilCountCell);
+        const untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
+        untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name));
+        untilCount.style.width = "100%"; // Make it take the whole cell space
+        untilCount.style.margin = "0px";
+        untilCount.style.textAlign = "right";
+        tableUntilCountCell.appendChild(untilCount);
+
+        // Savemark cell (will be added after the max-price ones)
+        const tableLastCell = document.createElement("td");
+
+        // Max price (only set if the item is subject to multiplier decrease)
+        let maxPrice;
+        if (itemData.item.multiplierDecrease)
+        {
+            // Table price cells
+            const tableMaxPriceLabelCell = document.createElement("td");
             tableMaxPriceLabelCell.style.paddingLeft = "4px";
             tableMaxPriceLabelCell.style.paddingRight = "4px";
             tableRow.appendChild(tableMaxPriceLabelCell);
-            label = document.createTextNode("at max base price");
-            tableMaxPriceLabelCell.appendChild(label);
 
-            let tableMaxPriceCell = document.createElement("td");
+            tableMaxPriceLabelCell.appendChild(document.createTextNode("at max base price"));
+
+            // Table max price
+            const tableMaxPriceCell = document.createElement("td");
             tableRow.appendChild(tableMaxPriceCell);
-            let maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
+            maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
             maxPrice.style.width = "100%"; // Make it take the whole cell space
             maxPrice.style.margin = "0px";
             maxPrice.style.textAlign = "right";
             maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name));
             tableMaxPriceCell.appendChild(maxPrice);
 
-            let tableLastCell = document.createElement("td");
-            tableRow.appendChild(tableLastCell);
-            let pokedollarsImage = document.createElement("img");
-            pokedollarsImage.src = "assets/images/currency/money.svg";
-            pokedollarsImage.style.height = "25px";
-            tableLastCell.appendChild(pokedollarsImage);
+            maxPrice.oninput = function() { this.__internal__basePriceOnInputCallback(maxPrice, itemData); }.bind(this);
 
-            // The save status checkmark
-            let checkmark = Automation.Menu.createAnimatedCheckMarkElement();
-            tableLastCell.appendChild(checkmark);
-
-            parentDiv.appendChild(table);
-
-            // Set all oninput callbacks
-            buyCount.oninput = function()
-                {
-                    this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
-                }.bind(this);
-            untilCount.oninput = function()
-                {
-                    this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
-                }.bind(this);
-            maxPrice.oninput = function()
-                {
-                    if (maxPrice.innerText < itemData.item.basePrice)
-                    {
-                        maxPrice.classList.add("invalid");
-                        // Let the time to the user to edit the value before setting back the minimum possible value
-                        let timeout = setTimeout(function()
-                            {
-                                // Only update the value if it's still under the minimum possible
-                                if (maxPrice.innerText < itemData.item.basePrice)
-                                {
-                                    maxPrice.innerText = itemData.item.basePrice;
-                                    maxPrice.classList.remove("invalid");
-
-                                    // Move the cursor at the end of the input if still focused
-                                    var range = document.createRange();
-
-                                    if (maxPrice === document.activeElement)
-                                    {
-                                        var set = window.getSelection();
-                                        range.setStart(maxPrice.childNodes[0], maxPrice.innerText.length);
-                                        range.collapse(true);
-                                        set.removeAllRanges();
-                                        set.addRange(range);
-                                    }
-                                }
-                                this.__internal__activeTimeouts.delete(itemData.item.name);
-                            }.bind(this), 1000);
-
-                        if (this.__internal__activeTimeouts.has(itemData.item.name))
-                        {
-                            clearTimeout(this.__internal__activeTimeouts.get(itemData.item.name));
-                            this.__internal__activeTimeouts.delete(itemData.item.name);
-                        }
-                        this.__internal__activeTimeouts.set(itemData.item.name, timeout);
-                    }
-                    else
-                    {
-                        maxPrice.classList.remove("invalid");
-                    }
-                    this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
-                }.bind(this);
+            // Add the currency image
+            const currencyCell = document.createElement("td");
+            const currencyImage = document.createElement("img");
+            currencyImage.src = `assets/images/currency/${GameConstants.Currency[itemData.item.currency]}.svg`;
+            currencyImage.style.height = "25px";
+            currencyCell.appendChild(currencyImage);
+            tableRow.appendChild(currencyCell);
         }
-
-        // Set an unlock watcher if needed
-        if (isAnyItemHidden)
+        else
         {
-            this.__internal__setShoppingUnlockWatcher();
+            // Keep the spacing and put the save mark right next to the last input text
+            tableLastCell.colSpan = 4;
         }
+
+        // The save status checkmark
+        const checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+        tableLastCell.appendChild(checkmark);
+        tableRow.appendChild(tableLastCell);
+
+        // Set common oninput callbacks
+        buyCount.oninput = function()
+            {
+                this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
+            }.bind(this);
+        untilCount.oninput = function()
+            {
+                this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
+            }.bind(this);
+
+        return tableRow.hidden;
+    }
+
+    /**
+     * @brief Ensures that a valid baseprice was entered (ie. above the item minimum price)
+     */
+    static __internal__basePriceOnInputCallback(maxPriceElem, itemData)
+    {
+        if (maxPriceElem.innerText < itemData.item.basePrice)
+        {
+            maxPriceElem.classList.add("invalid");
+            // Let the time to the user to edit the value before setting back the minimum possible value
+            let timeout = setTimeout(function()
+                {
+                    // Only update the value if it's still under the minimum possible
+                    if (maxPriceElem.innerText < itemData.item.basePrice)
+                    {
+                        maxPriceElem.innerText = itemData.item.basePrice;
+                        maxPriceElem.classList.remove("invalid");
+
+                        // Move the cursor at the end of the input if still focused
+                        var range = document.createRange();
+
+                        if (maxPriceElem === document.activeElement)
+                        {
+                            var set = window.getSelection();
+                            range.setStart(maxPriceElem.childNodes[0], maxPriceElem.innerText.length);
+                            range.collapse(true);
+                            set.removeAllRanges();
+                            set.addRange(range);
+                        }
+                    }
+                    this.__internal__activeTimeouts.delete(itemData.item.name);
+                }.bind(this), 1000);
+
+            if (this.__internal__activeTimeouts.has(itemData.item.name))
+            {
+                clearTimeout(this.__internal__activeTimeouts.get(itemData.item.name));
+                this.__internal__activeTimeouts.delete(itemData.item.name);
+            }
+            this.__internal__activeTimeouts.set(itemData.item.name, timeout);
+        }
+        else
+        {
+            maxPriceElem.classList.remove("invalid");
+        }
+        this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPriceElem);
     }
 
     /**
@@ -339,74 +400,136 @@ class AutomationShop
      */
     static __internal__buildShopItemList()
     {
+        const sellableItems = {};
+
+        // Insert this first to maintain the order
         for (const item of pokeMartShop.items)
         {
-            let itemData = { item: item }
-
-            if ((item.name == "Pokeball") || (item.name == "xAttack") || (item.name == "xClick"))
-            {
-                // Those basic items are always purchasable
-                itemData.isUnlocked = function() { return true; };
-                itemData.isPurchasable = itemData.isUnlocked;
-            }
-            else if (item.name == "Greatball")
-            {
-                itemData.isUnlocked = function() { return TownList["Lavender Town"].isUnlocked(); };
-                itemData.isPurchasable = function()
-                    {
-                        return this.__internal__isPokeMarkUnlocked()
-                            || (TownList["Lavender Town"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
-                            || TownList["Ecruteak City"].isUnlocked();
-                    }.bind(this);
-            }
-            else if (item.name == "Ultraball")
-            {
-                itemData.isUnlocked = function() { return TownList["Fuchsia City"].isUnlocked(); };
-                itemData.isPurchasable = function()
-                    {
-                        return this.__internal__isPokeMarkUnlocked()
-                            || (TownList["Fuchsia City"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
-                            || TownList["Blackthorn City"].isUnlocked();
-                    }.bind(this);
-            }
-            else if ((item.name == "Lucky_egg") || (item.name == "Token_collector"))
-            {
-                itemData.isUnlocked = function() { return TownList["Pewter City"].isUnlocked(); };
-                itemData.isPurchasable = function()
-                    {
-                        return this.__internal__isPokeMarkUnlocked()
-                            || (TownList["Pewter City"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
-                            || TownList["Violet City"].isUnlocked();
-                    }.bind(this);
-            }
-            else if ((item.name == "Dowsing_machine") || (item.name == "Lucky_incense"))
-            {
-                itemData.isUnlocked = function() { return TownList["Lavender Town"].isUnlocked(); };
-                itemData.isPurchasable = function()
-                    {
-                        return this.__internal__isPokeMarkUnlocked()
-                            || (TownList["Lavender Town"].isUnlocked() && Automation.Utils.Route.canMoveToRegion(0))
-                            || TownList["Olivine City"].isUnlocked();
-                    }.bind(this);
-            }
-            else if (item.name == "SmallRestore")
-            {
-                itemData.isUnlocked = function() { return TownList["Cinnabar Island"].isUnlocked(); };
-                itemData.isPurchasable = itemData.isUnlocked;
-            }
-            else if (item.name == "MediumRestore")
-            {
-                itemData.isUnlocked = function() { return TownList["Violet City"].isUnlocked(); };
-                itemData.isPurchasable = itemData.isUnlocked;
-            }
-            else if (item.name == "LargeRestore")
-            {
-                itemData.isUnlocked = function() { return TownList["Blackthorn City"].isUnlocked(); };
-                itemData.isPurchasable = itemData.isUnlocked;
-            }
-
-            this.__internal__shopItems.push(itemData);
+            sellableItems[item.name] = { item: item, towns: [], requirements: [] };
         }
+
+        for (const townName in TownList)
+        {
+            const town = TownList[townName];
+            // We only want shops, so discard anything that is not a shop
+            for (const shop of town.content.filter((content) => content instanceof Shop))
+            {
+                for (const item of shop.items)
+                {
+                    // Only add items that are:
+                    // Pokemart
+                    //   - Battle Items
+                    //   - Energy restore
+                    //   - Pokeballs (all types)
+                    //   - Vitamins
+                    //
+                    // Eggs
+                    //   - Eggs
+                    //
+                    // Farm tools
+                    //   - Mulch
+                    //   - Shovels
+                    //   - Mulch shovels (they are different class from normal shovels)
+                    if (!((item instanceof BattleItem)
+                          || (item instanceof EnergyRestore)
+                          || (item instanceof PokeballItem)
+                          || (item instanceof Vitamin)
+
+                          || (item instanceof EggItem)
+
+                          || (item instanceof MulchItem)
+                          || (item instanceof ShovelItem)
+                          || (item instanceof MulchShovelItem)))
+                    {
+                        continue;
+                    }
+
+                    // Skip any balls that are not sold in pokédollars for now (as they would be in out of contect of the tab)
+                    if ((item instanceof PokeballItem)
+                        && (item.currency != GameConstants.Currency.money))
+                    {
+                        continue;
+                    }
+
+                    // New item, so add it to the list
+                    if (sellableItems[item.name] === undefined)
+                    {
+                        sellableItems[item.name] = {item: item, towns: []};
+                    }
+                    sellableItems[item.name].towns.push(townName);
+                }
+
+            }
+        }
+
+        // Iterate using `of` instead of `Object.entries` to keep the order
+        for (const itemData of Object.values(sellableItems))
+        {
+            let shopItem = { item: itemData.item }
+            shopItem.isUnlocked = () => itemData.towns.some(townName => TownList[townName].isUnlocked());
+
+            // This may restrict some items that are actually purchasable, but only until the player unlocks the port again
+            shopItem.isPurchasable = function()
+                {
+                    return (pokeMartShop.items.includes(itemData.item) && this.__internal__isPokeMarkUnlocked())
+                        || itemData.towns.some((townName) =>
+                            {
+                                const town = TownList[townName];
+                                return town.isUnlocked() && Automation.Utils.Route.canMoveToRegion(town.region);
+                            });
+                };
+
+            this.__internal__shopItems.push(shopItem);
+        }
+
+        this.__internal__shopItems.sort(this.__internal__itemSortCompare);
+    }
+
+    /**
+     * @brief Sorts items based on their type
+     *
+     * @param a: The first item to compare
+     * @param b: The second item to compare
+     *
+     * @returns The sort order
+     */
+    static __internal__itemSortCompare(a, b)
+    {
+        // Items that are different currencies will never be shown together, so this sort is techincally useless
+        if (a.item.currency != b.item.currency)
+        {
+            return a.item.currency - b.item.currency;
+        }
+
+        // At this point, all comparisons are for the same currency
+
+        // Tweak the money item sorting a bit
+        if (a.item.currency === GameConstants.Currency.money)
+        {
+            // Force the pokeballs first (the other items are already sorted properly)
+            if ((a.item instanceof PokeballItem) && !(b.item instanceof PokeballItem)) return -1;
+            if ((b.item instanceof PokeballItem) && !(a.item instanceof PokeballItem)) return 1;
+        }
+
+        // Quest currency items are only eggs, so sort by item type (same as the game)
+        if (a.item.currency === GameConstants.Currency.questPoint)
+        {
+            return a.item.type - b.item.type;
+        }
+
+        // Farm currency items should have both shovels before the mulch, and the mulch ordered by base price
+        if (a.item.currency === GameConstants.Currency.farmPoint)
+        {
+            if (a.item instanceof ShovelItem) return -1;
+            if (b.item instanceof ShovelItem) return 1;
+
+            if (a.item instanceof MulchShovelItem) return -1;
+            if (b.item instanceof MulchShovelItem) return 1;
+
+            return a.item.basePrice - b.item.basePrice;
+        }
+
+        return 0;
     }
 
     /**
@@ -437,8 +560,11 @@ class AutomationShop
                                                        Automation.Utils.tryParseInt(buyCount.innerText));
                 Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.TargetAmount(itemName),
                                                        Automation.Utils.tryParseInt(untilCount.innerText));
-                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemName),
-                                                       Automation.Utils.tryParseInt(maxPrice.innerText));
+                if (maxPrice)
+                {
+                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemName),
+                                                           Automation.Utils.tryParseInt(maxPrice.innerText));
+                }
             }.bind(this), 3000); // Save the changes after 3s without edition
 
         this.__internal__activeTimeouts.set(mapKey, timeout);
@@ -452,8 +578,20 @@ class AutomationShop
         // Disable AutoBuy by default
         Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
 
-        // Don't buy is the player has under 1'000'000 pokédollars by default
-        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency, 1000000);
+        // Don't buy if the player has under 1'000'000 pokédollars by default
+        // Load old value if it exists
+        const oldPokedolarsValue = Automation.Utils.LocalStorage.getValue("Shop-MinPlayerCurrency");
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.money),
+                                                      oldPokedolarsValue ?? 1000000);
+        // Clean up the old value
+        Automation.Utils.LocalStorage.unsetValue("Shop-MinPlayerCurrency");
+        // TODO (06/11/2022): Definitly remove the value in the next release
+
+        // Don't buy if the player has under 10'000 quest points by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.questPoint), 10000);
+
+        // Don't buy if the player has under 10'000 farm points by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.farmPoint), 10000);
 
         // Set default value for all buyable items
         for (const itemData of this.__internal__shopItems)
@@ -461,15 +599,35 @@ class AutomationShop
             // Disable all items by default
             Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.ItemEnabled(itemData.item.name), false);
 
-            // By 10 items at a time by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name), 10);
-
-            // Stop buying at a stock of 10'000 by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name), 10000);
-
             // Buy at the cheapest possible by default
             Automation.Utils.LocalStorage.setDefaultValue(
                 this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name), itemData.item.basePrice);
+
+            if (itemData.item.currency == GameConstants.Currency.money)
+            {
+                // By 10 items at a time by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name), 10);
+
+                // Stop buying at a stock of 10'000 by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name), 10000);
+            }
+            else if (itemData.item.currency == GameConstants.Currency.questPoint)
+            {
+                // By 1 item at a time by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name), 1);
+
+                // Stop buying at a stock of 1 by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name), 1);
+            }
+            else if (itemData.item.currency == GameConstants.Currency.farmPoint)
+            {
+                // By 10 item at a time by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name), 10);
+
+                // Stop buying at a stock of 1000 by default
+                Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name), 1000);
+            }
+
         }
     }
 
@@ -478,12 +636,13 @@ class AutomationShop
      */
     static __internal__shop()
     {
-        let minPlayerCurrency = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MinPlayerCurrency));
-
-        let totalSpent = 0;
-
+        const totalSpent = {};
         for (const itemData of this.__internal__shopItems)
         {
+            const currencyType = itemData.item.currency;
+            const minPlayerCurrency =
+                parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MinPlayerCurrency(currencyType)));
+
             // Skip any disabled item
             if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.ItemEnabled(itemData.item.name)) !== "true")
             {
@@ -496,56 +655,99 @@ class AutomationShop
                 continue;
             }
 
-            let targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name)));
+            const targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name)));
 
             // Don't buy if the target quantity has been reached
-            if (this.__internal__getItemQuantity(itemData.item.name) > targetAmount)
+            if (this.__internal__getItemQuantity(itemData.item) >= targetAmount)
             {
                 continue;
             }
 
-            let buyAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name)));
+            // Only buy up to the target amount
+            const buyAmount =
+                Math.min(parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name))),
+                         targetAmount - this.__internal__getItemQuantity(itemData.item));
+
+            if (buyAmount <= 0)
+            {
+                continue;
+            }
 
             // Don't buy if it would bring the player under the set threshold
-            let totalPrice = itemData.item.totalPrice(buyAmount);
-            if (App.game.wallet.currencies[GameConstants.Currency.money]() < (minPlayerCurrency + totalPrice))
+            const totalPrice = itemData.item.totalPrice(buyAmount);
+            if (App.game.wallet.currencies[currencyType]() < (minPlayerCurrency + totalPrice))
             {
                 continue;
             }
 
-            let maxUnitPrice = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name)));
-
-            // Don't buy if the base price is over the set desired max price
-            if (itemData.item.totalPrice(1) > maxUnitPrice)
+            // Consider the max price, if needed
+            if (itemData.item.multiplierDecrease)
             {
-                continue;
+                const maxUnitPrice =
+                    parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name)));
+
+                // Don't buy if the base price is over the set desired max price
+                if (itemData.item.totalPrice(1) > maxUnitPrice)
+                {
+                    continue;
+                }
             }
 
             // Buy the item
             itemData.item.buy(buyAmount);
-            totalSpent += totalPrice;
+            if (!totalSpent[itemData.item.currency])
+            {
+                totalSpent[itemData.item.currency] = totalPrice;
+            }
+            else
+            {
+                totalSpent[itemData.item.currency] += totalPrice;
+            }
         }
 
-        if (totalSpent > 0)
+        // Only sent the notification if at least one currency was spent
+        if (Object.entries(totalSpent).length > 0)
         {
-            let pokedollarsImage = '<img src="assets/images/currency/money.svg" height="25px">';
-            Automation.Notifications.sendNotif(`Bought some items for a total of ${totalSpent.toLocaleString('en-US')} ${pokedollarsImage}`, "Shop");
+            let currenciesSpent = [];
+            for (const currency in totalSpent)
+            {
+                const currencyImage = `<img src="assets/images/currency/${GameConstants.Currency[currency]}.svg" height="25px">`;
+                currenciesSpent.push(`${totalSpent[currency].toLocaleString('en-US')} ${currencyImage}`);
+            }
+            Automation.Notifications.sendNotif(`Bought some items for a total of ${currenciesSpent.join(", ")}`, "Shop");
         }
     }
 
     /**
-     * @brief Gets the player's current quantity for the given @p itemName
+     * @brief Gets the player's current quantity for the given @p item
      *
-     * @param {string} itemName
+     * @param item: The pokeclicker item instance
      *
      * @returns The current quantity
      */
-    static __internal__getItemQuantity(itemName)
+    static __internal__getItemQuantity(item)
     {
         // Pokeballs always return 0 if checked through player.itemList, their dedicated getter need to be used
-        if (itemName in GameConstants.Pokeball)
+        if (item instanceof PokeballItem)
         {
-            return App.game.pokeballs.getBallQuantity(GameConstants.Pokeball[itemName]);
+            return App.game.pokeballs.getBallQuantity(GameConstants.Pokeball[item.name]);
+        }
+
+        // Shovels
+        if (item instanceof ShovelItem)
+        {
+            return App.game.farming.shovelAmt();
+        }
+
+        if (item instanceof MulchShovelItem)
+        {
+            return App.game.farming.mulchShovelAmt();
+        }
+
+        // Mulch
+        if (item instanceof MulchItem)
+        {
+            return App.game.farming.mulchList[MulchType[item.name]]();
         }
 
         return player.itemList[itemName]();

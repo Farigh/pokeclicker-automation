@@ -831,6 +831,10 @@ class AutomationMenu
             {
                 left: calc(50%);
             }
+            .hasAutomationTooltip.shopItemAutomationTooltip::after
+            {
+                left: calc(30%);
+            }
             .hasAutomationTooltip.gotoAutomationTooltip::after
             {
                 left: calc(100% - 85px);
