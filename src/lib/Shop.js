@@ -750,7 +750,7 @@ class AutomationShop
             return App.game.farming.mulchList[MulchType[item.name]]();
         }
 
-        return player.itemList[itemName]();
+        return player.itemList[item.name]();
     }
 
     /**
