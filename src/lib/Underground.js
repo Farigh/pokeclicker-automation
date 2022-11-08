@@ -308,7 +308,7 @@ class AutomationUnderground
         if (Automation.Utils.LocalStorage.getValue(this.Settings.RestrictRestoreItemsToMiningQuests) === "true")
         {
             let hasActiveMiningQuests = App.game.quests.currentQuests().some(
-                (quest) => ((quest instanceof MineItemsQuest) || (quest instanceof MineLayersQuest))
+                (quest) => (Automation.Utils.isInstanceOf(quest, "MineItemsQuest") || Automation.Utils.isInstanceOf(quest, "MineLayersQuest"))
                         && !quest.isCompleted());
             if (!hasActiveMiningQuests)
             {

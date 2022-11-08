@@ -102,4 +102,30 @@ class AutomationUtils
 
         return CaughtStatus.Caught;
     }
+
+    /**
+     * @brief Checks if the given @p obj is an instance of @p instanceName as javascripts `instanceof` would,
+     *        but without requiring the class to be accessible.
+     *        This is usefull if the class was created in a module and the object is not accessible from the document.
+     *
+     * @param obj: The object to check
+     * @param {string} instanceName: The name of the class to expect
+     * @returns
+     */
+    static isInstanceOf(obj, instanceName)
+    {
+        let toCheck = obj;
+        while (toCheck)
+        {
+            if (toCheck.constructor.name == instanceName)
+            {
+                return true;
+            }
+
+            // Descend one step further into the inheritance chain
+            toCheck = toCheck.__proto__;
+        }
+
+        return false;
+    }
 }

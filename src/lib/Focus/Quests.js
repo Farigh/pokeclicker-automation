@@ -361,7 +361,7 @@ class AutomationFocusQuests
         }
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
-        let currentQuests = this.__internal__getFilteredCurrentQuests();
+        const currentQuests = this.__internal__getFilteredCurrentQuests();
         if (currentQuests.length == 0)
         {
             return;
@@ -371,50 +371,50 @@ class AutomationFocusQuests
         currentQuests.sort(this.__internal__sortQuestByPriority, this);
 
         // Filter the quests that do not need specific action
-        let filteredQuests = currentQuests.filter(
+        const filteredQuests = currentQuests.filter(
             (quest) =>
             {
-                return !((quest instanceof CatchShiniesQuest)
-                         || (quest instanceof GainMoneyQuest)
-                         || (quest instanceof GainFarmPointsQuest)
-                         || (quest instanceof HarvestBerriesQuest)
-                         || (quest instanceof MineItemsQuest)
-                         || (quest instanceof MineLayersQuest));
+                return !(Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")
+                         || Automation.Utils.isInstanceOf(quest, "GainMoneyQuest")
+                         || Automation.Utils.isInstanceOf(quest, "GainFarmPointsQuest")
+                         || Automation.Utils.isInstanceOf(quest, "HarvestBerriesQuest")
+                         || Automation.Utils.isInstanceOf(quest, "MineItemsQuest")
+                         || Automation.Utils.isInstanceOf(quest, "MineLayersQuest"));
             });
 
-        let quest = filteredQuests[0];
+        const quest = filteredQuests[0];
 
         // Defeat gym quest
-        if ((quest instanceof CapturePokemonsQuest)
-            || (quest instanceof GainTokensQuest))
+        if (Automation.Utils.isInstanceOf(quest, "CapturePokemonsQuest")
+            || Automation.Utils.isInstanceOf(quest, "GainTokensQuest"))
         {
             this.__internal__workOnUsePokeballQuest(Automation.Focus.__internal__pokeballToUseSelectElem.value);
         }
-        else if (quest instanceof CapturePokemonTypesQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "CapturePokemonTypesQuest"))
         {
             this.__internal__workOnCapturePokemonTypesQuest(quest);
         }
-        else if (quest instanceof DefeatDungeonQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "DefeatDungeonQuest"))
         {
             this.__internal__workOnDefeatDungeonQuest(quest);
         }
-        else if (quest instanceof DefeatGymQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "DefeatGymQuest"))
         {
             this.__internal__workOnDefeatGymQuest(quest);
         }
-        else if (quest instanceof DefeatPokemonsQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "DefeatPokemonsQuest"))
         {
             this.__internal__workOnDefeatPokemonsQuest(quest);
         }
-        else if (quest instanceof GainGemsQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "GainGemsQuest"))
         {
             this.__internal__workOnGainGemsQuest(quest);
         }
-        else if (quest instanceof UseOakItemQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "UseOakItemQuest"))
         {
             this.__internal__workOnUseOakItemQuest(quest);
         }
-        else if (quest instanceof UsePokeballQuest)
+        else if (Automation.Utils.isInstanceOf(quest, "UsePokeballQuest"))
         {
             this.__internal__workOnUsePokeballQuest(quest.pokeball, true);
         }
@@ -423,13 +423,13 @@ class AutomationFocusQuests
             // Disable catching pokemons if enabled
             this.__internal__selectBallToCatch(Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value);
 
-            if (currentQuests.some((quest) => quest instanceof CatchShiniesQuest))
+            if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")))
             {
                 // Buy some ball to be prepared
                 this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__internal__pokeballToUseSelectElem.value, 10);
                 this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             }
-            else if (currentQuests.some((quest) => quest instanceof GainMoneyQuest))
+            else if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "GainMoneyQuest")))
             {
                 this.__internal__farmSomeMoney();
                 return;
@@ -475,12 +475,12 @@ class AutomationFocusQuests
         // Filter the quests that do not need specific action
         for (const quest of currentQuests)
         {
-            if (quest instanceof HarvestBerriesQuest)
+            if (Automation.Utils.isInstanceOf(quest, "HarvestBerriesQuest"))
             {
                 this.__internal__enableFarmingForBerryType(quest.berryType);
                 isFarmingSpecificBerry = true;
             }
-            else if ((quest instanceof GainFarmPointsQuest)
+            else if (Automation.Utils.isInstanceOf(quest, "GainFarmPointsQuest")
                      && !isFarmingSpecificBerry)
             {
                 let bestBerry = this.__internal__getMostSuitableBerryForQuest(quest);
@@ -683,7 +683,7 @@ class AutomationFocusQuests
             // Choose the most optimal pokeball, based on the other quests
             for (const quest of this.__internal__getFilteredCurrentQuests())
             {
-                if (quest instanceof UsePokeballQuest)
+                if (Automation.Utils.isInstanceOf(quest, "UsePokeballQuest"))
                 {
                     ballTypeToUse = quest.pokeball;
                     enforceType = true;
@@ -819,58 +819,58 @@ class AutomationFocusQuests
     static __internal__sortQuestByPriority(a, b)
     {
         // Select pokemon catching related quests (starting with the shiny one)
-        if (a instanceof CatchShiniesQuest) return -1;
-        if (b instanceof CatchShiniesQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "CatchShiniesQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "CatchShiniesQuest")) return 1;
 
-        if (a instanceof CapturePokemonTypesQuest) return -1;
-        if (b instanceof CapturePokemonTypesQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "CapturePokemonTypesQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "CapturePokemonTypesQuest")) return 1;
 
-        if (a instanceof CapturePokemonsQuest) return -1;
-        if (b instanceof CapturePokemonsQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "CapturePokemonsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "CapturePokemonsQuest")) return 1;
 
-        if (a instanceof UsePokeballQuest) return -1;
-        if (b instanceof UsePokeballQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "UsePokeballQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "UsePokeballQuest")) return 1;
 
-        if (a instanceof GainTokensQuest) return -1;
-        if (b instanceof GainTokensQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "GainTokensQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "GainTokensQuest")) return 1;
 
         // Then quests related to defeating pokemon/opponents
         // (starting with the oak item one, since it can be related to catching)
-        if (a instanceof UseOakItemQuest) return -1;
-        if (b instanceof UseOakItemQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "UseOakItemQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "UseOakItemQuest")) return 1;
 
-        if (a instanceof GainGemsQuest) return -1;
-        if (b instanceof GainGemsQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "GainGemsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "GainGemsQuest")) return 1;
 
-        if (a instanceof DefeatDungeonQuest) return -1;
-        if (b instanceof DefeatDungeonQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "DefeatDungeonQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "DefeatDungeonQuest")) return 1;
 
-        if (a instanceof DefeatGymQuest) return -1;
-        if (b instanceof DefeatGymQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "DefeatGymQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "DefeatGymQuest")) return 1;
 
-        if (a instanceof DefeatPokemonsQuest) return -1;
-        if (b instanceof DefeatPokemonsQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "DefeatPokemonsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "DefeatPokemonsQuest")) return 1;
 
         // Then the gain pokedollar one
-        if (a instanceof GainMoneyQuest) return -1;
-        if (b instanceof GainMoneyQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "GainMoneyQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "GainMoneyQuest")) return 1;
 
         // Then the egg hatching one
-        if (a instanceof HatchEggsQuest) return -1;
-        if (b instanceof HatchEggsQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "HatchEggsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "HatchEggsQuest")) return 1;
 
         // Then the harvest one
-        if (a instanceof HarvestBerriesQuest) return -1;
-        if (b instanceof HarvestBerriesQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "HarvestBerriesQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "HarvestBerriesQuest")) return 1;
 
-        if (a instanceof GainFarmPointsQuest) return -1;
-        if (b instanceof GainFarmPointsQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "GainFarmPointsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "GainFarmPointsQuest")) return 1;
 
         // Finally the underground ones
-        if (a instanceof MineItemsQuest) return -1;
-        if (b instanceof MineItemsQuest) return 1;
-        if (a instanceof MineLayersQuest) return -1;
-        if (b instanceof MineLayersQuest) return 1;
+        if (Automation.Utils.isInstanceOf(a, "MineItemsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "MineItemsQuest")) return 1;
+        if (Automation.Utils.isInstanceOf(a, "MineLayersQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "MineLayersQuest")) return 1;
 
         // Don't sort other quests
         return 0;
@@ -885,16 +885,16 @@ class AutomationFocusQuests
     {
         let optimumItems = [];
 
-        let currentQuests = this.__internal__getFilteredCurrentQuests();
+        const currentQuests = this.__internal__getFilteredCurrentQuests();
 
         // Always equip UseOakItemQuest items 1st
-        let useOakItemQuests = currentQuests.filter((quest) => quest instanceof UseOakItemQuest)
+        const useOakItemQuests = currentQuests.filter((quest) => Automation.Utils.isInstanceOf(quest, "UseOakItemQuest"));
         if (useOakItemQuests.length == 1)
         {
             optimumItems.push(useOakItemQuests[0].item);
         }
 
-        if (currentQuests.some((quest) => quest instanceof CatchShiniesQuest))
+        if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")))
         {
             optimumItems.push(OakItemType.Shiny_Charm);
         }

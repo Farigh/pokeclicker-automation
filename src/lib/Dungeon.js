@@ -251,7 +251,7 @@ class AutomationDungeon
         //    - The player has bought the dungeon ticket
         //    - The player has enough dungeon token
         if (App.game.gameState === GameConstants.GameState.town
-            && (player.town() instanceof DungeonTown)
+            && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
             && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
         {
@@ -661,7 +661,7 @@ class AutomationDungeon
         let dungeonDiv = document.getElementById("dungeonFightButtons");
         dungeonDiv.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
                               || ((App.game.gameState === GameConstants.GameState.town)
-                                  && (player.town() instanceof DungeonTown)));
+                                  && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")));
 
         if (!dungeonDiv.hidden)
         {

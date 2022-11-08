@@ -440,7 +440,7 @@ class AutomationShop
         {
             const town = TownList[townName];
             // We only want shops, so discard anything that is not a shop
-            for (const shop of town.content.filter((content) => content instanceof Shop))
+            for (const shop of town.content.filter((content) => Automation.Utils.isInstanceOf(content, "Shop")))
             {
                 for (const item of shop.items)
                 {
@@ -458,22 +458,22 @@ class AutomationShop
                     //   - Mulch
                     //   - Shovels
                     //   - Mulch shovels (they are different class from normal shovels)
-                    if (!((item instanceof BattleItem)
-                          || (item instanceof EnergyRestore)
-                          || (item instanceof PokeballItem)
-                          || (item instanceof Vitamin)
+                    if (!(Automation.Utils.isInstanceOf(item, "BattleItem")
+                          || Automation.Utils.isInstanceOf(item, "EnergyRestore")
+                          || Automation.Utils.isInstanceOf(item, "PokeballItem")
+                          || Automation.Utils.isInstanceOf(item, "Vitamin")
 
-                          || (item instanceof EggItem)
+                          || Automation.Utils.isInstanceOf(item, "EggItem")
 
-                          || (item instanceof MulchItem)
-                          || (item instanceof ShovelItem)
-                          || (item instanceof MulchShovelItem)))
+                          || Automation.Utils.isInstanceOf(item, "MulchItem")
+                          || Automation.Utils.isInstanceOf(item, "ShovelItem")
+                          || Automation.Utils.isInstanceOf(item, "MulchShovelItem")))
                     {
                         continue;
                     }
 
                     // Skip any balls that are not sold in pokédollars for now (as they would be in out of contect of the tab)
-                    if ((item instanceof PokeballItem)
+                    if (Automation.Utils.isInstanceOf(item, "PokeballItem")
                         && (item.currency != GameConstants.Currency.money))
                     {
                         continue;
@@ -535,8 +535,8 @@ class AutomationShop
         if (a.item.currency === GameConstants.Currency.money)
         {
             // Force the pokeballs first (the other items are already sorted properly)
-            if ((a.item instanceof PokeballItem) && !(b.item instanceof PokeballItem)) return -1;
-            if ((b.item instanceof PokeballItem) && !(a.item instanceof PokeballItem)) return 1;
+            if (Automation.Utils.isInstanceOf(a.item, "PokeballItem") && !Automation.Utils.isInstanceOf(b.item, "PokeballItem")) return -1;
+            if (Automation.Utils.isInstanceOf(b.item, "PokeballItem") && !Automation.Utils.isInstanceOf(a.item, "PokeballItem")) return 1;
         }
 
         // Quest currency items are only eggs, so sort by item type (same as the game)
@@ -548,11 +548,11 @@ class AutomationShop
         // Farm currency items should have both shovels before the mulch, and the mulch ordered by base price
         if (a.item.currency === GameConstants.Currency.farmPoint)
         {
-            if (a.item instanceof ShovelItem) return -1;
-            if (b.item instanceof ShovelItem) return 1;
+            if (Automation.Utils.isInstanceOf(a.item, "ShovelItem")) return -1;
+            if (Automation.Utils.isInstanceOf(b.item, "ShovelItem")) return 1;
 
-            if (a.item instanceof MulchShovelItem) return -1;
-            if (b.item instanceof MulchShovelItem) return 1;
+            if (Automation.Utils.isInstanceOf(a.item, "MulchShovelItem")) return -1;
+            if (Automation.Utils.isInstanceOf(b.item, "MulchShovelItem")) return 1;
 
             return a.item.basePrice - b.item.basePrice;
         }
@@ -756,24 +756,24 @@ class AutomationShop
     static __internal__getItemQuantity(item)
     {
         // Pokeballs always return 0 if checked through player.itemList, their dedicated getter need to be used
-        if (item instanceof PokeballItem)
+        if (Automation.Utils.isInstanceOf(item, "PokeballItem"))
         {
             return App.game.pokeballs.getBallQuantity(GameConstants.Pokeball[item.name]);
         }
 
         // Shovels
-        if (item instanceof ShovelItem)
+        if (Automation.Utils.isInstanceOf(item, "ShovelItem"))
         {
             return App.game.farming.shovelAmt();
         }
 
-        if (item instanceof MulchShovelItem)
+        if (Automation.Utils.isInstanceOf(item, "MulchShovelItem"))
         {
             return App.game.farming.mulchShovelAmt();
         }
 
         // Mulch
-        if (item instanceof MulchItem)
+        if (Automation.Utils.isInstanceOf(item, "MulchItem"))
         {
             return App.game.farming.mulchList[MulchType[item.name]]();
         }

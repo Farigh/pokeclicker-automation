@@ -109,7 +109,7 @@ class AutomationUtilsGym
             }
 
             // Some gyms are trials linked to a dungeon, don't consider those
-            if (TownList[gymTown] instanceof DungeonTown)
+            if (Automation.Utils.isInstanceOf(TownList[gymTown], "DungeonTown"))
             {
                 continue;
             }
@@ -123,7 +123,7 @@ class AutomationUtilsGym
             }
 
             // Some champion have a team that depends on the player's starter pick
-            if (gym instanceof Champion)
+            if (Automation.Utils.isInstanceOf(gym, "Champion"))
             {
                 gym.setPokemon(player.regionStarters[townRegion]());
             }
