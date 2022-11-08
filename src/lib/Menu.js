@@ -624,6 +624,7 @@ class AutomationMenu
         let labelElem = document.createElement("label");
         labelElem.classList.add("automationTabLabel");
         labelElem.textContent = label;
+        labelElem.id = `${currentTabId}-label`;
         labelElem.setAttribute("for", currentTabId);
         tabLabelContainer.appendChild(labelElem);
 
