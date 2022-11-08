@@ -96,7 +96,8 @@ class AutomationUtilsRoute
     static canMoveToRegion(region)
     {
         // Not possible move
-        if (Automation.Utils.isInInstanceState()
+        if (isNaN(region)
+            || Automation.Utils.isInInstanceState()
             || (region > player.highestRegion())
             || (region < 0))
         {

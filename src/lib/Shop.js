@@ -43,6 +43,9 @@ class AutomationShop
                                               MaxBuyUnitPrice:  function(itemName) { return `Shop-${itemName}-MaxBuyUnitPrice`; }
                                           };
 
+    static __internal__shopListCount = 0;
+    static __internal__tabs = new Map();
+
     /**
      * @brief Builds the menu
      */
@@ -77,16 +80,9 @@ class AutomationShop
         titleDiv.style.marginBottom = "10px";
         shoppingSettingPanel.appendChild(titleDiv);
 
-        const shopSettingsTabsGroup = "automationShopSettings";
-
-        const mainShopTabContainer = Automation.Menu.addTabElement(shoppingSettingPanel, "Pokédolars", shopSettingsTabsGroup);
-        let isAnyItemHidden = this.__internal__buildShopItemListMenu(mainShopTabContainer, GameConstants.Currency.money);
-
-        const questShopTabContainer = Automation.Menu.addTabElement(shoppingSettingPanel, "Eggs", shopSettingsTabsGroup);
-        isAnyItemHidden |= this.__internal__buildShopItemListMenu(questShopTabContainer, GameConstants.Currency.questPoint);
-
-        const farmShopTabContainer = Automation.Menu.addTabElement(shoppingSettingPanel, "Farm tools", shopSettingsTabsGroup);
-        isAnyItemHidden |= this.__internal__buildShopItemListMenu(farmShopTabContainer, GameConstants.Currency.farmPoint);
+        let isAnyItemHidden = this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Pokédolars", GameConstants.Currency.money);
+        isAnyItemHidden |= this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Eggs", GameConstants.Currency.questPoint);
+        isAnyItemHidden |= this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Farm tools", GameConstants.Currency.farmPoint);
 
         // Set an unlock watcher if needed
         if (isAnyItemHidden)
@@ -108,6 +104,13 @@ class AutomationShop
                     if (itemData.rowElem && itemData.rowElem.hidden && itemData.isUnlocked())
                     {
                         itemData.rowElem.hidden = false;
+                        const tabElems = this.__internal__tabs.get(itemData.item.currency);
+                        if (tabElems)
+                        {
+                            tabElems.label.hidden = false;
+                            tabElems.content.hidden = false;
+                            this.__internal__tabs.delete(itemData.item.currency);
+                        }
                     }
                 }
 
@@ -148,13 +151,24 @@ class AutomationShop
         }
     }
 
+
     /**
-     * @brief Adds the shop item list and adds it to the advanced settings
+     * @brief Adds the shop item tab to the advanced settings
      *
      * @param {Element} parentDiv: The div to add the list to
+     * @param {string} tabName: The tab label name
+     * @param currency: The pokéclicker currency associated with the tab
+     *
+     * @returns True if the item is hidden, false otherwise
      */
-    static __internal__buildShopItemListMenu(parentDiv, currency)
+    static __internal__buildShopItemListMenu(parentDiv, tabName, currency)
     {
+        this.__internal__shopListCount += 1;
+
+        // Add the tab
+        const shopSettingsTabsGroup = "automationShopSettings";
+        const tabContainer = Automation.Menu.addTabElement(parentDiv, tabName, shopSettingsTabsGroup);
+
         // Add the min currency limit input
         const minCurrencyInputContainer = document.createElement("div");
         minCurrencyInputContainer.style.textAlign = "left";
@@ -198,7 +212,7 @@ class AutomationShop
             this.__internal__activeTimeouts.set(mapKey, timeout);
         }.bind(this);
 
-        parentDiv.appendChild(minCurrencyInputContainer);
+        tabContainer.appendChild(minCurrencyInputContainer);
 
         // Add the shop item list
         const table = document.createElement("table");
@@ -206,13 +220,27 @@ class AutomationShop
         table.style.marginLeft = "auto"; // Align table to the right
 
         let isAnyItemHidden = false;
+        let isAnyItemVisible = false;
 
         for (const itemData of this.__internal__shopItems.filter(data => data.item.currency === currency))
         {
-            isAnyItemHidden |= this.__internal__addItemToTheList(table, itemData);
+            const isItemHidden = this.__internal__addItemToTheList(table, itemData);
+            isAnyItemHidden |= isItemHidden;
+            isAnyItemVisible |= !isItemHidden;
         }
 
-        parentDiv.appendChild(table);
+        // Hide the entire tab of no item is visible
+        if (!isAnyItemVisible)
+        {
+            const tabLabelContainer =
+                document.getElementById(`automation-tab-${shopSettingsTabsGroup.replaceAll(" ", "-")}-${this.__internal__shopListCount}-label`);
+            tabLabelContainer.hidden = true;
+            tabContainer.hidden = true;
+
+            this.__internal__tabs.set(currency, { label: tabLabelContainer, content: tabContainer });
+        }
+
+        tabContainer.appendChild(table);
 
         return isAnyItemHidden;
     }

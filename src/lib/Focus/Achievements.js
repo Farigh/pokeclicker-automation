@@ -23,10 +23,9 @@ class AutomationFocusAchievements
                        + "This feature handles the following achievements:\n"
                        + "Route Kill, Clear Gym and Clear Dungeon\n"
                        + "The achievements will be completed in region order.\n"
-                       + "The current achievement will be pinned to the tracker",
+                       + "The current achievement will be pinned to the tracker, if unlocked",
                 run: function (){ this.__internal__start(); }.bind(this),
                 stop: function (){ this.__internal__stop(); }.bind(this),
-                isUnlocked: function (){ return App.game.achievementTracker.canAccess(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }
@@ -113,7 +112,11 @@ class AutomationFocusAchievements
                 return;
             }
 
-            App.game.achievementTracker.trackAchievement(this.__internal__currentAchievement);
+            // Track the achievement only if the tracker was unlocked
+            if (App.game.achievementTracker.canAccess())
+            {
+                App.game.achievementTracker.trackAchievement(this.__internal__currentAchievement);
+            }
         }
     }
 
@@ -244,7 +247,7 @@ class AutomationFocusAchievements
                 // Only handle supported kinds of achievements, if achievable and not already completed
                 if (achievement.isCompleted()
                     || !achievement.achievable()
-                    || (achievement.region > player.highestRegion()))
+                    || (achievement.property.region > player.highestRegion()))
                 {
                     return false;
                 }
@@ -252,7 +255,7 @@ class AutomationFocusAchievements
                 // Consider RouteKill achievements, if the player can move to the target route
                 if (achievement.property instanceof RouteKillRequirement)
                 {
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToRoute(achievement.property.route, achievement.property.region));
                 }
 
@@ -268,7 +271,7 @@ class AutomationFocusAchievements
                         townName = GymList[townName].parent.name;
                     }
 
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToTown(townName)
                             && GymList[gymName].isUnlocked());
                 }
@@ -277,7 +280,7 @@ class AutomationFocusAchievements
                 if (achievement.property instanceof ClearDungeonRequirement)
                 {
                     let dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToTown(dungeonName));
                 }
 
