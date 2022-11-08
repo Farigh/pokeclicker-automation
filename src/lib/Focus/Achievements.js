@@ -23,10 +23,9 @@ class AutomationFocusAchievements
                        + "This feature handles the following achievements:\n"
                        + "Route Kill, Clear Gym and Clear Dungeon\n"
                        + "The achievements will be completed in region order.\n"
-                       + "The current achievement will be pinned to the tracker",
+                       + "The current achievement will be pinned to the tracker, if unlocked",
                 run: function (){ this.__internal__start(); }.bind(this),
                 stop: function (){ this.__internal__stop(); }.bind(this),
-                isUnlocked: function (){ return App.game.achievementTracker.canAccess(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }
@@ -113,7 +112,11 @@ class AutomationFocusAchievements
                 return;
             }
 
-            App.game.achievementTracker.trackAchievement(this.__internal__currentAchievement);
+            // Track the achievement only if the tracker was unlocked
+            if (App.game.achievementTracker.canAccess())
+            {
+                App.game.achievementTracker.trackAchievement(this.__internal__currentAchievement);
+            }
         }
     }
 
