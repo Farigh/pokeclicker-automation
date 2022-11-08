@@ -247,7 +247,7 @@ class AutomationFocusAchievements
                 // Only handle supported kinds of achievements, if achievable and not already completed
                 if (achievement.isCompleted()
                     || !achievement.achievable()
-                    || (achievement.region > player.highestRegion()))
+                    || (achievement.property.region > player.highestRegion()))
                 {
                     return false;
                 }
@@ -255,7 +255,7 @@ class AutomationFocusAchievements
                 // Consider RouteKill achievements, if the player can move to the target route
                 if (achievement.property instanceof RouteKillRequirement)
                 {
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToRoute(achievement.property.route, achievement.property.region));
                 }
 
@@ -271,7 +271,7 @@ class AutomationFocusAchievements
                         townName = GymList[townName].parent.name;
                     }
 
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToTown(townName)
                             && GymList[gymName].isUnlocked());
                 }
@@ -280,7 +280,7 @@ class AutomationFocusAchievements
                 if (achievement.property instanceof ClearDungeonRequirement)
                 {
                     let dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.region)
+                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToTown(dungeonName));
                 }
 
