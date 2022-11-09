@@ -247,7 +247,7 @@ class AutomationTrivia
             // Build the new drop-down list
             for (const [townName, town] of filteredList)
             {
-                const type = (town instanceof DungeonTown) ? "&nbsp;⚔&nbsp;" : "🏫";
+                const type = Automation.Utils.isInstanceOf(town, "DungeonTown") ? "&nbsp;⚔&nbsp;" : "🏫";
 
                 let opt = document.createElement("option");
                 opt.value = townName;
@@ -528,11 +528,12 @@ class AutomationTrivia
      {
 
         // Get the list of towns with bulletin board with a quest
-        const townsWithBoard = Object.entries(TownList).filter(([_, town]) => (town.content.some(content => content instanceof BulletinBoard)));
+        const townsWithBoard = Object.entries(TownList).filter(
+            ([_, town]) => (town.content.some(content => Automation.Utils.isInstanceOf(content, "BulletinBoard"))));
         const townsQuests = townsWithBoard.map(
             ([townName, town]) =>
             {
-                return { name: townName, quests: town.content.find(content => content instanceof BulletinBoard).getQuests() };
+                return { name: townName, quests: town.content.find(content => Automation.Utils.isInstanceOf(content, "BulletinBoard")).getQuests() };
             });
         const townsWithInactiveQuest = townsQuests.filter((data) => data.quests.some(quest => quest.state() === QuestLineState.inactive));
 

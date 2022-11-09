@@ -1600,7 +1600,7 @@ class AutomationFarm
         // Check if the discord is linked and all hints are gathered
         if (App.game.discord.ID() !== null)
         {
-            const enigmaMutation = App.game.farming.mutations.filter((mutation) => mutation instanceof EnigmaMutation)[0];
+            const enigmaMutation = App.game.farming.mutations.filter((mutation) => Automation.Utils.isInstanceOf(mutation, "EnigmaMutation"))[0];
 
             if (enigmaMutation.hintsSeen.every((seen) => seen()))
             {
@@ -1623,7 +1623,7 @@ class AutomationFarm
                     return;
                 }
 
-                const enigmaMutation = App.game.farming.mutations.filter((mutation) => mutation instanceof EnigmaMutation)[0];
+                const enigmaMutation = App.game.farming.mutations.filter((mutation) => Automation.Utils.isInstanceOf(mutation, "EnigmaMutation"))[0];
 
                 if (enigmaMutation.hintsSeen.every((seen) => seen()))
                 {

@@ -670,7 +670,7 @@ class AutomationMenu
      */
     static getCaughtStatusImage(caughtStatus)
     {
-        return '<img class="pokeball-smallest" style="position: relative; top: 1px;"'
+        return '<img class="pokeball-smallest" style="position: relative; top: 1px; filter: invert(1) brightness(90%) !important;"'
              + ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`;
     }
 
