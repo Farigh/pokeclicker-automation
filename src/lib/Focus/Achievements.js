@@ -241,7 +241,7 @@ class AutomationFocusAchievements
     {
         let result = null;
 
-        let availableAchievements = AchievementHandler.achievementList.filter(
+        const availableAchievements = AchievementHandler.achievementList.filter(
             (achievement) =>
             {
                 // Only handle supported kinds of achievements, if achievable and not already completed
@@ -262,16 +262,18 @@ class AutomationFocusAchievements
                 // Consider ClearGym achievements, if the player can move to the target town
                 if (achievement.property instanceof ClearGymRequirement)
                 {
-                    let gymName = GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
+                    const gymName = GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
 
                     // If a ligue champion is the target, the gymTown points to the champion instead of the town
                     let townName = gymName;
-                    if (!TownList[townName])
+                    let town = TownList[gymName];
+                    if (!town)
                     {
                         townName = GymList[townName].parent.name;
+                        town = TownList[townName];
                     }
 
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
+                    return (Automation.Utils.Route.canMoveToRegion(town.region)
                             && MapHelper.accessToTown(townName)
                             && GymList[gymName].isUnlocked());
                 }
@@ -279,8 +281,9 @@ class AutomationFocusAchievements
                 // Consider ClearDungeon achievements, if the player can move to the target dungeon
                 if (achievement.property instanceof ClearDungeonRequirement)
                 {
-                    let dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
+                    const dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
+                    const town = TownList[dungeonName];
+                    return (Automation.Utils.Route.canMoveToRegion(town.region)
                             && MapHelper.accessToTown(dungeonName));
                 }
 
