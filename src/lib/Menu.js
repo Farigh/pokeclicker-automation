@@ -213,8 +213,8 @@ class AutomationMenu
      */
     static addLabeledAdvancedSettingsToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
     {
-        // Enable automation by default, if not already set in local storage
-        Automation.Utils.LocalStorage.setDefaultValue(id, true);
+        // Enable automation by default, if not already set in local storage, unless the user chose to disable settings by default
+        Automation.Utils.LocalStorage.setDefaultValue(id, !this.DisableSettingsByDefault);
 
         let buttonMainContainer = document.createElement("span");
         containingDiv.appendChild(buttonMainContainer);

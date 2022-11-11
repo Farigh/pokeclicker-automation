@@ -32,11 +32,13 @@ class Automation
     /**
      * @brief Automation entry point
      *
-     * @param {boolean} disableFeaturesByDefault: True if every features needs to be disabeld by default, False otherwise
+     * @param {boolean} disableFeaturesByDefault: True if every features needs to be disabled by default, False otherwise
+     * @param {boolean} disableSettingsByDefault: True if every settings needs to be disabled by default, False otherwise
      */
-    static start(disableFeaturesByDefault)
+    static start(disableFeaturesByDefault, disableSettingsByDefault)
     {
         this.Menu.DisableFeaturesByDefault = disableFeaturesByDefault;
+        this.Menu.DisableSettingsByDefault = disableSettingsByDefault;
 
         var timer = setInterval(function()
         {
