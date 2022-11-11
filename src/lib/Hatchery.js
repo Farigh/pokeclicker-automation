@@ -383,8 +383,8 @@ class AutomationHatchery
         }
         else
         {
-            // Enable Pokérus spreading by default
-            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SpreadPokerus, true);
+            // Enable Pokérus spreading by default, unless the user chose to disable settings by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SpreadPokerus, !Automation.Menu.DisableSettingsByDefault);
         }
     }
 
