@@ -24,6 +24,12 @@ class AutomationShop
         {
             // Restore previous session state
             this.__internal__toggleAutoBuy();
+
+            // Set the watcher to display the option once the map has been unlocked, if needed
+            if (this.__internal__shoppingContainer.hidden)
+            {
+                this.__internal__setShoppingUnlockWatcher();
+            }
         }
     }
 
@@ -31,6 +37,7 @@ class AutomationShop
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__shoppingContainer = null;
     static __internal__shopLoop = null;
     static __internal__shopItems = [];
     static __internal__activeTimeouts = new Map();
@@ -52,18 +59,22 @@ class AutomationShop
     static __internal__buildMenu()
     {
         // Add the related buttons to the automation menu
-        const shoppingContainer = document.createElement("div");
-        Automation.Menu.AutomationButtonsDiv.appendChild(shoppingContainer);
+        this.__internal__shoppingContainer = document.createElement("div");
+        Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__shoppingContainer);
 
-        Automation.Menu.addSeparator(shoppingContainer);
+        // Hide the shop until the user has access to the map
+        this.__internal__shoppingContainer.hidden = !App.game.keyItems.hasKeyItem(KeyItemType.Town_map);
+
+        Automation.Menu.addSeparator(this.__internal__shoppingContainer);
 
         const autoShopTooltip = "Automatically buys the configured items (see advanced settings)"
                               + Automation.Menu.TooltipSeparator
                               + "⚠️ This can be cost-heavy";
-        const autoShopButton = Automation.Menu.addAutomationButton("Auto Shop", this.Settings.FeatureEnabled, autoShopTooltip, shoppingContainer);
+        const autoShopButton =
+            Automation.Menu.addAutomationButton("Auto Shop", this.Settings.FeatureEnabled, autoShopTooltip, this.__internal__shoppingContainer);
         autoShopButton.addEventListener("click", this.__internal__toggleAutoBuy.bind(this), false);
 
-        this.__internal__buildAdvancedSettings(shoppingContainer);
+        this.__internal__buildAdvancedSettings(this.__internal__shoppingContainer);
     }
 
     /**
@@ -87,15 +98,31 @@ class AutomationShop
         // Set an unlock watcher if needed
         if (isAnyItemHidden)
         {
-            this.__internal__setShoppingUnlockWatcher();
+            this.__internal__setShoppingItemUnlockWatcher();
         }
     }
 
     /**
-     * @brief Watches for the in-game items to be unlocked (ie. a shop selling it was unlocked).
+     * @brief Watches for the in-game map to be unlocked.
      *        Once unlocked, the menu will be displayed to the user
      */
     static __internal__setShoppingUnlockWatcher()
+    {
+        const watcher = setInterval(function()
+        {
+            if (App.game.keyItems.hasKeyItem(KeyItemType.Town_map))
+            {
+                this.__internal__shoppingContainer.hidden = false;
+                clearInterval(watcher);
+            }
+        }.bind(this), 5000); // Check every 5 seconds
+    }
+
+    /**
+     * @brief Watches for the in-game items to be unlocked (ie. a shop selling it was unlocked).
+     *        Once unlocked, the item will be displayed to the user
+     */
+    static __internal__setShoppingItemUnlockWatcher()
     {
         const watcher = setInterval(function()
             {
