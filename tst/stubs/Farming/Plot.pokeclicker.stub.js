@@ -33,6 +33,11 @@ class Plot
         return 1;
     }
 
+    getGrowthMultiplier()
+    {
+        return 1;
+    }
+
     harvestAmount()
     {
         return Math.floor(Math.max(1, Math.floor(this.berryData.harvestAmount)) * this.getHarvestMultiplier());
