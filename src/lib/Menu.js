@@ -335,6 +335,37 @@ class AutomationMenu
     }
 
     /**
+     * @brief Creates a sort direction (input) element
+     *
+     * @param {string} id: The input id (that will be used for the corresponding local storage item id as well)
+     *
+     * @returns The created element (It's the caller's responsibility to add it to the DOM at some point) and it's input
+     */
+    static createSortDirectionButtonElement(id)
+    {
+        const container = document.createElement("div");
+        container.classList.add("custom-input-order");
+        container.classList.add("bg-primary");
+        container.classList.add("automationDirectionSortButton");
+        container.name = container.id;
+        container.style.display = "inline-block";
+
+        const input = document.createElement("input");
+        input.id = `Automation-${id}`;
+        input.type = "checkbox";
+        input.checked = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        container.appendChild(input);
+
+        const label = document.createElement("label");
+        label.setAttribute("for", input.id);
+        container.appendChild(label);
+
+        input.onclick = function() { Automation.Utils.LocalStorage.setValue(id, input.checked); };
+
+        return { container, input };
+    }
+
+    /**
      * @brief Creates a button element
      *
      * @param {string} id: The button id
@@ -1186,6 +1217,39 @@ class AutomationMenu
                     border-bottom: 4px solid #78b13f;
                     border-right: 4px solid #78b13f;
                 }
+            }
+
+            /*****************************\
+            |*   Sort direction button   *|
+            \*****************************/
+            .automationDirectionSortButton
+            {
+                position: relative;
+                background-color: #CCCCCC;
+                width: 25px;
+                height: 25px;
+                white-space: pre;
+            }
+            .automationDirectionSortButton label
+            {
+                display: block;
+                box-sizing: border-box;
+                height: 25px;
+            }
+            .automationDirectionSortButton label:before
+            {
+                content: "⥂";
+                text-align: center;
+                position: absolute;
+                right: calc(25%);
+            }
+            .automationDirectionSortButton input[type="checkbox"]
+            {
+                display: none;
+            }
+            .automationDirectionSortButton input[type="checkbox"]:checked + label:before
+            {
+                content: "⥄";
             }
 
             /***********\
