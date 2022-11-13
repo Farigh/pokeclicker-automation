@@ -9,6 +9,7 @@ class AutomationHatchery
     static Settings = {
                           FeatureEnabled: "Hatchery-Enabled",
                           NotShinyFirst: "Hatchery-NotShinyFirst",
+                          NotAlternateFormFirst: "Hatchery-NotAlternateFormFirst",
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
@@ -33,8 +34,12 @@ class AutomationHatchery
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
 
+            // Disable no-alternate-form mode by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotAlternateFormFirst, false);
+
             // Set default sorting to descending breeding efficiency
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedSortingDescending, true);
+
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedSorting, SortOptions.breedingEfficiency);
 
             // Set default region priority to Any
@@ -159,7 +164,7 @@ class AutomationHatchery
      */
     static __internal__buildSortingAdvancedSettingCategory(parentDiv)
     {
-        let categoryContainer = Automation.Menu.createSettingCategory("Pokémon breeding order settings");
+        const categoryContainer = Automation.Menu.createSettingCategory("Pokémon breeding order settings");
         parentDiv.appendChild(categoryContainer);
 
         /************************\
@@ -167,7 +172,7 @@ class AutomationHatchery
         \************************/
 
         // Add sorting selector
-        let sortingSelector = this.__internal__buildSortingSelectorList();
+        const sortingSelector = this.__internal__buildSortingSelectorList();
         categoryContainer.appendChild(sortingSelector);
 
         /***********************\
@@ -175,9 +180,9 @@ class AutomationHatchery
         \***********************/
 
         // Add region selector
-        let tooltip = "The pokémons from the selected region will be added in priority";
-        let label = "Prioritize pokémon from the following region:";
-        let regionSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.PrioritizedRegion);
+        const regionTooltip = "The pokémons from the selected region will be added in priority";
+        const regionLabel = "Prioritize pokémon from the following region:";
+        const regionSelector = this.__internal__buildRegionSelectorList(regionTooltip, regionLabel, this.Settings.PrioritizedRegion);
         categoryContainer.appendChild(regionSelector);
 
         /*********************\
@@ -185,7 +190,7 @@ class AutomationHatchery
         \*********************/
 
         // Add type selector
-        let typeSelector = this.__internal__buildTypeSelectorList();
+        const typeSelector = this.__internal__buildTypeSelectorList();
         categoryContainer.appendChild(typeSelector);
 
         /*******************\
@@ -195,27 +200,37 @@ class AutomationHatchery
         // Add regional debuff selector (only if the challenge is active)
         if (App.game.challenges.list.regionalAttackDebuff.active())
         {
-            tooltip = "The regional debuff will be considered while\n"
-                    + "sorting pokémon using the selected attribute\n"
-                    + "(for now only the Breeding efficiency is available)";
-            label = "Regional attack debuff to consider:";
-            let regionalDebuffSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.RegionalDebuffRegion);
+            const regionalDebufTooltip = "The regional debuff will be considered while\n"
+                                       + "sorting pokémon using the selected attribute\n"
+                                       + "(for now only the Breeding efficiency is available)";
+            const regionalDebufLabel = "Regional attack debuff to consider:";
+            const regionalDebuffSelector =
+                this.__internal__buildRegionSelectorList(regionalDebufTooltip, regionalDebufLabel, this.Settings.RegionalDebuffRegion);
             categoryContainer.appendChild(regionalDebuffSelector);
         }
 
         // Add the shiny setting
-        let shinyTooltip = "Only add shinies to the hatchery if no other pokémon is available"
-                         + Automation.Menu.TooltipSeparator
-                         + "This is useful to farm shinies you don't have yet";
+        const shinyTooltip = "Only add shinies to the hatchery if no other pokémon is available"
+                           + Automation.Menu.TooltipSeparator
+                           + "This is useful to farm shinies you don't have yet";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider shiny pokémons last",
                                                                this.Settings.NotShinyFirst,
                                                                shinyTooltip,
                                                                categoryContainer);
 
+        // Add the alternate forms setting
+        const alternateFormTooltip = "Only add alternate forms to the hatchery if no other pokémon is available"
+                                   + Automation.Menu.TooltipSeparator
+                                   + "This is useful to farm shiny dex archievements, as they do not include alternate forms";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider alternate forms last",
+                                                               this.Settings.NotAlternateFormFirst,
+                                                               alternateFormTooltip,
+                                                               categoryContainer);
+
         // Add the pokérus setting
-        let pokerusTooltip = "Spread the Pokérus in priority"
-                           + Automation.Menu.TooltipSeparator
-                           + "This will try to infect as many pokémon as possible with the Pokérus";
+        const pokerusTooltip = "Spread the Pokérus in priority"
+                             + Automation.Menu.TooltipSeparator
+                             + "This will try to infect as many pokémon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
     }
@@ -689,6 +704,7 @@ class AutomationHatchery
         const sortPriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
         const sortPriorityDescending = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
         const notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
+        const notAlternateFormFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
         const regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
         const regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
         const typePriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
@@ -746,6 +762,19 @@ class AutomationHatchery
                         return 1;
                     }
                     if (!a.shiny && b.shiny)
+                    {
+                        return -1;
+                    }
+                }
+
+                // Not alternate form priority
+                if (notAlternateFormFirst)
+                {
+                    if (!Number.isInteger(a.id) && Number.isInteger(b.id))
+                    {
+                        return 1;
+                    }
+                    if (Number.isInteger(a.id) && !Number.isInteger(b.id))
                     {
                         return -1;
                     }
