@@ -1,5 +1,6 @@
 // Import game constants
 import "tst/stubs/GameConstants.pokeclicker.stub.js";
+import "tst/stubs/SortOptions.pokeclicker.stub.js";
 
 // Import enums
 import "tst/stubs/Farming/BerryType.pokeclicker.stub.js";
