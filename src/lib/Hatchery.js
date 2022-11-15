@@ -9,9 +9,12 @@ class AutomationHatchery
     static Settings = {
                           FeatureEnabled: "Hatchery-Enabled",
                           NotShinyFirst: "Hatchery-NotShinyFirst",
+                          NotAlternateFormFirst: "Hatchery-NotAlternateFormFirst",
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
+                          PrioritizedSorting: "Hatchery-PrioritizedSorting",
+                          PrioritizedSortingDescending: "Hatchery-PrioritizedSortingDescending",
                           PrioritizedType: "Hatchery-PrioritizedType",
                           PrioritizedRegion: "Hatchery-PrioritizedRegion",
                           RegionalDebuffRegion: "Hatchery-RegionalDebuffRegion"
@@ -30,6 +33,14 @@ class AutomationHatchery
         {
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
+
+            // Disable no-alternate-form mode by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotAlternateFormFirst, false);
+
+            // Set default sorting to descending breeding efficiency
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedSortingDescending, true);
+
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedSorting, SortOptions.breedingEfficiency);
 
             // Set default region priority to Any
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedRegion, GameConstants.Region.none);
@@ -112,32 +123,32 @@ class AutomationHatchery
             this.__internal__setHatcheryUnlockWatcher();
         }
 
-        let autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
-                                + Automation.Menu.TooltipSeparator
-                                + "The higher beeding efficiency pokémon are added first\n"
-                                + "The queue is not used, as it would reduce the pokémon Attack\n"
-                                + "It also enables you to manually add pokémons to the queue\n"
-                                + "The queued pokémon are hatched first";
-        let autoHatcheryButton =
+        const autoHatcheryTooltip = "Automatically adds eggs to the hatchery"
+                                  + Automation.Menu.TooltipSeparator
+                                  + "The higher beeding efficiency pokémon are added first\n"
+                                  + "The queue is not used, as it would reduce the pokémon Attack\n"
+                                  + "It also enables you to manually add pokémons to the queue\n"
+                                  + "The queued pokémon are hatched first";
+        const autoHatcheryButton =
             Automation.Menu.addAutomationButton("Hatchery", this.Settings.FeatureEnabled, autoHatcheryTooltip, this.__internal__hatcheryContainer);
         autoHatcheryButton.addEventListener("click", this.toggleAutoHatchery.bind(this), false);
 
         // Build advanced settings panel
-        let hatcherySettingPanel = Automation.Menu.addSettingPanel(autoHatcheryButton.parentElement.parentElement);
+        const hatcherySettingPanel = Automation.Menu.addSettingPanel(autoHatcheryButton.parentElement.parentElement);
 
-        let titleDiv = Automation.Menu.createTitleElement("Hatchery advanced settings");
+        const titleDiv = Automation.Menu.createTitleElement("Hatchery advanced settings");
         titleDiv.style.marginBottom = "10px";
         hatcherySettingPanel.appendChild(titleDiv);
 
-        let fossilTooltip = "Add fossils to the hatchery as well"
-                          + Automation.Menu.TooltipSeparator
-                          + "Only fossils for which pokémon are not currently held are added";
+        const fossilTooltip = "Add fossils to the hatchery as well"
+                            + Automation.Menu.TooltipSeparator
+                            + "Only fossils for which pokémon are not currently held are added";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Hatch Fossils that can breed an uncaught pokémon", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
-        let eggTooltip = "Add eggs to the hatchery as well"
-                       + Automation.Menu.TooltipSeparator
-                       + "Only eggs for which some pokémon are not currently held are added\n"
-                       + "Only one egg of a given type is used at the same time";
+        const eggTooltip = "Add eggs to the hatchery as well"
+                         + Automation.Menu.TooltipSeparator
+                         + "Only eggs for which some pokémon are not currently held are added\n"
+                         + "Only one egg of a given type is used at the same time";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Hatch Eggs that can breed an uncaught pokémon", this.Settings.UseEggs, eggTooltip, hatcherySettingPanel);
 
@@ -153,31 +164,33 @@ class AutomationHatchery
      */
     static __internal__buildSortingAdvancedSettingCategory(parentDiv)
     {
-        let categoryContainer = Automation.Menu.createSettingCategory("Pokémon breeding order settings");
+        const categoryContainer = Automation.Menu.createSettingCategory("Pokémon breeding order settings");
         parentDiv.appendChild(categoryContainer);
 
-        // For now only Breeding efficiency is possible
-        let sortingOrder = document.createElement("div");
-        sortingOrder.style.paddingRight = "12px";
-        sortingOrder.textContent = "Sorting on attribute: Breeding efficiency";
-        categoryContainer.appendChild(sortingOrder);
+        /************************\
+        |* Sorting prioritizing *|
+        \************************/
+
+        // Add sorting selector
+        const sortingSelector = this.__internal__buildSortingSelectorList();
+        categoryContainer.appendChild(sortingSelector);
 
         /***********************\
         |* Region prioritizing *|
         \***********************/
 
         // Add region selector
-        let tooltip = "The pokémons from the selected region will be added in priority";
-        let label = "Prioritize pokémon from the following region:";
-        let regionSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.PrioritizedRegion);
+        const regionTooltip = "The pokémons from the selected region will be added in priority";
+        const regionLabel = "Prioritize pokémon from the following region:";
+        const regionSelector = this.__internal__buildRegionSelectorList(regionTooltip, regionLabel, this.Settings.PrioritizedRegion);
         categoryContainer.appendChild(regionSelector);
 
         /*********************\
         |* Type prioritizing *|
         \*********************/
 
-        // Add region selector
-        let typeSelector = this.__internal__buildTypeSelectorList();
+        // Add type selector
+        const typeSelector = this.__internal__buildTypeSelectorList();
         categoryContainer.appendChild(typeSelector);
 
         /*******************\
@@ -187,27 +200,37 @@ class AutomationHatchery
         // Add regional debuff selector (only if the challenge is active)
         if (App.game.challenges.list.regionalAttackDebuff.active())
         {
-            tooltip = "The regional debuff will be considered while\n"
-                    + "sorting pokémon using the selected attribute\n"
-                    + "(for now only the Breeding efficiency is available)";
-            label = "Regional attack debuff to consider:";
-            let regionalDebuffSelector = this.__internal__buildRegionSelectorList(tooltip, label, this.Settings.RegionalDebuffRegion);
+            const regionalDebufTooltip = "The regional debuff will be considered while\n"
+                                       + "sorting pokémon using the selected attribute\n"
+                                       + "(for now only the Breeding efficiency is available)";
+            const regionalDebufLabel = "Regional attack debuff to consider:";
+            const regionalDebuffSelector =
+                this.__internal__buildRegionSelectorList(regionalDebufTooltip, regionalDebufLabel, this.Settings.RegionalDebuffRegion);
             categoryContainer.appendChild(regionalDebuffSelector);
         }
 
         // Add the shiny setting
-        let shinyTooltip = "Only add shinies to the hatchery if no other pokémon is available"
-                         + Automation.Menu.TooltipSeparator
-                         + "This is useful to farm shinies you don't have yet";
+        const shinyTooltip = "Only add shinies to the hatchery if no other pokémon is available"
+                           + Automation.Menu.TooltipSeparator
+                           + "This is useful to farm shinies you don't have yet";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider shiny pokémons last",
                                                                this.Settings.NotShinyFirst,
                                                                shinyTooltip,
                                                                categoryContainer);
 
+        // Add the alternate forms setting
+        const alternateFormTooltip = "Only add alternate forms to the hatchery if no other pokémon is available"
+                                   + Automation.Menu.TooltipSeparator
+                                   + "This is useful to farm shiny dex archievements, as they do not include alternate forms";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Consider alternate forms last",
+                                                               this.Settings.NotAlternateFormFirst,
+                                                               alternateFormTooltip,
+                                                               categoryContainer);
+
         // Add the pokérus setting
-        let pokerusTooltip = "Spread the Pokérus in priority"
-                           + Automation.Menu.TooltipSeparator
-                           + "This will try to infect as many pokémon as possible with the Pokérus";
+        const pokerusTooltip = "Spread the Pokérus in priority"
+                             + Automation.Menu.TooltipSeparator
+                             + "This will try to infect as many pokémon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
     }
@@ -238,7 +261,7 @@ class AutomationHatchery
         let selectElem = Automation.Menu.createDropDownListElement("selectedType-Hatchery");
         selectElem.style.position = "relative";
         selectElem.style.bottom = "2px";
-        selectElem.style.width = "85px";
+        selectElem.style.width = "110px";
         selectElem.style.marginLeft = "4px";
         selectElem.style.paddingLeft = "3px";
         container.appendChild(selectElem);
@@ -284,6 +307,92 @@ class AutomationHatchery
 
 
     /**
+     * @brief Builds the sorting selector drop-down list
+     *
+     * @returns the created element
+     */
+    static __internal__buildSortingSelectorList()
+    {
+        const container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+
+        // Set the tooltip
+        const baseTooltip = "The sorting criteria to consider when adding pokémon to the hatchery"
+                          + Automation.Menu.TooltipSeparator
+                          + "It uses the same logic as the sorting in the Day Care\n"
+                          + "but it also takes into account the regional attack debuff,\n"
+                          + "if set in the corresponding setting.";
+
+        const isDescending = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
+        const tooltip = baseTooltip
+                      + Automation.Menu.TooltipSeparator
+                      + "Sorting direction: " + (isDescending ? "Descending (highest value first)" : "Ascending (lowest value first)");
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+
+        // Add the label
+        container.appendChild(document.createTextNode("Sorting on attribute:"));
+
+        // Add the drop-down list
+        const selectElem = Automation.Menu.createDropDownListElement("selectedSorting-Hatchery");
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "85px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        selectElem.style.borderTopRightRadius = "0px";
+        selectElem.style.borderBottomRightRadius = "0px";
+        container.appendChild(selectElem);
+
+        const previouslySelectedType = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting);
+
+        // Populate the list
+        for (const sortType in SortOptionConfigs)
+        {
+            const opt = document.createElement("option");
+            // Set the type name as the content
+            opt.textContent = SortOptionConfigs[sortType].text;
+
+            opt.value = sortType;
+            opt.id = sortType;
+
+            // Restore the previouly seletected item
+            if (sortType == previouslySelectedType)
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            selectElem.options.add(opt);
+        }
+
+        // Update the local storage if the value is changed by the user
+        selectElem.onchange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.PrioritizedSorting, selectElem.value);
+            }.bind(this);
+
+        // Add the sort direction button
+        const sortDirectionElem = Automation.Menu.createSortDirectionButtonElement(this.Settings.PrioritizedSortingDescending);
+        // Update the tooltip on sort change
+        sortDirectionElem.input.addEventListener("click", function()
+            {
+                const isDescending = sortDirectionElem.input.checked;
+                const newTooltip = baseTooltip
+                                 + Automation.Menu.TooltipSeparator
+                                 + "Sorting direction: " + (isDescending ? "Descending (highest value first)" : "Ascending (lowest value first)");
+                container.setAttribute("automation-tooltip-text", newTooltip);
+            }, false);
+        sortDirectionElem.container.style.borderTopRightRadius = "5px";
+        sortDirectionElem.container.style.borderBottomRightRadius = "5px";
+        container.appendChild(sortDirectionElem.container);
+
+        return container;
+    }
+
+
+    /**
      * @brief Builds a region selector drop-down list
      *
      * @param {string} tooltip: The tooltip to use
@@ -305,7 +414,7 @@ class AutomationHatchery
         let selectElem = Automation.Menu.createDropDownListElement("selectedRegion-" + setting);
         selectElem.style.position = "relative";
         selectElem.style.bottom = "2px";
-        selectElem.style.width = "85px";
+        selectElem.style.width = "110px";
         selectElem.style.marginLeft = "4px";
         selectElem.style.paddingLeft = "3px";
         container.appendChild(selectElem);
@@ -585,17 +694,30 @@ class AutomationHatchery
     static __internal__getBreedablePokemonByBreedingEfficiency()
     {
         // Get breedable pokemon list
-        let pokemonToBreed = App.game.party.caughtPokemon.filter(
+        const pokemonToBreed = App.game.party.caughtPokemon.filter(
             (pokemon) =>
             {
                 // Only consider breedable Pokemon (ie. not breeding and lvl 100)
                 return !pokemon.breeding && (pokemon.level == 100);
             });
 
-        let notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
-        let regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
-        let regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
-        let typePriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
+        const sortPriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
+        const sortPriorityDescending = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
+        const notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
+        const notAlternateFormFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
+        const regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
+        const regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
+        const typePriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
+
+        let sortPriorityFunction = SortOptionConfigs[sortPriority].getValue;
+        if (sortPriority === SortOptions.breedingEfficiency)
+        {
+            // Add the regional debuff multiplier for the breeding efficiency
+            sortPriorityFunction = function(p)
+                {
+                    return SortOptionConfigs[sortPriority].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
+                };
+        }
 
         // Sort list by breeding efficiency
         pokemonToBreed.sort((a, b) =>
@@ -603,8 +725,8 @@ class AutomationHatchery
                 // Region priority
                 if (regionPriority != GameConstants.Region.none)
                 {
-                    let isARegionValid = pokemonMap[a.name].nativeRegion == regionPriority;
-                    let isBRegionValid = pokemonMap[b.name].nativeRegion == regionPriority;
+                    const isARegionValid = pokemonMap[a.name].nativeRegion == regionPriority;
+                    const isBRegionValid = pokemonMap[b.name].nativeRegion == regionPriority;
 
                     if (isARegionValid && !isBRegionValid)
                     {
@@ -619,8 +741,8 @@ class AutomationHatchery
                 // Type priority
                 if (typePriority != PokemonType.None)
                 {
-                    let isATypeValid = pokemonMap[a.name].type.includes(typePriority);
-                    let isBTypeValid = pokemonMap[b.name].type.includes(typePriority);
+                    const isATypeValid = pokemonMap[a.name].type.includes(typePriority);
+                    const isBTypeValid = pokemonMap[b.name].type.includes(typePriority);
 
                     if (isATypeValid && !isBTypeValid)
                     {
@@ -645,22 +767,30 @@ class AutomationHatchery
                     }
                 }
 
-                // Breeding efficiency order
-                let aValue = ((a.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + a.proteinsUsed()) / pokemonMap[a.name].eggCycles)
-                           * PartyController.calculateRegionalMultiplier(a, regionalDebuff);
-                let bValue = ((b.baseAttack * (GameConstants.BREEDING_ATTACK_BONUS / 100) + b.proteinsUsed()) / pokemonMap[b.name].eggCycles)
-                           * PartyController.calculateRegionalMultiplier(b, regionalDebuff);
-
-                if (aValue < bValue)
+                // Not alternate form priority
+                if (notAlternateFormFirst)
                 {
-                    return 1;
-                }
-                if (aValue > bValue)
-                {
-                    return -1;
+                    if (!Number.isInteger(a.id) && Number.isInteger(b.id))
+                    {
+                        return 1;
+                    }
+                    if (Number.isInteger(a.id) && !Number.isInteger(b.id))
+                    {
+                        return -1;
+                    }
                 }
 
-                return 0;
+                const aValue = sortPriorityFunction(a);
+                const bValue = sortPriorityFunction(b);
+
+                if (sortPriorityDescending)
+                {
+                    return bValue - aValue;
+                }
+                else
+                {
+                    return aValue - bValue;
+                }
             });
 
         return pokemonToBreed;

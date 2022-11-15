@@ -80,11 +80,14 @@ function expectBreedingPokemonOrderedByBreedingEfficiencyOnly()
 
 function resetSettings()
 {
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedSortingDescending, true);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.NotShinyFirst, false);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.NotAlternateFormFirst, false);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.SpreadPokerus, true);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedRegion, GameConstants.Region.none);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedType, PokemonType.None);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedSorting, SortOptions.breedingEfficiency);
 }
 
 /************************\
@@ -113,8 +116,10 @@ beforeAll(() =>
 
         // Filtering settings
         resetSettings();
+        expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedSortingDescending)).toBe("true");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.SpreadPokerus)).toBe("true");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.NotShinyFirst)).toBe("false");
+        expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.NotAlternateFormFirst)).toBe("false");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedRegion)).toBe("-1");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedType)).toBe("-1");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.RegionalDebuffRegion)).toBe("-1");
