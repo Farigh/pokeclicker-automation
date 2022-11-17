@@ -91,7 +91,7 @@ class AutomationShop
         titleDiv.style.marginBottom = "10px";
         shoppingSettingPanel.appendChild(titleDiv);
 
-        let isAnyItemHidden = this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Pokédolars", GameConstants.Currency.money);
+        let isAnyItemHidden = this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Pokédollars", GameConstants.Currency.money);
         isAnyItemHidden |= this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Eggs", GameConstants.Currency.questPoint);
         isAnyItemHidden |= this.__internal__buildShopItemListMenu(shoppingSettingPanel, "Farm tools", GameConstants.Currency.farmPoint);
 
@@ -635,9 +635,9 @@ class AutomationShop
 
         // Don't buy if the player has under 1'000'000 pokédollars by default
         // Load old value if it exists
-        const oldPokedolarsValue = Automation.Utils.LocalStorage.getValue("Shop-MinPlayerCurrency");
+        const oldPokedollarsValue = Automation.Utils.LocalStorage.getValue("Shop-MinPlayerCurrency");
         Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.money),
-                                                      oldPokedolarsValue ?? 1000000);
+                                                      oldPokedollarsValue ?? 1000000);
         // Clean up the old value
         Automation.Utils.LocalStorage.unsetValue("Shop-MinPlayerCurrency");
         // TODO (06/11/2022): Definitly remove the value in the next release
