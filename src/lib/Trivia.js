@@ -495,9 +495,9 @@ class AutomationTrivia
 
         for (const pokemon of PokemonHelper.getPokemonsWithEvolution(GameConstants.StoneType[stone]))
         {
-            for (const status of PartyController.getStoneEvolutionsCaughtStatus(pokemon.id, GameConstants.StoneType[stone]))
+            for (const data of PartyController.getStoneEvolutionsCaughtData(pokemon.id, GameConstants.StoneType[stone]))
             {
-                hasCandidate |= (status == 0);
+                hasCandidate |= (data.status == 0);
             }
         }
 
