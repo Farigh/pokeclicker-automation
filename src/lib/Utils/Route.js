@@ -67,8 +67,8 @@ class AutomationUtilsRoute
         {
             MapHelper.moveToTown(GameConstants.DockTowns[town.region]);
             player.region = town.region;
-            player._subregion(0);
         }
+        player.subregion = town.subRegion;
 
         MapHelper.moveToTown(townName);
     }
