@@ -142,12 +142,15 @@ class AutomationFarm
         titleDiv.style.marginBottom = "10px";
         farmingSettingPanel.appendChild(titleDiv);
 
+        // Focus on unlock button
+        const unlockLabel = "Focus on unlocking plots and new berries";
         const unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Focus on unlocking plots and new berries",
-                                                               this.Settings.FocusOnUnlocks,
-                                                               unlockTooltip,
-                                                               farmingSettingPanel);
+        const unlockButton = Automation.Menu.addLabeledAdvancedSettingsToggleButton(unlockLabel,
+                                                                                    this.Settings.FocusOnUnlocks,
+                                                                                    unlockTooltip,
+                                                                                    farmingSettingPanel);
 
+        // Disable ak items button
         const disableOakItemTooltip = "Modifies the oak item loadout when required for a mutation to occur"
                                     + Automation.Menu.TooltipSeparator
                                     + "⚠️ Disabling this functionality will prevent some berries from being unlocked";
@@ -156,16 +159,26 @@ class AutomationFarm
                                                                disableOakItemTooltip,
                                                                farmingSettingPanel);
 
-        const gatherAsLateAsPossibleTooltip = "Harvests berries as late as possible"
-                                            + Automation.Menu.TooltipSeparator
-                                            + "Enabling this setting will harvest the berries right before they die.\n"
-                                            + "This is useful when you want the aura instead of the berry itself.\n"
-                                            + "This settings is not considered when the\n"
-                                            + "'Focus on unlocking plots and new berries' setting is disabled.";
+        // Gather as late as possible button
+        const gatherAsLateAsPossibleTooltip = "Enabling this setting will harvest the berries right before they die.\n"
+                                            + "This is useful when you want the aura instead of the berry itself.\n";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Harvest berries as late as possible",
                                                                this.Settings.HarvestLate,
                                                                gatherAsLateAsPossibleTooltip,
                                                                farmingSettingPanel);
+
+        // Disable the harvest late feature if the Focus on unlocks is enabled
+        const disableReason = "This settings is not considered when the\n"
+                            + `'${unlockLabel}' setting is enabled`;
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
+        {
+            Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, true, disableReason);
+        }
+        unlockButton.addEventListener("click", function()
+                                      {
+                                           const disableState = (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true");
+                                           Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, disableState, disableReason);
+                                      }.bind(this), false);
     }
 
     /**
