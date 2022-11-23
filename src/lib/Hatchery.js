@@ -11,6 +11,7 @@ class AutomationHatchery
                           NotShinyFirst: "Hatchery-NotShinyFirst",
                           NotAlternateFormFirst: "Hatchery-NotAlternateFormFirst",
                           SpreadPokerus: "Hatchery-SpreadPokerus",
+                          UnlockMegaEvolutions: "Hatchery-UnlockMegaEvolutions",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
                           PrioritizedSorting: "Hatchery-PrioritizedSorting",
@@ -31,6 +32,9 @@ class AutomationHatchery
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            // Disable mega evolution unlock mode by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UnlockMegaEvolutions, false);
+
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
 
@@ -233,6 +237,14 @@ class AutomationHatchery
                              + "This will try to infect as many pokémon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
+
+        // Add the mega evolution setting
+        const megaEvolutionTooltip = "Tries to unlock mega evolution requirements in priority"
+                                   + Automation.Menu.TooltipSeparator
+                                   + "Mega evolutions are not possible until the pokémon reaches\n"
+                                   + "a certain attack increase compared to its base attack.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Focus on mega evolution requirements unlock", this.Settings.UnlockMegaEvolutions, megaEvolutionTooltip, categoryContainer);
     }
 
 
@@ -581,7 +593,7 @@ class AutomationHatchery
         {
             // Sort pokemon by breeding efficiency
             let pokemonToBreed = [];
-            let sortedPokemonToBreed = this.__internal__getBreedablePokemonByBreedingEfficiency();
+            const sortedPokemonToBreed = this.__internal__getBreedablePokemonByBreedingEfficiency();
 
             // Spread pokerus if enabled
             if (Automation.Utils.LocalStorage.getValue(this.Settings.SpreadPokerus) === "true")
@@ -702,6 +714,7 @@ class AutomationHatchery
             });
 
         const sortPriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
+        const megaEvolutionsFirst = Automation.Utils.LocalStorage.getValue(this.Settings.UnlockMegaEvolutions) === "true";
         const sortPriorityDescending = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
         const notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
         const notAlternateFormFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
@@ -718,6 +731,8 @@ class AutomationHatchery
                     return SortOptionConfigs[sortPriority].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
                 };
         }
+
+        const megaEvolutionsPokemons = megaEvolutionsFirst ? this.__internal__getUnderleveledMegaEvolutions() : [];
 
         // Sort list by breeding efficiency
         pokemonToBreed.sort((a, b) =>
@@ -749,6 +764,22 @@ class AutomationHatchery
                         return -1;
                     }
                     if (!isATypeValid && isBTypeValid)
+                    {
+                        return 1;
+                    }
+                }
+
+                // Mega evolution priority
+                if (megaEvolutionsFirst)
+                {
+                    const isAMegaEvolNeeded = megaEvolutionsPokemons.some(p => p.name == a.name);
+                    const isBMegaEvolNeeded = megaEvolutionsPokemons.some(p => p.name == b.name);
+
+                    if (isAMegaEvolNeeded && !isBMegaEvolNeeded)
+                    {
+                        return -1;
+                    }
+                    if (!isAMegaEvolNeeded && isBMegaEvolNeeded)
                     {
                         return 1;
                     }
@@ -946,5 +977,32 @@ class AutomationHatchery
         }
 
         return currentList;
+    }
+
+    /**
+     * @brief Lists the possible Mega evolutions that does not meet the requirements
+     *
+     * @returns The list of pokemons to raise the base attack of
+     */
+    static __internal__getUnderleveledMegaEvolutions()
+    {
+        return App.game.party.caughtPokemon.filter((partyPokemon) =>
+            {
+                if (!partyPokemon.evolutions)
+                {
+                    return false;
+                }
+                for (const evolution of partyPokemon.evolutions)
+                {
+                    if ((evolution.trigger === EvoTrigger.STONE)
+                        && (evolution?.stone == GameConstants.StoneType.Key_stone)
+                        && PokemonHelper.calcNativeRegion(evolution.evolvedPokemon) <= player.highestRegion())
+                    {
+                        // Only consider mega evolution with an incomplete mega evolution requirement
+                        return !evolution.restrictions?.filter(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement"))[0]?.isCompleted();
+                    }
+                }
+                return false;
+            });
     }
 }
