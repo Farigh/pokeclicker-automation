@@ -98,7 +98,7 @@
             return;
         }
 
-        // We are currently fighting, do do anything
+        // We are currently fighting, do not do anything
         if (App.game.gameState === GameConstants.GameState.gym)
         {
             return;

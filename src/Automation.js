@@ -10,6 +10,7 @@ class Automation
     static Farm = AutomationFarm;
     static Focus = AutomationFocus;
     static Gym = AutomationGym;
+    static BattleFrontier = AutomationBattleFrontier;
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
     static Notifications = AutomationNotifications;
@@ -76,9 +77,10 @@ class Automation
                     // 'Trivia' panel
                     this.Trivia.initialize(initStep);
 
-                    // 'Gym' and 'Dungeon' panels
+                    // 'Gym', 'Dungeon' and 'Battle Frontier' panels
                     this.Gym.initialize(initStep);
                     this.Dungeon.initialize(initStep);
+                    this.BattleFrontier.initialize(initStep);
                 }
 
                 // Log automation startup completion
