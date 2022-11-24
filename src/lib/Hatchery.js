@@ -11,6 +11,7 @@ class AutomationHatchery
                           NotShinyFirst: "Hatchery-NotShinyFirst",
                           NotAlternateFormFirst: "Hatchery-NotAlternateFormFirst",
                           SpreadPokerus: "Hatchery-SpreadPokerus",
+                          UnlockMegaEvolutions: "Hatchery-UnlockMegaEvolutions",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
                           PrioritizedSorting: "Hatchery-PrioritizedSorting",
@@ -31,6 +32,9 @@ class AutomationHatchery
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            // Disable mega evolution unlock mode by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UnlockMegaEvolutions, false);
+
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
 
@@ -233,6 +237,14 @@ class AutomationHatchery
                              + "This will try to infect as many pokémon as possible with the Pokérus";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on spreading the Pokérus", this.Settings.SpreadPokerus, pokerusTooltip, categoryContainer);
+
+        // Add the mega evolution setting
+        const megaEvolutionTooltip = "Tries to unlock mega evolution requirements in priority"
+                                   + Automation.Menu.TooltipSeparator
+                                   + "Mega evolutions are not possible until the pokémon reaches\n"
+                                   + "a certain attack increase compared to its base attack.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Focus on mega evolution requirements unlock", this.Settings.UnlockMegaEvolutions, megaEvolutionTooltip, categoryContainer);
     }
 
 
@@ -243,22 +255,22 @@ class AutomationHatchery
      */
     static __internal__buildTypeSelectorList()
     {
-        let tooltip = "The pokémons of the selected type will be added in priority"
-                    + Automation.Menu.TooltipSeparator
-                    + "⚠️ If a region is set as well, and no pokémon of the selected\n"
-                    + "region and type can be hatched, the algorithm will select\n"
-                    + "pokémons from such region before ones matching the type.";
+        const tooltip = "The pokémons of the selected type will be added in priority"
+                      + Automation.Menu.TooltipSeparator
+                      + "⚠️ If a region is set as well, and no pokémon of the selected\n"
+                      + "region and type can be hatched, the algorithm will select\n"
+                      + "pokémons from such region before ones matching the type.";
 
-        let container = document.createElement("div");
+        const container = document.createElement("div");
         container.style.paddingLeft = "10px";
         container.style.paddingRight = "10px";
         container.classList.add("hasAutomationTooltip");
         container.setAttribute("automation-tooltip-text", tooltip);
 
-        let label = "Prioritize pokémon of the following type:";
+        const label = "Prioritize pokémon of the following type:";
         container.appendChild(document.createTextNode(label));
 
-        let selectElem = Automation.Menu.createDropDownListElement("selectedType-Hatchery");
+        const selectElem = Automation.Menu.createDropDownListElement("selectedType-Hatchery");
         selectElem.style.position = "relative";
         selectElem.style.bottom = "2px";
         selectElem.style.width = "110px";
@@ -403,7 +415,7 @@ class AutomationHatchery
      */
     static __internal__buildRegionSelectorList(tooltip, label, setting)
     {
-        let container = document.createElement("div");
+        const container = document.createElement("div");
         container.style.paddingLeft = "10px";
         container.style.paddingRight = "10px";
         container.classList.add("hasAutomationTooltip");
@@ -411,7 +423,7 @@ class AutomationHatchery
 
         container.appendChild(document.createTextNode(label));
 
-        let selectElem = Automation.Menu.createDropDownListElement("selectedRegion-" + setting);
+        const selectElem = Automation.Menu.createDropDownListElement("selectedRegion-" + setting);
         selectElem.style.position = "relative";
         selectElem.style.bottom = "2px";
         selectElem.style.width = "110px";
@@ -426,7 +438,7 @@ class AutomationHatchery
         opt.id = GameConstants.Region.none;
         selectElem.options.add(opt);
 
-        let previouslySelectedRegion = Automation.Utils.LocalStorage.getValue(setting);
+        const previouslySelectedRegion = Automation.Utils.LocalStorage.getValue(setting);
 
         // Populate the list
         for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
@@ -481,7 +493,7 @@ class AutomationHatchery
             Automation.Utils.LocalStorage.unsetValue(this.Settings.SpreadPokerus);
 
             // Disable the switch button
-            let disableReason = "You need to progress further in the game to unlock the Pokérus feature";
+            const disableReason = "You need to progress further in the game to unlock the Pokérus feature";
             Automation.Menu.setButtonDisabledState(this.Settings.SpreadPokerus, true, disableReason);
 
             // Set the watcher if not already done
@@ -505,11 +517,11 @@ class AutomationHatchery
      */
     static __internal__setHatcheryUnlockWatcher()
     {
-        let watcher = setInterval(function()
+        const watcher = setInterval(function()
         {
-            let hatcheryUnlocked = App.game.breeding.canAccess();
-            let pokerusUnlocked = App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus);
-            let areAllRegionUnlocked = this.__internal__lockedRegions.length == 0;
+            const hatcheryUnlocked = App.game.breeding.canAccess();
+            const pokerusUnlocked = App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus);
+            const areAllRegionUnlocked = this.__internal__lockedRegions.length == 0;
 
             if (hatcheryUnlocked && this.__internal__hatcheryContainer.hidden)
             {
@@ -525,9 +537,9 @@ class AutomationHatchery
             if (!areAllRegionUnlocked)
             {
                 // Reverse iterate to avoid any problem that would be cause by element removal
-                for (var i = this.__internal__lockedRegions.length - 1; i >= 0; i--)
+                for (let i = this.__internal__lockedRegions.length - 1; i >= 0; i--)
                 {
-                    let regionId = this.__internal__lockedRegions[i];
+                    const regionId = this.__internal__lockedRegions[i];
                     if (regionId <= player.highestRegion())
                     {
                         // Make the element visible
@@ -581,7 +593,7 @@ class AutomationHatchery
         {
             // Sort pokemon by breeding efficiency
             let pokemonToBreed = [];
-            let sortedPokemonToBreed = this.__internal__getBreedablePokemonByBreedingEfficiency();
+            const sortedPokemonToBreed = this.__internal__getBreedablePokemonByBreedingEfficiency();
 
             // Spread pokerus if enabled
             if (Automation.Utils.LocalStorage.getValue(this.Settings.SpreadPokerus) === "true")
@@ -601,7 +613,7 @@ class AutomationHatchery
 
             // Do not add pokemons to the queue as it reduces the overall attack
             // (this will also allow the player to add pokemons, eggs or fossils manually)
-            var i = 0;
+            let i = 0;
             while ((i < pokemonToBreed.length) && App.game.breeding.hasFreeEggSlot())
             {
                 App.game.breeding.addPokemonToHatchery(pokemonToBreed[i]);
@@ -619,12 +631,12 @@ class AutomationHatchery
      */
     static __internal__addEggsToHatchery()
     {
-        let eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player.itemList[eggType]());
+        const eggList = Object.keys(GameConstants.EggItemType).filter((eggType) => isNaN(eggType) && player.itemList[eggType]());
 
         for (const eggTypeName of eggList)
         {
-            let eggType = ItemList[eggTypeName];
-            let pokemonType = PokemonType[eggTypeName.split('_')[0]];
+            const eggType = ItemList[eggTypeName];
+            const pokemonType = PokemonType[eggTypeName.split('_')[0]];
             // Use an egg only if:
             //   - a slot is available
             //   - the player has one
@@ -653,16 +665,16 @@ class AutomationHatchery
      */
     static __internal__addFossilsToHatchery()
     {
-        let currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(
+        const currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(
             f => player.mineInventory().find(i => i.name == f)).filter((f) => f ? f.amount() : false);
 
         let i = 0;
         while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
         {
-            let fossil = currentlyHeldFossils[i];
+            const fossil = currentlyHeldFossils[i];
 
-            let associatedPokemon = GameConstants.FossilToPokemon[fossil.name];
-            let hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon));
+            const associatedPokemon = GameConstants.FossilToPokemon[fossil.name];
+            const hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon));
 
             // Use an egg only if:
             //   - a slot is available
@@ -702,6 +714,7 @@ class AutomationHatchery
             });
 
         const sortPriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
+        const megaEvolutionsFirst = Automation.Utils.LocalStorage.getValue(this.Settings.UnlockMegaEvolutions) === "true";
         const sortPriorityDescending = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
         const notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
         const notAlternateFormFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
@@ -718,6 +731,8 @@ class AutomationHatchery
                     return SortOptionConfigs[sortPriority].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
                 };
         }
+
+        const megaEvolutionsPokemons = megaEvolutionsFirst ? this.__internal__getUnderleveledMegaEvolutions() : [];
 
         // Sort list by breeding efficiency
         pokemonToBreed.sort((a, b) =>
@@ -749,6 +764,22 @@ class AutomationHatchery
                         return -1;
                     }
                     if (!isATypeValid && isBTypeValid)
+                    {
+                        return 1;
+                    }
+                }
+
+                // Mega evolution priority
+                if (megaEvolutionsFirst)
+                {
+                    const isAMegaEvolNeeded = megaEvolutionsPokemons.some(p => p.name == a.name);
+                    const isBMegaEvolNeeded = megaEvolutionsPokemons.some(p => p.name == b.name);
+
+                    if (isAMegaEvolNeeded && !isBMegaEvolNeeded)
+                    {
+                        return -1;
+                    }
+                    if (!isAMegaEvolNeeded && isBMegaEvolNeeded)
                     {
                         return 1;
                     }
@@ -807,7 +838,7 @@ class AutomationHatchery
     {
         let pokemonToBreed = [];
 
-        let targetPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Uninfected));
+        const targetPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Uninfected));
 
         // No more pokemon to infect, fallback to the default order
         if (targetPokemons.length == 0)
@@ -816,12 +847,12 @@ class AutomationHatchery
         }
 
         // Both Contagious and Cured pokemon spread the Pokérus
-        let contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
-                                                                        || (pokemon?.pokerus === GameConstants.Pokerus.Resistant));
-        let availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
-                             - (App.game.breeding.eggList.length - App.game.breeding.eggSlots);
+        const contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
+                                                                          || (pokemon?.pokerus === GameConstants.Pokerus.Resistant));
+        const availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
+                               - (App.game.breeding.eggList.length - App.game.breeding.eggSlots);
 
-        let hatchingContagiousTypes = new Set();
+        const hatchingContagiousTypes = new Set();
 
         for (const egg of App.game.breeding.eggList)
         {
@@ -865,7 +896,7 @@ class AutomationHatchery
      */
     static __internal__addContagiousPokemon(contagiousPokemons, targetPokemons, pokemonToBreed, availableEggSlot)
     {
-        let contagiousPokemonTypes = new Set();
+        const contagiousPokemonTypes = new Set();
 
         // Build the list of possible contagious types
         for (const pokemon of contagiousPokemons)
@@ -877,7 +908,7 @@ class AutomationHatchery
         }
 
         // Pick the next best contagious pokémon candidate
-        let bestPokemonMatchingAContagiousType = targetPokemons.find(
+        const bestPokemonMatchingAContagiousType = targetPokemons.find(
             (pokemon) => pokemonMap[pokemon.id].type.some((type) => contagiousPokemonTypes.has(type))
                       && !pokemonToBreed.some(p => p.id === pokemon.id));
 
@@ -885,7 +916,7 @@ class AutomationHatchery
         {
             // Get the best contagious candidate
             let bestCandidate = null;
-            let possibleTypes = pokemonMap[bestPokemonMatchingAContagiousType.id].type;
+            const possibleTypes = pokemonMap[bestPokemonMatchingAContagiousType.id].type;
             for (const pokemon of contagiousPokemons)
             {
                 let pokemonTypes = pokemonMap[pokemon.id].type;
@@ -909,7 +940,7 @@ class AutomationHatchery
             if (bestCandidate !== null)
             {
                 pokemonToBreed.push(bestCandidate);
-                let hatchingContagiousTypes = new Set();
+                const hatchingContagiousTypes = new Set();
                 for (const type of pokemonMap[bestCandidate.id].type)
                 {
                     hatchingContagiousTypes.add(type);
@@ -946,5 +977,32 @@ class AutomationHatchery
         }
 
         return currentList;
+    }
+
+    /**
+     * @brief Lists the possible Mega evolutions that does not meet the requirements
+     *
+     * @returns The list of pokemons to raise the base attack of
+     */
+    static __internal__getUnderleveledMegaEvolutions()
+    {
+        return App.game.party.caughtPokemon.filter((partyPokemon) =>
+            {
+                if (!partyPokemon.evolutions)
+                {
+                    return false;
+                }
+                for (const evolution of partyPokemon.evolutions)
+                {
+                    if ((evolution.trigger === EvoTrigger.STONE)
+                        && (evolution?.stone == GameConstants.StoneType.Key_stone)
+                        && PokemonHelper.calcNativeRegion(evolution.evolvedPokemon) <= player.highestRegion())
+                    {
+                        // Only consider mega evolution with an incomplete mega evolution requirement
+                        return !evolution.restrictions?.filter(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement"))[0]?.isCompleted();
+                    }
+                }
+                return false;
+            });
     }
 }
