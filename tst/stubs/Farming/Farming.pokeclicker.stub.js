@@ -122,6 +122,11 @@ class Farming
         App.game.farming.plotList[index].isUnlocked = true;
     }
 
+    getGrowthMultiplier()
+    {
+        return App.game.oakItems.calculateBonus(OakItemType.Sprayduck);
+    }
+
     /***************************\
     |*   Test-only interface   *|
     \***************************/

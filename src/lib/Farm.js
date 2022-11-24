@@ -9,7 +9,8 @@ class AutomationFarm
     static Settings = {
                           FeatureEnabled: "Farming-Enabled",
                           FocusOnUnlocks: "Farming-FocusOnUnlocks",
-                          OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate"
+                          OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate",
+                          HarvestLate: "Farming-HarvestLate"
                       };
 
     static ForcePlantBerriesAsked = false;
@@ -23,6 +24,8 @@ class AutomationFarm
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.HarvestLate, false);
+
             this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
@@ -139,12 +142,15 @@ class AutomationFarm
         titleDiv.style.marginBottom = "10px";
         farmingSettingPanel.appendChild(titleDiv);
 
+        // Focus on unlock button
+        const unlockLabel = "Focus on unlocking plots and new berries";
         const unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Focus on unlocking plots and new berries",
-                                                               this.Settings.FocusOnUnlocks,
-                                                               unlockTooltip,
-                                                               farmingSettingPanel);
+        const unlockButton = Automation.Menu.addLabeledAdvancedSettingsToggleButton(unlockLabel,
+                                                                                    this.Settings.FocusOnUnlocks,
+                                                                                    unlockTooltip,
+                                                                                    farmingSettingPanel);
 
+        // Disable ak items button
         const disableOakItemTooltip = "Modifies the oak item loadout when required for a mutation to occur"
                                     + Automation.Menu.TooltipSeparator
                                     + "⚠️ Disabling this functionality will prevent some berries from being unlocked";
@@ -152,6 +158,27 @@ class AutomationFarm
                                                                this.Settings.OakItemLoadoutUpdate,
                                                                disableOakItemTooltip,
                                                                farmingSettingPanel);
+
+        // Gather as late as possible button
+        const gatherAsLateAsPossibleTooltip = "Enabling this setting will harvest the berries right before they die.\n"
+                                            + "This is useful when you want the aura instead of the berry itself.\n";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Harvest berries as late as possible",
+                                                               this.Settings.HarvestLate,
+                                                               gatherAsLateAsPossibleTooltip,
+                                                               farmingSettingPanel);
+
+        // Disable the harvest late feature if the Focus on unlocks is enabled
+        const disableReason = "This settings is not considered when the\n"
+                            + `'${unlockLabel}' setting is enabled`;
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
+        {
+            Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, true, disableReason);
+        }
+        unlockButton.addEventListener("click", function()
+                                      {
+                                           const disableState = (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true");
+                                           Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, disableState, disableReason);
+                                      }.bind(this), false);
     }
 
     /**
@@ -269,9 +296,19 @@ class AutomationFarm
         this.__internal__freeSlotCount = 0;
         this.__internal__plantedBerryCount = 0;
 
+        const focusOnUnlocksEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true";
+        const harvestLateEnabled = !focusOnUnlocksEnabled && (Automation.Utils.LocalStorage.getValue(this.Settings.HarvestLate) === "true");
+        const overallGrowthMultiplier = App.game.farming.getGrowthMultiplier();
+
         // Mutations can only occur while the berry is fully ripe, so we need to collect them the later possible
         for (const [ index, plot ] of App.game.farming.plotList.entries())
         {
+            // Dont count the plots that are manually locked
+            if (plot.isSafeLocked)
+            {
+                continue;
+            }
+
             if (plot.isEmpty())
             {
                 if (plot.isUnlocked)
@@ -281,32 +318,56 @@ class AutomationFarm
                 continue;
             }
 
+            // Cant harvest berries if the plant is not fully ripe
             if (plot.stage() != PlotStage.Berry)
             {
                 continue;
             }
 
-            // Harvest berry in any of those cases:
-            //   - No strategy is currently active
-            //   - The unlock feature is disabled
-            //   - Another feature required force harvesting
-            //   - The strategy requires to harvest as soon as possible
-            //   - The berry is the target one
-            //   - The berry is close to dying (less than 15s)
-            if ((this.__internal__currentStrategy === null)
-                || ((this.__internal__currentStrategy.harvestStrategy !== this.__internal__harvestTimingType.LetTheBerryDie)
-                    && ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "false")
-                        || this.ForcePlantBerriesAsked
-                        || (this.__internal__currentStrategy.harvestStrategy === this.__internal__harvestTimingType.AsSoonAsPossible)
-                        || ((this.__internal__currentStrategy.berryToUnlock !== undefined)
-                            && (this.__internal__currentStrategy.berryToUnlock == plot.berry))
-                        || ((plot.berryData.growthTime[PlotStage.Berry] - plot.age) < 15))))
+            const isCurrentBerryTheTarget = (this.__internal__currentStrategy?.berryToUnlock == plot.berry);
+
+            // Always harvest if it was asked, or the current plot berry is the target one
+            if (!this.ForcePlantBerriesAsked && !isCurrentBerryTheTarget)
             {
-                App.game.farming.harvest(index);
-                this.__internal__harvestCount++;
-                this.__internal__freeSlotCount++;
+                // Never harvest if the strategy requires the berries to die
+                if (this.__internal__currentStrategy?.harvestStrategy === this.__internal__harvestTimingType.LetTheBerryDie)
+                {
+                    continue;
+                }
+
+                // Don't harvest if we need to wait until the last moment
+                if ((this.__internal__currentStrategy?.harvestStrategy === this.__internal__harvestTimingType.RightBeforeWithering)
+                    || harvestLateEnabled)
+                {
+                    // And we are NOT close to death (less than 15s)
+                    if (this.__internal__getTimeUntilStage(plot, PlotStage.Berry, overallGrowthMultiplier) > 15)
+                    {
+                        continue;
+                    }
+                }
             }
+
+            App.game.farming.harvest(index);
+            this.__internal__harvestCount++;
+            this.__internal__freeSlotCount++;
         }
+    }
+
+    /**
+     * @brief Gets the time until a plot gets past a specific stage
+     *
+     * @param plot: The plot to check the time left before the end of the given @p stage
+     * @param stage: The stage to check
+     * @param overallGrowthMultiplier: The farming overall growth multiplier (from oak items)
+     *
+     * @returns The time until the plot gets past the specified stage, as second
+     */
+    static __internal__getTimeUntilStage(plot, stage, overallGrowthMultiplier = App.game.farming.getGrowthMultiplier())
+    {
+        const baseTimeLeft = plot.berryData.growthTime[stage] - plot.age;
+        const growthMultiplier = plot.getGrowthMultiplier() * overallGrowthMultiplier;
+        const timeLeft = baseTimeLeft / growthMultiplier;
+        return timeLeft;
     }
 
     /**
