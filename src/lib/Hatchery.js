@@ -992,16 +992,19 @@ class AutomationHatchery
                 {
                     return false;
                 }
-                for (const evolution of partyPokemon.evolutions)
-                {
-                    if ((evolution.trigger === EvoTrigger.STONE)
-                        && (evolution?.stone == GameConstants.StoneType.Key_stone)
-                        && PokemonHelper.calcNativeRegion(evolution.evolvedPokemon) <= player.highestRegion())
+
+                const hasMegaEvolution = partyPokemon.evolutions.some((evolution) =>
                     {
-                        // Only consider mega evolution with an incomplete mega evolution requirement
-                        return !evolution.restrictions?.filter(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement"))[0]?.isCompleted();
-                    }
+                        return evolution.restrictions?.some(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement"));
+                    });
+
+                // Don't consider pokemon that does not have a mega evolution
+                if  (hasMegaEvolution)
+                {
+                    // Only consider pokemon with an incomplete mega-stone requirement (buid it since the pokemon might not have unlocked it yet)
+                    return !(new MegaStone(partyPokemon.id, partyPokemon.baseAttack, partyPokemon._attack).canEvolve());
                 }
+
                 return false;
             });
     }
