@@ -90,7 +90,7 @@ class AutomationUtilsGym
         let bestGym = null;
         let bestGymTown = null;
         let bestGymRatio = 0;
-        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
+        const playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
         for (const key of Object.keys(GymList))
         {
             let gym = GymList[key];

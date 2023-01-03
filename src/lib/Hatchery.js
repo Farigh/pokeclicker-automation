@@ -999,7 +999,7 @@ class AutomationHatchery
                     });
 
                 // Don't consider pokemon that does not have a mega evolution
-                if  (hasMegaEvolution)
+                if (hasMegaEvolution)
                 {
                     // Only consider pokemon with an incomplete mega-stone requirement (buid it since the pokemon might not have unlocked it yet)
                     return !(new MegaStone(partyPokemon.id, partyPokemon.baseAttack, partyPokemon._attack).canEvolve());
