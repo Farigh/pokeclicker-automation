@@ -6,6 +6,7 @@ class Multiplier
         this.__bonus = new Map();
 
         this.__bonus.set('pokemonAttack', 1);
+        this.__bonus.set('clickAttack', 1);
     }
 
     getBonus(type, useBonus = false)

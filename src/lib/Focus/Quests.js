@@ -450,7 +450,7 @@ class AutomationFocusQuests
     {
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.Money);
 
-        let bestGym = Automation.Utils.Gym.findBestGymForMoney();
+        const bestGym = Automation.Utils.Gym.findBestGymForMoney();
         if (bestGym.bestGymTown !== null)
         {
             Automation.Utils.Route.moveToTown(bestGym.bestGymTown);
@@ -648,13 +648,17 @@ class AutomationFocusQuests
      */
     static __internal__workOnUsePokeballQuest(ballType, enforceType = false)
     {
-        let hasBalls = this.__internal__selectBallToCatch(ballType, enforceType);
-        this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+        const hasBalls = this.__internal__selectBallToCatch(ballType, enforceType);
 
         if (hasBalls)
         {
+            this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             // Go to the highest route, for higher quest point income
             Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(ballType);
+        }
+        else
+        {
+            this.__internal__farmSomeMoney();
         }
     }
 

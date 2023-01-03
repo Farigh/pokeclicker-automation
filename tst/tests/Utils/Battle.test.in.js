@@ -156,7 +156,7 @@ test('Check calculateClickAttack() output', () =>
 
     // Simulate the click loop being active by setting the loop to something different from null
     Automation.Click.__internal__autoClickLoop = "dummy";
-    expect(Automation.Utils.Battle.calculateClickAttack()).toEqual(App.game.party.calculateClickAttack());
+    expect(Automation.Utils.Battle.calculateClickAttack()).toEqual(684);
 
     // Simulate the no-click challenge being enabled
     App.game.challenges.list.disableClickAttack.__active = true;

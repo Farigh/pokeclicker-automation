@@ -88,6 +88,7 @@ import "tst/stubs/Weather/WeatherCondition.pokeclicker.stub.js"; // Used by Weat
 import "tst/stubs/Weather/Weather.pokeclicker.stub.js";
 
 // Import pokeclicker classes
+import "tst/stubs/AchievementHandler.pokeclicker.stub.js";
 import "tst/stubs/Challenges.pokeclicker.stub.js";
 import "tst/stubs/Discord.pokeclicker.stub.js";
 import "tst/stubs/MapHelper.pokeclicker.stub.js";
