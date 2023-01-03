@@ -34,12 +34,13 @@ class AutomationUtilsGym
         let bestGymTown = null;
         let bestGymRate = 0;
 
-        let playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
-        let totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
+        const playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
+        const magikarpPlayerClickAttack = Automation.Utils.Battle.calculateClickAttack(true);
+        const totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
         for (const gymData of this.__internal__gymGemTypeMap.get(pokemonType))
         {
-            let gym = GymList[gymData.gymName];
+            const gym = GymList[gymData.gymName];
 
             // Skip any gym that we can't access
             if (!gym.isUnlocked()
@@ -48,17 +49,21 @@ class AutomationUtilsGym
                 continue;
             }
 
+            const currentGymClickAttack = Automation.Utils.Route.isInMagikarpJumpIsland(gymData.region, gymData.subRegion)
+                                        ? magikarpPlayerClickAttack
+                                        : playerClickAttack;
+
             let currentGymGemPerTick = 0;
             for (const pokemon of gym.pokemons)
             {
-                let pokemonData = pokemonMap[pokemon.name];
+                const pokemonData = pokemonMap[pokemon.name];
                 if (!pokemonData.type.includes(pokemonType))
                 {
                     continue;
                 }
 
-                let currentPokemonTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
-                    pokemon.maxHealth, playerClickAttack, totalAtkPerSecondByRegion[gymData.region]);
+                const currentPokemonTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
+                    pokemon.maxHealth, currentGymClickAttack, totalAtkPerSecondByRegion[gymData.region]);
                 currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
             }
 
@@ -90,10 +95,13 @@ class AutomationUtilsGym
         let bestGym = null;
         let bestGymTown = null;
         let bestGymRatio = 0;
+
         const playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
+        const magikarpPlayerClickAttack = Automation.Utils.Battle.calculateClickAttack(true);
+
         for (const key of Object.keys(GymList))
         {
-            let gym = GymList[key];
+            const gym = GymList[key];
 
             // Skip locked gyms
             if (!gym.isUnlocked())
@@ -114,7 +122,7 @@ class AutomationUtilsGym
                 continue;
             }
 
-            let townRegion = TownList[gymTown].region;
+            const townRegion = TownList[gymTown].region;
 
             // Don't consider town that the player can't move to either
             if (!Automation.Utils.Route.canMoveToRegion(townRegion))
@@ -128,20 +136,24 @@ class AutomationUtilsGym
                 gym.setPokemon(player.regionStarters[townRegion]());
             }
 
-            let weatherType = Weather.regionalWeather[townRegion]();
+            const currentGymClickAttack = Automation.Utils.Route.isInMagikarpJumpIsland(townRegion, TownList[gymTown].subRegion)
+                                        ? magikarpPlayerClickAttack
+                                        : playerClickAttack;
 
-            let ticksToWin = gym.pokemons.reduce(
+            const weatherType = Weather.regionalWeather[townRegion]();
+
+            const ticksToWin = gym.pokemons.reduce(
                 (count, pokemon) =>
                 {
-                    let partyAttack =
+                    const partyAttack =
                         Automation.Utils.Battle.calculatePokemonAttack(pokemonMap[pokemon.name].type[0], townRegion, weatherType);
-                    let nbGameTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
-                        pokemon.maxHealth, playerClickAttack, partyAttack);
+                    const nbGameTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
+                        pokemon.maxHealth, currentGymClickAttack, partyAttack);
 
                     return count + nbGameTickToDefeat;
                 }, 0);
 
-            let rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
+            const rewardRatio = Math.floor(gym.moneyReward / ticksToWin);
 
             if (rewardRatio > bestGymRatio)
             {
@@ -204,6 +216,7 @@ class AutomationUtilsGym
                                              gymName: gymName,
                                              gymTown: gymTown,
                                              region: TownList[gymTown].region,
+                                             subRegion: TownList[gymTown].subRegion,
                                              pokemonMathingType: 1,
                                              totalPokemons: gym.pokemons.length
                                          });

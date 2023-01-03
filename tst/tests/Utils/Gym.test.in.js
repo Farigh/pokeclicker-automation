@@ -34,6 +34,9 @@ class Automation
     };
 }
 
+// Stub the calculateClickAttack method
+Automation.Utils.Battle.calculateClickAttack = function() { return App.game.party.calculateClickAttack(); };
+
 // Load some pokémons
 PokemonLoader.loadEggsPokemons();
 
@@ -95,7 +98,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check findBestGymForFarmingType()
 
     test('No-click challenge active', () =>
     {
-        App.game.party.__clickAttack = 10000; // Whatever number we put here shouldn't change anything
+        App.game.party.__clickAttack = 0; // Simulate no-click challenge
         App.game.challenges.list.disableClickAttack.__active = true;
 
         let result = Automation.Utils.Gym.findBestGymForFarmingType(PokemonType.Fighting);
