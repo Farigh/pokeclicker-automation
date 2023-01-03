@@ -109,7 +109,7 @@ class AutomationClick
         }
 
         // Add a watcher, in case the player changes the challenge configuration at some point
-        if (this.__internal__container.hidden || (player.regionStarters[0]() === GameConstants.Starter.None))
+        if (this.__internal__container.hidden || (player.regionStarters[GameConstants.Region.kanto]() === GameConstants.Starter.None))
         {
             let watcher = setInterval(function()
                 {
@@ -121,7 +121,7 @@ class AutomationClick
 
                     this.__internal__container.hidden = false;
 
-                    if (player.starter() !== GameConstants.Starter.None)
+                    if (player.regionStarters[GameConstants.Region.kanto]() !== GameConstants.Starter.None)
                     {
                         clearInterval(watcher);
                     }
