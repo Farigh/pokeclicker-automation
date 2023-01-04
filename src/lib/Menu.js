@@ -800,6 +800,18 @@ class AutomationMenu
         const style = document.createElement('style');
         style.textContent = `
 
+            .automationWarningIcon
+            {
+                position: relative;
+            }
+            .automationWarningIcon::before
+            {
+                position: absolute;
+                content: '⚠️';
+                top: 1px;
+                left: -15px;
+            }
+
             /****************\
             |*   Tooltips   *|
             \****************/
@@ -864,6 +876,16 @@ class AutomationMenu
             .hasAutomationTooltip.centeredAutomationTooltip::after
             {
                 left: calc(50%);
+            }
+            .hasAutomationTooltip.warningAutomationTooltip::before
+            {
+                transform: translateX(-30px);
+                top: calc(100% + 8px);
+            }
+            .hasAutomationTooltip.warningAutomationTooltip::after
+            {
+                left: -11px;
+                top: calc(100% + 2px);
             }
             .hasAutomationTooltip.shopItemAutomationTooltip::after
             {

@@ -168,7 +168,8 @@ class AutomationShop
         {
             if (this.__internal__shopLoop === null)
             {
-                this.__internal__shopLoop = setInterval(this.__internal__shop.bind(this), 10000); // Runs every 10s
+                this.__internal__shop(); // Run once immediately
+                this.__internal__shopLoop = setInterval(this.__internal__shop.bind(this), 10000); // Then, runs every 10s
             }
         }
         else
@@ -219,25 +220,25 @@ class AutomationShop
         minCurrencyInputContainer.appendChild(checkmark);
 
         minCurrencyInputElem.oninput = function()
-        {
-            const mapKey = "MinPlayerCurrency-Save";
-
-            if (this.__internal__activeTimeouts.has(mapKey))
             {
-                clearTimeout(this.__internal__activeTimeouts.get(mapKey));
-                this.__internal__activeTimeouts.delete(mapKey);
-            }
+                const mapKey = "MinPlayerCurrency-Save";
 
-            const timeout = setTimeout(function()
+                if (this.__internal__activeTimeouts.has(mapKey))
                 {
-                    Automation.Menu.showCheckmark(checkmark, 2000);
+                    clearTimeout(this.__internal__activeTimeouts.get(mapKey));
+                    this.__internal__activeTimeouts.delete(mapKey);
+                }
 
-                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency,
-                                                           Automation.Utils.tryParseInt(minCurrencyInputElem.innerText));
-                }.bind(this), 3000); // Save the changes after 3s without edition
+                const timeout = setTimeout(function()
+                    {
+                        Automation.Menu.showCheckmark(checkmark, 2000);
 
-            this.__internal__activeTimeouts.set(mapKey, timeout);
-        }.bind(this);
+                        Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency,
+                                                            Automation.Utils.tryParseInt(minCurrencyInputElem.innerText));
+                    }.bind(this), 3000); // Save the changes after 3s without edition
+
+                this.__internal__activeTimeouts.set(mapKey, timeout);
+            }.bind(this);
 
         tabContainer.appendChild(minCurrencyInputContainer);
 
@@ -283,18 +284,51 @@ class AutomationShop
     static __internal__addItemToTheList(table, itemData)
     {
         const tableRow = document.createElement("tr");
-        table.appendChild(tableRow);
-        const tableFirstCell = document.createElement("td");
-        tableFirstCell.style.paddingLeft = "7px";
-        tableRow.appendChild(tableFirstCell);
         tableRow.hidden = !itemData.isUnlocked(); // Hide the item row if needed
+        table.appendChild(tableRow);
 
         // Update the item data
         itemData.rowElem = tableRow;
 
+        // Add the purchase warning cell
+        const purchaseWarningCell = document.createElement("td");
+        purchaseWarningCell.style.paddingLeft = "7px";
+        tableRow.appendChild(purchaseWarningCell);
+
+        const warningTooltip = "No accessible shop to buy this item"
+                             + Automation.Menu.TooltipSeparator
+                             + "This can happen when you change region and you\n"
+                             + "cannot travel back to the previous region shops yet";
+
+        itemData.warningElement = document.createElement("span");
+        itemData.warningElement.classList.add("hasAutomationTooltip");
+        itemData.warningElement.classList.add("warningAutomationTooltip");
+        itemData.warningElement.classList.add("shortTransitionAutomationTooltip");
+        itemData.warningElement.style.cursor = "help";
+        itemData.warningElement.setAttribute("automation-tooltip-text", warningTooltip);
+        itemData.warningElement.hidden = true; // Hide it by default
+        purchaseWarningCell.appendChild(itemData.warningElement);
+
+        const warningIcon = document.createElement("span");
+        warningIcon.classList.add("automationWarningIcon");
+        itemData.warningElement.appendChild(warningIcon);
+
         // Add the toggle button
-        const buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(this.__internal__advancedSettings.ItemEnabled(itemData.item.name));
-        tableFirstCell.appendChild(buttonElem);
+        const toogleCell = document.createElement("td");
+        toogleCell.style.paddingLeft = "4px";
+        tableRow.appendChild(toogleCell);
+
+        const itemEnabledKey = this.__internal__advancedSettings.ItemEnabled(itemData.item.name);
+        const buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(itemEnabledKey);
+
+        buttonElem.addEventListener("click", function()
+            {
+                // Display the warning if the item purchase its enable and the item can't be purchased at the moment
+                itemData.warningElement.hidden = (Automation.Utils.LocalStorage.getValue(itemEnabledKey) != "true")
+                                              || itemData.isPurchasable();
+            }, false);
+
+        toogleCell.appendChild(buttonElem);
 
         // Buy count
         const tableBuyLabelCell = document.createElement("td");
@@ -349,7 +383,7 @@ class AutomationShop
         const tableLastCell = document.createElement("td");
 
         // Max price (only set if the item is subject to multiplier decrease)
-        let maxPrice;
+        let maxPrice = null;
         if (itemData.item.multiplierDecrease)
         {
             // Table price cells
@@ -520,7 +554,7 @@ class AutomationShop
         // Iterate using `of` instead of `Object.entries` to keep the order
         for (const itemData of Object.values(sellableItems))
         {
-            let shopItem = { item: itemData.item }
+            const shopItem = { item: itemData.item }
             shopItem.isUnlocked = () => itemData.towns.some(townName => TownList[townName].isUnlocked());
 
             // This may restrict some items that are actually purchasable, but only until the player unlocks the port again
@@ -598,7 +632,7 @@ class AutomationShop
      */
     static __internal__setSaveItemChangesTimeout(itemName, checkmark, buyCount, untilCount, maxPrice)
     {
-        let mapKey = `${itemName}-Save`;
+        const mapKey = `${itemName}-Save`;
 
         if (this.__internal__activeTimeouts.has(mapKey))
         {
@@ -606,7 +640,7 @@ class AutomationShop
             this.__internal__activeTimeouts.delete(mapKey);
         }
 
-        let timeout = setTimeout(function()
+        const timeout = setTimeout(function()
             {
                 Automation.Menu.showCheckmark(checkmark, 2000);
 
@@ -682,7 +716,6 @@ class AutomationShop
                 // Stop buying at a stock of 1000 by default
                 Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name), 1000);
             }
-
         }
     }
 
@@ -707,8 +740,10 @@ class AutomationShop
             // Skip any not-purchasable item
             if (!itemData.isPurchasable())
             {
+                itemData.warningElement.hidden = false;
                 continue;
             }
+            itemData.warningElement.hidden = true;
 
             const targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name)));
 
@@ -763,7 +798,7 @@ class AutomationShop
         // Only sent the notification if at least one currency was spent
         if (Object.entries(totalSpent).length > 0)
         {
-            let currenciesSpent = [];
+            const currenciesSpent = [];
             for (const currency in totalSpent)
             {
                 const currencyImage = `<img src="assets/images/currency/${GameConstants.Currency[currency]}.svg" height="25px">`;

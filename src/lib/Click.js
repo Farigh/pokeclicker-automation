@@ -27,7 +27,7 @@ class AutomationClick
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
-           this.__internal__buildMenu();
+            this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
@@ -91,10 +91,10 @@ class AutomationClick
         this.__internal__container = document.createElement('div');
 
         // Add auto click button
-        let autoClickTooltip = "Attack clicks are performed every 50ms"
-                             + Automation.Menu.TooltipSeparator
-                             + "Applies to battle, gym and dungeon";
-        let autoClickButton =
+        const autoClickTooltip = "Attack clicks are performed every 50ms"
+                               + Automation.Menu.TooltipSeparator
+                               + "Applies to battle, gym and dungeon";
+        const autoClickButton =
             Automation.Menu.addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip, this.__internal__container);
         autoClickButton.addEventListener("click", this.toggleAutoClick.bind(this), false);
 
@@ -111,7 +111,7 @@ class AutomationClick
         // Add a watcher, in case the player changes the challenge configuration at some point
         if (this.__internal__container.hidden || (player.regionStarters[GameConstants.Region.kanto]() === GameConstants.Starter.None))
         {
-            let watcher = setInterval(function()
+            const watcher = setInterval(function()
                 {
                     if (App.game.challenges.list.disableClickAttack.active())
                     {
