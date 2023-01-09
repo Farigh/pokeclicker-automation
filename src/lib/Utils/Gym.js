@@ -49,6 +49,12 @@ class AutomationUtilsGym
                 continue;
             }
 
+            // Some gyms are trials linked to a dungeon, don't consider those
+            if (Automation.Utils.isInstanceOf(TownList[gymData.gymTown], "DungeonTown"))
+            {
+                continue;
+            }
+
             const currentGymClickAttack = Automation.Utils.Route.isInMagikarpJumpIsland(gymData.region, gymData.subRegion)
                                         ? magikarpPlayerClickAttack
                                         : playerClickAttack;
