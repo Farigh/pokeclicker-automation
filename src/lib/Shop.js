@@ -221,7 +221,7 @@ class AutomationShop
 
         minCurrencyInputElem.oninput = function()
             {
-                const mapKey = "MinPlayerCurrency-Save";
+                const mapKey = `MinPlayerCurrency-${currency}-Save`;
 
                 if (this.__internal__activeTimeouts.has(mapKey))
                 {
@@ -233,8 +233,8 @@ class AutomationShop
                     {
                         Automation.Menu.showCheckmark(checkmark, 2000);
 
-                        Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency,
-                                                            Automation.Utils.tryParseInt(minCurrencyInputElem.innerText));
+                        Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MinPlayerCurrency(currency),
+                                                               Automation.Utils.tryParseInt(minCurrencyInputElem.innerText));
                     }.bind(this), 3000); // Save the changes after 3s without edition
 
                 this.__internal__activeTimeouts.set(mapKey, timeout);
@@ -668,13 +668,7 @@ class AutomationShop
         Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
 
         // Don't buy if the player has under 1'000'000 pokédollars by default
-        // Load old value if it exists
-        const oldPokedollarsValue = Automation.Utils.LocalStorage.getValue("Shop-MinPlayerCurrency");
-        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.money),
-                                                      oldPokedollarsValue ?? 1000000);
-        // Clean up the old value
-        Automation.Utils.LocalStorage.unsetValue("Shop-MinPlayerCurrency");
-        // TODO (06/11/2022): Definitly remove the value in the next release
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.money), 1000000);
 
         // Don't buy if the player has under 10'000 quest points by default
         Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.MinPlayerCurrency(GameConstants.Currency.questPoint), 10000);
