@@ -59,7 +59,7 @@ class AutomationBattleCafe
             this.__internal__battleCafeSweetContainers.push(currentSweetContainer);
 
             currentSweetContainer.appendChild(document.createElement("br"));
-            currentSweetContainer.appendChild(document.createTextNode("Day (5:00 → 19:00)"));
+            currentSweetContainer.appendChild(document.createTextNode("Day (6:00 → 18:00)"));
             currentSweetContainer.appendChild(document.createElement("br"));
             this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayClockwiseBelow5, currentSweetContainer);
             this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayClockwiseAbove5, currentSweetContainer);
@@ -67,12 +67,12 @@ class AutomationBattleCafe
             this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayCounterclockwiseAbove5, currentSweetContainer);
 
             currentSweetContainer.appendChild(document.createElement("br"));
-            currentSweetContainer.appendChild(document.createTextNode("Dusk (19:00 → 20:00)"));
+            currentSweetContainer.appendChild(document.createTextNode("Dusk (17:00 → 18:00)"));
             currentSweetContainer.appendChild(document.createElement("br"));
-            this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.at7Above10, currentSweetContainer);
+            this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.at5Above10, currentSweetContainer);
 
             currentSweetContainer.appendChild(document.createElement("br"));
-            currentSweetContainer.appendChild(document.createTextNode("Night (19:00 → 5:00)"));
+            currentSweetContainer.appendChild(document.createTextNode("Night (18:00 → 6:00)"));
             currentSweetContainer.appendChild(document.createElement("br"));
             this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.nightClockwiseBelow5, currentSweetContainer);
             this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.nightClockwiseAbove5, currentSweetContainer);
