@@ -668,6 +668,98 @@ class AutomationMenu
     }
 
     /**
+     * @brief Adds a pokeball selection setting
+     *
+     * @param {string}  id: The id to set to the drop-down list
+     * @param {Element} parent: The element to add the list to
+     * @param {string}  setting: The local storage setting id
+     * @param {string}  textLabel: The text to display before the list
+     * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
+     * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
+     *
+     * @returns The created drop-down list element
+     */
+    static addPokeballList(id, parent, setting, textLabel, tooltip, addNoneOption = false)
+    {
+        const container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+        parent.appendChild(container);
+
+        const label = document.createTextNode(textLabel);
+        container.appendChild(label);
+
+        const selectElem = Automation.Menu.createDropDownListElement(id);
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "100px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        container.appendChild(selectElem);
+
+        let savedValue = Automation.Utils.LocalStorage.getValue(setting);
+
+        // Don't consider the saved value if the user does not have access to the corresponding ball yet
+        if ((savedValue != null)
+            && (savedValue != GameConstants.Pokeball.None)
+            && !Automation.Utils.isBallPurchasable(savedValue))
+        {
+            Automation.Utils.LocalStorage.unsetValue(setting);
+            savedValue = null;
+        }
+
+        // Default to None if the value was not set and the option is available
+        if (addNoneOption && (savedValue === null))
+        {
+            Automation.Utils.LocalStorage.setDefaultValue(setting, GameConstants.Pokeball.None);
+            savedValue = GameConstants.Pokeball.None;
+        }
+
+        this.__internal__populatePokeballOptions(savedValue, selectElem, addNoneOption);
+
+        // Set a watcher in case some balls are not unloced yet
+        if (this.__internal__pokeballListElems.length == 0)
+        {
+            const watcher = setInterval(function()
+            {
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__internal__lockedBalls.length - 1; i >= 0; i--)
+                {
+                    const ballValue = this.__internal__lockedBalls[i];
+                    if (Automation.Utils.isBallPurchasable(ballValue))
+                    {
+                        for (const elemData of this.__internal__pokeballListElems)
+                        {
+                            const index = ballValue + (elemData.hasNoneOption ? 1 : 0);
+
+                            // Make the element visible
+                            elemData.selectElem.options[index].hidden = false;
+                        }
+
+                        // Remove the pokéball from the locked list
+                        this.__internal__lockedBalls.splice(i, 1);
+                    }
+                }
+
+                if (this.__internal__lockedBalls.length == 0)
+                {
+                    // No more missing element, unregister the loop
+                    clearInterval(watcher);
+                }
+            }.bind(this), 5000); // Refresh every 5s
+        }
+
+        this.__internal__pokeballListElems.push({ selectElem, hasNoneOption: addNoneOption });
+
+        // Update the local storage if the value is changed by the user
+        selectElem.onchange = function() { Automation.Utils.LocalStorage.setValue(setting, selectElem.value); }.bind(this);
+
+        return selectElem;
+    }
+
+    /**
      * @brief Sets the disable state of the given button
      *
      * A disabled button will be greyed-out and its clic action will be inhibited
@@ -710,6 +802,9 @@ class AutomationMenu
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
+
+    static __internal__lockedBalls = [];
+    static __internal__pokeballListElems = [];
 
     static __internal__caughtStatusImageSwitch = {
                                                      [CaughtStatus.NotCaught]: "None",
@@ -781,6 +876,56 @@ class AutomationMenu
             button.classList.add((Automation.Utils.LocalStorage.getValue(button.id) === "true") ? "btn-success" : "btn-danger");
             button.classList.remove("btn-secondary");
             button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+        }
+    }
+
+    /**
+     * @brief Populates the drop-down list with the pokeballs that can be bought at the Poké Mart
+     *
+     * If any pokeball can't be bought yet, it will be hidden to the player.
+     *
+     * @param {any}               selectedValue: The saved value
+     * @param {HTMLSelectElement} listElem: The list to populate the values of
+     * @param {boolean}           addNoneOption: If set to true, the none option will be added at the beginning of the list
+     */
+    static __internal__populatePokeballOptions(selectedValue, listElem, addNoneOption)
+    {
+        const options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ];
+
+        if (addNoneOption)
+        {
+            options.unshift(GameConstants.Pokeball.None);
+        }
+
+        // Populate the list
+        for (const ball of options)
+        {
+            const opt = document.createElement("option");
+
+            // Set the ball name as the content
+            opt.textContent = GameConstants.Pokeball[ball];
+
+            if ((ball != GameConstants.Pokeball.None)
+                && !Automation.Utils.isBallPurchasable(ball))
+            {
+                if (!this.__internal__lockedBalls.includes(ball))
+                {
+                    this.__internal__lockedBalls.push(ball);
+                }
+                opt.hidden = true;
+            }
+
+            opt.value = ball;
+            opt.id = ball;
+
+            // Select the most efficient catching rate if no ball settings was
+            if (!opt.hidden && ((selectedValue == ball) || (selectedValue === null)))
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            listElem.options.add(opt);
         }
     }
 
