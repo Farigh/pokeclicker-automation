@@ -25,6 +25,7 @@ class AutomationBattleCafe
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__battleCafeInGameModal = null;
     static __internal__battleCafePanel = null;
     static __internal__battleCafeSweetContainers = [];
     static __internal__currentlyVisibleSweet = null;
@@ -35,6 +36,9 @@ class AutomationBattleCafe
      */
     static __internal__buildMenu()
     {
+        // Store the in-game modal internally
+        this.__internal__battleCafeInGameModal = document.getElementById("battleCafeModal");
+
         let battleCafeTitle = '☕ Battle Café ☕';
         const battleCafeContainer = Automation.Menu.addCategory("automationBattleCafe", battleCafeTitle);
         this.__internal__battleCafePanel = battleCafeContainer.parentElement;
@@ -175,8 +179,7 @@ class AutomationBattleCafe
      */
     static __internal__updateDivVisibilityAndContent()
     {
-        const battleCafeModal = document.getElementById("battleCafeModal");
-        if (battleCafeModal.classList.contains("show"))
+        if (this.__internal__battleCafeInGameModal.classList.contains("show"))
         {
             this.__internal__battleCafePanel.hidden = false;
 

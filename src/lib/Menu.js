@@ -28,18 +28,19 @@ class AutomationMenu
 
         this.__internal__injectAutomationCss();
 
-        let node = document.createElement("div");
-        node.style.position = "absolute";
-        node.style.top = "50px";
-        node.style.right = "10px";
-        node.style.width = "145px";
-        node.style.textAlign = "right";
-        node.style.lineHeight = "24px";
-        node.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
-        node.style.fontSize = ".875rem";
-        node.style.fontWeight = "400";
-        node.id = "automationContainer";
-        document.body.appendChild(node);
+        this.__internal__automationContainer = document.createElement("div");
+        this.__internal__automationContainer.style.position = "absolute";
+        this.__internal__automationContainer.style.top = "50px";
+        this.__internal__automationContainer.style.right = "10px";
+        this.__internal__automationContainer.style.width = "145px";
+        this.__internal__automationContainer.style.textAlign = "right";
+        this.__internal__automationContainer.style.lineHeight = "24px";
+        this.__internal__automationContainer.style.fontFamily =
+            'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
+        this.__internal__automationContainer.style.fontSize = ".875rem";
+        this.__internal__automationContainer.style.fontWeight = "400";
+        this.__internal__automationContainer.id = "automationContainer";
+        document.body.appendChild(this.__internal__automationContainer);
     }
 
     /**
@@ -69,9 +70,7 @@ class AutomationMenu
      */
     static addCategory(categoryId, title)
     {
-        let mainNode = document.getElementById("automationContainer");
-
-        let newNode = document.createElement("div");
+        const newNode = document.createElement("div");
         newNode.id = categoryId;
         newNode.style.backgroundColor = "#444444";
         newNode.style.color = "#eeeeee";
@@ -82,20 +81,22 @@ class AutomationMenu
         newNode.style.borderStyle = "solid";
         newNode.style.borderWidth = "1px";
         newNode.style.marginTop = "5px";
-        mainNode.appendChild(newNode);
+        this.__internal__automationContainer.appendChild(newNode);
 
-        let contentDivId = categoryId + "Div";
+        const contentDivId = categoryId + "Div";
 
-        let titleDiv = document.createElement("div");
+        const titleDiv = document.createElement("div");
         titleDiv.innerHTML = title;
         titleDiv.style.textAlign = "center";
-        titleDiv.onclick = function() { document.getElementById(contentDivId).classList.toggle('hide'); }.bind(contentDivId);
         newNode.appendChild(titleDiv);
 
-        let contentDiv = document.createElement("div");
+        const contentDiv = document.createElement("div");
         contentDiv.id = contentDivId;
         contentDiv.classList.add("automationCategorie");
         newNode.appendChild(contentDiv);
+
+        // Add the onclick action
+        titleDiv.onclick = function() { contentDiv.classList.toggle('hide'); }.bind(contentDivId);
 
         Automation.Menu.addSeparator(contentDiv);
 
@@ -109,7 +110,7 @@ class AutomationMenu
      */
     static addSeparator(containingDiv = this.AutomationButtonsDiv)
     {
-        let separatorDiv = document.createElement("div");
+        const separatorDiv = document.createElement("div");
         separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
         separatorDiv.style.marginBottom = "5px";
         separatorDiv.style.marginTop = "6px";
@@ -253,13 +254,13 @@ class AutomationMenu
      */
     static toggleButtonState(id)
     {
-        let button = document.getElementById(id);
+        const button = document.getElementById(id);
         if (button.disabled)
         {
             return;
         }
 
-        let newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
+        const newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
         if (newStatus)
         {
             // Only update the class if the button was not disabled
@@ -292,14 +293,14 @@ class AutomationMenu
      */
     static forceAutomationState(id, newState)
     {
-        let isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        const isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
 
         if (isEnabled !== newState)
         {
-            let button = document.getElementById(id);
+            const button = document.getElementById(id);
 
             // Re-enable the button so we can click on it, if needed
-            let disableState = button.disabled;
+            const disableState = button.disabled;
             if (disableState)
             {
                 button.disabled = false;
@@ -320,7 +321,7 @@ class AutomationMenu
      */
     static createDropDownListElement(id)
     {
-        let newSelect = document.createElement("select");
+        const newSelect = document.createElement("select");
         newSelect.className = "custom-select";
         newSelect.name = id;
         newSelect.id = id;
@@ -375,7 +376,7 @@ class AutomationMenu
     static createButtonElement(id)
     {
         // Create as a span to avoid the glowing effect on click
-        let newButton = document.createElement("span");
+        const newButton = document.createElement("span");
         newButton.id = id;
         newButton.classList.add("btn");
         newButton.style.width = "30px";
@@ -402,7 +403,7 @@ class AutomationMenu
      */
     static createToggleButtonElement(id)
     {
-        let toggleButton = document.createElement("span");
+        const toggleButton = document.createElement("span");
         toggleButton.id = id;
         toggleButton.classList.add("automation-toggle-button");
 
@@ -417,10 +418,10 @@ class AutomationMenu
      */
     static createAnimatedCheckMarkElement()
     {
-        let checkmarkContainer = document.createElement("div");
+        const checkmarkContainer = document.createElement("div");
         checkmarkContainer.classList.add("automation-checkmark-container");
 
-        let checkmarkElem = document.createElement("div");
+        const checkmarkElem = document.createElement("div");
         checkmarkElem.classList.add("automation-checkmark");
         checkmarkContainer.appendChild(checkmarkElem);
 
@@ -434,7 +435,7 @@ class AutomationMenu
      */
     static createSettingCategory(title)
     {
-        let categoryContainer = document.createElement("div");
+        const categoryContainer = document.createElement("div");
         categoryContainer.classList.add("automation-setting-category");
         categoryContainer.setAttribute("automation-setting-category-title", title);
 
@@ -450,7 +451,7 @@ class AutomationMenu
      */
     static showCheckmark(checkmarkContainer, resetTimer = 2000)
     {
-        let checkmarkElem = checkmarkContainer.children[0];
+        const checkmarkElem = checkmarkContainer.children[0];
         checkmarkElem.classList.add("shown");
 
         setTimeout(function() { checkmarkElem.classList.remove("shown"); }, resetTimer);
@@ -465,10 +466,10 @@ class AutomationMenu
      */
     static createTitleElement(titleText)
     {
-        let titleDiv = document.createElement("div");
+        const titleDiv = document.createElement("div");
         titleDiv.style.textAlign = "center";
         titleDiv.style.marginBottom = "3px";
-        let titleSpan = document.createElement("span");
+        const titleSpan = document.createElement("span");
         titleSpan.textContent = titleText;
         titleSpan.style.borderRadius = "4px";
         titleSpan.style.borderWidth = "1px";
@@ -495,7 +496,7 @@ class AutomationMenu
     static createTextInputElement(charLimit = -1, acceptedRegex = "")
     {
         // Add the input
-        let inputElem = document.createElement("div");
+        const inputElem = document.createElement("div");
         inputElem.contentEditable = true;
         inputElem.spellcheck = false;
         inputElem.classList.add("automation-setting-input");
@@ -503,13 +504,13 @@ class AutomationMenu
         // Filter input based on the given parameters
         inputElem.onkeydown = function(event)
         {
-            let isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
+            const isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
 
             return (event.key === "Backspace")
-                   || (event.key === "Delete")
-                   || (event.key === "ArrowLeft")
-                   || (event.key === "ArrowRight")
-                   || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
+                || (event.key === "Delete")
+                || (event.key === "ArrowLeft")
+                || (event.key === "ArrowRight")
+                || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
         };
 
         // Disable drag and drop
@@ -528,41 +529,41 @@ class AutomationMenu
      */
     static addSettingPanel(elemDiv, openUpward = false)
     {
-        let placeholderDiv = document.createElement("div");
+        const placeholderDiv = document.createElement("div");
         placeholderDiv.classList.add("automation-setting-placeholder");
         if (openUpward)
         {
             placeholderDiv.setAttribute("direction", "up");
         }
 
-        let panelContainer = document.createElement("div");
+        const panelContainer = document.createElement("div");
         panelContainer.classList.add("automation-setting-panel-container");
         placeholderDiv.appendChild(panelContainer);
 
-        let innerDiv = document.createElement("div");
+        const innerDiv = document.createElement("div");
         innerDiv.classList.add("automation-setting-menu-container");
         panelContainer.appendChild(innerDiv);
 
-        let settingsContainerDiv = document.createElement("div");
+        const settingsContainerDiv = document.createElement("div");
         settingsContainerDiv.style.whiteSpace = "nowrap";
         innerDiv.appendChild(settingsContainerDiv);
 
-        let buttonContainerDiv = document.createElement("div");
+        const buttonContainerDiv = document.createElement("div");
         buttonContainerDiv.classList.add("automation-arrow-container-div");
         settingsContainerDiv.appendChild(buttonContainerDiv)
 
-        let buttonDiv = document.createElement("div");
+        const buttonDiv = document.createElement("div");
         buttonDiv.classList.add("automation-arrow-div");
         buttonContainerDiv.appendChild(buttonDiv)
 
-        let arrowDiv = document.createElement("div");
+        const arrowDiv = document.createElement("div");
         arrowDiv.classList.add("automation-arrow");
         buttonDiv.appendChild(arrowDiv);
 
         // Add onclick action
         buttonContainerDiv.onclick = function()
             {
-                let allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
+                const allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
 
                 if (!innerDiv.hasAttribute("automation-visible"))
                 {
@@ -591,7 +592,7 @@ class AutomationMenu
 
         elemDiv.appendChild(placeholderDiv);
 
-        let settingsContentDiv = document.createElement("div");
+        const settingsContentDiv = document.createElement("div");
         settingsContentDiv.style.display = "inline-block";
         settingsContentDiv.style.paddingTop = "5px";
         settingsContentDiv.style.paddingBottom = "5px";
@@ -614,7 +615,7 @@ class AutomationMenu
     static addTabElement(parentElem, label, tabGroupName)
     {
         let tabContainer = parentElem.getElementsByClassName("automationTabContainerDiv")[0];
-        let isFirstTab = !tabContainer;
+        const isFirstTab = !tabContainer;
         let tabLabelContainer;
         let tabContentContainer;
 
@@ -639,11 +640,11 @@ class AutomationMenu
             tabContentContainer = tabContainer.getElementsByClassName("automationTabContentContainer")[0];
         }
 
-        let currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
-        let currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
+        const currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
+        const currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
 
         // Add the input (the magic lies here)
-        let labelInputElem = document.createElement("input");
+        const labelInputElem = document.createElement("input");
         labelInputElem.classList.add("automationTabLabelButton");
         labelInputElem.type = "radio";
         labelInputElem.name = tabGroupName;
@@ -652,7 +653,7 @@ class AutomationMenu
         tabContainer.insertBefore(labelInputElem, tabLabelContainer);
 
         // Add the label
-        let labelElem = document.createElement("label");
+        const labelElem = document.createElement("label");
         labelElem.classList.add("automationTabLabel");
         labelElem.textContent = label;
         labelElem.id = `${currentTabId}-label`;
@@ -660,11 +661,103 @@ class AutomationMenu
         tabLabelContainer.appendChild(labelElem);
 
         // Add the content
-        let contentContainer = document.createElement("div");
+        const contentContainer = document.createElement("div");
         contentContainer.classList.add("automationTabContent");
         tabContentContainer.appendChild(contentContainer);
 
         return contentContainer;
+    }
+
+    /**
+     * @brief Adds a pokeball selection setting
+     *
+     * @param {string}  id: The id to set to the drop-down list
+     * @param {Element} parent: The element to add the list to
+     * @param {string}  setting: The local storage setting id
+     * @param {string}  textLabel: The text to display before the list
+     * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
+     * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
+     *
+     * @returns The created drop-down list element
+     */
+    static addPokeballList(id, parent, setting, textLabel, tooltip, addNoneOption = false)
+    {
+        const container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+        parent.appendChild(container);
+
+        const label = document.createTextNode(textLabel);
+        container.appendChild(label);
+
+        const selectElem = Automation.Menu.createDropDownListElement(id);
+        selectElem.style.position = "relative";
+        selectElem.style.bottom = "2px";
+        selectElem.style.width = "100px";
+        selectElem.style.marginLeft = "4px";
+        selectElem.style.paddingLeft = "3px";
+        container.appendChild(selectElem);
+
+        let savedValue = Automation.Utils.LocalStorage.getValue(setting);
+
+        // Don't consider the saved value if the user does not have access to the corresponding ball yet
+        if ((savedValue != null)
+            && (savedValue != GameConstants.Pokeball.None)
+            && !Automation.Utils.isBallPurchasable(savedValue))
+        {
+            Automation.Utils.LocalStorage.unsetValue(setting);
+            savedValue = null;
+        }
+
+        // Default to None if the value was not set and the option is available
+        if (addNoneOption && (savedValue === null))
+        {
+            Automation.Utils.LocalStorage.setDefaultValue(setting, GameConstants.Pokeball.None);
+            savedValue = GameConstants.Pokeball.None;
+        }
+
+        this.__internal__populatePokeballOptions(savedValue, selectElem, addNoneOption);
+
+        // Set a watcher in case some balls are not unloced yet
+        if (this.__internal__pokeballListElems.length == 0)
+        {
+            const watcher = setInterval(function()
+            {
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__internal__lockedBalls.length - 1; i >= 0; i--)
+                {
+                    const ballValue = this.__internal__lockedBalls[i];
+                    if (Automation.Utils.isBallPurchasable(ballValue))
+                    {
+                        for (const elemData of this.__internal__pokeballListElems)
+                        {
+                            const index = ballValue + (elemData.hasNoneOption ? 1 : 0);
+
+                            // Make the element visible
+                            elemData.selectElem.options[index].hidden = false;
+                        }
+
+                        // Remove the pokéball from the locked list
+                        this.__internal__lockedBalls.splice(i, 1);
+                    }
+                }
+
+                if (this.__internal__lockedBalls.length == 0)
+                {
+                    // No more missing element, unregister the loop
+                    clearInterval(watcher);
+                }
+            }.bind(this), 5000); // Refresh every 5s
+        }
+
+        this.__internal__pokeballListElems.push({ selectElem, hasNoneOption: addNoneOption });
+
+        // Update the local storage if the value is changed by the user
+        selectElem.onchange = function() { Automation.Utils.LocalStorage.setValue(setting, selectElem.value); }.bind(this);
+
+        return selectElem;
     }
 
     /**
@@ -681,7 +774,7 @@ class AutomationMenu
      */
     static setButtonDisabledState(id, newState, reason = "")
     {
-        let button = document.getElementById(id);
+        const button = document.getElementById(id);
         if (button.classList.contains("automation-toggle-button"))
         {
             this.__internal__disableToggleButton(button, newState, reason);
@@ -711,6 +804,10 @@ class AutomationMenu
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__automationContainer = null;
+    static __internal__lockedBalls = [];
+    static __internal__pokeballListElems = [];
+
     static __internal__caughtStatusImageSwitch = {
                                                      [CaughtStatus.NotCaught]: "None",
                                                      [CaughtStatus.Caught]: "Pokeball",
@@ -726,7 +823,7 @@ class AutomationMenu
      */
     static __internal__disableToggleButton(button, newState, reason)
     {
-        let wasDisabled = button.getAttribute("disabled") == "true";
+        const wasDisabled = button.getAttribute("disabled") == "true";
 
         if (wasDisabled === newState)
         {
@@ -781,6 +878,56 @@ class AutomationMenu
             button.classList.add((Automation.Utils.LocalStorage.getValue(button.id) === "true") ? "btn-success" : "btn-danger");
             button.classList.remove("btn-secondary");
             button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+        }
+    }
+
+    /**
+     * @brief Populates the drop-down list with the pokeballs that can be bought at the Poké Mart
+     *
+     * If any pokeball can't be bought yet, it will be hidden to the player.
+     *
+     * @param {any}               selectedValue: The saved value
+     * @param {HTMLSelectElement} listElem: The list to populate the values of
+     * @param {boolean}           addNoneOption: If set to true, the none option will be added at the beginning of the list
+     */
+    static __internal__populatePokeballOptions(selectedValue, listElem, addNoneOption)
+    {
+        const options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ];
+
+        if (addNoneOption)
+        {
+            options.unshift(GameConstants.Pokeball.None);
+        }
+
+        // Populate the list
+        for (const ball of options)
+        {
+            const opt = document.createElement("option");
+
+            // Set the ball name as the content
+            opt.textContent = GameConstants.Pokeball[ball];
+
+            if ((ball != GameConstants.Pokeball.None)
+                && !Automation.Utils.isBallPurchasable(ball))
+            {
+                if (!this.__internal__lockedBalls.includes(ball))
+                {
+                    this.__internal__lockedBalls.push(ball);
+                }
+                opt.hidden = true;
+            }
+
+            opt.value = ball;
+            opt.id = ball;
+
+            // Select the most efficient catching rate if no ball settings was
+            if (!opt.hidden && ((selectedValue == ball) || (selectedValue === null)))
+            {
+                // Restore previous session selected element
+                opt.selected = true;
+            }
+
+            listElem.options.add(opt);
         }
     }
 
