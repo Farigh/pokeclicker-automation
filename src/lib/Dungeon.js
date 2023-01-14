@@ -6,6 +6,7 @@ class AutomationDungeon
     static Settings = {
                           FeatureEnabled: "Dungeon-FightEnabled",
                           StopOnPokedex: "Dungeon-FightStopOnPokedex",
+                          BossCatchPokeballToUse: "Dungeon-BossCatchPokeballToUse",
                           AvoidEncounters: "Dungeon-AvoidEncounters",
                           SkipChests: "Dungeon-SkipChests",
                           SkipBoss: "Dungeon-SkipBoss"
@@ -51,6 +52,8 @@ class AutomationDungeon
     \*********************************************************************/
 
     static __internal__autoDungeonLoop = null;
+    static __internal__dungeonBossCatchPokeballSelectElem = null;
+    static __internal__userDefinedPokeballToRestore = null;
 
     static __internal__isShinyCatchStopMode = false;
     static __internal__floorEndPosition = null;
@@ -109,61 +112,88 @@ class AutomationDungeon
     static __internal__buildMenu()
     {
         // Hide the dungeon fight panel by default
-        let dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
-                         +     '&nbsp;Dungeon fight&nbsp;'
-                         + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
-        let dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
+        const dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position: relative; bottom: 3px; transform: scaleX(-1);">'
+                           +     '&nbsp;Dungeon fight&nbsp;'
+                           + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position: relative; bottom: 3px;">';
+        const dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
         dungeonDiv.parentElement.hidden = true;
 
         // Add an on/off button
-        let autoDungeonTooltip = "Automatically enters and completes the dungeon"
-                               + Automation.Menu.TooltipSeparator
-                               + "Chests and the boss are ignored until all tiles are revealed\n"
-                               + "Chests are all picked right before fighting the boss";
-        let autoDungeonButton = Automation.Menu.addAutomationButton("Auto Fight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
+        const autoDungeonTooltip = "Automatically enters and completes the dungeon"
+                                 + Automation.Menu.TooltipSeparator
+                                 + "Chests and the boss are ignored until all tiles are revealed\n"
+                                 + "Chests are all picked right before fighting the boss";
+        const autoDungeonButton =
+            Automation.Menu.addAutomationButton("Auto Fight", this.Settings.FeatureEnabled, autoDungeonTooltip, dungeonDiv, true);
         autoDungeonButton.addEventListener("click", this.__internal__toggleDungeonFight.bind(this), false);
 
         // Add an on/off button to stop after pokedex completion
-        let autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
-                                   + "once all pokémon are caught in this dungeon."
-                                   + Automation.Menu.TooltipSeparator
-                                   + "You can switch between pokémon and shiny completion\n"
-                                   + "by clicking on the pokéball image.";
+        const autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
+                                     + "once all pokémon are caught in this dungeon."
+                                     + Automation.Menu.TooltipSeparator
+                                     + "You can switch between pokémon and shiny completion\n"
+                                     + "by clicking on the pokéball image.";
 
-        let buttonLabel = 'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
+        const buttonLabel =
+            'Stop on <span id="automation-dungeon-pokedex-img"><img src="assets/images/pokeball/Pokeball.svg" height="17px"></span> :';
         Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
 
         // Add the pokéball click action
-        let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
+        const pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
         pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
 
-        // Build advanced settings panel
-        let dungeonSettingsPanel = Automation.Menu.addSettingPanel(autoDungeonButton.parentElement.parentElement, true);
+        // Build advanced settings
+        this.__internal__buildAdvancedSettings(autoDungeonButton.parentElement.parentElement);
+    }
 
-        let titleDiv = Automation.Menu.createTitleElement("Dungeon advanced settings");
+    /**
+     * @brief Builds the 'Dungeon' feature advanced settings panel
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __internal__buildAdvancedSettings(parent)
+    {
+        // Build advanced settings panel
+        const dungeonSettingsPanel = Automation.Menu.addSettingPanel(parent, true);
+
+        const titleDiv = Automation.Menu.createTitleElement("Dungeon advanced settings");
         titleDiv.style.marginBottom = "10px";
         dungeonSettingsPanel.appendChild(titleDiv);
 
+        // Add the boss catch option
+        const bossCatchPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
+                                       + "pokémons, before fighting the dungeon boss";
+        this.__internal__dungeonBossCatchPokeballSelectElem =
+            Automation.Menu.addPokeballList("selectedDungeonBossCatchPokeball",
+                                            dungeonSettingsPanel,
+                                            this.Settings.BossCatchPokeballToUse,
+                                            "Pokéball to equip for the boss :",
+                                            bossCatchPokeballTooltip,
+                                            true);
+
+        // Add some space
+        dungeonSettingsPanel.appendChild(document.createElement("br"));
+
         // Add the avoid encounters button
-        let avoidEncountersTooltip = "If enabled, it will only fight battles that are not avoidable."
-                                   + Automation.Menu.TooltipSeparator
-                                   + "This setting only applies when the torchlight has been unlocked\n"
-                                   + "(after 200 clears in the current dungeon)."
-                                   + Automation.Menu.TooltipSeparator
-                                   + "It will still collect any chests found, before fighting\n"
-                                   + "the boss, unless it was disabled as well.";
+        const avoidEncountersTooltip = "If enabled, it will only fight battles that are not avoidable."
+                                     + Automation.Menu.TooltipSeparator
+                                     + "This setting only applies when the torchlight has been unlocked\n"
+                                     + "(after 200 clears in the current dungeon)."
+                                     + Automation.Menu.TooltipSeparator
+                                     + "It will still collect any chests found, before fighting\n"
+                                     + "the boss, unless it was disabled as well.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip as many fights as possible", this.Settings.AvoidEncounters, avoidEncountersTooltip, dungeonSettingsPanel);
 
         // Add the skip chests button
-        let skipChestsTooltip = "Don't pick dungeon chests at all.";
+        const skipChestsTooltip = "Don't pick dungeon chests at all.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip chests pickup", this.Settings.SkipChests, skipChestsTooltip, dungeonSettingsPanel);
 
         // Add the skip boss button
-        let skipBossTooltip = "Don't fight the dungeon boss at all."
-                            + Automation.Menu.TooltipSeparator
-                            + "It will exit the dungeon as soon as the other automation conditions are met";
+        const skipBossTooltip = "Don't fight the dungeon boss at all."
+                              + Automation.Menu.TooltipSeparator
+                              + "It will exit the dungeon as soon as the other automation conditions are met";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip the boss fight", this.Settings.SkipBoss, skipBossTooltip, dungeonSettingsPanel);
     }
@@ -208,7 +238,12 @@ class AutomationDungeon
                 this.__internal__playerActionOccured = false;
                 this.__internal__resetSavedStates();
 
+                // Reset the currently used pokeball
+                // (as the player might switch the ball during the dungeon process, the value should only be saved right before the boss fight)
+                this.__internal__userDefinedPokeballToRestore = null;
+
                 // Set auto-dungeon loop
+                this.__internal__dungeonFightLoop();
                 this.__internal__autoDungeonLoop = setInterval(this.__internal__dungeonFightLoop.bind(this), 50); // Runs every game tick
             }
         }
@@ -217,6 +252,12 @@ class AutomationDungeon
             // Unregister the loop
             clearInterval(this.__internal__autoDungeonLoop);
             this.__internal__autoDungeonLoop = null;
+
+            // Restore the pokeball used to catch pokémons
+            if (this.__internal__userDefinedPokeballToRestore != null)
+            {
+                App.game.pokeballs.alreadyCaughtSelection = this.__internal__userDefinedPokeballToRestore;
+            }
         }
     }
 
@@ -276,6 +317,12 @@ class AutomationDungeon
             {
                 this.__internal__resetSavedStates();
                 DungeonRunner.initializeDungeon(player.town().dungeon);
+
+                // Restore the pokeball used to catch pokémons
+                if (this.__internal__userDefinedPokeballToRestore != null)
+                {
+                    App.game.pokeballs.alreadyCaughtSelection = this.__internal__userDefinedPokeballToRestore;
+                }
             }
         }
         else if (App.game.gameState === GameConstants.GameState.dungeon)
@@ -366,6 +413,17 @@ class AutomationDungeon
                     if (foundFloorEndTile)
                     {
                         this.__internal__moveToCell(this.__internal__floorEndPosition);
+
+                        // Equip the selected pokeball (if None is set, keep the user in-game setting)
+                        const ballToCatchBoss = this.__internal__dungeonBossCatchPokeballSelectElem.value;
+                        if (ballToCatchBoss != GameConstants.Pokeball.None)
+                        {
+                            // Save the currently used pokeball
+                            this.__internal__userDefinedPokeballToRestore = App.game.pokeballs.alreadyCaughtSelection;
+
+                            App.game.pokeballs.alreadyCaughtSelection = ballToCatchBoss;
+                        }
+
                         DungeonRunner.startBossFight();
                     }
                     else
