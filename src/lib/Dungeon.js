@@ -52,6 +52,8 @@ class AutomationDungeon
     \*********************************************************************/
 
     static __internal__autoDungeonLoop = null;
+    static __internal__pokedexSwitch = null;
+    static __internal__dungeonFightButton = null;
     static __internal__dungeonBossCatchPokeballSelectElem = null;
     static __internal__userDefinedPokeballToRestore = null;
 
@@ -116,7 +118,8 @@ class AutomationDungeon
                            +     '&nbsp;Dungeon fight&nbsp;'
                            + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position: relative; bottom: 3px;">';
         const dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
-        dungeonDiv.parentElement.hidden = true;
+        this.__internal__dungeonFightButton = dungeonDiv.parentElement;
+        this.__internal__dungeonFightButton.hidden = true;
 
         // Add an on/off button
         const autoDungeonTooltip = "Automatically enters and completes the dungeon"
@@ -139,8 +142,8 @@ class AutomationDungeon
         Automation.Menu.addAutomationButton(buttonLabel, this.Settings.StopOnPokedex, autoStopDungeonTooltip, dungeonDiv);
 
         // Add the pokéball click action
-        const pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
-        pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
+        this.__internal__pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
+        this.__internal__pokedexSwitch.onclick = this.__internal__toggleCatchStopMode.bind(this);
 
         // Build advanced settings
         this.__internal__buildAdvancedSettings(autoDungeonButton.parentElement.parentElement);
@@ -207,9 +210,8 @@ class AutomationDungeon
         this.__internal__isShinyCatchStopMode = !this.__internal__isShinyCatchStopMode;
 
         // Update the image accordingly
-        let image = (this.__internal__isShinyCatchStopMode) ? "Pokeball-shiny" : "Pokeball";
-        let pokedexSwitch = document.getElementById("automation-dungeon-pokedex-img");
-        pokedexSwitch.innerHTML = `<img src="assets/images/pokeball/${image}.svg" height="17px">`;
+        const image = (this.__internal__isShinyCatchStopMode) ? "Pokeball-shiny" : "Pokeball";
+        this.__internal__pokedexSwitch.innerHTML = `<img src="assets/images/pokeball/${image}.svg" height="17px">`;
     }
 
     /**
@@ -278,7 +280,7 @@ class AutomationDungeon
         const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true");
         const skipChests = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true");
         const skipBoss = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true")
-                         && (this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion);
+                      && (this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion);
 
         // Just to be safe, it should never happen, since the button should have been disabled
         if (avoidFights && skipChests && skipBoss)
@@ -366,7 +368,7 @@ class AutomationDungeon
                 else if (!skipChests && (visibleChestsCount > 0))
                 {
                     // There are some chests left to collect, collect the first of them
-                    let chestLocation = this.__internal__chestPositions.pop();
+                    const chestLocation = this.__internal__chestPositions.pop();
 
                     // The player probably moved to the next floor manually, skip it
                     if (chestLocation.floor != DungeonRunner.map.playerPosition().floor)
@@ -461,12 +463,12 @@ class AutomationDungeon
      */
     static __internal__handleNormalPathing()
     {
-        let playerCurrentPosition = DungeonRunner.map.playerPosition();
+        const playerCurrentPosition = DungeonRunner.map.playerPosition();
 
-        let maxIndex = (DungeonRunner.map.board()[playerCurrentPosition.floor].length - 1);
-        let isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
-        let isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
-                              || (!isEvenRow && (playerCurrentPosition.x == 0));
+        const maxIndex = (DungeonRunner.map.board()[playerCurrentPosition.floor].length - 1);
+        const isEvenRow = ((maxIndex - playerCurrentPosition.y) % 2) == 0;
+        const isLastTileOfTheRow = (isEvenRow && (playerCurrentPosition.x == maxIndex))
+                                || (!isEvenRow && (playerCurrentPosition.x == 0));
 
         if ((playerCurrentPosition.y == 0) && isLastTileOfTheRow)
         {
@@ -650,7 +652,7 @@ class AutomationDungeon
     {
         let startingTile = null;
 
-        let currentFloor = DungeonRunner.map.playerPosition().floor;
+        const currentFloor = DungeonRunner.map.playerPosition().floor;
 
         for (const [ rowIndex, row ] of DungeonRunner.map.board()[currentFloor].entries())
         {
@@ -659,7 +661,7 @@ class AutomationDungeon
                 // Ignore not visible tiles
                 if (!tile.isVisible) continue;
 
-                let currentLocation = { floor: currentFloor, x: columnIndex, y: rowIndex };
+                const currentLocation = { floor: currentFloor, x: columnIndex, y: rowIndex };
 
                 if (DungeonRunner.map.hasAccessToTile(currentLocation))
                 {
@@ -716,12 +718,11 @@ class AutomationDungeon
      */
     static __internal__updateDivVisibilityAndContent()
     {
-        let dungeonDiv = document.getElementById("dungeonFightButtons");
-        dungeonDiv.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
-                              || ((App.game.gameState === GameConstants.GameState.town)
-                                  && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")));
+        this.__internal__dungeonFightButton.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
+                                                       || ((App.game.gameState === GameConstants.GameState.town)
+                                                           && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")));
 
-        if (!dungeonDiv.hidden)
+        if (!this.__internal__dungeonFightButton.hidden)
         {
             // Disable the Auto Fight button if the requirements are not met
             let disableNeeded = false;

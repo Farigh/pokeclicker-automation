@@ -573,9 +573,9 @@ class AutomationFocusQuests
             Automation.Utils.Route.moveToTown(townToGoTo);
         }
         // Select the right gym to fight
-        else if (document.getElementById("selectedAutomationGym").value != quest.gymTown)
+        else if (Automation.Gym.GymSelectElem.value != quest.gymTown)
         {
-            document.getElementById("selectedAutomationGym").value = quest.gymTown;
+            Automation.Gym.GymSelectElem.value = quest.gymTown;
         }
         // Enable gym auto-fight feature if not already done
         else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false")

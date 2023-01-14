@@ -188,9 +188,9 @@ class AutomationFocusAchievements
         else
         {
             // Select the right gym to fight
-            if (document.getElementById("selectedAutomationGym").value != gymName)
+            if (Automation.Gym.GymSelectElem.value != gymName)
             {
-                document.getElementById("selectedAutomationGym").value = gymName;
+                Automation.Gym.GymSelectElem.value = gymName;
             }
         }
     }

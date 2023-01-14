@@ -27,6 +27,15 @@ class AutomationTrivia
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__gotoSelectedLocation = null;
+    static __internal__moveToLocationButton = null;
+    static __internal__moveToRoamersRouteButton = null;
+    static __internal__roamingRouteTriviaContainer = null;
+    static __internal__availableEvolutionTriviaContainer = null;
+    static __internal__availableEvolutionTriviaContent = null;
+    static __internal__availableBulletinBoardTriviaContainer = null;
+    static __internal__availableBulletinBoardTriviaText = null;
+
     static __internal__previousRegion = null;
     static __internal__displayedCaughtStatus = null;
     static __internal__displayedRoamingRoute = null;
@@ -70,13 +79,12 @@ class AutomationTrivia
      */
      static __internal__addRoamingRouteContent(triviaDiv)
      {
-        let containerDiv = document.createElement("div");
-        containerDiv.id = "roamingRouteTriviaContainer";
-        triviaDiv.appendChild(containerDiv);
+        this.__internal__roamingRouteTriviaContainer = document.createElement("div");
+        triviaDiv.appendChild(this.__internal__roamingRouteTriviaContainer);
 
         this.__internal__roamersContainer = document.createElement("div");
         this.__internal__roamersContainer.classList.add("hasAutomationTooltip");
-        containerDiv.appendChild(this.__internal__roamersContainer);
+        this.__internal__roamingRouteTriviaContainer.appendChild(this.__internal__roamersContainer);
 
         // Add the roamers label
         this.__internal__roamersContainer.appendChild(document.createTextNode("Roamers"));
@@ -84,15 +92,15 @@ class AutomationTrivia
         this.__internal__roamersContainer.appendChild(this.__internal__roamersCatchStatus);
 
         // Add go to roamers route button
-        let gotoButton = Automation.Menu.createButtonElement("moveToRoamersRouteButton");
-        gotoButton.textContent = "Go";
-        gotoButton.style.marginLeft = "10px";
-        gotoButton.style.marginRight = "10px";
-        gotoButton.classList.add("btn-primary");
-        gotoButton.onclick = this.__internal__moveToRoamersRoute.bind(this);
-        this.__internal__roamersContainer.appendChild(gotoButton);
+        this.__internal__moveToRoamersRouteButton = Automation.Menu.createButtonElement("moveToRoamersRouteButton");
+        this.__internal__moveToRoamersRouteButton.textContent = "Go";
+        this.__internal__moveToRoamersRouteButton.style.marginLeft = "10px";
+        this.__internal__moveToRoamersRouteButton.style.marginRight = "10px";
+        this.__internal__moveToRoamersRouteButton.classList.add("btn-primary");
+        this.__internal__moveToRoamersRouteButton.onclick = this.__internal__moveToRoamersRoute.bind(this);
+        this.__internal__roamersContainer.appendChild(this.__internal__moveToRoamersRouteButton);
 
-        Automation.Menu.addSeparator(containerDiv);
+        Automation.Menu.addSeparator(this.__internal__roamingRouteTriviaContainer);
      }
     /**
      * @brief Adds the 'Available evolution' trivia content to the given @p triviaDiv
@@ -102,27 +110,25 @@ class AutomationTrivia
     static __internal__addAvailableEvolutionContent(triviaDiv)
     {
         // Add available evolution div
-        let containerDiv = document.createElement("div");
-        containerDiv.id = "availableEvolutionTrivia";
-        containerDiv.style.textAlign = "center";
-        triviaDiv.appendChild(containerDiv);
+        this.__internal__availableEvolutionTriviaContainer = document.createElement("div");
+        this.__internal__availableEvolutionTriviaContainer.style.textAlign = "center";
+        triviaDiv.appendChild(this.__internal__availableEvolutionTriviaContainer);
 
-        let evolutionLabel = document.createElement("span");
+        const evolutionLabel = document.createElement("span");
         evolutionLabel.classList.add("hasAutomationTooltip");
         evolutionLabel.classList.add("centeredAutomationTooltip");
-        let tooltip = "Displays the available stone evolutions"
-                    + Automation.Menu.TooltipSeparator
-                    + "You can click on a stone to get to the according page\n"
-                    + "in your inventory directly";
+        const tooltip = "Displays the available stone evolutions"
+                      + Automation.Menu.TooltipSeparator
+                      + "You can click on a stone to get to the according page\n"
+                      + "in your inventory directly";
         evolutionLabel.setAttribute("automation-tooltip-text", tooltip);
         evolutionLabel.textContent = "Possible evolution:";
-        containerDiv.appendChild(evolutionLabel);
+        this.__internal__availableEvolutionTriviaContainer.appendChild(evolutionLabel);
 
-        let evolutionStoneListContainer = document.createElement("div");
-        evolutionStoneListContainer.id = "availableEvolutionTriviaContent";
-        containerDiv.appendChild(evolutionStoneListContainer);
+        this.__internal__availableEvolutionTriviaContent = document.createElement("div");
+        this.__internal__availableEvolutionTriviaContainer.appendChild(this.__internal__availableEvolutionTriviaContent);
 
-        Automation.Menu.addSeparator(containerDiv);
+        Automation.Menu.addSeparator(this.__internal__availableEvolutionTriviaContainer);
     }
 
     /**
@@ -132,20 +138,19 @@ class AutomationTrivia
      */
      static __internal__addAvailableBulletinBoardContent(triviaDiv)
      {
-        let containerDiv = document.createElement("div");
-        containerDiv.id = "availableBulletinBoardTriviaContainer";
-        containerDiv.hidden = true; // Hide it by default
-        triviaDiv.appendChild(containerDiv);
+        this.__internal__availableBulletinBoardTriviaContainer = document.createElement("div");
+        this.__internal__availableBulletinBoardTriviaContainer.hidden = true; // Hide it by default
+        triviaDiv.appendChild(this.__internal__availableBulletinBoardTriviaContainer);
 
-        let contentNode = document.createElement("div");
-        contentNode.id = "availableBulletinBoardTriviaText";
-        contentNode.classList.add("hasAutomationTooltip");
-        contentNode.classList.add("centeredAutomationTooltip");
-        contentNode.classList.add("shortTransitionAutomationTooltip");
-        contentNode.style.textAlign = "center";
-        containerDiv.appendChild(contentNode);
+        this.__internal__availableBulletinBoardTriviaText = document.createElement("div");
+        this.__internal__availableBulletinBoardTriviaText.classList.add("hasAutomationTooltip");
+        this.__internal__availableBulletinBoardTriviaText.classList.add("centeredAutomationTooltip");
+        this.__internal__availableBulletinBoardTriviaText.classList.add("shortTransitionAutomationTooltip");
+        this.__internal__availableBulletinBoardTriviaText.style.textAlign = "center";
+        this.__internal__availableBulletinBoardTriviaText.textContent = "Quest available 📖";
+        this.__internal__availableBulletinBoardTriviaContainer.appendChild(this.__internal__availableBulletinBoardTriviaText);
 
-        Automation.Menu.addSeparator(containerDiv);
+        Automation.Menu.addSeparator(this.__internal__availableBulletinBoardTriviaContainer);
      }
 
     /**
@@ -156,38 +161,38 @@ class AutomationTrivia
     static __internal__addGotoLocationContent(triviaDiv)
     {
         // Add go to location div
-        let gotoLocationDiv = document.createElement("div");
+        const gotoLocationDiv = document.createElement("div");
         gotoLocationDiv.id = "gotoLocationTrivia";
         gotoLocationDiv.style.textAlign = "center";
         triviaDiv.appendChild(gotoLocationDiv);
 
         // Add button and label div
-        let gotoContainer = document.createElement("div");
+        const gotoContainer = document.createElement("div");
         gotoContainer.classList.add("hasAutomationTooltip");
         gotoContainer.classList.add("gotoAutomationTooltip");
-        let tooltip = "Goes to the selected location"
-                    + Automation.Menu.TooltipSeparator
-                    + "🏫-prefixed locations are towns\n"
-                    + "⚔-prefixed locations are dungeons";
+        const tooltip = "Goes to the selected location"
+                      + Automation.Menu.TooltipSeparator
+                      + "🏫-prefixed locations are towns\n"
+                      + "⚔-prefixed locations are dungeons";
         gotoContainer.setAttribute("automation-tooltip-text", tooltip);
         gotoLocationDiv.appendChild(gotoContainer);
 
         // Add go to location button
-        let gotoButton = Automation.Menu.createButtonElement("moveToLocationButton");
-        gotoButton.textContent = "Go";
-        gotoButton.classList.add("btn-primary");
-        gotoButton.onclick = this.__internal__moveToLocation;
-        gotoContainer.appendChild(gotoButton);
+        this.__internal__moveToLocationButton = Automation.Menu.createButtonElement("moveToLocationButton");
+        this.__internal__moveToLocationButton.textContent = "Go";
+        this.__internal__moveToLocationButton.classList.add("btn-primary");
+        this.__internal__moveToLocationButton.onclick = this.__internal__moveToLocation.bind(this);
+        gotoContainer.appendChild(this.__internal__moveToLocationButton);
 
         // Add the text next to the button
-        let gotoText = document.createElement("span");
+        const gotoText = document.createElement("span");
         gotoText.textContent = " to:";
         gotoContainer.appendChild(gotoText);
 
         // Add go to location drop-down list
-        let selectElem = Automation.Menu.createDropDownListElement("gotoSelectedLocation");
-        selectElem.style.paddingLeft = "2px";
-        gotoLocationDiv.appendChild(selectElem);
+        this.__internal__gotoSelectedLocation = Automation.Menu.createDropDownListElement("gotoSelectedLocation");
+        this.__internal__gotoSelectedLocation.style.paddingLeft = "2px";
+        gotoLocationDiv.appendChild(this.__internal__gotoSelectedLocation);
     }
 
     /**
@@ -212,21 +217,19 @@ class AutomationTrivia
      */
     static __internal__refreshGotoLocationTrivia()
     {
-        if (this.__internal__disableButtonIfNeeded(document.getElementById("moveToLocationButton")))
+        if (this.__internal__disableButtonIfNeeded(this.__internal__moveToLocationButton))
         {
             return;
         }
 
-        let gotoList = document.getElementById("gotoSelectedLocation");
-
-        let filteredList = Object.entries(TownList).filter(([_, town]) => (town.region === player.region));
-        let unlockedTownCount = filteredList.reduce((count, [_, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
+        const filteredList = Object.entries(TownList).filter(([_, town]) => (town.region === player.region));
+        const unlockedTownCount = filteredList.reduce((count, [_, town]) => count + (town.isUnlocked() ? 1 : 0), 0);
 
         // Clear the list if the player changed region
         if (this.__internal__previousRegion !== player.region)
         {
             // Drop all elements and rebuild the list
-            gotoList.innerHTML = "";
+            this.__internal__gotoSelectedLocation.innerHTML = "";
 
             // Sort the list alphabetically
             filteredList.sort(([townNameA, townA], [townNameB, townB]) =>
@@ -249,7 +252,7 @@ class AutomationTrivia
             {
                 const type = Automation.Utils.isInstanceOf(town, "DungeonTown") ? "&nbsp;⚔&nbsp;" : "🏫";
 
-                let opt = document.createElement("option");
+                const opt = document.createElement("option");
                 opt.value = townName;
                 opt.id = townName;
                 opt.innerHTML = type + ' ' + townName;
@@ -265,7 +268,7 @@ class AutomationTrivia
                     selectedItemSet = true;
                 }
 
-                gotoList.options.add(opt);
+                this.__internal__gotoSelectedLocation.options.add(opt);
             }
 
             this.__internal__previousRegion = player.region;
@@ -278,7 +281,7 @@ class AutomationTrivia
             {
                 if (town.isUnlocked())
                 {
-                    let opt = gotoList.options.namedItem(townName);
+                    const opt = this.__internal__gotoSelectedLocation.options.namedItem(townName);
                     if (opt.style.display === "none")
                     {
                         opt.style.display = "block";
@@ -293,7 +296,7 @@ class AutomationTrivia
      */
     static __internal__moveToLocation()
     {
-        let selectedDestination = document.getElementById("gotoSelectedLocation").value;
+        const selectedDestination = this.__internal__gotoSelectedLocation.value;
         Automation.Utils.Route.moveToTown(selectedDestination);
     }
 
@@ -327,21 +330,21 @@ class AutomationTrivia
      */
     static __internal__refreshRoamingRouteTrivia()
     {
-        if (this.__internal__disableButtonIfNeeded(document.getElementById("moveToRoamersRouteButton")))
+        if (this.__internal__disableButtonIfNeeded(this.__internal__moveToRoamersRouteButton))
         {
             return;
         }
 
         // Their can be no roamers at this time
-        let subRegionGroup = RoamingPokemonList.findGroup(player.region, player.subregion);
-        let roamers = RoamingPokemonList.getSubRegionalGroupRoamers(player.region, subRegionGroup);
+        const subRegionGroup = RoamingPokemonList.findGroup(player.region, player.subregion);
+        const roamers = RoamingPokemonList.getSubRegionalGroupRoamers(player.region, subRegionGroup);
 
         if (roamers.length === 0)
         {
             if (this.__internal__displayedRoamingRoute !== -1)
             {
                 // Hide the roaming info if there is no roamers
-                document.getElementById("roamingRouteTriviaContainer").hidden = true;
+                this.__internal__roamingRouteTriviaContainer.hidden = true;
                 this.__internal__displayedRoamingRoute = -1;
             }
 
@@ -381,7 +384,7 @@ class AutomationTrivia
 
             this.__internal__roamersContainer.setAttribute("automation-tooltip-text", tooltip);
 
-            document.getElementById("roamingRouteTriviaContainer").hidden = false;
+            this.__internal__roamingRouteTriviaContainer.hidden = false;
         }
     }
 
@@ -433,22 +436,20 @@ class AutomationTrivia
      */
     static __internal__refreshEvolutionTrivia()
     {
-        let triviaDiv = document.getElementById("availableEvolutionTrivia");
-
-        let evoStones = Object.keys(GameConstants.StoneType).filter(
+        const evoStones = Object.keys(GameConstants.StoneType).filter(
             (stone) => isNaN(stone) && (stone !== "None") && this.__internal__hasStoneEvolutionCandidate(stone));
 
-        triviaDiv.hidden = (evoStones.length == 0);
+        this.__internal__availableEvolutionTriviaContainer.hidden = (evoStones.length == 0);
 
-        if (!triviaDiv.hidden && !Automation.Utils.areArrayEquals(this.__internal__lastEvoStone, evoStones))
+        if (!this.__internal__availableEvolutionTriviaContainer.hidden && !Automation.Utils.areArrayEquals(this.__internal__lastEvoStone, evoStones))
         {
-            let contentDiv = document.getElementById("availableEvolutionTriviaContent");
-            contentDiv.innerHTML = "";
+            this.__internal__availableEvolutionTriviaContent.innerHTML = "";
 
             for (const stone of evoStones)
             {
-                 contentDiv.innerHTML += `<img style="max-width: 28px;" src="assets/images/items/evolution/${stone}.png"`
-                                       + ` onclick="javascript: Automation.Trivia.__internal__goToStoneMenu('${stone}');">`;
+                this.__internal__availableEvolutionTriviaContent.innerHTML +=
+                    `<img style="max-width: 28px;" src="assets/images/items/evolution/${stone}.png"`
+                  + ` onclick="javascript: Automation.Trivia.__internal__goToStoneMenu('${stone}');">`;
             }
 
             this.__internal__lastEvoStone = evoStones;
@@ -541,7 +542,7 @@ class AutomationTrivia
         {
             if (this.__internal__displayedBulletinBoardTown !== null)
             {
-                document.getElementById("availableBulletinBoardTriviaContainer").hidden = true;
+                this.__internal__availableBulletinBoardTriviaContainer.hidden = true;
                 this.__internal__displayedBulletinBoardTown = null;
             }
             return
@@ -566,12 +567,9 @@ class AutomationTrivia
         {
             this.__internal__displayedBulletinBoardTown = townNamesAmount;
 
-            let textElem = document.getElementById("availableBulletinBoardTriviaText");
-            textElem.textContent = "Quest available 📖";
+            this.__internal__availableBulletinBoardTriviaText.setAttribute("automation-tooltip-text", tooltip);
 
-            textElem.setAttribute("automation-tooltip-text", tooltip);
-
-            document.getElementById("availableBulletinBoardTriviaContainer").hidden = false;
+            this.__internal__availableBulletinBoardTriviaContainer.hidden = false;
         }
     }
 

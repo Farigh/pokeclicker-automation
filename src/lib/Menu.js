@@ -28,18 +28,19 @@ class AutomationMenu
 
         this.__internal__injectAutomationCss();
 
-        let node = document.createElement("div");
-        node.style.position = "absolute";
-        node.style.top = "50px";
-        node.style.right = "10px";
-        node.style.width = "145px";
-        node.style.textAlign = "right";
-        node.style.lineHeight = "24px";
-        node.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
-        node.style.fontSize = ".875rem";
-        node.style.fontWeight = "400";
-        node.id = "automationContainer";
-        document.body.appendChild(node);
+        this.__internal__automationContainer = document.createElement("div");
+        this.__internal__automationContainer.style.position = "absolute";
+        this.__internal__automationContainer.style.top = "50px";
+        this.__internal__automationContainer.style.right = "10px";
+        this.__internal__automationContainer.style.width = "145px";
+        this.__internal__automationContainer.style.textAlign = "right";
+        this.__internal__automationContainer.style.lineHeight = "24px";
+        this.__internal__automationContainer.style.fontFamily =
+            'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
+        this.__internal__automationContainer.style.fontSize = ".875rem";
+        this.__internal__automationContainer.style.fontWeight = "400";
+        this.__internal__automationContainer.id = "automationContainer";
+        document.body.appendChild(this.__internal__automationContainer);
     }
 
     /**
@@ -69,9 +70,7 @@ class AutomationMenu
      */
     static addCategory(categoryId, title)
     {
-        let mainNode = document.getElementById("automationContainer");
-
-        let newNode = document.createElement("div");
+        const newNode = document.createElement("div");
         newNode.id = categoryId;
         newNode.style.backgroundColor = "#444444";
         newNode.style.color = "#eeeeee";
@@ -82,20 +81,22 @@ class AutomationMenu
         newNode.style.borderStyle = "solid";
         newNode.style.borderWidth = "1px";
         newNode.style.marginTop = "5px";
-        mainNode.appendChild(newNode);
+        this.__internal__automationContainer.appendChild(newNode);
 
-        let contentDivId = categoryId + "Div";
+        const contentDivId = categoryId + "Div";
 
-        let titleDiv = document.createElement("div");
+        const titleDiv = document.createElement("div");
         titleDiv.innerHTML = title;
         titleDiv.style.textAlign = "center";
-        titleDiv.onclick = function() { document.getElementById(contentDivId).classList.toggle('hide'); }.bind(contentDivId);
         newNode.appendChild(titleDiv);
 
-        let contentDiv = document.createElement("div");
+        const contentDiv = document.createElement("div");
         contentDiv.id = contentDivId;
         contentDiv.classList.add("automationCategorie");
         newNode.appendChild(contentDiv);
+
+        // Add the onclick action
+        titleDiv.onclick = function() { contentDiv.classList.toggle('hide'); }.bind(contentDivId);
 
         Automation.Menu.addSeparator(contentDiv);
 
@@ -109,7 +110,7 @@ class AutomationMenu
      */
     static addSeparator(containingDiv = this.AutomationButtonsDiv)
     {
-        let separatorDiv = document.createElement("div");
+        const separatorDiv = document.createElement("div");
         separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
         separatorDiv.style.marginBottom = "5px";
         separatorDiv.style.marginTop = "6px";
@@ -253,13 +254,13 @@ class AutomationMenu
      */
     static toggleButtonState(id)
     {
-        let button = document.getElementById(id);
+        const button = document.getElementById(id);
         if (button.disabled)
         {
             return;
         }
 
-        let newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
+        const newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
         if (newStatus)
         {
             // Only update the class if the button was not disabled
@@ -292,14 +293,14 @@ class AutomationMenu
      */
     static forceAutomationState(id, newState)
     {
-        let isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
+        const isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
 
         if (isEnabled !== newState)
         {
-            let button = document.getElementById(id);
+            const button = document.getElementById(id);
 
             // Re-enable the button so we can click on it, if needed
-            let disableState = button.disabled;
+            const disableState = button.disabled;
             if (disableState)
             {
                 button.disabled = false;
@@ -320,7 +321,7 @@ class AutomationMenu
      */
     static createDropDownListElement(id)
     {
-        let newSelect = document.createElement("select");
+        const newSelect = document.createElement("select");
         newSelect.className = "custom-select";
         newSelect.name = id;
         newSelect.id = id;
@@ -375,7 +376,7 @@ class AutomationMenu
     static createButtonElement(id)
     {
         // Create as a span to avoid the glowing effect on click
-        let newButton = document.createElement("span");
+        const newButton = document.createElement("span");
         newButton.id = id;
         newButton.classList.add("btn");
         newButton.style.width = "30px";
@@ -402,7 +403,7 @@ class AutomationMenu
      */
     static createToggleButtonElement(id)
     {
-        let toggleButton = document.createElement("span");
+        const toggleButton = document.createElement("span");
         toggleButton.id = id;
         toggleButton.classList.add("automation-toggle-button");
 
@@ -417,10 +418,10 @@ class AutomationMenu
      */
     static createAnimatedCheckMarkElement()
     {
-        let checkmarkContainer = document.createElement("div");
+        const checkmarkContainer = document.createElement("div");
         checkmarkContainer.classList.add("automation-checkmark-container");
 
-        let checkmarkElem = document.createElement("div");
+        const checkmarkElem = document.createElement("div");
         checkmarkElem.classList.add("automation-checkmark");
         checkmarkContainer.appendChild(checkmarkElem);
 
@@ -434,7 +435,7 @@ class AutomationMenu
      */
     static createSettingCategory(title)
     {
-        let categoryContainer = document.createElement("div");
+        const categoryContainer = document.createElement("div");
         categoryContainer.classList.add("automation-setting-category");
         categoryContainer.setAttribute("automation-setting-category-title", title);
 
@@ -450,7 +451,7 @@ class AutomationMenu
      */
     static showCheckmark(checkmarkContainer, resetTimer = 2000)
     {
-        let checkmarkElem = checkmarkContainer.children[0];
+        const checkmarkElem = checkmarkContainer.children[0];
         checkmarkElem.classList.add("shown");
 
         setTimeout(function() { checkmarkElem.classList.remove("shown"); }, resetTimer);
@@ -465,10 +466,10 @@ class AutomationMenu
      */
     static createTitleElement(titleText)
     {
-        let titleDiv = document.createElement("div");
+        const titleDiv = document.createElement("div");
         titleDiv.style.textAlign = "center";
         titleDiv.style.marginBottom = "3px";
-        let titleSpan = document.createElement("span");
+        const titleSpan = document.createElement("span");
         titleSpan.textContent = titleText;
         titleSpan.style.borderRadius = "4px";
         titleSpan.style.borderWidth = "1px";
@@ -495,7 +496,7 @@ class AutomationMenu
     static createTextInputElement(charLimit = -1, acceptedRegex = "")
     {
         // Add the input
-        let inputElem = document.createElement("div");
+        const inputElem = document.createElement("div");
         inputElem.contentEditable = true;
         inputElem.spellcheck = false;
         inputElem.classList.add("automation-setting-input");
@@ -503,13 +504,13 @@ class AutomationMenu
         // Filter input based on the given parameters
         inputElem.onkeydown = function(event)
         {
-            let isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
+            const isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
 
             return (event.key === "Backspace")
-                   || (event.key === "Delete")
-                   || (event.key === "ArrowLeft")
-                   || (event.key === "ArrowRight")
-                   || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
+                || (event.key === "Delete")
+                || (event.key === "ArrowLeft")
+                || (event.key === "ArrowRight")
+                || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
         };
 
         // Disable drag and drop
@@ -528,41 +529,41 @@ class AutomationMenu
      */
     static addSettingPanel(elemDiv, openUpward = false)
     {
-        let placeholderDiv = document.createElement("div");
+        const placeholderDiv = document.createElement("div");
         placeholderDiv.classList.add("automation-setting-placeholder");
         if (openUpward)
         {
             placeholderDiv.setAttribute("direction", "up");
         }
 
-        let panelContainer = document.createElement("div");
+        const panelContainer = document.createElement("div");
         panelContainer.classList.add("automation-setting-panel-container");
         placeholderDiv.appendChild(panelContainer);
 
-        let innerDiv = document.createElement("div");
+        const innerDiv = document.createElement("div");
         innerDiv.classList.add("automation-setting-menu-container");
         panelContainer.appendChild(innerDiv);
 
-        let settingsContainerDiv = document.createElement("div");
+        const settingsContainerDiv = document.createElement("div");
         settingsContainerDiv.style.whiteSpace = "nowrap";
         innerDiv.appendChild(settingsContainerDiv);
 
-        let buttonContainerDiv = document.createElement("div");
+        const buttonContainerDiv = document.createElement("div");
         buttonContainerDiv.classList.add("automation-arrow-container-div");
         settingsContainerDiv.appendChild(buttonContainerDiv)
 
-        let buttonDiv = document.createElement("div");
+        const buttonDiv = document.createElement("div");
         buttonDiv.classList.add("automation-arrow-div");
         buttonContainerDiv.appendChild(buttonDiv)
 
-        let arrowDiv = document.createElement("div");
+        const arrowDiv = document.createElement("div");
         arrowDiv.classList.add("automation-arrow");
         buttonDiv.appendChild(arrowDiv);
 
         // Add onclick action
         buttonContainerDiv.onclick = function()
             {
-                let allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
+                const allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
 
                 if (!innerDiv.hasAttribute("automation-visible"))
                 {
@@ -591,7 +592,7 @@ class AutomationMenu
 
         elemDiv.appendChild(placeholderDiv);
 
-        let settingsContentDiv = document.createElement("div");
+        const settingsContentDiv = document.createElement("div");
         settingsContentDiv.style.display = "inline-block";
         settingsContentDiv.style.paddingTop = "5px";
         settingsContentDiv.style.paddingBottom = "5px";
@@ -614,7 +615,7 @@ class AutomationMenu
     static addTabElement(parentElem, label, tabGroupName)
     {
         let tabContainer = parentElem.getElementsByClassName("automationTabContainerDiv")[0];
-        let isFirstTab = !tabContainer;
+        const isFirstTab = !tabContainer;
         let tabLabelContainer;
         let tabContentContainer;
 
@@ -639,11 +640,11 @@ class AutomationMenu
             tabContentContainer = tabContainer.getElementsByClassName("automationTabContentContainer")[0];
         }
 
-        let currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
-        let currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
+        const currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
+        const currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
 
         // Add the input (the magic lies here)
-        let labelInputElem = document.createElement("input");
+        const labelInputElem = document.createElement("input");
         labelInputElem.classList.add("automationTabLabelButton");
         labelInputElem.type = "radio";
         labelInputElem.name = tabGroupName;
@@ -652,7 +653,7 @@ class AutomationMenu
         tabContainer.insertBefore(labelInputElem, tabLabelContainer);
 
         // Add the label
-        let labelElem = document.createElement("label");
+        const labelElem = document.createElement("label");
         labelElem.classList.add("automationTabLabel");
         labelElem.textContent = label;
         labelElem.id = `${currentTabId}-label`;
@@ -660,7 +661,7 @@ class AutomationMenu
         tabLabelContainer.appendChild(labelElem);
 
         // Add the content
-        let contentContainer = document.createElement("div");
+        const contentContainer = document.createElement("div");
         contentContainer.classList.add("automationTabContent");
         tabContentContainer.appendChild(contentContainer);
 
@@ -773,7 +774,7 @@ class AutomationMenu
      */
     static setButtonDisabledState(id, newState, reason = "")
     {
-        let button = document.getElementById(id);
+        const button = document.getElementById(id);
         if (button.classList.contains("automation-toggle-button"))
         {
             this.__internal__disableToggleButton(button, newState, reason);
@@ -803,6 +804,7 @@ class AutomationMenu
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__automationContainer = null;
     static __internal__lockedBalls = [];
     static __internal__pokeballListElems = [];
 
@@ -821,7 +823,7 @@ class AutomationMenu
      */
     static __internal__disableToggleButton(button, newState, reason)
     {
-        let wasDisabled = button.getAttribute("disabled") == "true";
+        const wasDisabled = button.getAttribute("disabled") == "true";
 
         if (wasDisabled === newState)
         {

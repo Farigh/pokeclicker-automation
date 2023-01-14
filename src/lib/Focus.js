@@ -124,7 +124,7 @@ class AutomationFocus
                     return;
                 }
 
-                for (const option of document.getElementById("selectedAutomationGym").options)
+                for (const option of Automation.Gym.GymSelectElem.options)
                 {
                     if (option.value === gymName)
                     {
