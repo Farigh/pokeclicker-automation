@@ -8,7 +8,7 @@ class AutomationFocusAchievements
     \******************************************************************************/
 
     /**
-     * @brief Adds the Achivements functionality to the 'Focus on' list
+     * @brief Adds the Achievements functionality to the 'Focus on' list
      *
      * @param {Array} functionalitiesList: The list to add the functionality to
      */
@@ -75,7 +75,7 @@ class AutomationFocusAchievements
         // Already fighting, nothing to do for now
         if (Automation.Utils.isInInstanceState())
         {
-            // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress^M
+            // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress
             if ((this.__internal__currentAchievement === null)
                 || ((this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
                     && this.__internal__currentAchievement.isCompleted()))

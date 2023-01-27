@@ -847,7 +847,7 @@ class AutomationHatchery
             return sortedPokemonCandidates;
         }
 
-        // Both Contagious and Cured pokemon spread the Pokérus
+        // Both Contagious and Resistant pokemon spread the Pokérus
         const contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
                                                                           || (pokemon?.pokerus === GameConstants.Pokerus.Resistant));
         const availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
