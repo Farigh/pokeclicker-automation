@@ -43,6 +43,8 @@ class AutomationFocus
     \******************************************************************************/
 
     static __noFunctionalityRefresh = -1;
+    static __pokeballToUseSelectElem = null;
+    static __defaultCaughtPokeballSelectElem = null;
 
     /**
      * @brief Makes sure no instance is in progress
@@ -82,31 +84,20 @@ class AutomationFocus
             return;
         }
 
-        // Buy some balls if needed
-        if (App.game.pokeballs.getBallQuantity(this.__internal__pokeballToUseSelectElem.value) === 0)
+        // Ensure that the player has some balls available
+        if (!this.__ensurePlayerHasEnoughBalls(this.__pokeballToUseSelectElem.value))
         {
-            const pokeballName = GameConstants.Pokeball[this.__internal__pokeballToUseSelectElem.value];
-            const pokeballItem = ItemList[pokeballName];
-
-            // No more money, or too expensive, go farm some money
-            if ((App.game.wallet.currencies[Currency.money]() < pokeballItem.totalPrice(10))
-                || (pokeballItem.totalPrice(1) !== pokeballItem.basePrice))
-            {
-                this.__internal__goToBestGymForMoney();
-                return;
-            }
-
-            pokeballItem.buy(10);
+            return;
         }
 
         // Equip the Oak item catch loadout
-        this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+        this.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
-        App.game.pokeballs.alreadyCaughtSelection = this.__internal__pokeballToUseSelectElem.value;
+        App.game.pokeballs.alreadyCaughtSelection = this.__pokeballToUseSelectElem.value;
 
         // Move to the highest unlocked route
-        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__internal__pokeballToUseSelectElem.value);
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__pokeballToUseSelectElem.value);
     }
 
     /**
@@ -137,6 +128,81 @@ class AutomationFocus
             }.bind(this), 50); // Check every game tick
     }
 
+    /**
+     * @brief Moves the player to the best gym to earn the given @p gemType
+     *        If no gym is found, moves to the best route to earn the given @p gemType
+     *
+     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
+     */
+    static __goToBestGymOrRouteForGem(gemType)
+    {
+        if (!this.__ensureNoInstanceIsInProgress())
+        {
+            return;
+        }
+
+        const bestGym = Automation.Utils.Gym.findBestGymForFarmingType(gemType);
+        const bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(gemType);
+
+        // Compare with a 1/1000 precision
+        if ((bestGym !== null) && (Math.ceil(bestGym.Rate * 1000) >= Math.ceil(bestRoute.Rate * 1000)))
+        {
+            Automation.Utils.Route.moveToTown(bestGym.Town);
+            this.__enableAutoGymFight(bestGym.Name);
+        }
+        else
+        {
+            Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
+        }
+    }
+
+    /**
+     * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
+     *
+     * @note The loadout will only be modified if the OakItemLoadoutUpdate is enabled
+     *
+     * @see Automation.Utils.OakItem.equipLoadout()
+     *
+     * @param {Array} loadoutCandidates: The wanted loadout composition
+     */
+    static __equipLoadout(loadoutCandidates)
+    {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
+        {
+            Automation.Utils.OakItem.equipLoadout(loadoutCandidates);
+        }
+    }
+
+    /**
+     * @brief Ensures that the player has some balls of the given @p ballType
+     *        Otherwise, it will move to the best gym to farm money until it can buy 10 of those
+     *
+     * @param ballType: The ball type to have
+     *
+     * @returns True if the player has some, false otherwise
+     */
+    static __ensurePlayerHasEnoughBalls(ballType)
+    {
+        // Buy some balls if needed
+        if (App.game.pokeballs.getBallQuantity(ballType) === 0)
+        {
+            const pokeballName = GameConstants.Pokeball[ballType];
+            const pokeballItem = ItemList[pokeballName];
+
+            // No more money, or too expensive, go farm some money
+            if ((App.game.wallet.currencies[Currency.money]() < pokeballItem.totalPrice(10))
+                || (pokeballItem.totalPrice(1) !== pokeballItem.basePrice))
+            {
+                this.__internal__goToBestGymForMoney();
+                return false;
+            }
+
+            pokeballItem.buy(10);
+        }
+
+        return true;
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
@@ -144,8 +210,6 @@ class AutomationFocus
     static __internal__focusLoop = null;
     static __internal__activeFocus = null;
     static __internal__focusSelectElem = null;
-    static __internal__pokeballToUseSelectElem = null;
-    static __internal__defaultCaughtPokeballSelectElem = null;
 
     static __internal__functionalities = [];
     static __internal__lockedFunctionalities = [];
@@ -236,7 +300,7 @@ class AutomationFocus
         const pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
                                    + "already caught pokémon, when needed"
                                    + disclaimer;
-        this.__internal__pokeballToUseSelectElem =
+        this.__pokeballToUseSelectElem =
             Automation.Menu.addPokeballList("focusPokeballToUseSelection",
                                             generalTabContainer,
                                             this.Settings.BallToUseToCatch,
@@ -250,7 +314,7 @@ class AutomationFocus
                                            + "This setting will not be taken into account while focusing on quests.\n"
                                            + "In this case no pokéball will be equipped to complete quests faster"
                                            + disclaimer;
-        this.__internal__defaultCaughtPokeballSelectElem =
+        this.__defaultCaughtPokeballSelectElem =
             Automation.Menu.addPokeballList("focusDefaultCaughtBallSelection",
                                             generalTabContainer,
                                             this.Settings.DefaultCaughtBall,
@@ -377,7 +441,7 @@ class AutomationFocus
                                         stop: function ()
                                               {
                                                   Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-                                                  App.game.pokeballs.alreadyCaughtSelection = this.__internal__defaultCaughtPokeballSelectElem.value;
+                                                  App.game.pokeballs.alreadyCaughtSelection = this.__defaultCaughtPokeballSelectElem.value;
                                               }.bind(this),
                                         refreshRateAsMs: 3000 // Refresh every 3s
                                     });
@@ -420,7 +484,7 @@ class AutomationFocus
                            + "The best location is the one that will give the most\n"
                            + gemTypeName + " gems per game tick.\n"
                            + "Both gyms and routes are considered, the best one will be used.",
-                    run: function (){ this.__internal__goToBestGymOrRouteForGem(gemType); }.bind(this),
+                    run: function (){ this.__goToBestGymOrRouteForGem(gemType); }.bind(this),
                     stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                     isUnlocked: isUnlockedCallback,
                     refreshRateAsMs: 10000 // Refresh every 10s
@@ -536,7 +600,7 @@ class AutomationFocus
         }
 
         // Equip the most effective Oak item loadout for XP farming
-        this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        this.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         Automation.Utils.Route.moveToBestRouteForExp();
     }
@@ -560,7 +624,7 @@ class AutomationFocus
         }
 
         // Equip the 'money' Oak loadout
-        this.__internal__equipLoadout(Automation.Utils.OakItem.Setup.Money);
+        this.__equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
         // Fallback to the exp route if no gym can be found
         if (this.__internal__lastFocusData.bestGymTown === null)
@@ -571,50 +635,5 @@ class AutomationFocus
 
         Automation.Utils.Route.moveToTown(this.__internal__lastFocusData.bestGymTown);
         this.__enableAutoGymFight(this.__internal__lastFocusData.bestGym);
-    }
-
-    /**
-     * @brief Moves the player to the best gym to earn the given @p gemType
-     *        If no gym is found, moves to the best route to earn the given @p gemType
-     *
-     * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
-     */
-    static __internal__goToBestGymOrRouteForGem(gemType)
-    {
-        if (!this.__ensureNoInstanceIsInProgress())
-        {
-            return;
-        }
-
-        const bestGym = Automation.Utils.Gym.findBestGymForFarmingType(gemType);
-        const bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(gemType);
-
-        // Compare with a 1/1000 precision
-        if ((bestGym !== null) && (Math.ceil(bestGym.Rate * 1000) >= Math.ceil(bestRoute.Rate * 1000)))
-        {
-            Automation.Utils.Route.moveToTown(bestGym.Town);
-            this.__enableAutoGymFight(bestGym.Name);
-        }
-        else
-        {
-            Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
-        }
-    }
-
-    /**
-     * @brief Updates the Oak item loadout with the provided @p loadoutCandidates
-     *
-     * @note The loadout will only be modified if the OakItemLoadoutUpdate is enabled
-     *
-     * @see Automation.Utils.OakItem.equipLoadout()
-     *
-     * @param {Array} loadoutCandidates: The wanted loadout composition
-     */
-    static __internal__equipLoadout(loadoutCandidates)
-    {
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
-        {
-            Automation.Utils.OakItem.equipLoadout(loadoutCandidates);
-        }
     }
 }
