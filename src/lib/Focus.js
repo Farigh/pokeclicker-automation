@@ -370,14 +370,14 @@ class AutomationFocus
                 this.__internal__activeFocus =
                     this.__internal__functionalities.filter((functionality) => functionality.id === this.__internal__focusSelectElem.value)[0];
 
-                // First loop run (to avoid waiting too long before the first iteration, in case of long refresh rate)
-                this.__internal__activeFocus.run();
-
                 // Set focus loop if needed
                 if (this.__internal__activeFocus.refreshRateAsMs !== this.__noFunctionalityRefresh)
                 {
                     this.__internal__focusLoop = setInterval(this.__internal__activeFocus.run, this.__internal__activeFocus.refreshRateAsMs);
                 }
+
+                // First loop run (to avoid waiting too long before the first iteration, in case of long refresh rate)
+                this.__internal__activeFocus.run();
             }
         }
         else

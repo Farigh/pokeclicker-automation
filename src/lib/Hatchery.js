@@ -90,6 +90,7 @@ class AutomationHatchery
             {
                 // Set auto-hatchery loop
                 this.__internal__autoHatcheryLoop = setInterval(this.__internal__hatcheryLoop.bind(this), 1000); // Runs every second
+                this.__internal__hatcheryLoop();
             }
         }
         else

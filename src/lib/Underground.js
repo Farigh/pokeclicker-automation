@@ -62,6 +62,7 @@ class AutomationUnderground
             {
                 // Set auto-mine loop
                 this.__internal__autoMiningLoop = setInterval(this.__internal__miningLoop.bind(this), 10000); // Runs every 10 seconds
+                this.__internal__miningLoop();
             }
             if (this.__internal__autoSellingLoop === null)
             {

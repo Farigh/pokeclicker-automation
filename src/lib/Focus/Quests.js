@@ -160,6 +160,7 @@ class AutomationFocusQuests
         {
             // Set auto-quest loop
             this.__internal__autoQuestLoop = setInterval(this.__internal__questLoop.bind(this), 1000); // Runs every second
+            this.__internal__questLoop();
 
             // Disable other modes button
             const disableReason = "The 'Focus on Quests' feature is enabled";

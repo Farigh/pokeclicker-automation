@@ -44,6 +44,7 @@ class AutomationFocusAchievements
     {
         // Set achievement loop
         this.__internal__achievementLoop = setInterval(this.__internal__focusOnAchievements.bind(this), 1000); // Runs every second
+        this.__internal__focusOnAchievements();
     }
 
     /**

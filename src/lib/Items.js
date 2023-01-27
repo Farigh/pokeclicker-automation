@@ -158,6 +158,7 @@ class AutomationItems
             {
                 // Set auto-upgrade loop
                 this.__internal__autoOakUpgradeLoop = setInterval(this.__internal__oakItemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
+                this.__internal__oakItemUpgradeLoop();
             }
         }
         else
@@ -197,6 +198,7 @@ class AutomationItems
             {
                 // Set auto-upgrade loop
                 this.__internal__autoGemUpgradeLoop = setInterval(this.__internal__gemUpgradeLoop.bind(this), 10000); // Runs every 10 seconds
+                this.__internal__gemUpgradeLoop();
             }
         }
         else
