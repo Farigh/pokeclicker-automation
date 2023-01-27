@@ -172,7 +172,6 @@ class AutomationFocusQuests
             // Force enable other modes
             Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.toggleAutoHatchery(true);
-            Automation.Farm.toggleAutoFarming(true);
             Automation.Underground.toggleAutoMining(true);
         }
     }
@@ -192,9 +191,14 @@ class AutomationFocusQuests
             // Select cheri berry to avoid long riping time
             Automation.Farm.ForcePlantBerriesAsked = true;
             FarmController.selectedBerry(BerryType.Cheri);
+
+            Automation.Farm.toggleAutoFarming(true);
         }
         else
         {
+            // Reset farming automation user-selected state
+            Automation.Farm.toggleAutoFarming();
+
             Automation.Farm.ForcePlantBerriesAsked = false;
             Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
             Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);

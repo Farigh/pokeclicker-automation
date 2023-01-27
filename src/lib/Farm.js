@@ -65,7 +65,8 @@ class AutomationFarm
             // Only set a loop if there is none active
             if (this.__internal__farmingLoop === null)
             {
-                // Set auto-farm loop
+                // Set auto-farm loop (run it once right away)
+                this.__internal__farmLoop();
                 this.__internal__farmingLoop = setInterval(this.__internal__farmLoop.bind(this), 10000); // Runs every 10 seconds
             }
         }
