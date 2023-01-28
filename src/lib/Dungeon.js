@@ -437,14 +437,7 @@ class AutomationDungeon
             }
 
             // If the flashight is unlocked, use it to avoid fighting every encounters
-            if (DungeonRunner.map.flash)
-            {
-                this.__internal__handleFlashPathing();
-            }
-            else
-            {
-                this.__internal__handleNormalPathing();
-            }
+            this.__internal__handleNormalPathing();
         }
         // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
         else
