@@ -28,6 +28,7 @@ class AutomationComponentLoader
         // From the least dependant, to the most dependent
         this.__addScript("src/lib/Focus/Achievements.js");
         this.__addScript("src/lib/Focus/Quests.js");
+        this.__addScript("src/lib/Focus/PokerusCure.js");
         this.__addScript("src/lib/Utils/Battle.js");
         this.__addScript("src/lib/Utils/Gym.js");
         this.__addScript("src/lib/Utils/LocalStorage.js");

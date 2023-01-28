@@ -245,7 +245,6 @@ class AutomationDungeon
                 this.__internal__userDefinedPokeballToRestore = null;
 
                 // Set auto-dungeon loop
-                this.__internal__dungeonFightLoop();
                 this.__internal__autoDungeonLoop = setInterval(this.__internal__dungeonFightLoop.bind(this), 50); // Runs every game tick
             }
         }

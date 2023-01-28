@@ -168,8 +168,8 @@ class AutomationShop
         {
             if (this.__internal__shopLoop === null)
             {
-                this.__internal__shop(); // Run once immediately
                 this.__internal__shopLoop = setInterval(this.__internal__shop.bind(this), 10000); // Then, runs every 10s
+                this.__internal__shop(); // Run once immediately
             }
         }
         else

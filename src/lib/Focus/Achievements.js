@@ -8,7 +8,7 @@ class AutomationFocusAchievements
     \******************************************************************************/
 
     /**
-     * @brief Adds the Achivements functionality to the 'Focus on' list
+     * @brief Adds the Achievements functionality to the 'Focus on' list
      *
      * @param {Array} functionalitiesList: The list to add the functionality to
      */
@@ -44,6 +44,7 @@ class AutomationFocusAchievements
     {
         // Set achievement loop
         this.__internal__achievementLoop = setInterval(this.__internal__focusOnAchievements.bind(this), 1000); // Runs every second
+        this.__internal__focusOnAchievements();
     }
 
     /**
@@ -61,7 +62,7 @@ class AutomationFocusAchievements
                                                                                           : Automation.Dungeon.InternalModes.None;
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-        App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value;
+        App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
     }
 
     /**
@@ -74,7 +75,7 @@ class AutomationFocusAchievements
         // Already fighting, nothing to do for now
         if (Automation.Utils.isInInstanceState())
         {
-            // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress^M
+            // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress
             if ((this.__internal__currentAchievement === null)
                 || ((this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
                     && this.__internal__currentAchievement.isCompleted()))
@@ -126,7 +127,7 @@ class AutomationFocusAchievements
     static __internal__workOnAchievement()
     {
         // Reset any equipped pokeball
-        App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__internal__defaultCaughtPokeballSelectElem.value;
+        App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
 
         if (this.__internal__currentAchievement.property instanceof RouteKillRequirement)
         {
@@ -152,7 +153,7 @@ class AutomationFocusAchievements
     static __internal__workOnRouteKillRequirement()
     {
         // Equip the Oak item Exp loadout
-        Automation.Focus.__internal__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
+        Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         // Move to the selected route
         Automation.Utils.Route.moveToRoute(this.__internal__currentAchievement.property.route, this.__internal__currentAchievement.property.region);
