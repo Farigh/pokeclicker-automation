@@ -437,7 +437,14 @@ class AutomationDungeon
             }
 
             // If the flashight is unlocked, use it to avoid fighting every encounters
-            this.__internal__handleNormalPathing();
+            if (DungeonRunner.map.flash)
+            {
+                this.__internal__handleFlashPathing();
+            }
+            else
+            {
+                this.__internal__handleNormalPathing();
+            }
         }
         // Else hide the menu and turn off the feature, if we're not in the dungeon anymore
         else
@@ -508,14 +515,15 @@ class AutomationDungeon
         const currentBoard = DungeonRunner.map.board()[floor];
         // Transform the board into a flat array of cells (a cell is a tile + its position)
         const allCells = currentBoard.flatMap((row, y) => row.map((tile, x) => ({ tile, x, y, floor })));
-        const visibleUnvisitedTiles = allCells.filter(({ tile }) => tile.isVisible && !tile.isVisited);
-        const nonEnemyCells = visibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTile.enemy);
-        const enemyCells = visibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTile.enemy);
+        const accessibleUnvisitedTiles = allCells.filter(
+            ({ tile, x, y, floor }) => tile.isVisible && !tile.isVisited && DungeonRunner.map.hasAccessToTile({ x, y, floor }));
+        const nonEnemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTile.enemy);
+        const enemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTile.enemy);
         if (nonEnemyCells.length > 0)
         {
-            const bestEmptyCell = this.__internal__getCellWithMostNonVisibleNeightbours(nonEnemyCells);
+            const bestEmptyCell = this.__internal__getCellWithMostNonVisitedNeightbours(nonEnemyCells);
             // Only bother to move if it will reveal anything
-            if (bestEmptyCell.nonVisibleNeighborsCount > 0)
+            if (bestEmptyCell.nonVisitedNeighborsCount > 0)
             {
                 this.__internal__moveToCell(bestEmptyCell);
                 this.__internal__markAdjacentTiles();
@@ -525,42 +533,42 @@ class AutomationDungeon
 
         if (enemyCells.length > 0)
         {
-            const bestEnemyCell = this.__internal__getCellWithMostNonVisibleNeightbours(enemyCells);
+            const bestEnemyCell = this.__internal__getCellWithMostNonVisitedNeightbours(enemyCells);
             this.__internal__moveToCell(bestEnemyCell);
             this.__internal__markAdjacentTiles();
         }
     }
 
     /**
-     * @brief Returns the cell with the most non-visible neighbours
+     * @brief Returns the cell with the most non-visited neighbours
      *
      * @param {Array} cellsToChooseFrom: The list of cells to analyze
      */
-    static __internal__getCellWithMostNonVisibleNeightbours(cellsToChooseFrom)
+    static __internal__getCellWithMostNonVisitedNeightbours(cellsToChooseFrom)
     {
-        let cellWithMostNonVisibleNeighbors = { nonVisibleNeighborsCount: 0 };
+        let cellWithMostNonVisitedNeighbors = { nonVisitedNeighborsCount: 0 };
         for (const cell of cellsToChooseFrom)
         {
-            const nonVisibleNeighborsCount = this.__internal__getNonVisibleNeighboursCount(cell);
-            if (nonVisibleNeighborsCount >= cellWithMostNonVisibleNeighbors.nonVisibleNeighborsCount)
+            const nonVisitedNeighborsCount = this.__internal__getNonVisitedNeighboursCount(cell);
+            if (nonVisitedNeighborsCount >= cellWithMostNonVisitedNeighbors.nonVisitedNeighborsCount)
             {
-                cellWithMostNonVisibleNeighbors = { ...cell, nonVisibleNeighborsCount };
+                cellWithMostNonVisitedNeighbors = { ...cell, nonVisitedNeighborsCount: nonVisitedNeighborsCount };
             }
         }
-        return cellWithMostNonVisibleNeighbors;
+        return cellWithMostNonVisitedNeighbors;
     }
 
     /**
-     * @brief Counts how many non-visible neighbours a cell has
+     * @brief Counts how many non-visited neighbours a cell has
      *
      * @param point: The coordinate of the cell to analyze, in the shape {x, y, floor}
      *
-     * @returns The amount of non-visible neighbours
+     * @returns The amount of non-visited neighbours
      */
-    static __internal__getNonVisibleNeighboursCount(point)
+    static __internal__getNonVisitedNeighboursCount(point)
     {
         const neighbors = DungeonRunner.map.nearbyTiles(point);
-        return neighbors.filter((tile) => !tile.isVisible).length;
+        return neighbors.filter((tile) => !tile.isVisited).length;
     }
 
     /**
