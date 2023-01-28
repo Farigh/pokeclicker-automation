@@ -687,12 +687,13 @@ class AutomationDungeon
 
         if (!this.__internal__isFirstMove)
         {
+            // Consider that an action occured is there is any not-visited cell in the room
             this.__internal__playerActionOccured = this.__internal__playerActionOccured
                                                 || !DungeonRunner.map.board()[currentFloor].every((row) => row.every((tile) => tile.isVisited));
         }
 
         // Every tile is visible, but the boss was not found (it is inaccessible). Check all squares
-        if (this.__internal__floorEndPosition == null && DungeonRunner.map.board()[currentFloor].flat().every(tile => tile.isVisible))
+        if ((this.__internal__floorEndPosition == null) && DungeonRunner.map.board()[currentFloor].flat().every(tile => tile.isVisible))
         {
             this.__internal__isRecovering = true;
         }
@@ -702,6 +703,9 @@ class AutomationDungeon
         {
             this.__internal__moveToCell(startingTile);
         }
+
+        // Don't bother with player action if the player got the flash-light
+        this.__internal__playerActionOccured &= !DungeonRunner.map.flash;
     }
 
     /**
