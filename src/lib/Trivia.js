@@ -498,6 +498,19 @@ class AutomationTrivia
         {
             for (const data of PartyController.getStoneEvolutionsCaughtData(pokemon.id, GameConstants.StoneType[stone]))
             {
+                // Some evolution might be locked with the folowing reason (as of v0.10.9):
+                //  - You must be in the <Region name>
+                //  - Your local part of the day must be <Time of day>
+                //  - Can't mega evolve <Pokémon name> yet
+                if (data.locked)
+                {
+                    // Only filter the mega-evolvable requirements
+                    if (data.lockHint.startsWith("Can't mega evolve"))
+                    {
+                        continue;
+                    }
+                }
+
                 hasCandidate |= (data.status == 0);
             }
         }
