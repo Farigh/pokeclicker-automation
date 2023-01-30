@@ -142,7 +142,7 @@ class AutomationFocusPokerusCure
 
         // Set the next best route
         this.__internal__currentRouteData = this.__internal__pokerusRouteData.find(
-            (data) => this.__internal__doesAnyPokemonNeedCuring(data.route), this);
+            (data) => this.__internal__doesAnyPokemonNeedCuring(data.route, true), this);
     }
 
     /**
@@ -163,14 +163,14 @@ class AutomationFocusPokerusCure
      * @brief Checks if any pokémon from the given @p route needs to be cured
      *
      * @param route: The route to check
-     * @param {boolean} considerOnlyAvailableInfectedPokemons: Whether only currently available and infected pokémon should be considered
+     * @param {boolean} onlyConsiderAvailableContagiousPokemons: Whether only currently available and contagious pokémon should be considered
      *
      * @returns True if every pokémons are cured, false otherwise
      */
-    static __internal__doesAnyPokemonNeedCuring(route, considerOnlyAvailableInfectedPokemons = false)
+    static __internal__doesAnyPokemonNeedCuring(route, onlyConsiderAvailableContagiousPokemons = false)
     {
-        const pokemonList = considerOnlyAvailableInfectedPokemons ? RouteHelper.getAvailablePokemonList(route.number, route.region)
-                                                                  : this.__internal__getEveryPokemonForRoute(route);
+        const pokemonList = onlyConsiderAvailableContagiousPokemons ? RouteHelper.getAvailablePokemonList(route.number, route.region)
+                                                                    : this.__internal__getEveryPokemonForRoute(route);
 
         for (const pokemonName of pokemonList)
         {
@@ -178,9 +178,9 @@ class AutomationFocusPokerusCure
 
             // A pokémon is a candidate to catch if
             //  - It's not already cured
-            //  - It's infected or we are listing every uncured pokemon
+            //  - It's contagious or we are listing every uncured pokemon
             const isCandidatePokemon = (pokemon?.pokerus != GameConstants.Pokerus.Resistant)
-                                    && (!considerOnlyAvailableInfectedPokemons || (pokemon?.pokerus == GameConstants.Pokerus.Infected));
+                                    && (!onlyConsiderAvailableContagiousPokemons || (pokemon?.pokerus == GameConstants.Pokerus.Contagious));
 
             if (isCandidatePokemon)
             {
