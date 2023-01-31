@@ -7,6 +7,10 @@ class AutomationFocusAchievements
     |***    Focus specific members, should only be used by focus sub-classes    ***|
     \******************************************************************************/
 
+    static __internal__advancedSettings = {
+        DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast"
+    };
+
     /**
      * @brief Adds the Achievements functionality to the 'Focus on' list
      *
@@ -28,6 +32,33 @@ class AutomationFocusAchievements
                 stop: function (){ this.__internal__stop(); }.bind(this),
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
+    }
+
+    /**
+     * @brief Builds the 'Focus on Achievements' advanced settings tab
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __buildAdvancedSettings(parent)
+    {
+        // Disable the magikarp jump last by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.DoMagikarpJumpLast, false);
+
+        // OakItem loadout setting
+        const tooltip = "Will perform the Magikarp Jump achievements last.";
+        const button = Automation.Menu.addLabeledAdvancedSettingsToggleButton("Complete Magikarp Jump achievements last",
+                                                                              this.__internal__advancedSettings.DoMagikarpJumpLast,
+                                                                              tooltip,
+                                                                              parent);
+
+        button.addEventListener("click", function()
+            {
+                // Force current achievement update
+                if (this.__internal__currentAchievement)
+                {
+                    this.__internal__currentAchievement = this.__internal__getNextAchievement();
+                }
+            }.bind(this), false);
     }
 
     /*********************************************************************\
@@ -297,8 +328,8 @@ class AutomationFocusAchievements
                 (a, b) =>
                 {
                     // Favor lower region quests
-                    let aRegion = this.__internal__getRegionFromCategoryName(a.category.name);
-                    let bRegion = this.__internal__getRegionFromCategoryName(b.category.name);
+                    const aRegion = this.__internal__getRegionFromCategoryName(a.category.name);
+                    const bRegion = this.__internal__getRegionFromCategoryName(b.category.name);
                     if (aRegion < bRegion) return -1;
                     if (aRegion > bRegion) return 1;
 
@@ -333,6 +364,24 @@ class AutomationFocusAchievements
     static __internal__getRegionFromCategoryName(categoryName)
     {
         // Handle Sevii Island content at the same time as Hoenn content
-        return (categoryName == "sevii") ? GameConstants.Region.hoenn : GameConstants.Region[categoryName];
+        if (categoryName == "sevii")
+        {
+            return GameConstants.Region.hoenn;
+        }
+
+        // Handle Magikarp Jump Island content at the same time as Galar content, unless the user chose to do it last
+        if (categoryName == "magikarpJump")
+        {
+            if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.DoMagikarpJumpLast) === "true")
+            {
+                return GameConstants.Region.final;
+
+            }
+
+            return GameConstants.Region.galar;
+        }
+
+        // Any unknown content (new sub-region) should be considered last
+        return GameConstants.Region[categoryName] ?? GameConstants.Region.final;
     }
 }

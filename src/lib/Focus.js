@@ -342,7 +342,14 @@ class AutomationFocus
         \*********************/
 
         const questTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Quests", focusSettingsTabsGroup);
-        this.Quests.__buildAdvancedSettings(questTabContainer)
+        this.Quests.__buildAdvancedSettings(questTabContainer);
+
+        /***************************\
+        |*  Achievements settings  *|
+        \***************************/
+
+        const achievementsTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Achievements", focusSettingsTabsGroup);
+        this.Achievements.__buildAdvancedSettings(achievementsTabContainer);
     }
 
     /**
