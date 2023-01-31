@@ -7,6 +7,10 @@ class AutomationFocusAchievements
     |***    Focus specific members, should only be used by focus sub-classes    ***|
     \******************************************************************************/
 
+    static __internal__advancedSettings = {
+        DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast"
+    };
+
     /**
      * @brief Adds the Achievements functionality to the 'Focus on' list
      *
@@ -28,6 +32,33 @@ class AutomationFocusAchievements
                 stop: function (){ this.__internal__stop(); }.bind(this),
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
+    }
+
+    /**
+     * @brief Builds the 'Focus on Achievements' advanced settings tab
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __buildAdvancedSettings(parent)
+    {
+        // Disable the magikarp jump last by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.DoMagikarpJumpLast, false);
+
+        // OakItem loadout setting
+        const tooltip = "Will perform the Magikarp Jump achievements last.";
+        const button = Automation.Menu.addLabeledAdvancedSettingsToggleButton("Complete Magikarp Jump achievements last",
+                                                                              this.__internal__advancedSettings.DoMagikarpJumpLast,
+                                                                              tooltip,
+                                                                              parent);
+
+        button.addEventListener("click", function()
+            {
+                // Force current achievement update
+                if (this.__internal__currentAchievement)
+                {
+                    this.__internal__currentAchievement = this.__internal__getNextAchievement();
+                }
+            }.bind(this), false);
     }
 
     /*********************************************************************\
@@ -77,7 +108,7 @@ class AutomationFocusAchievements
         {
             // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress
             if ((this.__internal__currentAchievement === null)
-                || ((this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
+                || (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearDungeonRequirement")
                     && this.__internal__currentAchievement.isCompleted()))
             {
                 Automation.Focus.__ensureNoInstanceIsInProgress();
@@ -129,17 +160,17 @@ class AutomationFocusAchievements
         // Reset any equipped pokeball
         App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
 
-        if (this.__internal__currentAchievement.property instanceof RouteKillRequirement)
+        if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "RouteKillRequirement"))
         {
             Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
             this.__internal__workOnRouteKillRequirement();
         }
-        else if (this.__internal__currentAchievement.property instanceof ClearGymRequirement)
+        else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearGymRequirement"))
         {
             Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
             this.__internal__workOnClearGymRequirement();
         }
-        else if (this.__internal__currentAchievement.property instanceof ClearDungeonRequirement)
+        else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearDungeonRequirement"))
         {
             this.__internal__workOnClearDungeonRequirement();
         }
@@ -254,14 +285,14 @@ class AutomationFocusAchievements
                 }
 
                 // Consider RouteKill achievements, if the player can move to the target route
-                if (achievement.property instanceof RouteKillRequirement)
+                if (Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement"))
                 {
                     return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
                             && MapHelper.accessToRoute(achievement.property.route, achievement.property.region));
                 }
 
                 // Consider ClearGym achievements, if the player can move to the target town
-                if (achievement.property instanceof ClearGymRequirement)
+                if (Automation.Utils.isInstanceOf(achievement.property, "ClearGymRequirement"))
                 {
                     const gymName = GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
 
@@ -280,7 +311,7 @@ class AutomationFocusAchievements
                 }
 
                 // Consider ClearDungeon achievements, if the player can move to the target dungeon
-                if (achievement.property instanceof ClearDungeonRequirement)
+                if (Automation.Utils.isInstanceOf(achievement.property, "ClearDungeonRequirement"))
                 {
                     const dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
                     const town = TownList[dungeonName];
@@ -297,25 +328,31 @@ class AutomationFocusAchievements
                 (a, b) =>
                 {
                     // Favor lower region quests
-                    let aRegion = this.__internal__getRegionFromCategoryName(a.category.name);
-                    let bRegion = this.__internal__getRegionFromCategoryName(b.category.name);
+                    const aRegion = this.__internal__getRegionFromCategoryName(a.category.name);
+                    const bRegion = this.__internal__getRegionFromCategoryName(b.category.name);
                     if (aRegion < bRegion) return -1;
                     if (aRegion > bRegion) return 1;
 
                     // Then route kill
-                    if ((a.property instanceof RouteKillRequirement) && (b.property instanceof RouteKillRequirement)) return 0;
-                    if (a.property instanceof RouteKillRequirement) return -1;
-                    if (b.property instanceof RouteKillRequirement) return 1;
+                    const isAInstanceOfRouteKillRequirement = Automation.Utils.isInstanceOf(a.property, "RouteKillRequirement");
+                    const isBInstanceOfRouteKillRequirement = Automation.Utils.isInstanceOf(b.property, "RouteKillRequirement");
+                    if (isAInstanceOfRouteKillRequirement && isBInstanceOfRouteKillRequirement) return 0;
+                    if (isAInstanceOfRouteKillRequirement) return -1;
+                    if (isBInstanceOfRouteKillRequirement) return 1;
 
                     // Then Gym clear
-                    if ((a.property instanceof ClearGymRequirement) && (b.property instanceof ClearGymRequirement)) return 0;
-                    if (a.property instanceof ClearGymRequirement) return -1;
-                    if (b.property instanceof ClearGymRequirement) return 1;
+                    const isAInstanceOfClearGymRequirement = Automation.Utils.isInstanceOf(a.property, "ClearGymRequirement");
+                    const isBInstanceOfClearGymRequirement = Automation.Utils.isInstanceOf(b.property, "ClearGymRequirement");
+                    if (isAInstanceOfClearGymRequirement && isBInstanceOfClearGymRequirement) return 0;
+                    if (isAInstanceOfClearGymRequirement) return -1;
+                    if (isBInstanceOfClearGymRequirement) return 1;
 
                     // Finally Dungeon clear
-                    if ((a.property instanceof ClearDungeonRequirement) && (b.property instanceof ClearDungeonRequirement)) return 0;
-                    if (a.property instanceof ClearDungeonRequirement) return -1;
-                    if (b.property instanceof ClearDungeonRequirement) return 1;
+                    const isAInstanceOfClearDungeonRequirement = Automation.Utils.isInstanceOf(a.property, "ClearDungeonRequirement");
+                    const isBInstanceOfClearDungeonRequirement = Automation.Utils.isInstanceOf(b.property, "ClearDungeonRequirement");
+                    if (isAInstanceOfClearDungeonRequirement && isBInstanceOfClearDungeonRequirement) return 0;
+                    if (isAInstanceOfClearDungeonRequirement) return -1;
+                    if (isBInstanceOfClearDungeonRequirement) return 1;
                 },
                 this)[0];
         }
@@ -333,6 +370,24 @@ class AutomationFocusAchievements
     static __internal__getRegionFromCategoryName(categoryName)
     {
         // Handle Sevii Island content at the same time as Hoenn content
-        return (categoryName == "sevii") ? GameConstants.Region.hoenn : GameConstants.Region[categoryName];
+        if (categoryName == "sevii")
+        {
+            return GameConstants.Region.hoenn;
+        }
+
+        // Handle Magikarp Jump Island content at the same time as Galar content, unless the user chose to do it last
+        if (categoryName == "magikarpJump")
+        {
+            if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.DoMagikarpJumpLast) === "true")
+            {
+                return GameConstants.Region.final;
+
+            }
+
+            return GameConstants.Region.galar;
+        }
+
+        // Any unknown content (new sub-region) should be considered last
+        return GameConstants.Region[categoryName] ?? GameConstants.Region.final;
     }
 }
