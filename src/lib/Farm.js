@@ -94,6 +94,7 @@ class AutomationFarm
     // Collection of
     // {
     //     isNeeded: function(),
+    //     isOptional: boolean,
     //     berryToUnlock: BerryType,
     //     harvestStrategy: this.__internal__harvestTimingType,
     //     oakItemToEquip: OakItemType,
@@ -928,6 +929,10 @@ class AutomationFarm
         pinkanConfig[BerryType.Watmel] = [ 12 ];
         this.__internal__addUnlockMutationStrategy(BerryType.Pinkan, pinkanConfig);
 
+        // Make the pinkan berry optional, since it's not required by any other berry strategy
+        const pinkanStrategy = this.__internal__unlockStrategySelection.at(-1);
+        pinkanStrategy.isOptional = true;
+
         /**********************************\
         |*   Harvest some Gen 3 berries   *|
         \**********************************/
@@ -1550,6 +1555,13 @@ class AutomationFarm
 
         for (const strategy of this.__internal__unlockStrategySelection)
         {
+            // Don't consider strategies if the berry cannot be unlocked and it was flagged as optionnal
+            if ((strategy.isOptional === true)
+                && !App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == strategy.berryToUnlock).unlocked)
+            {
+                continue;
+            }
+
             if (strategy.isNeeded())
             {
                 this.__internal__currentStrategy = strategy;
@@ -1679,7 +1691,7 @@ class AutomationFarm
         // Check if the discord is linked and all hints are gathered
         if (App.game.discord.ID() !== null)
         {
-            const enigmaMutation = App.game.farming.mutations.filter((mutation) => Automation.Utils.isInstanceOf(mutation, "EnigmaMutation"))[0];
+            const enigmaMutation = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Enigma);
 
             if (enigmaMutation.hintsSeen.every((seen) => seen()))
             {
@@ -1702,7 +1714,7 @@ class AutomationFarm
                     return;
                 }
 
-                const enigmaMutation = App.game.farming.mutations.filter((mutation) => Automation.Utils.isInstanceOf(mutation, "EnigmaMutation"))[0];
+                const enigmaMutation = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Enigma);
 
                 if (enigmaMutation.hintsSeen.every((seen) => seen()))
                 {

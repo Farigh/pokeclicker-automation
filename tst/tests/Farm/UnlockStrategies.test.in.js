@@ -1389,6 +1389,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[53]);
 
+        // This berry should be optional
+        expect(Automation.Farm.__internal__currentStrategy.isOptional).toBe(true);
+
         // The layout should look like that
         // |a| |b| |a|
         // |c| |d| |c|  with:  a : Nanab     e : Qualot
@@ -2713,6 +2716,42 @@ describe(`${AutomationTestUtils.categoryPrefix}Edge cases`, () =>
 
         // Restore the player's Shuca berries (for the next test)
         App.game.farming.__berryListCount[BerryType.Shuca] = 24;
+
+        // Restore the item unlock status
+        App.game.oakItems.itemList[OakItemType.Sprinklotad].__isUnlocked = true;
+
+        // Reenable the feature
+        Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.FocusOnUnlocks, true);
+    });
+
+    // If the Pinkan berry was not unlocked, it should not keep the other ones to be unlocked
+    test('Skipping Pinkan berry if not unlocked', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Give the player 0 Pinkan and Occa berries
+        App.game.farming.__berryListCount[BerryType.Pinkan] = 0;
+        App.game.farming.__berryListCount[BerryType.Occa] = 0;
+
+        // Simulate the player not having unlocked the Pinkan berry
+        const pinkanBerryData = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Pinkan);
+        pinkanBerryData.unlocked = false;
+        Automation.Farm.__internal__farmLoop();
+
+        // Expect the strategy to be pointing to the Occa berry (which is the next unlock)
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[55]);
+
+        // Simulate the player unlocking the Pinkan berry
+        pinkanBerryData.unlocked = true;
+        Automation.Farm.__internal__farmLoop();
+
+        // Expect the strategy to be pointing to the Pinkan berry
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[53]);
+
+        // Restore the player's berries (for the next test)
+        App.game.farming.__berryListCount[BerryType.Pinkan] = 1;
+        App.game.farming.__berryListCount[BerryType.Occa] = 24;
     });
 
     // Make sure the automation removes items that are forbidden
