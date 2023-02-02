@@ -1568,6 +1568,17 @@ class AutomationFarm
         this.__internal__checkOakItemRequirement();
         this.__internal__checkPokemonRequirement();
         this.__internal__checkDiscordLinkRequirement();
+
+        // Make sure that the automation will not try to unlock any berry that can't be mutated
+        if ((this.__internal__currentStrategy !== null)
+            && this.__internal__currentStrategy.berryToUnlock
+            && !App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == this.__internal__currentStrategy.berryToUnlock).unlocked)
+        {
+            Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
+            Automation.Notifications.sendWarningNotif("Farming unlock disabled, you do not meet the requirements"
+                                                    + ` to unlock the ${BerryType[this.__internal__currentStrategy.berryToUnlock]} berry`, "Farming");
+            this.__internal__currentStrategy = null;
+        }
     }
 
     /**
@@ -1575,7 +1586,8 @@ class AutomationFarm
      */
     static __internal__checkOakItemRequirement()
     {
-        if (this.__internal__currentStrategy.oakItemToEquip === null)
+        if ((this.__internal__currentStrategy == null)
+            || (this.__internal__currentStrategy.oakItemToEquip === null))
         {
             return;
         }
@@ -1593,7 +1605,7 @@ class AutomationFarm
             const watcher = setInterval(function()
                 {
                     if ((Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
-                        || App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isActive)
+                        || oakItem.isActive)
                     {
                         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                         clearInterval(watcher);
@@ -1613,7 +1625,7 @@ class AutomationFarm
         // Set a watcher to re-enable the feature once the item is unlocked
         const watcher = setInterval(function()
             {
-                if (App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isUnlocked())
+                if (oakItem.isUnlocked())
                 {
                     Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
@@ -1626,7 +1638,8 @@ class AutomationFarm
      */
     static __internal__checkPokemonRequirement()
     {
-        if (this.__internal__currentStrategy.requiredPokemon === null)
+        if ((this.__internal__currentStrategy == null)
+            || (this.__internal__currentStrategy.requiredPokemon === null))
         {
             return;
         }
@@ -1657,7 +1670,8 @@ class AutomationFarm
      */
     static __internal__checkDiscordLinkRequirement()
     {
-        if (!this.__internal__currentStrategy.requiresDiscord)
+        if ((this.__internal__currentStrategy == null)
+            || (!this.__internal__currentStrategy.requiresDiscord))
         {
             return;
         }
@@ -1720,6 +1734,7 @@ class AutomationFarm
         Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
         Automation.Utils.OakItem.ForbiddenItems = [];
+        this.__internal__currentStrategy = null;
     }
 
     /**

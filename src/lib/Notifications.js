@@ -55,11 +55,8 @@ class AutomationNotifications
      */
     static sendWarningNotif(message, module = null, subModule = null)
     {
-        // Don't filter warnings, even if the module notifications were disabled
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) == "true")
-        {
-            this.__internal__sendNotification(message, module, subModule, NotificationConstants.NotificationOption.warning, 10000);
-        }
+        // Don't filter warnings, even if the notifications were disabled
+        this.__internal__sendNotification(message, module, subModule, NotificationConstants.NotificationOption.warning, 10000);
     }
 
     /*********************************************************************\

@@ -233,8 +233,18 @@ class Farming
 
     __initMutations()
     {
-        // Only the enigma mutation is needed for now
-        this.mutations.push(new EnigmaMutation());
+        for (let key of Object.keys(BerryType).filter(x => !isNaN(x) && x >= 0).map(x => parseInt(x)))
+        {
+            if (key == BerryType.Enigma)
+            {
+                // The enigma berry has a specific ctor
+                this.mutations.push(new EnigmaMutation());
+            }
+            else
+            {
+                this.mutations.push(new Mutation(key));
+            }
+        }
     }
 
     __initPlotList()
