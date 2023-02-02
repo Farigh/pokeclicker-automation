@@ -209,26 +209,29 @@ class AutomationFarm
         this.__internal__harvestAsEfficientAsPossible();
         this.__internal__tryToUnlockNewSpots();
 
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
-        {
-            this.__internal__chooseUnlockStrategy();
-        }
-        else if (this.__internal__currentStrategy !== null)
-        {
-            // If the focus is turned off, clear the current strategy
-            this.__internal__currentStrategy = null;
-        }
-
+        // Try to unlock berries, if enabled
         if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
             && !this.ForcePlantBerriesAsked)
         {
-            this.__internal__removeOakItemIfNeeded();
-            this.__internal__equipOakItemIfNeeded();
-            this.__internal__currentStrategy.action();
+            this.__internal__chooseUnlockStrategy();
+
+            if (this.__internal__currentStrategy)
+            {
+                this.__internal__removeOakItemIfNeeded();
+                this.__internal__equipOakItemIfNeeded();
+                this.__internal__currentStrategy.action();
+
+                return;
+            }
         }
-        else
+
+        // Otherwise, fallback to planting berries
+        this.__internal__plantAllBerries();
+
+        if (this.__internal__currentStrategy !== null)
         {
-            this.__internal__plantAllBerries();
+            // Clear the current strategy
+            this.__internal__currentStrategy = null;
         }
     }
 
