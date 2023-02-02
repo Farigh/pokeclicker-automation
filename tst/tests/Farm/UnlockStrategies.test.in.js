@@ -21,7 +21,7 @@ import "tst/utils/farming.utils.js";
 
 // Stub setInterval calls
 jest.useFakeTimers();
-let setIntervalSpy = jest.spyOn(global, 'setInterval');
+const setIntervalSpy = jest.spyOn(global, 'setInterval');
 
 // Stub the Automation class to the bare minimum
 class Automation
@@ -40,6 +40,9 @@ class Automation
     };
 }
 
+// Disable warning notifications
+Automation.Notifications.sendWarningNotif = function() {};
+
 // Load the needed pokemons
 PokemonLoader.loadFarmingUnlockPokemons();
 
@@ -53,7 +56,7 @@ function setAllBerriesToRipe()
     {
         if (!plot.isEmpty())
         {
-            let berryData = App.game.farming.berryData[plot.berry];
+            const berryData = App.game.farming.berryData[plot.berry];
             plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
     }
@@ -98,10 +101,10 @@ function runPlotUnlockTest(slotToBeUnlocked)
 {
     expect(Automation.Farm.__internal__currentStrategy.harvestStrategy).toBe(Automation.Farm.__internal__harvestTimingType.AsSoonAsPossible);
 
-    let berryCost = App.game.farming.plotBerryCost(slotToBeUnlocked);
+    const berryCost = App.game.farming.plotBerryCost(slotToBeUnlocked);
 
     // Simulate the user getting some berries (just enough to unlock the plot)
-    let unlockBerryAmount = berryCost.amount;
+    const unlockBerryAmount = berryCost.amount;
     App.game.farming.__berryListCount[berryCost.type] = unlockBerryAmount;
 
     // Simulate the loop
@@ -111,7 +114,7 @@ function runPlotUnlockTest(slotToBeUnlocked)
     expect(App.game.farming.plotList[slotToBeUnlocked].isUnlocked).toBe(false);
 
     // Give the player just under the amount needed
-    let unlockFPAmount = App.game.farming.plotFPCost(slotToBeUnlocked);
+    const unlockFPAmount = App.game.farming.plotFPCost(slotToBeUnlocked);
     App.game.wallet.__currencies[GameConstants.Currency.farmPoint] = unlockFPAmount - 1;
 
     Automation.Farm.__internal__farmLoop();
@@ -166,7 +169,7 @@ function runBerryMutationTest(targetBerry,
     }
 
     App.game.farming.plotList[8].plant(targetBerry);
-    let targetBerryData = App.game.farming.berryData[targetBerry];
+    const targetBerryData = App.game.farming.berryData[targetBerry];
     App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
     Automation.Farm.__internal__farmLoop();
 
@@ -204,11 +207,11 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
     const currentMutationBerry = Automation.Farm.__internal__currentStrategy.berryToUnlock;
 
     // Some berry might have the save riping time, those will be planted at the same time
-    let berryPlantOrder = [];
+    const berryPlantOrder = [];
     let lastBerryTime = 0;
     for (const berryType of expectedOrder)
     {
-        let currentBerryTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+        const currentBerryTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
         if (lastBerryTime == 0)
         {
             berryPlantOrder.push([]);
@@ -222,8 +225,8 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
         berryPlantOrder[berryPlantOrder.length - 1].push(berryType);
     }
 
-    let targetAge = App.game.farming.berryData[expectedOrder[0]].growthTime[PlotStage.Bloom];
-    let agingPlot = App.game.farming.plotList[expectedConfig[expectedOrder[0]][0]];
+    const targetAge = App.game.farming.berryData[expectedOrder[0]].growthTime[PlotStage.Bloom];
+    const agingPlot = App.game.farming.plotList[expectedConfig[expectedOrder[0]][0]];
     for (const index of expectedOrder.keys())
     {
         const currentOrderIndex = berryPlantOrder[index].length;
@@ -237,7 +240,7 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
             break;
         }
 
-        let nextBerryGrowingTime = App.game.farming.berryData[expectedOrder[index + 1]].growthTime[PlotStage.Bloom];
+        const nextBerryGrowingTime = App.game.farming.berryData[expectedOrder[index + 1]].growthTime[PlotStage.Bloom];
 
         // Simulate the berry age getting close to the next rotation
         agingPlot.age = targetAge - nextBerryGrowingTime - 1;
@@ -287,7 +290,7 @@ function runBerryMutationTestNoTiming(targetBerry,
         }
 
         App.game.farming.plotList[8].plant(targetBerry);
-        let targetBerryData = App.game.farming.berryData[targetBerry];
+        const targetBerryData = App.game.farming.berryData[targetBerry];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
         Automation.Farm.__internal__farmLoop();
 
@@ -306,37 +309,42 @@ function checkItemNeededBehaviour(oakItemNeeded)
         return;
     }
 
-    // If the item was not unlocked, more steps are needed
-    if (!App.game.oakItems.itemList[oakItemNeeded].isUnlocked())
-    {
-        expectFocusOnUnlocksToBeDisabled(function ()
-        {
-            // Simulate the player getting the item
-            App.game.oakItems.itemList[oakItemNeeded].__isUnlocked = true;
-
-            // Expect the feature to be reenabled
-            return true;
-        });
-    }
-
     // Remove the needed item if it's equipped, so we can make sure the automation will equip it back
     App.game.oakItems.deactivate(oakItemNeeded);
 }
 
 function checkPokemonNeededBehaviour(pokemonName)
 {
-    // Check the stategy needed pokemon
-    expect(Automation.Farm.__internal__currentStrategy.requiredPokemon).toBe(pokemonName);
-
     expectFocusOnUnlocksToBeDisabled(function ()
         {
             // Simulate the player catching the pokemon
-            let pokemonId = PokemonHelper.getPokemonByName(pokemonName).id;
+            const pokemonId = PokemonHelper.getPokemonByName(pokemonName).id;
             App.game.statistics.__pokemonCapturedCount[pokemonId] = 1;
 
             // Expect the feature to be reenabled
             return true;
         });
+
+    // Make sure the next unlock strategy gets set
+    Automation.Farm.__internal__farmLoop();
+
+    // Check the stategy needed pokemon
+    expect(Automation.Farm.__internal__currentStrategy.requiredPokemon).toBe(pokemonName);
+}
+
+function expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded)
+{
+    expectFocusOnUnlocksToBeDisabled(function ()
+    {
+        // Simulate the player getting the item
+        App.game.oakItems.itemList[oakItemNeeded].__isUnlocked = true;
+
+        // Expect the feature to be reenabled
+        return true;
+    });
+
+    // Make sure the next unlock strategy gets set
+    Automation.Farm.__internal__farmLoop();
 }
 
 function expectFocusOnUnlocksToBeDisabled(reenableConditionCallback)
@@ -380,10 +388,10 @@ function expectIncreaseHarvestRateStrategy(targetBerry)
     // |a|a|a| | |         b : targetBerry
     // | | | | | |
     // | | | | | |
-    let expectedConfig = {};
+    const expectedConfig = {};
     expectedConfig[targetBerry] = [ 6 ];
     expectedConfig[BerryType.Passho] = [ 0, 1, 2, 5, 7, 10, 11, 12 ];
-    let expectedOrder = [ targetBerry, BerryType.Passho ];
+    const expectedOrder = [ targetBerry, BerryType.Passho ];
     runBerryMutationTest(targetBerry, expectedConfig, expectedOrder);
 
     // Give the player 4 target berries, to move to the next farming strategy
@@ -421,7 +429,7 @@ beforeAll(() =>
 // Test when player does not have enough berries to unlock anything
 test('Not enough berry to unlock anything', () =>
 {
-    let cheriData = App.game.farming.berryData[BerryType.Cheri];
+    const cheriData = App.game.farming.berryData[BerryType.Cheri];
 
     // Expect the current strategy to be pointing to the first one
     expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[0]);
@@ -433,7 +441,7 @@ test('Not enough berry to unlock anything', () =>
     expect(App.game.farming.plotList[12].isEmpty()).toBe(true);
 
     // Simulate the user getting some Cheri berries
-    let initialCheriCount = 5;
+    const initialCheriCount = 5;
     App.game.farming.__berryListCount[BerryType.Cheri] = initialCheriCount;
 
     // Simulate farm loop
@@ -602,7 +610,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 1 unlocks`, () =>
         // Simulate the planted berries riping
         for (const index of [ 6, 7, 8, 11, 12, 13, 16, 17, 18 ])
         {
-            let berryData = App.game.farming.berryData[App.game.farming.plotList[index].berry];
+            const berryData = App.game.farming.berryData[App.game.farming.plotList[index].berry];
             App.game.farming.plotList[index].age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
         Automation.Farm.__internal__farmLoop();
@@ -630,10 +638,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |#|b| |b|#|         b : Pecha
         // |#| |a| |#|
         // |#|#|#|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Oran] = [ 7, 17 ];
         expectedConfig[BerryType.Pecha] = [ 11, 13 ];
-        let expectedOrder = [ BerryType.Oran, BerryType.Pecha ];
+        const expectedOrder = [ BerryType.Oran, BerryType.Pecha ];
         runBerryMutationTest(BerryType.Persim, expectedConfig, expectedOrder);
     });
 
@@ -658,10 +666,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |#| |b| |#|         b : Cheri
         // |#| |a| |#|
         // |#|#|#|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Leppa] = [ 2, 17 ];
         expectedConfig[BerryType.Cheri] = [ 12 ];
-        let expectedOrder = [ BerryType.Leppa, BerryType.Cheri ];
+        const expectedOrder = [ BerryType.Leppa, BerryType.Cheri ];
         runBerryMutationTest(BerryType.Razz, expectedConfig, expectedOrder);
     });
 
@@ -686,10 +694,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |#| |b| | |         b : Chesto
         // |#| |a| |#|
         // |#|#|#|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Leppa] = [ 2, 17 ];
         expectedConfig[BerryType.Chesto] = [ 12 ];
-        let expectedOrder = [ BerryType.Leppa, BerryType.Chesto ];
+        const expectedOrder = [ BerryType.Leppa, BerryType.Chesto ];
         runBerryMutationTest(BerryType.Bluk, expectedConfig, expectedOrder);
     });
 
@@ -714,10 +722,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |#| |b| | |         b : Pecha
         // |#| |a| |#|
         // |#|#| |#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Aspear] = [ 2, 17 ];
         expectedConfig[BerryType.Pecha] = [ 12 ];
-        let expectedOrder = [ BerryType.Aspear, BerryType.Pecha ];
+        const expectedOrder = [ BerryType.Aspear, BerryType.Pecha ];
         runBerryMutationTest(BerryType.Nanab, expectedConfig, expectedOrder);
     });
 
@@ -742,10 +750,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| |b| |a|         b : Rawst
         // |#| | | |#|
         // |#|#|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Oran] = [ 2, 10, 14, 22 ];
         expectedConfig[BerryType.Rawst] = [ 12 ];
-        let expectedOrder = [ BerryType.Oran, BerryType.Rawst ];
+        const expectedOrder = [ BerryType.Oran, BerryType.Rawst ];
         runBerryMutationTest(BerryType.Wepear, expectedConfig, expectedOrder);
     });
 
@@ -770,10 +778,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| |b| |a|         b : Aspear
         // |#| | | |#|
         // |#|#|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Sitrus] = [ 2, 10, 14, 22 ];
         expectedConfig[BerryType.Aspear] = [ 12 ];
-        let expectedOrder = [ BerryType.Sitrus, BerryType.Aspear ];
+        const expectedOrder = [ BerryType.Sitrus, BerryType.Aspear ];
         runBerryMutationTest(BerryType.Pinap, expectedConfig, expectedOrder);
     });
 
@@ -798,9 +806,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| | | |a|
         // |#|a| |a|a|
         // |#|#|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Cheri] = [ 2, 3, 6, 10, 14, 16, 18, 19, 22 ];
-        let expectedOrder = [ BerryType.Cheri ];
+        const expectedOrder = [ BerryType.Cheri ];
         runBerryMutationTest(BerryType.Figy, expectedConfig, expectedOrder);
     });
 
@@ -825,9 +833,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| |a| |a|
         // |#| | | |a|
         // |#|a|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Chesto] = [ 2, 3, 6, 10, 12, 14, 19, 21, 22 ];
-        let expectedOrder = [ BerryType.Chesto ];
+        const expectedOrder = [ BerryType.Chesto ];
         runBerryMutationTest(BerryType.Wiki, expectedConfig, expectedOrder);
     });
 
@@ -852,9 +860,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| |a| |a|
         // |#| | | |a|
         // |#|a|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Pecha] = [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ];
-        let expectedOrder = [ BerryType.Pecha ];
+        const expectedOrder = [ BerryType.Pecha ];
         runBerryMutationTest(BerryType.Mago, expectedConfig, expectedOrder);
     });
 
@@ -879,9 +887,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| |a| |a|
         // |#| | | |a|
         // |#|a|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Rawst] = [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ];
-        let expectedOrder = [ BerryType.Rawst ];
+        const expectedOrder = [ BerryType.Rawst ];
         runBerryMutationTest(BerryType.Aguav, expectedConfig, expectedOrder);
     });
 
@@ -906,9 +914,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         // |a| |a| |a|
         // |#| | | |a|
         // |#|a|a|#|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Aspear] = [ 2, 3, 5, 10, 12, 14, 19, 21, 22 ];
-        let expectedOrder = [ BerryType.Aspear ];
+        const expectedOrder = [ BerryType.Aspear ];
         runBerryMutationTest(BerryType.Iapapa, expectedConfig, expectedOrder);
     });
 
@@ -968,7 +976,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         {
             if (!plot.isEmpty())
             {
-                let berryData = App.game.farming.berryData[plot.berry];
+                const berryData = App.game.farming.berryData[plot.berry];
                 plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
             }
         }
@@ -996,10 +1004,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |         b : Mago
         // |#|a| | |a|
         // |#| |b| |#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Iapapa] = [ 5, 8, 16, 19 ];
         expectedConfig[BerryType.Mago] = [ 6, 9, 22 ];
-        let expectedOrder = [ BerryType.Iapapa, BerryType.Mago ];
+        const expectedOrder = [ BerryType.Iapapa, BerryType.Mago ];
         runBerryMutationTest(BerryType.Pomeg, expectedConfig, expectedOrder);
     });
 
@@ -1024,10 +1032,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |b| | | |b|         b : Chesto
         // | | | | | |
         // |#|a|b|a|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Persim] = [ 6, 8, 21, 23 ];
         expectedConfig[BerryType.Chesto] = [ 7, 10, 14, 22 ];
-        let expectedOrder = [ BerryType.Persim, BerryType.Chesto ];
+        const expectedOrder = [ BerryType.Persim, BerryType.Chesto ];
         runBerryMutationTest(BerryType.Kelpsy, expectedConfig, expectedOrder);
     });
 
@@ -1052,10 +1060,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |         b : Mago
         // |a| | |a|b|
         // |#|b| | |#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Mago] = [ 6, 9, 19, 21 ];
         expectedConfig[BerryType.Pinap] = [ 0, 8, 15, 18 ];
-        let expectedOrder = [ BerryType.Mago, BerryType.Pinap ];
+        const expectedOrder = [ BerryType.Mago, BerryType.Pinap ];
         runBerryMutationTest(BerryType.Qualot, expectedConfig, expectedOrder);
     });
 
@@ -1080,11 +1088,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |         b : Wiki
         // |a| |b| |b|         c : Aguav
         // |#| |c|a|#|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Wiki] = [ 3, 5, 17, 19 ];
         expectedConfig[BerryType.Figy] = [ 1, 8, 15, 23 ];
         expectedConfig[BerryType.Aguav] = [ 6, 9, 22 ];
-        let expectedOrder = [ BerryType.Wiki, BerryType.Figy, BerryType.Aguav ];
+        const expectedOrder = [ BerryType.Wiki, BerryType.Figy, BerryType.Aguav ];
         runBerryMutationTest(BerryType.Hondew, expectedConfig, expectedOrder);
     });
 
@@ -1109,10 +1117,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |         b : Figy
         // |a| | |a| |
         // |#|b| | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Aguav] = [ 0, 3, 15, 18 ];
         expectedConfig[BerryType.Figy] = [ 6, 9, 21, 24 ];
-        let expectedOrder = [ BerryType.Aguav, BerryType.Figy ];
+        const expectedOrder = [ BerryType.Aguav, BerryType.Figy ];
         runBerryMutationTest(BerryType.Grepa, expectedConfig, expectedOrder);
     });
 
@@ -1137,10 +1145,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|         b : Pomeg
         // |a|a|a|a|a|
         // |a|b|a|a|b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Pomeg] = [ 6, 9, 21, 24 ];
         expectedConfig[BerryType.Razz] = App.game.farming.plotList.map((_, index) => index).filter(x => !expectedConfig[BerryType.Pomeg].includes(x));
-        let expectedOrder = [ BerryType.Pomeg, BerryType.Razz ];
+        const expectedOrder = [ BerryType.Pomeg, BerryType.Razz ];
         runBerryMutationTest(BerryType.Tamato, expectedConfig, expectedOrder);
     });
 
@@ -1156,11 +1164,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |         b : Bluk
         // | |a| | |a|         c : Wiki
         // |b|c| |b|c|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Wiki] = [ 6, 9, 21, 24 ];
         expectedConfig[BerryType.Bluk] = [ 5, 8, 20, 23 ];
         expectedConfig[BerryType.Leppa] = [ 1, 4, 16, 19 ];
-        let expectedOrder = [ BerryType.Wiki, BerryType.Bluk, BerryType.Leppa ];
+        const expectedOrder = [ BerryType.Wiki, BerryType.Bluk, BerryType.Leppa ];
         runBerryMutationTest(BerryType.Cornn, expectedConfig, expectedOrder);
     });
 
@@ -1176,11 +1184,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |         b : Nanab
         // | |a| | |a|         c : Mago
         // |b|c| |b|c|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Mago] = [ 6, 9, 21, 24 ];
         expectedConfig[BerryType.Nanab] = [ 5, 8, 20, 23 ];
         expectedConfig[BerryType.Pecha] = [ 1, 4, 16, 19 ];
-        let expectedOrder = [ BerryType.Mago, BerryType.Nanab, BerryType.Pecha ];
+        const expectedOrder = [ BerryType.Mago, BerryType.Nanab, BerryType.Pecha ];
         runBerryMutationTest(BerryType.Magost, expectedConfig, expectedOrder);
     });
 
@@ -1196,10 +1204,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|         b : Aguav
         // |a|a|a|a|a|
         // |a|b|a|a|b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Aguav] = [ 6, 9, 21, 24 ];
         expectedConfig[BerryType.Aspear] = App.game.farming.plotList.map((_, index) => index).filter(x => !expectedConfig[BerryType.Aguav].includes(x));
-        let expectedOrder = [ BerryType.Aguav, BerryType.Aspear ];
+        const expectedOrder = [ BerryType.Aguav, BerryType.Aspear ];
         runBerryMutationTest(BerryType.Rabuta, expectedConfig, expectedOrder);
     });
 
@@ -1215,9 +1223,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // | | | | | |
         // | | | | | |
         // | |a| | |a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Pinap] = [ 6, 9, 21, 24 ];
-        let expectedOrder = [ BerryType.Pinap ];
+        const expectedOrder = [ BerryType.Pinap ];
         runBerryMutationTest(BerryType.Nomel, expectedConfig, expectedOrder);
     });
 
@@ -1276,7 +1284,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // Simulate the planted berries riping
         for (const plot of App.game.farming.plotList)
         {
-            let berryData = App.game.farming.berryData[plot.berry];
+            const berryData = App.game.farming.berryData[plot.berry];
             plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
         Automation.Farm.__internal__farmLoop();
@@ -1297,9 +1305,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Tamato] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Tamato ];
+        const expectedOrder = [ BerryType.Tamato ];
         runBerryMutationTest(BerryType.Spelon, expectedConfig, expectedOrder);
     });
 
@@ -1315,9 +1323,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Cornn] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Cornn ];
+        const expectedOrder = [ BerryType.Cornn ];
         runBerryMutationTest(BerryType.Pamtre, expectedConfig, expectedOrder, null, [ OakItemType.Cell_Battery ]);
     });
 
@@ -1333,9 +1341,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Magost] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Magost ];
+        const expectedOrder = [ BerryType.Magost ];
         runBerryMutationTest(BerryType.Watmel, expectedConfig, expectedOrder);
     });
 
@@ -1351,9 +1359,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Rabuta] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Rabuta ];
+        const expectedOrder = [ BerryType.Rabuta ];
         runBerryMutationTest(BerryType.Durin, expectedConfig, expectedOrder);
     });
 
@@ -1369,9 +1377,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Nomel] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Nomel ];
+        const expectedOrder = [ BerryType.Nomel ];
         runBerryMutationTest(BerryType.Belue, expectedConfig, expectedOrder);
     });
 
@@ -1381,13 +1389,16 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[53]);
 
+        // This berry should be optional
+        expect(Automation.Farm.__internal__currentStrategy.isOptional).toBe(true);
+
         // The layout should look like that
         // |a| |b| |a|
         // |c| |d| |c|  with:  a : Nanab     e : Qualot
         // |e|f|g|f|e|         b : Pecha     f : Magost
         // |c| |d| |c|         c : Mago      g : Watmel
         // |a| |b| |a|         d : Persim
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Nanab] = [ 0, 4, 20, 24 ];
         expectedConfig[BerryType.Pecha] = [ 2, 22 ];
         expectedConfig[BerryType.Mago] = [ 5, 9, 15, 19 ];
@@ -1395,8 +1406,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         expectedConfig[BerryType.Qualot] = [ 10, 14 ];
         expectedConfig[BerryType.Magost] = [ 11, 13 ];
         expectedConfig[BerryType.Watmel] = [ 12 ];
-        let expectedOrder = [ BerryType.Watmel, BerryType.Magost, BerryType.Qualot, BerryType.Mago,
-                              BerryType.Nanab, BerryType.Persim, BerryType.Pecha ];
+        const expectedOrder = [ BerryType.Watmel, BerryType.Magost, BerryType.Qualot, BerryType.Mago,
+                                BerryType.Nanab, BerryType.Persim, BerryType.Pecha ];
         runBerryMutationTest(BerryType.Pinkan, expectedConfig, expectedOrder);
     });
 
@@ -1444,7 +1455,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // Simulate the planted berries riping
         for (const plot of App.game.farming.plotList)
         {
-            let berryData = App.game.farming.berryData[plot.berry];
+            const berryData = App.game.farming.berryData[plot.berry];
             plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
         Automation.Farm.__internal__farmLoop();
@@ -1471,12 +1482,12 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Figy    d : Razz
         // |b| |a| |b|
         // |d| |c| |d|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Spelon] = [ 5, 9, 22 ];
         expectedConfig[BerryType.Tamato] = [ 0, 4, 17 ];
         expectedConfig[BerryType.Figy] = [ 2, 15, 19 ];
         expectedConfig[BerryType.Razz] = [ 7, 20, 24 ];
-        let expectedOrder = [ BerryType.Spelon, BerryType.Tamato, BerryType.Figy, BerryType.Razz ];
+        const expectedOrder = [ BerryType.Spelon, BerryType.Tamato, BerryType.Figy, BerryType.Razz ];
         runBerryMutationTest(BerryType.Occa, expectedConfig, expectedOrder, null, [ OakItemType.Blaze_Cassette ]);
     });
 
@@ -1492,10 +1503,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Aguav
         // |a| | |a| |
         // | |b| | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Wiki] = [ 0, 3, 15, 18 ];
         expectedConfig[BerryType.Aguav] = [ 6, 9, 21, 24 ];
-        let expectedOrder = [ BerryType.Wiki, BerryType.Aguav ];
+        const expectedOrder = [ BerryType.Wiki, BerryType.Aguav ];
         runBerryMutationTest(BerryType.Coba, expectedConfig, expectedOrder);
     });
 
@@ -1511,12 +1522,12 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Kelpsy   d : Coba
         // |b| |a| |b|
         // |d| |c| |d|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Coba] = [ 7, 20, 24 ];
         expectedConfig[BerryType.Kelpsy] = [ 2, 15, 19 ];
         expectedConfig[BerryType.Oran] = [ 0, 4, 17 ];
         expectedConfig[BerryType.Chesto] = [ 5, 9, 22 ];
-        let expectedOrder = [ BerryType.Coba, BerryType.Kelpsy, BerryType.Oran, BerryType.Chesto ];
+        const expectedOrder = [ BerryType.Coba, BerryType.Kelpsy, BerryType.Oran, BerryType.Chesto ];
         runBerryMutationTest(BerryType.Passho, expectedConfig, expectedOrder);
     });
 
@@ -1532,12 +1543,12 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Pinap    d : Grepa
         // |b| |a| |b|
         // |d| |c| |d|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Grepa] = [ 7, 20, 24 ];
         expectedConfig[BerryType.Qualot] = [ 5, 9, 22 ];
         expectedConfig[BerryType.Iapapa] = [ 0, 4, 17 ];
         expectedConfig[BerryType.Pinap] = [ 2, 15, 19 ];
-        let expectedOrder = [ BerryType.Grepa, BerryType.Qualot, BerryType.Iapapa, BerryType.Pinap ];
+        const expectedOrder = [ BerryType.Grepa, BerryType.Qualot, BerryType.Iapapa, BerryType.Pinap ];
         runBerryMutationTest(BerryType.Wacan, expectedConfig, expectedOrder);
     });
 
@@ -1553,10 +1564,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Aguav
         // |a| | |a| |
         // | |b| | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Figy] = [ 0, 3, 15, 18 ];
         expectedConfig[BerryType.Aguav] = [ 6, 9, 21, 24 ];
-        let expectedOrder = [ BerryType.Figy, BerryType.Aguav ];
+        const expectedOrder = [ BerryType.Figy, BerryType.Aguav ];
         runBerryMutationTest(BerryType.Rindo, expectedConfig, expectedOrder);
     });
 
@@ -1572,9 +1583,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |a| |a| |a|
         // | | | | | |
         // |a| |a| |a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Passho] = [ 0, 2, 4, 10, 12, 14, 20, 22, 24 ];
-        let expectedOrder = [ BerryType.Passho ];
+        const expectedOrder = [ BerryType.Passho ];
         runBerryMutationTest(BerryType.Yache, expectedConfig, expectedOrder);
     });
 
@@ -1590,12 +1601,12 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Cornn   d : Pamtre
         // |b| |a| |b|
         // |d| |c| |d|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Pamtre] = [ 7, 20, 24 ];
         expectedConfig[BerryType.Bluk] = [ 5, 9, 22 ];
         expectedConfig[BerryType.Wiki] = [ 0, 4, 17 ];
         expectedConfig[BerryType.Cornn] = [ 2, 15, 19 ];
-        let expectedOrder = [ BerryType.Pamtre, BerryType.Cornn, BerryType.Wiki, BerryType.Bluk ];
+        const expectedOrder = [ BerryType.Pamtre, BerryType.Cornn, BerryType.Wiki, BerryType.Bluk ];
         runBerryMutationTest(BerryType.Payapa, expectedConfig, expectedOrder, null, [ OakItemType.Rocky_Helmet, OakItemType.Cell_Battery ]);
     });
 
@@ -1611,9 +1622,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |a|a|a|a|a|
         // |a| |a| |a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Rindo] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 16, 18 ].includes(x));
-        let expectedOrder = [ BerryType.Rindo ];
+        const expectedOrder = [ BerryType.Rindo ];
         runBerryMutationTest(BerryType.Tanga, expectedConfig, expectedOrder);
     });
 
@@ -1652,7 +1663,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expect(Automation.Utils.OakItem.ForbiddenItems).toEqual([]);
 
         // Simulate the berries being close to death
-        let cheriBerryData = App.game.farming.berryData[BerryType.Cheri];
+        const cheriBerryData = App.game.farming.berryData[BerryType.Cheri];
         for (const plot of App.game.farming.plotList)
         {
             plot.age = cheriBerryData.growthTime[PlotStage.Berry] - 1;
@@ -1680,7 +1691,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // Simulate a mutation in plot 8
         App.game.farming.plotList[8].die();
         App.game.farming.plotList[8].plant(BerryType.Kasib);
-        let targetBerryData = App.game.farming.berryData[BerryType.Kasib];
+        const targetBerryData = App.game.farming.berryData[BerryType.Kasib];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
         Automation.Farm.__internal__farmLoop();
 
@@ -1704,12 +1715,12 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Passho   d : Rindo
         // |b| |a| |b|
         // |d| |c| |d|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
         expectedConfig[BerryType.Occa] = [ 0, 4, 17 ];
         expectedConfig[BerryType.Passho] = [ 2, 15, 19 ];
         expectedConfig[BerryType.Wacan] = [ 5, 9, 22 ];
-        let expectedOrder = [ BerryType.Rindo, BerryType.Occa, BerryType.Passho, BerryType.Wacan ];
+        const expectedOrder = [ BerryType.Rindo, BerryType.Occa, BerryType.Passho, BerryType.Wacan ];
         runBerryMutationTest(BerryType.Haban, expectedConfig, expectedOrder);
     });
 
@@ -1725,11 +1736,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Kasib
         // | |a| | |a|         c : Payapa
         // |b|c| |b|c|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Payapa] = [ 6, 9, 21, 24 ];
         expectedConfig[BerryType.Rabuta] = [ 1, 4, 16, 19 ];
         expectedConfig[BerryType.Kasib] = [ 5, 8, 20, 23 ];
-        let expectedOrder = [ BerryType.Payapa, BerryType.Rabuta, BerryType.Kasib ];
+        const expectedOrder = [ BerryType.Payapa, BerryType.Rabuta, BerryType.Kasib ];
         runBerryMutationTest(BerryType.Colbur, expectedConfig, expectedOrder);
     });
 
@@ -1745,18 +1756,23 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // | | | | | |         b : Magost   d : Watmel
         // |b| |a| |b|
         // |d| |c| |d|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Watmel] = [ 7, 20, 24 ];
         expectedConfig[BerryType.Magost] = [ 2, 15, 19 ];
         expectedConfig[BerryType.Mago] = [ 0, 4, 17 ];
         expectedConfig[BerryType.Nanab] = [ 5, 9, 22 ];
-        let expectedOrder = [ BerryType.Watmel, BerryType.Magost, BerryType.Mago, BerryType.Nanab ];
+        const expectedOrder = [ BerryType.Watmel, BerryType.Magost, BerryType.Mago, BerryType.Nanab ];
         runBerryMutationTest(BerryType.Roseli, expectedConfig, expectedOrder, null, [ OakItemType.Sprinklotad ]);
     });
 
     // Test the 68th unlock
     test('Unlock Shuca berry', () =>
     {
+        const oakItemNeeded = OakItemType.Sprinklotad;
+
+        // Expect the strategy to have been disabled
+        expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[67]);
 
@@ -1766,15 +1782,20 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Watmel] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Watmel ];
-        runBerryMutationTest(BerryType.Shuca, expectedConfig, expectedOrder, OakItemType.Sprinklotad);
+        const expectedOrder = [ BerryType.Watmel ];
+        runBerryMutationTest(BerryType.Shuca, expectedConfig, expectedOrder, oakItemNeeded);
     });
 
     // Test the 69th unlock
     test('Unlock Charti berry', () =>
     {
+        const oakItemNeeded = OakItemType.Cell_Battery;
+
+        // Expect the strategy to have been disabled
+        expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[68]);
 
@@ -1784,10 +1805,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Cornn] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Cornn ];
-        runBerryMutationTest(BerryType.Charti, expectedConfig, expectedOrder, OakItemType.Cell_Battery);
+        const expectedOrder = [ BerryType.Cornn ];
+        runBerryMutationTest(BerryType.Charti, expectedConfig, expectedOrder, oakItemNeeded);
     });
 
     // Test the 70th unlock
@@ -1802,16 +1823,21 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |b|b|b|b|b|         b : Charti
         // |b| |a| |b|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Shuca] = [ 0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24 ];
         expectedConfig[BerryType.Charti] = [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ];
-        let expectedOrder = [ BerryType.Shuca, BerryType.Charti ];
+        const expectedOrder = [ BerryType.Shuca, BerryType.Charti ];
         runBerryMutationTest(BerryType.Babiri, expectedConfig, expectedOrder);
     });
 
     // Test the 71st unlock
     test('Unlock Chople berry', () =>
     {
+        const oakItemNeeded = OakItemType.Blaze_Cassette;
+
+        // Expect the strategy to have been disabled
+        expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[70]);
 
@@ -1821,10 +1847,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Spelon] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Spelon ];
-        runBerryMutationTest(BerryType.Chople, expectedConfig, expectedOrder, OakItemType.Blaze_Cassette);
+        const expectedOrder = [ BerryType.Spelon ];
+        runBerryMutationTest(BerryType.Chople, expectedConfig, expectedOrder, oakItemNeeded);
     });
 
     // Wait for plots to be emptied
@@ -1860,7 +1886,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
 
-        let chilanUnlockFirstStep = function()
+        const chilanUnlockFirstStep = function()
             {
                 // The layout should look like that
                 // | | | | | |
@@ -1884,7 +1910,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         runBerryMutationTestNoTiming(BerryType.Chilan, chilanUnlockFirstStep, true);
 
         // This should not change until the berries are ripe
-        let chopleBerryData = App.game.farming.berryData[BerryType.Chople];
+        const chopleBerryData = App.game.farming.berryData[BerryType.Chople];
         for (const index of [ 6, 8, 16, 18 ])
         {
             App.game.farming.plotList[index].age = chopleBerryData.growthTime[PlotStage.Bloom];
@@ -1923,7 +1949,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
 
         // Simulate a berry mutation in plot 8
         App.game.farming.plotList[8].plant(BerryType.Chilan);
-        let targetBerryData = App.game.farming.berryData[BerryType.Chilan];
+        const targetBerryData = App.game.farming.berryData[BerryType.Chilan];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
         Automation.Farm.__internal__farmLoop();
 
@@ -1934,6 +1960,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
     // Test the 74th unlock
     test('Unlock Kebia berry', () =>
     {
+        const oakItemNeeded = OakItemType.Rocky_Helmet;
+
+        // Expect the strategy to have been disabled
+        expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[73]);
 
@@ -1943,10 +1974,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // |a|a|a|a|a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Pamtre] = App.game.farming.plotList.map((_, index) => index);
-        let expectedOrder = [ BerryType.Pamtre ];
-        runBerryMutationTest(BerryType.Kebia, expectedConfig, expectedOrder, OakItemType.Rocky_Helmet);
+        const expectedOrder = [ BerryType.Pamtre ];
+        runBerryMutationTest(BerryType.Kebia, expectedConfig, expectedOrder, oakItemNeeded);
     });
 });
 
@@ -1967,9 +1998,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a| | | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Pamtre] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Pamtre ];
+        const expectedOrder = [ BerryType.Pamtre ];
         runBerryMutationTest(BerryType.Micle, expectedConfig, expectedOrder, null, [ OakItemType.Rocky_Helmet ]);
     });
 
@@ -1985,9 +2016,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a| | | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Watmel] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Watmel ];
+        const expectedOrder = [ BerryType.Watmel ];
         runBerryMutationTest(BerryType.Custap, expectedConfig, expectedOrder, null, [ OakItemType.Sprinklotad ]);
     });
 
@@ -2003,9 +2034,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a| | | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Durin] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Durin ];
+        const expectedOrder = [ BerryType.Durin ];
         runBerryMutationTest(BerryType.Jaboca, expectedConfig, expectedOrder);
     });
 
@@ -2021,19 +2052,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a| | | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Belue] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 6, 8, 11, 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Belue ];
+        const expectedOrder = [ BerryType.Belue ];
         runBerryMutationTest(BerryType.Rowap, expectedConfig, expectedOrder);
     });
 
     // Test the 79th unlock
     test('Unlock Liechi berry', () =>
     {
+        checkPokemonNeededBehaviour("Kyogre");
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[78]);
-
-        checkPokemonNeededBehaviour("Kyogre");
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2041,9 +2072,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a|a| | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Passho] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Passho ];
+        const expectedOrder = [ BerryType.Passho ];
         runBerryMutationTest(BerryType.Liechi, expectedConfig, expectedOrder);
     });
 
@@ -2059,10 +2090,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
     // Test the 81st unlock
     test('Unlock Ganlon berry', () =>
     {
+        checkPokemonNeededBehaviour("Groudon");
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[80]);
-
-        checkPokemonNeededBehaviour("Groudon");
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2070,9 +2101,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a|a| | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Shuca] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Shuca ];
+        const expectedOrder = [ BerryType.Shuca ];
         runBerryMutationTest(BerryType.Ganlon, expectedConfig, expectedOrder);
     });
 
@@ -2097,10 +2128,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // | | | | | |         b : Ganlon
         // |a| | |a| |
         // | |b| | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Ganlon] = [ 6, 9, 21, 24 ];
         expectedConfig[BerryType.Liechi] = [ 0, 3, 15, 18 ];
-        let expectedOrder = [ BerryType.Ganlon, BerryType.Liechi ];
+        const expectedOrder = [ BerryType.Ganlon, BerryType.Liechi ];
         runBerryMutationTest(BerryType.Kee, expectedConfig, expectedOrder);
     });
 
@@ -2111,10 +2142,10 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         App.game.farming.__berryListCount[BerryType.Ganlon] = 4;
         App.game.farming.__berryListCount[BerryType.Liechi] = 4;
 
+        checkPokemonNeededBehaviour("Rayquaza");
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[83]);
-
-        checkPokemonNeededBehaviour("Rayquaza");
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2122,9 +2153,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a|a| | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Coba] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Coba ];
+        const expectedOrder = [ BerryType.Coba ];
         runBerryMutationTest(BerryType.Salac, expectedConfig, expectedOrder);
     });
 
@@ -2149,7 +2180,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |f|g|h| |i|        c : Yache    h : Kebia    m : Tanga    r : Chilan
         // |j|k|l| |m|        d : Shuca    i : Haban    n : Occa
         // |n|o|p|q|r|        e : Wacan    j : Colbur   o : Rindo
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Kasib] = [ 0 ];
         expectedConfig[BerryType.Payapa] = [ 2 ];
         expectedConfig[BerryType.Yache] = [ 4 ];
@@ -2168,9 +2199,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         expectedConfig[BerryType.Passho] = [ 22 ];
         expectedConfig[BerryType.Roseli] = [ 23 ];
         expectedConfig[BerryType.Chilan] = [ 24 ];
-        let expectedOrder = [ BerryType.Haban, BerryType.Babiri, BerryType.Yache, BerryType.Shuca, BerryType.Charti, BerryType.Chople,
-                              BerryType.Payapa, BerryType.Rindo, BerryType.Colbur, BerryType.Roseli, BerryType.Occa, BerryType.Passho,
-                              BerryType.Coba, BerryType.Chilan, BerryType.Tanga, BerryType.Wacan, BerryType.Kebia, BerryType.Kasib ];
+        const expectedOrder = [ BerryType.Haban, BerryType.Babiri, BerryType.Yache, BerryType.Shuca, BerryType.Charti, BerryType.Chople,
+                                BerryType.Payapa, BerryType.Rindo, BerryType.Colbur, BerryType.Roseli, BerryType.Occa, BerryType.Passho,
+                                BerryType.Coba, BerryType.Chilan, BerryType.Tanga, BerryType.Wacan, BerryType.Kebia, BerryType.Kasib ];
         runBerryMutationTest(BerryType.Petaya, expectedConfig, expectedOrder);
     });
 
@@ -2195,20 +2226,20 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // | | | | | |         b : Petaya
         // |a| | |a| |
         // | |b| | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Salac] = [ 0, 3, 15, 18 ];
         expectedConfig[BerryType.Petaya] = [ 6, 9, 21, 24 ];
-        let expectedOrder = [ BerryType.Salac, BerryType.Petaya ];
+        const expectedOrder = [ BerryType.Salac, BerryType.Petaya ];
         runBerryMutationTest(BerryType.Maranga, expectedConfig, expectedOrder);
     });
 
     // Test the 89th unlock
     test('Unlock Apicot berry', () =>
     {
+        checkPokemonNeededBehaviour("Palkia");
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[88]);
-
-        checkPokemonNeededBehaviour("Palkia");
 
         // Give the player enough berries (only 19 berry available out of 23 needed)
         App.game.farming.__berryListCount[BerryType.Chilan] = 23;
@@ -2219,19 +2250,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a|a| | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Chilan] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Chilan ];
+        const expectedOrder = [ BerryType.Chilan ];
         runBerryMutationTest(BerryType.Apicot, expectedConfig, expectedOrder);
     });
 
     // Test the 90th unlock
     test('Unlock Lansat berry', () =>
     {
+        checkPokemonNeededBehaviour("Dialga");
+
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[89]);
-
-        checkPokemonNeededBehaviour("Dialga");
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2239,9 +2270,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a|a| | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Roseli] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Roseli ];
+        const expectedOrder = [ BerryType.Roseli ];
         runBerryMutationTest(BerryType.Lansat, expectedConfig, expectedOrder);
     });
 
@@ -2257,9 +2288,9 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         // |a| | | |a|
         // |a|a|a|a|a|
         // |a|a|a|a|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Roseli] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 11, 12, 13 ].includes(x));
-        let expectedOrder = [ BerryType.Roseli ];
+        const expectedOrder = [ BerryType.Roseli ];
         runBerryMutationTest(BerryType.Starf, expectedConfig, expectedOrder);
     });
 });
@@ -2284,7 +2315,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         // |f|g|h|g|f|         b : Oran      e : Pecha    h : Cheri
         // |d| |e| |d|         c : Aspear    f : Rawst
         // |a|b|c|b|a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Sitrus] = [ 0, 4, 20, 24 ];
         expectedConfig[BerryType.Oran] = [ 1, 3, 21, 23 ];
         expectedConfig[BerryType.Aspear] = [ 2, 22 ];
@@ -2293,26 +2324,20 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         expectedConfig[BerryType.Rawst] = [ 10, 14 ];
         expectedConfig[BerryType.Chesto] = [ 11, 13 ];
         expectedConfig[BerryType.Cheri] = [ 12 ];
-        let expectedOrder = [ BerryType.Sitrus, BerryType.Oran, BerryType.Leppa, BerryType.Aspear,
-                              BerryType.Rawst, BerryType.Pecha, BerryType.Chesto, BerryType.Cheri ];
+        const expectedOrder = [ BerryType.Sitrus, BerryType.Oran, BerryType.Leppa, BerryType.Aspear,
+                                BerryType.Rawst, BerryType.Pecha, BerryType.Chesto, BerryType.Cheri ];
         runBerryMutationTest(BerryType.Lum, expectedConfig, expectedOrder);
     });
 
     // Test the 93rd unlock
     test('Unlock Enigma berry', () =>
     {
-        // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[92]);
-
-        // Check the stategy needed pokemon
-        expect(Automation.Farm.__internal__currentStrategy.requiresDiscord).toBe(true);
-
         expectFocusOnUnlocksToBeDisabled(function()
             {
                 // Simulate the player linking a discord account
                 App.game.discord.__id = "dummy";
 
-                let enigmaMutation = App.game.farming.mutations.filter((mutation) => mutation instanceof EnigmaMutation)[0];
+                const enigmaMutation = App.game.farming.mutations.filter((mutation) => mutation instanceof EnigmaMutation)[0];
 
                 for (const i of [ 0, 1, 2, 3 ])
                 {
@@ -2331,18 +2356,27 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
                 return true;
             });
 
+        // Make sure the next unlock strategy gets set
+        Automation.Farm.__internal__farmLoop();
+
+        // Expect the strategy to be pointing to the right one
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[92]);
+
+        // Check the stategy needed pokemon
+        expect(Automation.Farm.__internal__currentStrategy.requiresDiscord).toBe(true);
+
         // The layout should look like that
         // | |a| | | |
         // |b| |c| | |  with:  a : North berry (Cheri)
         // | |d| |a| |         b : West berry (Chesto)
         // | | |b| |c|         c : East berry (Pecha)
         // | | | |d| |         d : South berry (Rawst)
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Cheri] = [ 1, 13 ];
         expectedConfig[BerryType.Chesto] = [ 5, 17 ];
         expectedConfig[BerryType.Pecha] = [ 7, 19 ];
         expectedConfig[BerryType.Rawst] = [ 11, 23 ];
-        let expectedOrder = [ BerryType.Rawst, BerryType.Pecha, BerryType.Chesto, BerryType.Cheri ];
+        const expectedOrder = [ BerryType.Rawst, BerryType.Pecha, BerryType.Chesto, BerryType.Cheri ];
         runBerryMutationTest(BerryType.Enigma, expectedConfig, expectedOrder);
 
         // Nothing else to be unlocked, the feature should have been turned off
@@ -2362,7 +2396,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         clearTheFarm();
 
         // Get the Haban berry unlock strategy
-        let strategy = getMutationStrategy(BerryType.Haban);
+        const strategy = getMutationStrategy(BerryType.Haban);
 
         // Set a berry to a slot not involved in the strategy if the riping time higher than the highest bloom time of the strategy
         // (Rindo has 28800 riping time, where Micle has 31680)
@@ -2377,7 +2411,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | |a| | |
         // | | | | | |
         // | | | | | |
-        let expectedConfigBefore = {};
+        const expectedConfigBefore = {};
         expectedConfigBefore[BerryType.Micle] = [ 12 ];
         checkCurrentLayout(1, expectedConfigBefore, [ BerryType.Micle ]);
 
@@ -2393,8 +2427,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | |b| | |          b : Micle
         // | | | | | |
         // |a| | | |a|
-        let expectedBerries = [ BerryType.Micle, BerryType.Rindo ];
-        let expectedConfig = {};
+        const expectedBerries = [ BerryType.Micle, BerryType.Rindo ];
+        const expectedConfig = {};
         expectedConfig[BerryType.Micle] = [ 12 ];
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
@@ -2406,7 +2440,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         clearTheFarm();
 
         // Get the Haban berry unlock strategy
-        let strategy = getMutationStrategy(BerryType.Haban);
+        const strategy = getMutationStrategy(BerryType.Haban);
 
         // Set a berry to a slot not involved in the strategy if the riping time lower than the highest bloom time of the strategy
         // (Rindo has 28800 riping time, where Custap has 27360)
@@ -2421,14 +2455,14 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | |b| | |          b : Custap
         // | | | | | |
         // |a| | | |a|
-        let expectedBerries = [ BerryType.Rindo, BerryType.Custap ];
-        let expectedConfig = {};
+        const expectedBerries = [ BerryType.Rindo, BerryType.Custap ];
+        const expectedConfig = {};
         expectedConfig[BerryType.Custap] = [ 12 ];
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        let occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
+        const occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
         let ageDiff = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
         simulateTimePassing(ageDiff + 1);
 
@@ -2439,7 +2473,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        let passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        const passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
         ageDiff = occaBloomTime - passhoBloomTime;
         simulateTimePassing(ageDiff);
 
@@ -2475,7 +2509,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         clearTheFarm();
 
         // Get the Haban berry unlock strategy
-        let strategy = getMutationStrategy(BerryType.Haban);
+        const strategy = getMutationStrategy(BerryType.Haban);
 
         // Set a berry to a slot involved in the strategy
         App.game.farming.plotList[7].plant(BerryType.Micle);
@@ -2489,7 +2523,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | | | | |
         // | | | | | |
         // | | | | | |
-        let expectedConfigBefore = {};
+        const expectedConfigBefore = {};
         expectedConfigBefore[BerryType.Micle] = [ 7 ];
         checkCurrentLayout(1, expectedConfigBefore, [ BerryType.Micle ]);
 
@@ -2504,7 +2538,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | | | | |
         // | | | | | |
         // |a| | | |a|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
         checkCurrentLayout(1, expectedConfig, [ BerryType.Rindo ]);
     });
@@ -2515,7 +2549,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         clearTheFarm();
 
         // Get the Haban berry unlock strategy
-        let strategy = getMutationStrategy(BerryType.Haban);
+        const strategy = getMutationStrategy(BerryType.Haban);
 
         // Set a berry to a slot involved in the strategy
         App.game.farming.plotList[2].plant(BerryType.Cheri);
@@ -2529,7 +2563,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | | | | |          b : Rindo
         // | | | | | |
         // |b| | | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Cheri] = [ 2 ];
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
         checkCurrentLayout(2, expectedConfig, [ BerryType.Cheri, BerryType.Rindo ]);
@@ -2541,7 +2575,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         clearTheFarm();
 
         // Get the Haban berry unlock strategy
-        let strategy = getMutationStrategy(BerryType.Haban);
+        const strategy = getMutationStrategy(BerryType.Haban);
 
         // Set a berry to a slot involved in the strategy
         App.game.farming.plotList[0].plant(BerryType.Liechi);
@@ -2549,8 +2583,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         App.game.farming.plotList[5].plant(BerryType.Liechi);
 
         // Set the berries just under the planting time
-        let rindoTime = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom];
-        let liechiDiffTime = App.game.farming.berryData[BerryType.Liechi].growthTime[PlotStage.Bloom] - rindoTime;
+        const rindoTime = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom];
+        const liechiDiffTime = App.game.farming.berryData[BerryType.Liechi].growthTime[PlotStage.Bloom] - rindoTime;
         App.game.farming.plotList[0].age = liechiDiffTime + App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
         App.game.farming.plotList[2].age = liechiDiffTime + App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
         App.game.farming.plotList[5].age = liechiDiffTime + App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
@@ -2564,14 +2598,14 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         // | | | | | |          b : Rindo
         // | | | | | |
         // |b| | | |b|
-        let expectedConfig = {};
+        const expectedConfig = {};
         expectedConfig[BerryType.Liechi] = [ 0, 2, 5 ];
         expectedConfig[BerryType.Rindo] = [ 7, 20, 24 ];
-        let expectedBerries = [ BerryType.Liechi, BerryType.Rindo ];
+        const expectedBerries = [ BerryType.Liechi, BerryType.Rindo ];
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        let occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
+        const occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
         let ageDiff = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
         simulateTimePassing(ageDiff + 1);
 
@@ -2583,7 +2617,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        let passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        const passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
         ageDiff = occaBloomTime - passhoBloomTime;
         simulateTimePassing(ageDiff);
 
@@ -2671,8 +2705,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Edge cases`, () =>
 
         Automation.Farm.__internal__farmLoop();
 
-        // Expect the strategy to be pointing to the Shuca berry mutation
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[67]);
+        const expectedReasonStart = "The next unlock requires the 'Sprinklotad' Oak item";
+        expect(Automation.Menu.__disabledElements.get(Automation.Farm.Settings.FocusOnUnlocks).startsWith(expectedReasonStart)).toBe(true);
 
         expectFocusOnUnlocksToBeDisabled(function()
             {
@@ -2682,6 +2716,42 @@ describe(`${AutomationTestUtils.categoryPrefix}Edge cases`, () =>
 
         // Restore the player's Shuca berries (for the next test)
         App.game.farming.__berryListCount[BerryType.Shuca] = 24;
+
+        // Restore the item unlock status
+        App.game.oakItems.itemList[OakItemType.Sprinklotad].__isUnlocked = true;
+
+        // Reenable the feature
+        Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.FocusOnUnlocks, true);
+    });
+
+    // If the Pinkan berry was not unlocked, it should not keep the other ones to be unlocked
+    test('Skipping Pinkan berry if not unlocked', () =>
+    {
+        // Clear the farm
+        clearTheFarm();
+
+        // Give the player 0 Pinkan and Occa berries
+        App.game.farming.__berryListCount[BerryType.Pinkan] = 0;
+        App.game.farming.__berryListCount[BerryType.Occa] = 0;
+
+        // Simulate the player not having unlocked the Pinkan berry
+        const pinkanBerryData = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Pinkan);
+        pinkanBerryData.unlocked = false;
+        Automation.Farm.__internal__farmLoop();
+
+        // Expect the strategy to be pointing to the Occa berry (which is the next unlock)
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[55]);
+
+        // Simulate the player unlocking the Pinkan berry
+        pinkanBerryData.unlocked = true;
+        Automation.Farm.__internal__farmLoop();
+
+        // Expect the strategy to be pointing to the Pinkan berry
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[53]);
+
+        // Restore the player's berries (for the next test)
+        App.game.farming.__berryListCount[BerryType.Pinkan] = 1;
+        App.game.farming.__berryListCount[BerryType.Occa] = 24;
     });
 
     // Make sure the automation removes items that are forbidden

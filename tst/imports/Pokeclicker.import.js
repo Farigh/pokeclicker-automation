@@ -24,6 +24,7 @@ import "tst/stubs/Currency/Wallet.pokeclicker.stub.js";
 
 // Import pokeclicker Farming types and classes
 import "tst/stubs/Farming/Berry.pokeclicker.stub.js";
+import "tst/stubs/Farming/Mutation.pokeclicker.stub.js"; // Base class of EnigmaMutation, needs to be imported first
 import "tst/stubs/Farming/EnigmaMutation.pokeclicker.stub.js";
 import "tst/stubs/Farming/Farming.pokeclicker.stub.js";
 import "tst/stubs/Farming/Plot.pokeclicker.stub.js";

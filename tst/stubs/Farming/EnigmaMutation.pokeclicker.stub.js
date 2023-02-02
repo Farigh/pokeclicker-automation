@@ -1,5 +1,5 @@
 // Stub of https://github.com/pokeclicker/pokeclicker/blob/429140a10e6ebe8293f965e8a47e5348306fedb8/src/scripts/farming/mutation/mutationTypes/EnigmaMutation.ts#L6
-class EnigmaMutation
+class EnigmaMutation extends Mutation
 {
     /***************************\
     |*  Pokéclicker interface  *|
@@ -7,6 +7,8 @@ class EnigmaMutation
 
     constructor()
     {
+        super(BerryType.Enigma);
+
         this.hintsSeen = [];
         this.__hintsSeen = [];
 

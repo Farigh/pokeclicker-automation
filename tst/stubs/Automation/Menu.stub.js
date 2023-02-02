@@ -27,7 +27,7 @@ class AutomationMenu
     {
         if (newState)
         {
-            this.__disabledElements.add(id);
+            this.__disabledElements.set(id, reason);
         }
         else
         {
@@ -35,5 +35,5 @@ class AutomationMenu
         }
     }
 
-    static __disabledElements = new Set();
+    static __disabledElements = new Map();
 }

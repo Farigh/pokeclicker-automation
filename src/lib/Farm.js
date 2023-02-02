@@ -94,6 +94,7 @@ class AutomationFarm
     // Collection of
     // {
     //     isNeeded: function(),
+    //     isOptional: boolean,
     //     berryToUnlock: BerryType,
     //     harvestStrategy: this.__internal__harvestTimingType,
     //     oakItemToEquip: OakItemType,
@@ -209,26 +210,29 @@ class AutomationFarm
         this.__internal__harvestAsEfficientAsPossible();
         this.__internal__tryToUnlockNewSpots();
 
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
-        {
-            this.__internal__chooseUnlockStrategy();
-        }
-        else if (this.__internal__currentStrategy !== null)
-        {
-            // If the focus is turned off, clear the current strategy
-            this.__internal__currentStrategy = null;
-        }
-
+        // Try to unlock berries, if enabled
         if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
             && !this.ForcePlantBerriesAsked)
         {
-            this.__internal__removeOakItemIfNeeded();
-            this.__internal__equipOakItemIfNeeded();
-            this.__internal__currentStrategy.action();
+            this.__internal__chooseUnlockStrategy();
+
+            if (this.__internal__currentStrategy)
+            {
+                this.__internal__removeOakItemIfNeeded();
+                this.__internal__equipOakItemIfNeeded();
+                this.__internal__currentStrategy.action();
+
+                return;
+            }
         }
-        else
+
+        // Otherwise, fallback to planting berries
+        this.__internal__plantAllBerries();
+
+        if (this.__internal__currentStrategy !== null)
         {
-            this.__internal__plantAllBerries();
+            // Clear the current strategy
+            this.__internal__currentStrategy = null;
         }
     }
 
@@ -925,6 +929,10 @@ class AutomationFarm
         pinkanConfig[BerryType.Watmel] = [ 12 ];
         this.__internal__addUnlockMutationStrategy(BerryType.Pinkan, pinkanConfig);
 
+        // Make the pinkan berry optional, since it's not required by any other berry strategy
+        const pinkanStrategy = this.__internal__unlockStrategySelection.at(-1);
+        pinkanStrategy.isOptional = true;
+
         /**********************************\
         |*   Harvest some Gen 3 berries   *|
         \**********************************/
@@ -1547,6 +1555,13 @@ class AutomationFarm
 
         for (const strategy of this.__internal__unlockStrategySelection)
         {
+            // Don't consider strategies if the berry cannot be unlocked and it was flagged as optionnal
+            if ((strategy.isOptional === true)
+                && !App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == strategy.berryToUnlock).unlocked)
+            {
+                continue;
+            }
+
             if (strategy.isNeeded())
             {
                 this.__internal__currentStrategy = strategy;
@@ -1565,6 +1580,17 @@ class AutomationFarm
         this.__internal__checkOakItemRequirement();
         this.__internal__checkPokemonRequirement();
         this.__internal__checkDiscordLinkRequirement();
+
+        // Make sure that the automation will not try to unlock any berry that can't be mutated
+        if ((this.__internal__currentStrategy !== null)
+            && this.__internal__currentStrategy.berryToUnlock
+            && !App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == this.__internal__currentStrategy.berryToUnlock).unlocked)
+        {
+            Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
+            Automation.Notifications.sendWarningNotif("Farming unlock disabled, you do not meet the requirements"
+                                                    + ` to unlock the ${BerryType[this.__internal__currentStrategy.berryToUnlock]} berry`, "Farming");
+            this.__internal__currentStrategy = null;
+        }
     }
 
     /**
@@ -1572,7 +1598,8 @@ class AutomationFarm
      */
     static __internal__checkOakItemRequirement()
     {
-        if (this.__internal__currentStrategy.oakItemToEquip === null)
+        if ((this.__internal__currentStrategy == null)
+            || (this.__internal__currentStrategy.oakItemToEquip === null))
         {
             return;
         }
@@ -1590,7 +1617,7 @@ class AutomationFarm
             const watcher = setInterval(function()
                 {
                     if ((Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true")
-                        || App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isActive)
+                        || oakItem.isActive)
                     {
                         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                         clearInterval(watcher);
@@ -1610,7 +1637,7 @@ class AutomationFarm
         // Set a watcher to re-enable the feature once the item is unlocked
         const watcher = setInterval(function()
             {
-                if (App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip].isUnlocked())
+                if (oakItem.isUnlocked())
                 {
                     Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
                     clearInterval(watcher);
@@ -1623,7 +1650,8 @@ class AutomationFarm
      */
     static __internal__checkPokemonRequirement()
     {
-        if (this.__internal__currentStrategy.requiredPokemon === null)
+        if ((this.__internal__currentStrategy == null)
+            || (this.__internal__currentStrategy.requiredPokemon === null))
         {
             return;
         }
@@ -1654,7 +1682,8 @@ class AutomationFarm
      */
     static __internal__checkDiscordLinkRequirement()
     {
-        if (!this.__internal__currentStrategy.requiresDiscord)
+        if ((this.__internal__currentStrategy == null)
+            || (!this.__internal__currentStrategy.requiresDiscord))
         {
             return;
         }
@@ -1662,7 +1691,7 @@ class AutomationFarm
         // Check if the discord is linked and all hints are gathered
         if (App.game.discord.ID() !== null)
         {
-            const enigmaMutation = App.game.farming.mutations.filter((mutation) => Automation.Utils.isInstanceOf(mutation, "EnigmaMutation"))[0];
+            const enigmaMutation = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Enigma);
 
             if (enigmaMutation.hintsSeen.every((seen) => seen()))
             {
@@ -1685,7 +1714,7 @@ class AutomationFarm
                     return;
                 }
 
-                const enigmaMutation = App.game.farming.mutations.filter((mutation) => Automation.Utils.isInstanceOf(mutation, "EnigmaMutation"))[0];
+                const enigmaMutation = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Enigma);
 
                 if (enigmaMutation.hintsSeen.every((seen) => seen()))
                 {
@@ -1717,6 +1746,7 @@ class AutomationFarm
         Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
         Automation.Utils.OakItem.ForbiddenItems = [];
+        this.__internal__currentStrategy = null;
     }
 
     /**
