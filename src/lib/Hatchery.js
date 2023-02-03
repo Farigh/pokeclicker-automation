@@ -1122,6 +1122,8 @@ class AutomationHatchery
      */
     static __internal__getUnderleveledMegaEvolutions()
     {
+        const isRealEvolutionChallengeEnabled = App.game.challenges.list.realEvolutions.active();
+
         return App.game.party.caughtPokemon.filter((partyPokemon) =>
             {
                 if (!partyPokemon.evolutions)
@@ -1131,7 +1133,19 @@ class AutomationHatchery
 
                 const hasMegaEvolution = partyPokemon.evolutions.some((evolution) =>
                     {
-                        return evolution.restrictions?.some(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement"));
+                        if (!evolution.restrictions?.some(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement")))
+                        {
+                            return false;
+                        }
+
+                        // Don't farm for pokémons that the player has already unlocked if the real evolution challenge is enabled
+                        // Since the base pokémon stats gets transfered to the evolution in this mode
+                        if (isRealEvolutionChallengeEnabled)
+                        {
+                            return App.game.party.getPokemonByName(evolution.evolvedPokemon) == undefined;
+                        }
+
+                        return true;
                     });
 
                 // Don't consider pokemon that does not have a mega evolution
