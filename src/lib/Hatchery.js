@@ -52,6 +52,8 @@ class AutomationHatchery
             // Set default regional debuff to None
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.RegionalDebuffRegion, GameConstants.Region.none);
 
+            this.__internal__buildRegionDataList();
+            this.__internal__buildSeviiIslandPokemonLists();
             this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
@@ -112,7 +114,15 @@ class AutomationHatchery
     static __internal__regionSelectElem = null;
     static __internal__lockedRegions = [];
 
+    static __internal__seviiIslandPokemonIds = [];
+
     // Sorting internals
+    static __internal__customRegion =
+        {
+            SeviiIslands: "custom-sevii-islands",
+            MagikarpJump: "custom-magikarp-jump"
+        };
+    static __internal__selectRegionData = [];
     static __internal__sortingFunctions = [];
     static __internal__sortRegionSetting = null;
     static __internal__sortTypeSetting = null;
@@ -312,7 +322,7 @@ class AutomationHatchery
             opt.value = gemType;
             opt.id = gemType;
 
-            // Restore the previouly seletected item
+            // Restore the previouly selected item
             if (gemType == previouslySelectedType)
             {
                 // Restore previous session selected element
@@ -383,7 +393,7 @@ class AutomationHatchery
             opt.value = sortType;
             opt.id = sortType;
 
-            // Restore the previouly seletected item
+            // Restore the previouly selected item
             if (sortType == previouslySelectedType)
             {
                 // Restore previous session selected element
@@ -417,6 +427,53 @@ class AutomationHatchery
         return container;
     }
 
+    /**
+     * @brief Builds the region data list used to generate region drop-down lists
+     */
+    static __internal__buildRegionDataList()
+    {
+        for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
+        {
+            // Add the region data
+            const regionName = GameConstants.Region[regionId];
+            this.__internal__selectRegionData.push(
+                {
+                    name: regionName.charAt(0).toUpperCase() + regionName.slice(1),
+                    id: regionId,
+                    isUnlocked: function() { return regionId <= player.highestRegion(); },
+                    index: (this.__internal__selectRegionData.length + 1)
+                });
+
+            if (regionId == GameConstants.Region.kanto)
+            {
+                // Add the sevii islands after the kanto region
+                this.__internal__selectRegionData.push(
+                    {
+                        name: "Sevii Islands",
+                        id: this.__internal__customRegion.SeviiIslands,
+                        isUnlocked: function()
+                            {
+                                return SubRegions.getSubRegionById(GameConstants.Region.kanto, GameConstants.KantoSubRegions.Sevii4567).unlocked();
+                            },
+                        index: (this.__internal__selectRegionData.length + 1)
+                    });
+            }
+            else if (regionId == GameConstants.Region.alola)
+            {
+                // Add the magikarp jump after the alola region
+                this.__internal__selectRegionData.push(
+                    {
+                        name: "Magikarp Jump",
+                        id: this.__internal__customRegion.MagikarpJump,
+                        isUnlocked: function()
+                            {
+                                return SubRegions.getSubRegionById(GameConstants.Region.alola, GameConstants.AlolaSubRegions.MagikarpJump).unlocked();
+                            },
+                        index: (this.__internal__selectRegionData.length + 1)
+                    });
+            }
+        }
+    }
 
     /**
      * @brief Builds a region selector drop-down list
@@ -455,25 +512,33 @@ class AutomationHatchery
         const previouslySelectedRegion = Automation.Utils.LocalStorage.getValue(setting);
 
         // Populate the list
-        for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
+        for (const regionData of this.__internal__selectRegionData)
         {
+            // Only add the custom regions for the region filter
+            if ((setting !== this.Settings.PrioritizedRegion)
+                && isNaN(regionData.id))
+            {
+                continue;
+            }
+
             opt = document.createElement("option");
 
             // Set the region name as the content
-            let regionName = GameConstants.Region[regionId];
-            opt.textContent = regionName.charAt(0).toUpperCase() + regionName.slice(1);
+            opt.textContent = regionData.name;
 
-            if ((setting === this.Settings.PrioritizedRegion) && (regionId > player.highestRegion()))
+            // Only hide locked region for the region filter.
+            // Indeed, it might be usefull for the regional debuff to prepare to the upcoming region(s).
+            if ((setting === this.Settings.PrioritizedRegion) && !regionData.isUnlocked())
             {
-                this.__internal__lockedRegions.push(regionId);
+                this.__internal__lockedRegions.push(regionData);
                 opt.hidden = true;
             }
 
-            opt.value = regionId;
-            opt.id = regionId;
+            opt.value = regionData.id;
+            opt.id = regionData.id;
 
-            // Restore the previouly seletected item
-            if (!opt.hidden && (regionId == previouslySelectedRegion))
+            // Restore the previouly selected item
+            if (!opt.hidden && (regionData.id == previouslySelectedRegion))
             {
                 // Restore previous session selected element
                 opt.selected = true;
@@ -553,11 +618,11 @@ class AutomationHatchery
                 // Reverse iterate to avoid any problem that would be cause by element removal
                 for (let i = this.__internal__lockedRegions.length - 1; i >= 0; i--)
                 {
-                    const regionId = this.__internal__lockedRegions[i];
-                    if (regionId <= player.highestRegion())
+                    const regionData = this.__internal__lockedRegions[i];
+                    if (regionData.isUnlocked())
                     {
                         // Make the element visible
-                        this.__internal__regionSelectElem.options[regionId + 1].hidden = false;
+                        this.__internal__regionSelectElem.options[regionData.index].hidden = false;
 
                         // Remove the functionality from the locked list
                         this.__internal__lockedRegions.splice(i, 1);
@@ -572,7 +637,11 @@ class AutomationHatchery
         }.bind(this), 10000); // Check every 10 seconds
     }
 
-
+    /**
+     * @brief Builds the internal sorting function list
+     *
+     * Those functions will be applied in the list order to sort the hatchery algorithm pokémon list
+     */
     static __internal__buildSortingFunctionsList()
     {
         // Region priority
@@ -599,10 +668,10 @@ class AutomationHatchery
      *
      * If any egg is ready to hatch, it will be.
      * If any spot is available:
-     *   - [if anabled] An egg will be added from the user's inventory, if such egg can hatch an uncaught pokemon
-     *   - [if anabled] A fossil will be added from the user's inventory, if such fossil can hatch an uncaught pokemon
-     *   - The pokemon at max level (100), with the highet breeding efficiency, will be added
-     *     If the 'No shiny 1st' feature is enabled, shiny pokemon will only be added if no none-shiny ones are available
+     *   - [if anabled] An egg will be added from the user's inventory, if such egg can hatch an uncaught pokémon
+     *   - [if anabled] A fossil will be added from the user's inventory, if such fossil can hatch an uncaught pokémon
+     *   - The pokémon at max level (100), with the highet breeding efficiency, will be added
+     *     If the 'No shiny 1st' feature is enabled, shiny pokémon will only be added if no none-shiny ones are available
      */
     static __internal__hatcheryLoop()
     {
@@ -624,12 +693,12 @@ class AutomationHatchery
             this.__internal__addFossilsToHatchery();
         }
 
-        // Now add lvl 100 pokemons to empty slots if we can
+        // Now add lvl 100 pokémons to empty slots if we can
         if (App.game.breeding.hasFreeEggSlot())
         {
-            // Sort pokemon by breeding efficiency
+            // Get the list of pokémon candidate to breeding, sorted according to the player's settings
             let pokemonToBreed = [];
-            const sortedPokemonToBreed = this.__internal__getBreedablePokemonByBreedingEfficiency();
+            const sortedPokemonToBreed = this.__internal__getSortedBreedablePokemonCandidates();
 
             // Spread pokerus if enabled
             if (Automation.Utils.LocalStorage.getValue(this.Settings.SpreadPokerus) === "true")
@@ -647,8 +716,8 @@ class AutomationHatchery
                 }
             }
 
-            // Do not add pokemons to the queue as it reduces the overall attack
-            // (this will also allow the player to add pokemons, eggs or fossils manually)
+            // Do not add pokémons to the queue as it reduces the overall attack
+            // (this will also allow the player to add pokémons, eggs or fossils manually)
             let i = 0;
             while ((i < pokemonToBreed.length) && App.game.breeding.hasFreeEggSlot())
             {
@@ -663,7 +732,7 @@ class AutomationHatchery
      * @brief Adds eggs from the user's inventory to the hatchery
      *
      * Only one egg of a given type will be added at once.
-     * Only eggs that can hatch an uncaught pokemon will be considered.
+     * Only eggs that can hatch an uncaught pokémon will be considered.
      */
     static __internal__addEggsToHatchery()
     {
@@ -676,7 +745,7 @@ class AutomationHatchery
             // Use an egg only if:
             //   - a slot is available
             //   - the player has one
-            //   - a new pokemon can be caught that way
+            //   - a new pokémon can be caught that way
             //   - the item actually can be used
             //   - no other egg of that type is breeding
             if (App.game.breeding.hasFreeEggSlot()
@@ -697,7 +766,7 @@ class AutomationHatchery
      * @brief Adds fossils from the user's inventory to the hatchery
      *
      * Only one fossil of a given type will be added at once.
-     * Only fossils that can hatch an uncaught pokemon will be considered.
+     * Only fossils that can hatch an uncaught pokémon will be considered.
      */
     static __internal__addFossilsToHatchery()
     {
@@ -715,8 +784,8 @@ class AutomationHatchery
             // Use an egg only if:
             //   - a slot is available
             //   - the player has one
-            //   - the corresponding pokemon is from an unlocked region
-            //   - the pokemon associated to the fossil is not already held by the player
+            //   - the corresponding pokémon is from an unlocked region
+            //   - the pokémon associated to the fossil is not already held by the player
             //   - the fossil is not already in hatchery
             if (App.game.breeding.hasFreeEggSlot()
                 && (fossil.amount() > 0)
@@ -735,21 +804,20 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Gets the Pokémon to breed based on their breeding efficiency
+     * @brief Gets the pokémons to breed based on the player settings
      *
      * @returns The sorted list of pokémon to hatch
      */
-    static __internal__getBreedablePokemonByBreedingEfficiency()
+    static __internal__getSortedBreedablePokemonCandidates()
     {
-        // Get breedable pokemon list
+        // Get breedable pokémon list
         const pokemonToBreed = App.game.party.caughtPokemon.filter(
             (pokemon) =>
             {
-                // Only consider breedable Pokemon (ie. not breeding and lvl 100)
+                // Only consider breedable pokémons (ie. not breeding and lvl 100)
                 return !pokemon.breeding && (pokemon.level == 100);
             });
 
-        const sortAttribute = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
         this.__internal__sortAttributeDescendingSetting = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
         this.__internal__sortMegaEvolutionsFirstSetting = Automation.Utils.LocalStorage.getValue(this.Settings.UnlockMegaEvolutions) === "true";
         this.__internal__sortNotShinyFirstSetting = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
@@ -758,16 +826,7 @@ class AutomationHatchery
         this.__internal__sortTypeSetting = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
 
         // Initialize the sort by attribute function
-        const regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
-        this.__internal__sortByAttributeFunction = SortOptionConfigs[sortAttribute].getValue;
-        if (sortAttribute === SortOptions.breedingEfficiency)
-        {
-            // Add the regional debuff multiplier for the breeding efficiency
-            this.__internal__sortByAttributeFunction = function(p)
-                {
-                    return SortOptionConfigs[sortAttribute].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
-                };
-        }
+        this.__internal__setAttributeSortingFunction();
 
         // Initialize mega-evolution candidates list
         this.__internal__megaEvolutionsPokemons = [];
@@ -795,10 +854,32 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Sorts the given @a and @b pokemon depending on their region
+     * @brief Sets the sort by attribute function
+     */
+    static __internal__setAttributeSortingFunction()
+    {
+        const sortAttribute = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
+        const regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
+
+        if (sortAttribute === SortOptions.breedingEfficiency)
+        {
+            // Add the regional debuff multiplier for the breeding efficiency
+            this.__internal__sortByAttributeFunction = function(p)
+                {
+                    return SortOptionConfigs[sortAttribute].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
+                };
+        }
+        else
+        {
+            this.__internal__sortByAttributeFunction = SortOptionConfigs[sortAttribute].getValue;
+        }
+    }
+
+    /**
+     * @brief Sorts the given @p a and @p b pokémons depending on their region
      *
-     * @param a: The 1st pokemon to compare
-     * @param b: The 2nd pokemon to compare
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
      *
      * @returns -1 if @p a is from the selected region and not @p b,
      *           1 if @p b is from the selected region and not @p a,
@@ -808,8 +889,8 @@ class AutomationHatchery
     {
         if (this.__internal__sortRegionSetting != GameConstants.Region.none)
         {
-            const isARegionValid = pokemonMap[a.name].nativeRegion == this.__internal__sortRegionSetting;
-            const isBRegionValid = pokemonMap[b.name].nativeRegion == this.__internal__sortRegionSetting;
+            const isARegionValid = this.__internal__isPokemonNativeFromSelectedRegion(a);
+            const isBRegionValid = this.__internal__isPokemonNativeFromSelectedRegion(b);
 
             if (isARegionValid && !isBRegionValid)
             {
@@ -825,10 +906,10 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Sorts the given @a and @b pokemon depending on their type
+     * @brief Sorts the given @p a and @p b pokémons depending on their type
      *
-     * @param a: The 1st pokemon to compare
-     * @param b: The 2nd pokemon to compare
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
      *
      * @returns -1 if @p a has the selected type and not @p b,
      *           1 if @p b has the selected type and not @p a,
@@ -855,10 +936,10 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Sorts the given @a and @b pokemon depending on their need to unlock a mega-evolution
+     * @brief Sorts the given @p a and @p b pokémons depending on their need to unlock a mega-evolution
      *
-     * @param a: The 1st pokemon to compare
-     * @param b: The 2nd pokemon to compare
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
      *
      * @returns -1 if @p a has a locked mega-evolution and not @p b,
      *           1 if @p b has a locked mega-evolution and not @p a,
@@ -885,10 +966,10 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Sorts the given @a and @b pokemon depending on their shiny status
+     * @brief Sorts the given @p a and @p b pokémons depending on their shiny status
      *
-     * @param a: The 1st pokemon to compare
-     * @param b: The 2nd pokemon to compare
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
      *
      * @returns -1 if @p a shiny form was not unlocked and not @p b,
      *           1 if @p b shiny form was not unlocked and not @p a,
@@ -912,10 +993,10 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Sorts the given @a and @b pokemon depending on their shiny status
+     * @brief Sorts the given @p a and @p b pokémons depending on their shiny status
      *
-     * @param a: The 1st pokemon to compare
-     * @param b: The 2nd pokemon to compare
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
      *
      * @returns -1 if @p a base-form pokémon and not @p b,
      *           1 if @p b base-form pokémon and not @p a,
@@ -939,10 +1020,10 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Sorts the given @a and @b pokemon depending on their attribute
+     * @brief Sorts the given @p a and @p b pokémons depending on their attribute
      *
-     * @param a: The 1st pokemon to compare
-     * @param b: The 2nd pokemon to compare
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
      *
      * @returns -1 if @p a has a better attribut than @p b,
      *           1 if @p b has a better attribut than @p a,
@@ -976,13 +1057,13 @@ class AutomationHatchery
 
         const targetPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Uninfected));
 
-        // No more pokemon to infect, fallback to the default order
+        // No more pokémon to infect, fallback to the default order
         if (targetPokemons.length == 0)
         {
             return sortedPokemonCandidates;
         }
 
-        // Both Contagious and Resistant pokemon spread the Pokérus
+        // Both Contagious and Resistant pokémon spread the Pokérus
         const contagiousPokemons = sortedPokemonCandidates.filter(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Contagious)
                                                                           || (pokemon?.pokerus === GameConstants.Pokerus.Resistant));
         const availableEggSlot = App.game.breeding.eggList.reduce((count, egg) => count + (egg().isNone() ? 1 : 0), 0)
@@ -1003,7 +1084,7 @@ class AutomationHatchery
             }
         }
 
-        // At least one contagious pokemon is already in place, try to add pokemon of matching types first
+        // At least one contagious pokémon is already in place, try to add pokémon of matching types first
         if (hatchingContagiousTypes.size != 0)
         {
             pokemonToBreed = this.__internal__addBestPokemonWithTypes(hatchingContagiousTypes, targetPokemons, pokemonToBreed, availableEggSlot);
@@ -1019,16 +1100,16 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Adds the next contagious pokemon to the @p pokemonToBreed list
+     * @brief Adds the next contagious pokémon to the @p pokemonToBreed list
      *
-     * If their is still room it will add Pokérus-free pokemons matching the new contagious type to the list as well
+     * If their is still room it will add Pokérus-free pokémons matching the new contagious type to the list as well
      *
      * @param {Array}  contagiousPokemons
      * @param {Array}  targetPokemons
      * @param {Array}  pokemonToBreed
      * @param {number} availableEggSlot
      *
-     * @returns The updated list of pokemon to breed
+     * @returns The updated list of pokémon to breed
      */
     static __internal__addContagiousPokemon(contagiousPokemons, targetPokemons, pokemonToBreed, availableEggSlot)
     {
@@ -1061,7 +1142,7 @@ class AutomationHatchery
                     continue;
                 }
 
-                // Try to get contagious pokemon with multiple types
+                // Try to get contagious pokémon with multiple types
                 if (pokemonTypes.length > 1)
                 {
                     bestCandidate = pokemon;
@@ -1118,7 +1199,7 @@ class AutomationHatchery
     /**
      * @brief Lists the possible Mega evolutions that does not meet the requirements
      *
-     * @returns The list of pokemons to raise the base attack of
+     * @returns The list of pokémons to raise the base attack of
      */
     static __internal__getUnderleveledMegaEvolutions()
     {
@@ -1148,14 +1229,51 @@ class AutomationHatchery
                         return true;
                     });
 
-                // Don't consider pokemon that does not have a mega evolution
+                // Don't consider pokémon that does not have a mega evolution
                 if (hasMegaEvolution)
                 {
-                    // Only consider pokemon with an incomplete mega-stone requirement (buid it since the pokemon might not have unlocked it yet)
+                    // Only consider pokémon with an incomplete mega-stone requirement (buid it since the pokémon might not have unlocked it yet)
                     return !(new MegaStone(partyPokemon.id, partyPokemon.baseAttack, partyPokemon._attack).canEvolve());
                 }
 
                 return false;
             });
+    }
+
+    /**
+     * @brief Determines if the given @p pokemon is native of the currently selected region
+     *
+     * @param pokemon: The pokémon data
+     *
+     * @returns True if the pokémon is native of the selected region, false otherwise
+     */
+    static __internal__isPokemonNativeFromSelectedRegion(pokemon)
+    {
+        if (this.__internal__sortRegionSetting == this.__internal__customRegion.SeviiIslands)
+        {
+            return this.__internal__seviiIslandPokemonIds.includes(pokemon.id);
+        }
+
+        if (this.__internal__sortRegionSetting == this.__internal__customRegion.MagikarpJump)
+        {
+            // Only allow Magikarp and it's alternate forms
+            return Math.floor(pokemon.id) == 129;
+        }
+
+        // Default condition
+        return pokemonMap[pokemon.name].nativeRegion == this.__internal__sortRegionSetting;
+    }
+
+    /**
+     * @brief Builds the lists of pokémons that are considered for the Sevii Island achievements
+     */
+    static __internal__buildSeviiIslandPokemonLists()
+    {
+        // From: https://github.com/pokeclicker/pokeclicker/blob/16b9bed09e838da2ebcfb70ee3814494508e304e/src/modules/requirements/SeviiCaughtRequirement.ts#L10-L16
+        this.__internal__seviiIslandPokemonIds = pokemonMap.filter((p) => p.name.includes('Pinkan')
+                                                                       || p.name.includes('Valencian')
+                                                                       || (p.name === 'Crystal Onix')
+                                                                       || (p.name === 'Ash\'s Butterfree')
+                                                                       || (p.name === 'Pink Butterfree')).map(p => p.id);
     }
 }
