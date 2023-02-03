@@ -56,6 +56,8 @@ class AutomationHatchery
         }
         else if (initStep == Automation.InitSteps.Finalize)
         {
+            this.__internal__buildSortingFunctionsList();
+
             // Restore previous session state
             this.toggleAutoHatchery();
         }
@@ -109,6 +111,17 @@ class AutomationHatchery
     static __internal__autoHatcheryLoop = null;
     static __internal__regionSelectElem = null;
     static __internal__lockedRegions = [];
+
+    // Sorting internals
+    static __internal__sortingFunctions = [];
+    static __internal__sortRegionSetting = null;
+    static __internal__sortTypeSetting = null;
+    static __internal__sortMegaEvolutionsFirstSetting = null;
+    static __internal__sortNotShinyFirstSetting = null;
+    static __internal__sortNotAlternateFormFirstSetting = null;
+    static __internal__sortAttributeDescendingSetting = null;
+    static __internal__sortByAttributeFunction = null;
+    static __internal__megaEvolutionsPokemons = [];
 
     /**
      * @brief Builds the menu
@@ -559,6 +572,28 @@ class AutomationHatchery
         }.bind(this), 10000); // Check every 10 seconds
     }
 
+
+    static __internal__buildSortingFunctionsList()
+    {
+        // Region priority
+        this.__internal__sortingFunctions.push(this.__internal__sortByRegion.bind(this));
+
+        // Type priority
+        this.__internal__sortingFunctions.push(this.__internal__sortByType.bind(this));
+
+        // Mega evolution priority
+        this.__internal__sortingFunctions.push(this.__internal__sortByMegaEvolutionNeeds.bind(this));
+
+        // Not shiny priority
+        this.__internal__sortingFunctions.push(this.__internal__sortNotShinyFirst.bind(this));
+
+        // Not alternate form priority
+        this.__internal__sortingFunctions.push(this.__internal__sortNotAlternateFormFirst.bind(this));
+
+        // Selected attribute priority
+        this.__internal__sortingFunctions.push(this.__internal__sortByAttribute.bind(this));
+    }
+
     /**
      * @brief The Hatchery loop
      *
@@ -714,118 +749,218 @@ class AutomationHatchery
                 return !pokemon.breeding && (pokemon.level == 100);
             });
 
-        const sortPriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
-        const megaEvolutionsFirst = Automation.Utils.LocalStorage.getValue(this.Settings.UnlockMegaEvolutions) === "true";
-        const sortPriorityDescending = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
-        const notShinyFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
-        const notAlternateFormFirst = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
-        const regionPriority = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
-        const regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
-        const typePriority = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
+        const sortAttribute = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSorting));
+        this.__internal__sortAttributeDescendingSetting = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
+        this.__internal__sortMegaEvolutionsFirstSetting = Automation.Utils.LocalStorage.getValue(this.Settings.UnlockMegaEvolutions) === "true";
+        this.__internal__sortNotShinyFirstSetting = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
+        this.__internal__sortNotAlternateFormFirstSetting = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
+        this.__internal__sortRegionSetting = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
+        this.__internal__sortTypeSetting = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
 
-        let sortPriorityFunction = SortOptionConfigs[sortPriority].getValue;
-        if (sortPriority === SortOptions.breedingEfficiency)
+        // Initialize the sort by attribute function
+        const regionalDebuff = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.RegionalDebuffRegion));
+        this.__internal__sortByAttributeFunction = SortOptionConfigs[sortAttribute].getValue;
+        if (sortAttribute === SortOptions.breedingEfficiency)
         {
             // Add the regional debuff multiplier for the breeding efficiency
-            sortPriorityFunction = function(p)
+            this.__internal__sortByAttributeFunction = function(p)
                 {
-                    return SortOptionConfigs[sortPriority].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
+                    return SortOptionConfigs[sortAttribute].getValue(p) * PartyController.calculateRegionalMultiplier(p, regionalDebuff);
                 };
         }
 
-        const megaEvolutionsPokemons = megaEvolutionsFirst ? this.__internal__getUnderleveledMegaEvolutions() : [];
+        // Initialize mega-evolution candidates list
+        this.__internal__megaEvolutionsPokemons = [];
+        if (this.__internal__sortMegaEvolutionsFirstSetting)
+        {
+            this.__internal__megaEvolutionsPokemons = this.__internal__getUnderleveledMegaEvolutions();
+        }
 
-        // Sort list by breeding efficiency
+        // Sort the list
         pokemonToBreed.sort((a, b) =>
             {
-                // Region priority
-                if (regionPriority != GameConstants.Region.none)
+                for (const sortFunc of this.__internal__sortingFunctions)
                 {
-                    const isARegionValid = pokemonMap[a.name].nativeRegion == regionPriority;
-                    const isBRegionValid = pokemonMap[b.name].nativeRegion == regionPriority;
-
-                    if (isARegionValid && !isBRegionValid)
+                    const result = sortFunc(a, b);
+                    if (result != 0)
                     {
-                        return -1;
-                    }
-                    if (!isARegionValid && isBRegionValid)
-                    {
-                        return 1;
+                        return result;
                     }
                 }
 
-                // Type priority
-                if (typePriority != PokemonType.None)
-                {
-                    const isATypeValid = pokemonMap[a.name].type.includes(typePriority);
-                    const isBTypeValid = pokemonMap[b.name].type.includes(typePriority);
-
-                    if (isATypeValid && !isBTypeValid)
-                    {
-                        return -1;
-                    }
-                    if (!isATypeValid && isBTypeValid)
-                    {
-                        return 1;
-                    }
-                }
-
-                // Mega evolution priority
-                if (megaEvolutionsFirst)
-                {
-                    const isAMegaEvolNeeded = megaEvolutionsPokemons.some(p => p.name == a.name);
-                    const isBMegaEvolNeeded = megaEvolutionsPokemons.some(p => p.name == b.name);
-
-                    if (isAMegaEvolNeeded && !isBMegaEvolNeeded)
-                    {
-                        return -1;
-                    }
-                    if (!isAMegaEvolNeeded && isBMegaEvolNeeded)
-                    {
-                        return 1;
-                    }
-                }
-
-                // Not shiny priority
-                if (notShinyFirst)
-                {
-                    if (a.shiny && !b.shiny)
-                    {
-                        return 1;
-                    }
-                    if (!a.shiny && b.shiny)
-                    {
-                        return -1;
-                    }
-                }
-
-                // Not alternate form priority
-                if (notAlternateFormFirst)
-                {
-                    if (!Number.isInteger(a.id) && Number.isInteger(b.id))
-                    {
-                        return 1;
-                    }
-                    if (Number.isInteger(a.id) && !Number.isInteger(b.id))
-                    {
-                        return -1;
-                    }
-                }
-
-                const aValue = sortPriorityFunction(a);
-                const bValue = sortPriorityFunction(b);
-
-                if (sortPriorityDescending)
-                {
-                    return bValue - aValue;
-                }
-                else
-                {
-                    return aValue - bValue;
-                }
-            });
+                return 0;
+            }, this);
 
         return pokemonToBreed;
+    }
+
+    /**
+     * @brief Sorts the given @a and @b pokemon depending on their region
+     *
+     * @param a: The 1st pokemon to compare
+     * @param b: The 2nd pokemon to compare
+     *
+     * @returns -1 if @p a is from the selected region and not @p b,
+     *           1 if @p b is from the selected region and not @p a,
+     *           0 otherwise
+     */
+    static __internal__sortByRegion(a, b)
+    {
+        if (this.__internal__sortRegionSetting != GameConstants.Region.none)
+        {
+            const isARegionValid = pokemonMap[a.name].nativeRegion == this.__internal__sortRegionSetting;
+            const isBRegionValid = pokemonMap[b.name].nativeRegion == this.__internal__sortRegionSetting;
+
+            if (isARegionValid && !isBRegionValid)
+            {
+                return -1;
+            }
+            if (!isARegionValid && isBRegionValid)
+            {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @brief Sorts the given @a and @b pokemon depending on their type
+     *
+     * @param a: The 1st pokemon to compare
+     * @param b: The 2nd pokemon to compare
+     *
+     * @returns -1 if @p a has the selected type and not @p b,
+     *           1 if @p b has the selected type and not @p a,
+     *           0 otherwise
+     */
+    static __internal__sortByType(a, b)
+    {
+        if (this.__internal__sortTypeSetting != PokemonType.None)
+        {
+            const isATypeValid = pokemonMap[a.name].type.includes(this.__internal__sortTypeSetting);
+            const isBTypeValid = pokemonMap[b.name].type.includes(this.__internal__sortTypeSetting);
+
+            if (isATypeValid && !isBTypeValid)
+            {
+                return -1;
+            }
+            if (!isATypeValid && isBTypeValid)
+            {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @brief Sorts the given @a and @b pokemon depending on their need to unlock a mega-evolution
+     *
+     * @param a: The 1st pokemon to compare
+     * @param b: The 2nd pokemon to compare
+     *
+     * @returns -1 if @p a has a locked mega-evolution and not @p b,
+     *           1 if @p b has a locked mega-evolution and not @p a,
+     *           0 otherwise
+     */
+    static __internal__sortByMegaEvolutionNeeds(a, b)
+    {
+        if (this.__internal__sortMegaEvolutionsFirstSetting)
+        {
+            const isAMegaEvolNeeded = this.__internal__megaEvolutionsPokemons.some(p => p.name == a.name);
+            const isBMegaEvolNeeded = this.__internal__megaEvolutionsPokemons.some(p => p.name == b.name);
+
+            if (isAMegaEvolNeeded && !isBMegaEvolNeeded)
+            {
+                return -1;
+            }
+            if (!isAMegaEvolNeeded && isBMegaEvolNeeded)
+            {
+                return 1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @brief Sorts the given @a and @b pokemon depending on their shiny status
+     *
+     * @param a: The 1st pokemon to compare
+     * @param b: The 2nd pokemon to compare
+     *
+     * @returns -1 if @p a shiny form was not unlocked and not @p b,
+     *           1 if @p b shiny form was not unlocked and not @p a,
+     *           0 otherwise
+     */
+    static __internal__sortNotShinyFirst(a, b)
+    {
+        if (this.__internal__sortNotShinyFirstSetting)
+        {
+            if (a.shiny && !b.shiny)
+            {
+                return 1;
+            }
+            if (!a.shiny && b.shiny)
+            {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @brief Sorts the given @a and @b pokemon depending on their shiny status
+     *
+     * @param a: The 1st pokemon to compare
+     * @param b: The 2nd pokemon to compare
+     *
+     * @returns -1 if @p a base-form pokémon and not @p b,
+     *           1 if @p b base-form pokémon and not @p a,
+     *           0 otherwise
+     */
+    static __internal__sortNotAlternateFormFirst(a, b)
+    {
+        if (this.__internal__sortNotAlternateFormFirstSetting)
+        {
+            if (!Number.isInteger(a.id) && Number.isInteger(b.id))
+            {
+                return 1;
+            }
+            if (Number.isInteger(a.id) && !Number.isInteger(b.id))
+            {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @brief Sorts the given @a and @b pokemon depending on their attribute
+     *
+     * @param a: The 1st pokemon to compare
+     * @param b: The 2nd pokemon to compare
+     *
+     * @returns -1 if @p a has a better attribut than @p b,
+     *           1 if @p b has a better attribut than @p a,
+     *           0 otherwise
+     */
+    static __internal__sortByAttribute(a, b)
+    {
+        const aValue = this.__internal__sortByAttributeFunction(a);
+        const bValue = this.__internal__sortByAttributeFunction(b);
+
+        if (this.__internal__sortAttributeDescendingSetting)
+        {
+            return bValue - aValue;
+        }
+        else
+        {
+            return aValue - bValue;
+        }
     }
 
     /**
@@ -987,6 +1122,8 @@ class AutomationHatchery
      */
     static __internal__getUnderleveledMegaEvolutions()
     {
+        const isRealEvolutionChallengeEnabled = App.game.challenges.list.realEvolutions.active();
+
         return App.game.party.caughtPokemon.filter((partyPokemon) =>
             {
                 if (!partyPokemon.evolutions)
@@ -996,7 +1133,19 @@ class AutomationHatchery
 
                 const hasMegaEvolution = partyPokemon.evolutions.some((evolution) =>
                     {
-                        return evolution.restrictions?.some(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement"));
+                        if (!evolution.restrictions?.some(e => Automation.Utils.isInstanceOf(e, "MegaEvolveRequirement")))
+                        {
+                            return false;
+                        }
+
+                        // Don't farm for pokémons that the player has already unlocked if the real evolution challenge is enabled
+                        // Since the base pokémon stats gets transfered to the evolution in this mode
+                        if (isRealEvolutionChallengeEnabled)
+                        {
+                            return App.game.party.getPokemonByName(evolution.evolvedPokemon) == undefined;
+                        }
+
+                        return true;
                     });
 
                 // Don't consider pokemon that does not have a mega evolution
