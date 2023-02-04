@@ -29,16 +29,7 @@ class AutomationMenu
         this.__internal__injectAutomationCss();
 
         this.__internal__automationContainer = document.createElement("div");
-        this.__internal__automationContainer.style.position = "absolute";
-        this.__internal__automationContainer.style.top = "50px";
-        this.__internal__automationContainer.style.right = "10px";
-        this.__internal__automationContainer.style.width = "145px";
-        this.__internal__automationContainer.style.textAlign = "right";
-        this.__internal__automationContainer.style.lineHeight = "24px";
-        this.__internal__automationContainer.style.fontFamily =
-            'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
-        this.__internal__automationContainer.style.fontSize = ".875rem";
-        this.__internal__automationContainer.style.fontWeight = "400";
+        this.__internal__automationContainer.classList.add("automationMenuContainer");
         this.__internal__automationContainer.id = "automationContainer";
         document.body.appendChild(this.__internal__automationContainer);
     }
@@ -68,20 +59,17 @@ class AutomationMenu
      *
      * @returns The content div element
      */
-    static addCategory(categoryId, title)
+    static addCategory(categoryId, title, addToMainContainer = true)
     {
         const newNode = document.createElement("div");
         newNode.id = categoryId;
-        newNode.style.backgroundColor = "#444444";
-        newNode.style.color = "#eeeeee";
-        newNode.style.borderRadius = "5px";
-        newNode.style.paddingTop = "5px";
-        newNode.style.paddingBottom = "6px";
-        newNode.style.borderColor = "#aaaaaa";
-        newNode.style.borderStyle = "solid";
-        newNode.style.borderWidth = "1px";
-        newNode.style.marginTop = "5px";
-        this.__internal__automationContainer.appendChild(newNode);
+        newNode.classList.add("automationCategoryContainer");
+
+        if (addToMainContainer)
+        {
+            newNode.style.marginTop = "5px";
+            this.__internal__automationContainer.appendChild(newNode);
+        }
 
         const contentDivId = categoryId + "Div";
 
@@ -92,13 +80,39 @@ class AutomationMenu
 
         const contentDiv = document.createElement("div");
         contentDiv.id = contentDivId;
-        contentDiv.classList.add("automationCategorie");
+        contentDiv.classList.add("automationCategory");
         newNode.appendChild(contentDiv);
 
         // Add the onclick action
         titleDiv.onclick = function() { contentDiv.classList.toggle('hide'); }.bind(contentDivId);
 
         Automation.Menu.addSeparator(contentDiv);
+
+        return contentDiv;
+    }
+
+    /**
+     * @brief Adds a floating category that is meant to be displayed with the given @p ingameModal
+     *
+     * Such div contains two other divs:
+     *   - The title div
+     *   - The content div (where any element can safely be added)
+     *
+     * @param {string} categoryId: The id that will be given to the resulting div
+     * @param {string} title: The title that will be used for the category (can contain HTML)
+     * @param {Element} ingameModal: The in-game modal to add the category to
+     *
+     * @returns The content div element
+     */
+    static addFloatingCategory(categoryId, title, ingameModal)
+    {
+        const contentDiv = this.addCategory(categoryId, title, false);
+        const container = contentDiv.parentElement;
+        container.classList.add("automationFloatingCategory");
+
+        // Add the category to the in-game modal element
+        // Doing so will automatically hide/show it at the same time as the targeted modal
+        ingameModal.appendChild(container);
 
         return contentDiv;
     }
@@ -958,6 +972,65 @@ class AutomationMenu
                 top: 1px;
                 left: -15px;
             }
+            .automationMenuContainer
+            {
+                top: 50px;
+                right: 10px;
+            }
+
+            .automationMenuContainer,
+            .automationFloatingCategory
+            {
+                position: absolute;
+                width: 145px;
+                text-align: right;
+                line-height: 24px;
+                font-family: Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+                font-size: .875rem;
+                font-weight = 400;
+            }
+
+            /****************\
+            |*   Category   *|
+            \****************/
+
+            .automationCategoryContainer
+            {
+                background-color: #444444;
+                color: #eeeeee;
+                border-radius: 5px;
+                border: 1px solid #aaaaaa;
+                padding-top: 5px;
+                padding-bottom: 6px;
+            }
+            .automationFloatingCategory
+            {
+                top: 50%;
+                transform: translateY(-50%);
+                left: calc(50% + 400px);
+                border-top-left-radius: 0px;
+                border-bottom-left-radius: 0px;
+                z-index: 9999; /* Always put it on top of everything-else */
+            }
+
+            @media (max-width: 992px)
+            {
+                .automationFloatingCategory
+                {
+                    left: calc(50% + 250px);
+                }
+            }
+
+            .automationCategory
+            {
+                max-height: 499px;
+                display: block;
+            }
+            .automationCategory.hide
+            {
+                max-height: 0px;
+                display: none;
+            }
 
             /****************\
             |*   Tooltips   *|
@@ -1059,16 +1132,6 @@ class AutomationMenu
             |*   Setting   *|
             \***************/
 
-            .automationCategorie
-            {
-                max-height: 500px;
-                display: block;
-            }
-            .automationCategorie.hide
-            {
-                max-height: 0px;
-                display: none;
-            }
             .automation-setting-placeholder
             {
                 position: relative;

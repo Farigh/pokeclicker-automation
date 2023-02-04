@@ -58,9 +58,6 @@ class Automation
                     this.Utils.initialize(initStep);
                     this.Menu.initialize(initStep);
 
-                    // Battle Café panel (Always put it first)
-                    this.BattleCafe.initialize(initStep);
-
                     // Then add the main menu
                     this.Menu.addMainAutomationPanel(initStep);
 
@@ -81,6 +78,9 @@ class Automation
                     this.Gym.initialize(initStep);
                     this.Dungeon.initialize(initStep);
                     this.BattleFrontier.initialize(initStep);
+
+                    // Floating panel
+                    this.BattleCafe.initialize(initStep);
                 }
 
                 // Log automation startup completion

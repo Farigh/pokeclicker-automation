@@ -40,15 +40,9 @@ class AutomationBattleCafe
         this.__internal__battleCafeInGameModal = document.getElementById("battleCafeModal");
 
         let battleCafeTitle = '☕ Battle Café ☕';
-        const battleCafeContainer = Automation.Menu.addCategory("automationBattleCafe", battleCafeTitle);
+        const battleCafeContainer =
+            Automation.Menu.addFloatingCategory("automationBattleCafe", battleCafeTitle, this.__internal__battleCafeInGameModal);
         this.__internal__battleCafePanel = battleCafeContainer.parentElement;
-
-        // Always put it on top, so the user can interact with it while the game displays the modal overlay
-        this.__internal__battleCafePanel.style.position = "relative";
-        this.__internal__battleCafePanel.style.zIndex = "9999";
-
-        // Hide the battle café menu by default
-        this.__internal__battleCafePanel.hidden = true;
 
         this.__internal__addInfo(null, -1, battleCafeContainer);
 
@@ -181,8 +175,6 @@ class AutomationBattleCafe
     {
         if (this.__internal__battleCafeInGameModal.classList.contains("show"))
         {
-            this.__internal__battleCafePanel.hidden = false;
-
             const selectedSweet = BattleCafeController.selectedSweet();
 
             // Refresh caught statuses
@@ -206,10 +198,6 @@ class AutomationBattleCafe
 
             this.__internal__battleCafeSweetContainers[selectedSweet].hidden = false;
             this.__internal__currentlyVisibleSweet = selectedSweet;
-        }
-        else
-        {
-            this.__internal__battleCafePanel.hidden = true;
         }
     }
 
