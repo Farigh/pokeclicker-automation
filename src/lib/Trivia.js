@@ -35,6 +35,7 @@ class AutomationTrivia
     static __internal__availableEvolutionTriviaContent = null;
     static __internal__availableBulletinBoardTriviaContainer = null;
     static __internal__availableBulletinBoardTriviaText = null;
+    static __internal__townsWithBoard = [];
 
     static __internal__previousRegion = null;
     static __internal__displayedCaughtStatus = null;
@@ -71,14 +72,13 @@ class AutomationTrivia
         this.__internal__addGotoLocationContent(triviaDiv);
     }
 
-
     /**
      * @brief Adds the 'Roaming route' trivia content to the given @p triviaDiv
      *
      * @param {Element} triviaDiv: The div element to add the created elements to
      */
-     static __internal__addRoamingRouteContent(triviaDiv)
-     {
+    static __internal__addRoamingRouteContent(triviaDiv)
+    {
         this.__internal__roamingRouteTriviaContainer = document.createElement("div");
         triviaDiv.appendChild(this.__internal__roamingRouteTriviaContainer);
 
@@ -101,7 +101,8 @@ class AutomationTrivia
         this.__internal__roamersContainer.appendChild(this.__internal__moveToRoamersRouteButton);
 
         Automation.Menu.addSeparator(this.__internal__roamingRouteTriviaContainer);
-     }
+    }
+
     /**
      * @brief Adds the 'Available evolution' trivia content to the given @p triviaDiv
      *
@@ -136,8 +137,8 @@ class AutomationTrivia
      *
      * @param {Element} triviaDiv: The div element to add the created elements to
      */
-     static __internal__addAvailableBulletinBoardContent(triviaDiv)
-     {
+    static __internal__addAvailableBulletinBoardContent(triviaDiv)
+    {
         this.__internal__availableBulletinBoardTriviaContainer = document.createElement("div");
         this.__internal__availableBulletinBoardTriviaContainer.hidden = true; // Hide it by default
         triviaDiv.appendChild(this.__internal__availableBulletinBoardTriviaContainer);
@@ -151,7 +152,7 @@ class AutomationTrivia
         this.__internal__availableBulletinBoardTriviaContainer.appendChild(this.__internal__availableBulletinBoardTriviaText);
 
         Automation.Menu.addSeparator(this.__internal__availableBulletinBoardTriviaContainer);
-     }
+    }
 
     /**
      * @brief Adds the 'Go to' trivia content to the given @p triviaDiv
@@ -522,13 +523,52 @@ class AutomationTrivia
     /**
      * @brief Initializes the 'Bulletin board' trivia content and set its watcher loop
      */
-     static __internal__initializeBulletinBoardTrivia()
-     {
-         // Set the initial value
-         this.__internal__refreshBulletinBoardTrivia();
+    static __internal__initializeBulletinBoardTrivia()
+    {
+        // Build bulletin board data
+        const townsWithBoard = Object.entries(TownList).filter(
+            ([_, town]) => (town.content.some(content => Automation.Utils.isInstanceOf(content, "BulletinBoard"))));
+        this.__internal__townsWithBoard = townsWithBoard.map(
+            ([_, town]) =>
+            {
+                const datas = { town, bulletinBoard: town.content.find(content => Automation.Utils.isInstanceOf(content, "BulletinBoard")) };
 
-         setInterval(this.__internal__refreshBulletinBoardTrivia.bind(this), 10000); // Refresh every 10s (changes does not occur that often)
-     }
+                datas.allQuests = App.game.quests.questLines().filter((q) =>
+                    {
+                        if (q.state() == QuestLineState.ended)
+                        {
+                            return false;
+                        }
+                        if ((q.bulletinBoard !== GameConstants.BulletinBoards.All) && (q.bulletinBoard !== datas.bulletinBoard.board))
+                        {
+                            return false;
+                        }
+                        return true;
+                    })
+
+                datas.getAvailableQuests = function()
+                        {
+                            return datas.allQuests.filter((q) =>
+                                {
+                                    if (q.state() == QuestLineState.ended)
+                                    {
+                                        return false;
+                                    }
+                                    if (q.requirement ? !q.requirement.isCompleted() : false)
+                                    {
+                                        return false;
+                                    }
+                                    return true;
+                                });
+                        }
+
+                return datas;
+            });
+
+        // Set the initial value
+        this.__internal__refreshBulletinBoardTrivia();
+        setInterval(this.__internal__refreshBulletinBoardTrivia.bind(this), 10000); // Refresh every 10s (changes does not occur that often)
+    }
 
      /**
       * @brief Refreshes the 'Bulletin board' trivia content
@@ -538,20 +578,16 @@ class AutomationTrivia
       *   - The town with the board
       *   - The region with the board (in the tooltip)
       */
-     static __internal__refreshBulletinBoardTrivia()
-     {
+    static __internal__refreshBulletinBoardTrivia()
+    {
+        // Aggregate towns data
+        const townsWithQuests = this.__internal__townsWithBoard.map((data) =>
+            { return { town: data.town, quests: data.getAvailableQuests() } });
 
         // Get the list of towns with bulletin board with a quest
-        const townsWithBoard = Object.entries(TownList).filter(
-            ([_, town]) => (town.content.some(content => Automation.Utils.isInstanceOf(content, "BulletinBoard"))));
-        const townsQuests = townsWithBoard.map(
-            ([townName, town]) =>
-            {
-                return { name: townName, quests: town.content.find(content => Automation.Utils.isInstanceOf(content, "BulletinBoard")).getQuests() };
-            });
-        const townsWithInactiveQuest = townsQuests.filter((data) => data.quests.some(quest => quest.state() === QuestLineState.inactive));
+        const townsWithInactiveQuests = townsWithQuests.filter((data) => data.quests.some(quest => quest.state() === QuestLineState.inactive));
 
-        if (townsWithInactiveQuest.length === 0)
+        if (townsWithInactiveQuests.length === 0)
         {
             if (this.__internal__displayedBulletinBoardTown !== null)
             {
@@ -563,29 +599,25 @@ class AutomationTrivia
 
         let townNamesAmount = "";
         let tooltip = "";
-        for (const town of townsWithInactiveQuest)
+        for (const data of townsWithInactiveQuests)
         {
-            const townWithQuests = TownList[town.name];
-            const questCount = town.quests.filter(quest => quest.state() === QuestLineState.inactive).length;
-            const subregion = SubRegions.getSubRegionById(townWithQuests.region, townWithQuests.subRegion);
+            const questCount = data.quests.filter(quest => quest.state() === QuestLineState.inactive).length;
+            const subregion = SubRegions.getSubRegionById(data.town.region, data.town.subRegion);
             tooltip += (tooltip !== "") ? "\n" : "";
-            tooltip += `${questCount} quest${questCount === 1 ? "" : "s"} available in ${town.name} in ${subregion.name}`
+            tooltip += `${questCount} quest${questCount === 1 ? "" : "s"} available in ${data.town.name} in ${subregion.name}`
 
             // Only used to check if the UI needs to be updated
             // Will never be displayed
-            townNamesAmount += `${town.name} ${questCount}`;
+            townNamesAmount += `${data.town.name} ${questCount}`;
         }
 
         if (this.__internal__displayedBulletinBoardTown !== townNamesAmount)
         {
             this.__internal__displayedBulletinBoardTown = townNamesAmount;
-
             this.__internal__availableBulletinBoardTriviaText.setAttribute("automation-tooltip-text", tooltip);
-
             this.__internal__availableBulletinBoardTriviaContainer.hidden = false;
         }
     }
-
 
     /**
      * @brief Disabled the given @p button if the player is currently in an instance
