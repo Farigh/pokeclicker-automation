@@ -533,34 +533,34 @@ class AutomationTrivia
             {
                 const datas = { town, bulletinBoard: town.content.find(content => Automation.Utils.isInstanceOf(content, "BulletinBoard")) };
 
-                datas.allQuests = App.game.quests.questLines().filter((q) =>
+                datas.remainingQuests = App.game.quests.questLines().filter((q) =>
                     {
-                        if (q.state() == QuestLineState.ended)
+                        if (q.state() != QuestLineState.inactive)
                         {
                             return false;
                         }
-                        if ((q.bulletinBoard !== GameConstants.BulletinBoards.All) && (q.bulletinBoard !== datas.bulletinBoard.board))
+                        if (q.bulletinBoard !== datas.bulletinBoard.board)
                         {
                             return false;
                         }
                         return true;
-                    })
+                    });
 
                 datas.getAvailableQuests = function()
-                        {
-                            return datas.allQuests.filter((q) =>
+                    {
+                        return datas.remainingQuests.filter((q) =>
+                            {
+                                if (q.state() != QuestLineState.inactive)
                                 {
-                                    if (q.state() == QuestLineState.ended)
-                                    {
-                                        return false;
-                                    }
-                                    if (q.requirement ? !q.requirement.isCompleted() : false)
-                                    {
-                                        return false;
-                                    }
-                                    return true;
-                                });
-                        }
+                                    return false;
+                                }
+                                if (q.requirement ? !q.requirement.isCompleted() : false)
+                                {
+                                    return false;
+                                }
+                                return true;
+                            });
+                    };
 
                 return datas;
             });
@@ -570,14 +570,31 @@ class AutomationTrivia
         setInterval(this.__internal__refreshBulletinBoardTrivia.bind(this), 10000); // Refresh every 10s (changes does not occur that often)
     }
 
-     /**
-      * @brief Refreshes the 'Bulletin board' trivia content
-      *
-      * The following elements will be refreshed
-      *   - Content visibility (will be hidden if no quest in a board is available)
-      *   - The town with the board
-      *   - The region with the board (in the tooltip)
-      */
+    /**
+     * @brief Removes any completed quests from the bulletin board data, for perf purpose
+     */
+    static __internal__updateTownsWithBoardData()
+    {
+        for (const data of this.__internal__townsWithBoard)
+        {
+            // Don't even consider boards that are in higher region than the max player region
+            if (data.town.region > player.highestRegion())
+            {
+                continue;
+            }
+
+            data.remainingQuests = data.remainingQuests.filter(q => (q.state() == QuestLineState.inactive));
+        }
+    }
+
+    /**
+     * @brief Refreshes the 'Bulletin board' trivia content
+     *
+     * The following elements will be refreshed
+     *   - Content visibility (will be hidden if no quest in a board is available)
+     *   - The town with the board
+     *   - The region with the board (in the tooltip)
+     */
     static __internal__refreshBulletinBoardTrivia()
     {
         // Aggregate towns data
@@ -593,6 +610,9 @@ class AutomationTrivia
             {
                 this.__internal__availableBulletinBoardTriviaContainer.hidden = true;
                 this.__internal__displayedBulletinBoardTown = null;
+
+                // Clear completed quests
+                this.__internal__updateTownsWithBoardData();
             }
             return
         }
@@ -601,6 +621,12 @@ class AutomationTrivia
         let tooltip = "";
         for (const data of townsWithInactiveQuests)
         {
+            // Don't even consider boards that are in higher region than the max player region
+            if (data.town.region > player.highestRegion())
+            {
+                continue;
+            }
+
             const questCount = data.quests.filter(quest => quest.state() === QuestLineState.inactive).length;
             const subregion = SubRegions.getSubRegionById(data.town.region, data.town.subRegion);
             tooltip += (tooltip !== "") ? "\n" : "";
@@ -616,6 +642,9 @@ class AutomationTrivia
             this.__internal__displayedBulletinBoardTown = townNamesAmount;
             this.__internal__availableBulletinBoardTriviaText.setAttribute("automation-tooltip-text", tooltip);
             this.__internal__availableBulletinBoardTriviaContainer.hidden = false;
+
+            // Clear completed quests
+            this.__internal__updateTownsWithBoardData();
         }
     }
 
