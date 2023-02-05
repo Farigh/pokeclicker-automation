@@ -29,8 +29,7 @@ class AutomationUtilsRoute
     {
         // Don't move if the player is already there, or the game would not allow it
         if (((player.route() === route) && (player.region === region))
-            || !this.canMoveToRegion(region)
-            || !MapHelper.accessToRoute(route, region))
+            || !this.canMoveToRoute(route, region))
         {
             return;
         }
@@ -128,6 +127,31 @@ class AutomationUtilsRoute
     }
 
     /**
+     * @brief Determines if the player can move to the given @p route, in the given @p region
+     *
+     * @param {number} route: The number of the route to move to
+     * @param {number} region: The region number of the route to move to
+     * @param routeData: The route data (for perf optimisation)
+     *
+     * @returns True if the player can move to the route, false otherwise
+     */
+    static canMoveToRoute(route, region, routeData = null)
+    {
+        if (!this.canMoveToRegion(region))
+        {
+            return false;
+        }
+
+        const routeObj = routeData ?? Routes.getRoute(region, route);
+        if (!routeObj)
+        {
+            return false;
+        }
+
+        return routeObj.isUnlocked();
+    }
+
+    /**
      * @brief Moves to the best available route for pokemon Exp farming
      *
      * The best route is the highest unlocked route where any pokemon can be defeated in a single click attack
@@ -167,7 +191,7 @@ class AutomationUtilsRoute
             for (const routeData of this.__internal__routeMaxHealthData)
             {
                 // Skip any route that we can't access
-                if (!this.canMoveToRegion(routeData.route.region))
+                if (!this.canMoveToRoute(routeData.route.number, routeData.route.region, routeData.route))
                 {
                     continue;
                 }
@@ -230,7 +254,7 @@ class AutomationUtilsRoute
         for (const route of Routes.regionRoutes)
         {
             // Skip any route that we can't access
-            if (!route.isUnlocked() || !this.canMoveToRegion(route.region))
+            if (!this.canMoveToRoute(route.number, route.region, route))
             {
                 continue;
             }
@@ -297,7 +321,7 @@ class AutomationUtilsRoute
         for (const route of Routes.regionRoutes)
         {
             // Skip any route that we can't access
-            if (!route.isUnlocked() || !this.canMoveToRegion(route.region))
+            if (!this.canMoveToRoute(route.number, route.region, route))
             {
                 continue;
             }

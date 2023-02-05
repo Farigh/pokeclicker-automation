@@ -287,8 +287,7 @@ class AutomationFocusAchievements
                 // Consider RouteKill achievements, if the player can move to the target route
                 if (Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement"))
                 {
-                    return (Automation.Utils.Route.canMoveToRegion(achievement.property.region)
-                            && MapHelper.accessToRoute(achievement.property.route, achievement.property.region));
+                    return Automation.Utils.Route.canMoveToRoute(achievement.property.route, achievement.property.region);
                 }
 
                 // Consider ClearGym achievements, if the player can move to the target town
