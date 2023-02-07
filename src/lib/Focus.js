@@ -13,7 +13,8 @@ class AutomationFocus
                           FocusedTopic: "Focus-SelectedTopic",
                           OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate",
                           BallToUseToCatch: "Focus-BallToUseToCatch",
-                          DefaultCaughtBall: "Focus-DefaultCaughtBall"
+                          DefaultCaughtBall: "Focus-DefaultCaughtBall",
+                          DefaultContagiousCaughtBall: "Focus-DefaultContagiousCaughtBall"
                       };
 
     /**
@@ -46,6 +47,7 @@ class AutomationFocus
     static __noFunctionalityRefresh = -1;
     static __pokeballToUseSelectElem = null;
     static __defaultCaughtPokeballSelectElem = null;
+    static __defaultContagiousCaughtPokeballSelectElem = null;
 
     /**
      * @brief Makes sure no instance is in progress
@@ -295,33 +297,7 @@ class AutomationFocus
         |*   Balls settings   *|
         \**********************/
 
-        const disclaimer = Automation.Menu.TooltipSeparator + "⚠️ Equipping higher pokéballs can be cost-heavy during early game";
-
-        // Pokeball to use for catching
-        const pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
-                                   + "already caught pokémon, when needed"
-                                   + disclaimer;
-        this.__pokeballToUseSelectElem =
-            Automation.Menu.addPokeballList("focusPokeballToUseSelection",
-                                            generalTabContainer,
-                                            this.Settings.BallToUseToCatch,
-                                            "Pokeball to use for catching :",
-                                            pokeballToUseTooltip);
-
-        // Default Pokeball for caught pokémons
-        const defaultCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
-                                           + "already caught pokémon, when no catching is needed"
-                                           + Automation.Menu.TooltipSeparator
-                                           + "This setting will not be taken into account while focusing on quests.\n"
-                                           + "In this case no pokéball will be equipped to complete quests faster"
-                                           + disclaimer;
-        this.__defaultCaughtPokeballSelectElem =
-            Automation.Menu.addPokeballList("focusDefaultCaughtBallSelection",
-                                            generalTabContainer,
-                                            this.Settings.DefaultCaughtBall,
-                                            "Default value for caught pokémon pokéball :",
-                                            defaultCaughtPokeballTooltip,
-                                            true);
+        this.__internal__buildBallSelectionAdvancedSettings(generalTabContainer);
 
         /**********************\
         |*  Toggles settings  *|
@@ -350,6 +326,75 @@ class AutomationFocus
 
         const achievementsTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Achievements", focusSettingsTabsGroup);
         this.Achievements.__buildAdvancedSettings(achievementsTabContainer);
+    }
+
+    /**
+     * @brief Builds the ball selection advanced settings drop-down lists
+     *
+     * @param {Element} generalTabContainer: The tab container
+     */
+    static __internal__buildBallSelectionAdvancedSettings(generalTabContainer)
+    {
+        const disclaimer = Automation.Menu.TooltipSeparator + "⚠️ Equipping higher pokéballs can be cost-heavy during early game";
+
+        // Pokeball to use for catching
+        const pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
+                                   + "already caught pokémon, when needed"
+                                   + disclaimer;
+        this.__pokeballToUseSelectElem =
+            Automation.Menu.addPokeballList("focusPokeballToUseSelection",
+                                            generalTabContainer,
+                                            this.Settings.BallToUseToCatch,
+                                            "Pokeball to use for catching :",
+                                            pokeballToUseTooltip);
+
+        // Default Pokeball for caught pokémons
+        const defaultCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
+                                           + "already caught pokémon, when no catching is needed"
+                                           + Automation.Menu.TooltipSeparator
+                                           + "This setting will not be taken into account while focusing on quests.\n"
+                                           + "In this case no pokéball will be equipped to complete quests faster"
+                                           + disclaimer;
+        this.__defaultCaughtPokeballSelectElem =
+            Automation.Menu.addPokeballList("focusDefaultCaughtBallSelection",
+                                            generalTabContainer,
+                                            this.Settings.DefaultCaughtBall,
+                                            "Default value for caught pokémon pokéball :",
+                                            defaultCaughtPokeballTooltip,
+                                            true);
+
+        // Default Pokeball for contatgious caught pokémons
+        const defaultContagiousCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch already\n"
+                                                     + "caught contagious pokémon, when no catching is needed"
+                                                     + Automation.Menu.TooltipSeparator
+                                                     + "This setting will not be taken into account while focusing on quests.\n"
+                                                     + "In this case no pokéball will be equipped to complete quests faster"
+                                                     + disclaimer;
+        this.__defaultContagiousCaughtPokeballSelectElem =
+            Automation.Menu.addPokeballList("focusDefaultContagiousCaughtBallSelection",
+                                            generalTabContainer,
+                                            this.Settings.DefaultContagiousCaughtBall,
+                                            "Default value for contagious caught pokémon pokéball :",
+                                            defaultContagiousCaughtPokeballTooltip,
+                                            true);
+
+        // Hide it by default if the player did not unlock the in-game option
+        this.__defaultContagiousCaughtPokeballSelectElem.parentElement.hidden = !App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus);
+
+        // Set an interval to make the option visible once unlocked
+        if (this.__defaultContagiousCaughtPokeballSelectElem.parentElement.hidden)
+        {
+            const watcher = setInterval(function()
+                {
+                    if (App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus))
+                    {
+                        this.__defaultContagiousCaughtPokeballSelectElem.parentElement.hidden = false;
+
+                        // Feature unlocked, unregister the loop
+                        clearInterval(watcher);
+                    }
+                }.bind(this), 5000); // Refresh every 5s
+        }
     }
 
     /**
@@ -413,46 +458,50 @@ class AutomationFocus
      */
     static __internal__buildFunctionalitiesList()
     {
-        this.__internal__functionalities.push({
-                                        id: "XP",
-                                        name: "Experience",
-                                        tooltip: "Automatically moves to the best route for EXP"
-                                               + Automation.Menu.TooltipSeparator
-                                               + "Such route is the highest unlocked one\n"
-                                               + "with HP lower than Click Attack",
-                                        run: function (){ this.__internal__goToBestRouteForExp(); }.bind(this),
-                                        refreshRateAsMs: 10000 // Refresh every 10s
-                                    });
+        this.__internal__functionalities.push(
+            {
+                id: "XP",
+                name: "Experience",
+                tooltip: "Automatically moves to the best route for EXP"
+                       + Automation.Menu.TooltipSeparator
+                       + "Such route is the highest unlocked one\n"
+                       + "with HP lower than Click Attack",
+                run: function (){ this.__internal__goToBestRouteForExp(); }.bind(this),
+                refreshRateAsMs: 10000 // Refresh every 10s
+            });
 
-        this.__internal__functionalities.push({
-                                        id: "Gold",
-                                        name: "Money",
-                                        tooltip: "Automatically moves to the best gym for money"
-                                               + Automation.Menu.TooltipSeparator
-                                               + "Gyms gives way more money than routes\n"
-                                               + "The best gym is the one that gives the most money per game tick",
-                                        run: function (){ this.__internal__goToBestGymForMoney(); }.bind(this),
-                                        stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
-                                        refreshRateAsMs: 10000 // Refresh every 10s
-                                    });
+        this.__internal__functionalities.push(
+            {
+                id: "Gold",
+                name: "Money",
+                tooltip: "Automatically moves to the best gym for money"
+                       + Automation.Menu.TooltipSeparator
+                       + "Gyms gives way more money than routes\n"
+                       + "The best gym is the one that gives the most money per game tick",
+                run: function (){ this.__internal__goToBestGymForMoney(); }.bind(this),
+                stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                refreshRateAsMs: 10000 // Refresh every 10s
+            });
 
-        this.__internal__functionalities.push({
-                                        id: "DungeonTokens",
-                                        name: "Dungeon Tokens",
-                                        tooltip: "Moves to the best route to earn dungeon tokens"
-                                               + Automation.Menu.TooltipSeparator
-                                               + "The most efficient route is the one giving\n"
-                                               + "the most token per game tick.\n"
-                                               + "The most efficient Oak items loadout will be equipped.\n"
-                                               + "The configured balls will automatically be used and bought if needed.",
-                                        run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
-                                        stop: function ()
-                                              {
-                                                  Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-                                                  App.game.pokeballs.alreadyCaughtSelection = this.__defaultCaughtPokeballSelectElem.value;
-                                              }.bind(this),
-                                        refreshRateAsMs: 3000 // Refresh every 3s
-                                    });
+        this.__internal__functionalities.push(
+            {
+                id: "DungeonTokens",
+                name: "Dungeon Tokens",
+                tooltip: "Moves to the best route to earn dungeon tokens"
+                       + Automation.Menu.TooltipSeparator
+                       + "The most efficient route is the one giving\n"
+                       + "the most token per game tick.\n"
+                       + "The most efficient Oak items loadout will be equipped.\n"
+                       + "The configured balls will automatically be used and bought if needed.",
+                run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
+                stop: function ()
+                    {
+                        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
+                        App.game.pokeballs.alreadyCaughtSelection = this.__defaultCaughtPokeballSelectElem.value;
+                        App.game.pokeballs.alreadyCaughtContagiousSelection = this.__defaultContagiousCaughtPokeballSelectElem.value;
+                    }.bind(this),
+                refreshRateAsMs: 3000 // Refresh every 3s
+            });
 
         this.Quests.__registerFunctionalities(this.__internal__functionalities);
         this.Achievements.__registerFunctionalities(this.__internal__functionalities);

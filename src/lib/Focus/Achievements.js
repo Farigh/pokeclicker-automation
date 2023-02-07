@@ -94,6 +94,7 @@ class AutomationFocusAchievements
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
+        App.game.pokeballs.alreadyCaughtContagiousSelection = Automation.Focus.__defaultContagiousCaughtPokeballSelectElem.value;
     }
 
     /**
@@ -159,6 +160,7 @@ class AutomationFocusAchievements
     {
         // Reset any equipped pokeball
         App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
+        App.game.pokeballs.alreadyCaughtContagiousSelection = Automation.Focus.__defaultContagiousCaughtPokeballSelectElem.value;
 
         if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "RouteKillRequirement"))
         {

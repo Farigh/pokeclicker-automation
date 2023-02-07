@@ -236,7 +236,8 @@ class AutomationFocusQuests
         Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
         // Restore the ball to catch default value
-        this.__internal__selectBallToCatch(Automation.Focus.__defaultCaughtPokeballSelectElem.value);
+        App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
+        App.game.pokeballs.alreadyCaughtContagiousSelection = Automation.Focus.__defaultContagiousCaughtPokeballSelectElem.value;
     }
 
     /**
