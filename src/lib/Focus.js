@@ -98,6 +98,7 @@ class AutomationFocus
 
         // Equip an "Already caught" pokeball
         App.game.pokeballs.alreadyCaughtSelection = this.__pokeballToUseSelectElem.value;
+        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__pokeballToUseSelectElem.value);
 
         // Move to the highest unlocked route
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__pokeballToUseSelectElem.value);
@@ -204,6 +205,15 @@ class AutomationFocus
         }
 
         return true;
+    }
+
+    /**
+     * @brief Resets the player's ball selection according to the settings
+     */
+    static __resetBallSelection()
+    {
+        App.game.pokeballs.alreadyCaughtSelection = this.__defaultCaughtPokeballSelectElem.value;
+        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__defaultContagiousCaughtPokeballSelectElem.value);
     }
 
     /*********************************************************************\
@@ -497,8 +507,7 @@ class AutomationFocus
                 stop: function ()
                     {
                         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-                        App.game.pokeballs.alreadyCaughtSelection = this.__defaultCaughtPokeballSelectElem.value;
-                        App.game.pokeballs.alreadyCaughtContagiousSelection = this.__defaultContagiousCaughtPokeballSelectElem.value;
+                        this.__resetBallSelection();
                     }.bind(this),
                 refreshRateAsMs: 3000 // Refresh every 3s
             });

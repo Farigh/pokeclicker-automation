@@ -56,6 +56,7 @@ class AutomationFocusQuests
 
     static __internal__autoQuestLoop = null;
     static __internal__questLabels = {};
+    static __internal__useUserDefaultBall = "default";
 
     static __internal__advancedSettings = {
                                               QuestEnabled: function(questName) { return `Focus-${questName}-Enabled`; }
@@ -236,8 +237,7 @@ class AutomationFocusQuests
         Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
         // Restore the ball to catch default value
-        App.game.pokeballs.alreadyCaughtSelection = Automation.Focus.__defaultCaughtPokeballSelectElem.value;
-        App.game.pokeballs.alreadyCaughtContagiousSelection = Automation.Focus.__defaultContagiousCaughtPokeballSelectElem.value;
+        Automation.Focus.__resetBallSelection();
     }
 
     /**
@@ -426,8 +426,8 @@ class AutomationFocusQuests
         }
         else // Other type of quest don't need much
         {
-            // Disable catching pokemons if enabled
-            this.__internal__selectBallToCatch(Automation.Focus.__defaultCaughtPokeballSelectElem.value);
+            // Reset pokemon catching settings
+            Automation.Focus.__resetBallSelection();
 
             if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")))
             {
@@ -536,7 +536,8 @@ class AutomationFocusQuests
             return;
         }
 
-        this.__internal__selectBallToCatch(Automation.Focus.__defaultCaughtPokeballSelectElem.value);
+        // Reset pokemon catching settings
+        Automation.Focus.__resetBallSelection();
 
         // Move to dungeon if needed
         if (!Automation.Utils.Route.isPlayerInTown(quest.dungeon))
@@ -599,7 +600,9 @@ class AutomationFocusQuests
      */
     static __internal__workOnDefeatPokemonsQuest(quest)
     {
-        this.__internal__selectBallToCatch(Automation.Focus.__defaultCaughtPokeballSelectElem.value);
+        // Use the user's default setting, if no other quest requires pokéball
+        this.__internal__selectBallToCatch(this.__internal__useUserDefaultBall);
+
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         Automation.Utils.Route.moveToRoute(quest.route, quest.region);
@@ -614,7 +617,9 @@ class AutomationFocusQuests
      */
     static __internal__workOnGainGemsQuest(quest)
     {
-        this.__internal__selectBallToCatch(Automation.Focus.__defaultCaughtPokeballSelectElem.value);
+        // Use the user's default setting, if no other quest requires pokéball
+        this.__internal__selectBallToCatch(this.__internal__useUserDefaultBall);
+
         this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
         Automation.Focus.__goToBestGymOrRouteForGem(quest.type);
@@ -638,8 +643,10 @@ class AutomationFocusQuests
         {
             this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
+            // Use the user's default setting, if no other quest requires pokéball
+            this.__internal__selectBallToCatch(this.__internal__useUserDefaultBall);
+
             // Go kill some pokemon
-            this.__internal__selectBallToCatch(Automation.Focus.__defaultCaughtPokeballSelectElem.value);
             Automation.Utils.Route.moveToBestRouteForExp();
         }
     }
@@ -682,26 +689,25 @@ class AutomationFocusQuests
      */
     static __internal__selectBallToCatch(ballTypeToUse, enforceType = false)
     {
-        if (ballTypeToUse == GameConstants.Pokeball.None)
-        {
-            App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
-            return;
-        }
-
         if (!enforceType)
         {
             // Choose the most optimal pokeball, based on the other quests
-            for (const quest of this.__internal__getFilteredCurrentQuests())
+            const quest = this.__internal__getFilteredCurrentQuests().find((quest) => Automation.Utils.isInstanceOf(quest, "UsePokeballQuest"));
+            if (quest)
             {
-                if (Automation.Utils.isInstanceOf(quest, "UsePokeballQuest"))
-                {
-                    ballTypeToUse = quest.pokeball;
-                    enforceType = true;
-                }
+                ballTypeToUse = quest.pokeball;
+                enforceType = true;
             }
         }
 
+        if (ballTypeToUse == this.__internal__useUserDefaultBall)
+        {
+            Automation.Focus.__resetBallSelection();
+            return;
+        }
+
         App.game.pokeballs.alreadyCaughtSelection = ballTypeToUse;
+        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(ballTypeToUse);
 
         // Make sure to always have some balls to catch pokemons
         this.__internal__tryBuyBallIfUnderThreshold(ballTypeToUse, 10);
@@ -726,6 +732,8 @@ class AutomationFocusQuests
             {
                 // No more balls, go farm to buy some
                 App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
+                Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(GameConstants.Pokeball.None);
+
                 Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.Money);
 
                 let bestGym = Automation.Utils.Gym.findBestGymForMoney();

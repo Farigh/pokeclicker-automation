@@ -56,6 +56,7 @@ class AutomationDungeon
     static __internal__dungeonFightButton = null;
     static __internal__dungeonBossCatchPokeballSelectElem = null;
     static __internal__userDefinedPokeballToRestore = null;
+    static __internal__userDefinedContagiousPokeballToRestore = null;
 
     static __internal__isShinyCatchStopMode = false;
     static __internal__floorEndPosition = null;
@@ -165,7 +166,9 @@ class AutomationDungeon
 
         // Add the boss catch option
         const bossCatchPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
-                                       + "pokémons, before fighting the dungeon boss";
+                                       + "pokémons, before fighting the dungeon boss"
+                                       + Automation.Menu.TooltipSeparator
+                                       + "Selecting 'None' will leave the in-game value unchanged";
         this.__internal__dungeonBossCatchPokeballSelectElem =
             Automation.Menu.addPokeballList("selectedDungeonBossCatchPokeball",
                                             dungeonSettingsPanel,
@@ -243,6 +246,7 @@ class AutomationDungeon
                 // Reset the currently used pokeball
                 // (as the player might switch the ball during the dungeon process, the value should only be saved right before the boss fight)
                 this.__internal__userDefinedPokeballToRestore = null;
+                this.__internal__userDefinedContagiousPokeballToRestore = null;
 
                 // Set auto-dungeon loop
                 this.__internal__autoDungeonLoop = setInterval(this.__internal__dungeonFightLoop.bind(this), 50); // Runs every game tick
@@ -258,6 +262,7 @@ class AutomationDungeon
             if (this.__internal__userDefinedPokeballToRestore != null)
             {
                 App.game.pokeballs.alreadyCaughtSelection = this.__internal__userDefinedPokeballToRestore;
+                Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__internal__userDefinedContagiousPokeballToRestore);
             }
         }
     }
@@ -323,6 +328,7 @@ class AutomationDungeon
                 if (this.__internal__userDefinedPokeballToRestore != null)
                 {
                     App.game.pokeballs.alreadyCaughtSelection = this.__internal__userDefinedPokeballToRestore;
+                    Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__internal__userDefinedContagiousPokeballToRestore);
                 }
             }
         }
@@ -421,8 +427,10 @@ class AutomationDungeon
                         {
                             // Save the currently used pokeball
                             this.__internal__userDefinedPokeballToRestore = App.game.pokeballs.alreadyCaughtSelection;
+                            this.__internal__userDefinedContagiousPokeballToRestore = App.game.pokeballs.alreadyCaughtContagiousSelection;
 
                             App.game.pokeballs.alreadyCaughtSelection = ballToCatchBoss;
+                            Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(ballToCatchBoss);
                         }
 
                         DungeonRunner.startBossFight();

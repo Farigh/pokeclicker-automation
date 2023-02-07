@@ -68,7 +68,7 @@ class AutomationFocusPokerusCure
         // Restore pokéball used to catch
         if (this.__internal__pokeballToRestore != null)
         {
-            App.game.pokeballs.alreadyCaughtContagiousSelection = this.__internal__pokeballToRestore;
+            Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__internal__pokeballToRestore);
             this.__internal__pokeballToRestore = null;
         }
     }
@@ -109,7 +109,7 @@ class AutomationFocusPokerusCure
             // Restore pokéball used to catch
             if (this.__internal__pokeballToRestore != null)
             {
-                App.game.pokeballs.alreadyCaughtContagiousSelection = this.__internal__pokeballToRestore;
+                Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__internal__pokeballToRestore);
                 this.__internal__pokeballToRestore = null;
             }
 
@@ -121,7 +121,7 @@ class AutomationFocusPokerusCure
 
         // Equip an "Already caught contagious" pokeball
         this.__internal__pokeballToRestore = App.game.pokeballs.alreadyCaughtContagiousSelection;
-        App.game.pokeballs.alreadyCaughtContagiousSelection = Automation.Focus.__pokeballToUseSelectElem.value;
+        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(Automation.Focus.__pokeballToUseSelectElem.value);
 
         // Move to the best route
         Automation.Utils.Route.moveToRoute(this.__internal__currentRouteData.route.number, this.__internal__currentRouteData.route.region);
