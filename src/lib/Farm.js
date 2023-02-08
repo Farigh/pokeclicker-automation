@@ -58,6 +58,17 @@ class AutomationFarm
         if ((enable !== true) && (enable !== false))
         {
             enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
+
+            if (enable)
+            {
+                // Display the floating panel
+                this.__internal__contentFloatingContainer.hidden = false;
+            }
+            else
+            {
+                // Hide the floating panel
+                this.__internal__contentFloatingContainer.hidden = true;
+            }
         }
 
         if (enable)
@@ -86,6 +97,9 @@ class AutomationFarm
     \*********************************************************************/
 
     static __internal__farmingContainer = null;
+    static __internal__contentFloatingContainer = null;
+    static __internal__contentFloatingContentContainer = null;
+    static __internal__farmInGameModal = null;
 
     static __internal__farmingLoop = null;
 
@@ -99,8 +113,9 @@ class AutomationFarm
     //     harvestStrategy: this.__internal__harvestTimingType,
     //     oakItemToEquip: OakItemType,
     //     forbiddenOakItems: Array of OakItemType,
-    //     requiredPokemon: String,
+    //     requiredPokemon: string,
     //     requiresDiscord: boolean,
+    //     setFoatingPanelContent: function(),
     //     action: function()
     // }
     static __internal__unlockStrategySelection = [];
@@ -110,6 +125,7 @@ class AutomationFarm
     static __internal__plantedBerryCount = 0;
 
     static __internal__currentStrategy = null;
+    static __internal__lastFarmingBerryType = null;
 
     /**
      * @brief Builds the menu
@@ -178,9 +194,40 @@ class AutomationFarm
         }
         unlockButton.addEventListener("click", function()
                                       {
+                                           // Disable the HarvestLate feature when unlocks focus is enabled
                                            const disableState = (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true");
                                            Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, disableState, disableReason);
+
+                                           if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true")
+                                           {
+                                               // Update the floating panel content
+                                               this.__internal__updateFloatingPanel();
+
+                                               // Run the loop
+                                               this.__internal__farmLoop();
+                                           }
                                       }.bind(this), false);
+
+        this.__internal__buildFloatingModal();
+    }
+
+    /**
+     * @brief Builds the floating panel that will be displayed next to the in-game farming modal
+     */
+    static __internal__buildFloatingModal()
+    {
+        // Store the in-game modal internally
+        this.__internal__farmInGameModal = document.getElementById("farmModal");
+
+        const farmTitle = '🌾Farming 🌾';
+        const categoryContainer = Automation.Menu.addFloatingCategory("automationFarmingModal", farmTitle, this.__internal__farmInGameModal);
+        this.__internal__contentFloatingContainer = categoryContainer.parentElement;
+        this.__internal__contentFloatingContainer.hidden = true;
+
+        this.__internal__contentFloatingContentContainer = document.createElement("div");
+        this.__internal__contentFloatingContentContainer.style.textAlign = "center";
+        this.__internal__contentFloatingContentContainer.style.padding = "4px";
+        categoryContainer.appendChild(this.__internal__contentFloatingContentContainer);
     }
 
     /**
@@ -222,9 +269,19 @@ class AutomationFarm
                 this.__internal__equipOakItemIfNeeded();
                 this.__internal__currentStrategy.action();
 
+                this.__internal__lastFarmingBerryType = null;
+
                 return;
             }
         }
+        else
+        {
+            // Invalidate the last strategy
+            this.__internal__currentStrategy = null;
+        }
+
+        // Update the floating content panel if needed
+        this.__internal__updateFloatingPanel();
 
         // Otherwise, fallback to planting berries
         this.__internal__plantAllBerries();
@@ -236,6 +293,50 @@ class AutomationFarm
         }
     }
 
+    /**
+     * @brief Updates the floating panel content if needed
+     */
+    static __internal__updateFloatingPanel()
+    {
+        // Never update if the feature is not enabled
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) !== "true")
+        {
+            return;
+        }
+
+        if (this.__internal__currentStrategy)
+        {
+            this.__internal__lastFarmingBerryType = null;
+            this.__internal__currentStrategy.setFoatingPanelContent();
+            return;
+        }
+
+        // Only update the floating content panel if needed
+        const selectedBerryType = FarmController.selectedBerry();
+        if (this.__internal__lastFarmingBerryType != selectedBerryType)
+        {
+            const textPrefix = document.createTextNode("Currently planting ");
+
+            const berryImage = document.createElement("img");
+            const berryName = BerryType[selectedBerryType];
+            berryImage.src = `assets/images/items/berry/${berryName}.png`;
+            berryImage.style.height = "20px";
+
+            const textSuffix = document.createTextNode(`${berryName} berries`);
+
+            this.__internal__contentFloatingContentContainer.innerHTML = "";
+            this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+            this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+            this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+            this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+
+            this.__internal__lastFarmingBerryType = selectedBerryType;
+        }
+    }
+
+    /**
+     * @brief Equips the needed Oak item, if the player did not disable the feature
+     */
     static __internal__equipOakItemIfNeeded()
     {
         if ((this.__internal__currentStrategy.oakItemToEquip === null)
@@ -260,6 +361,9 @@ class AutomationFarm
         }
     }
 
+    /**
+     * @brief Removes the unwanted Oak item, if the player did not disable the feature
+     */
     static __internal__removeOakItemIfNeeded()
     {
         if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true")
@@ -1016,13 +1120,38 @@ class AutomationFarm
                 forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        let textPrefix;
+                        if (!App.game.farming.unlockedBerries[BerryType.Kasib]())
+                        {
+                            textPrefix = document.createTextNode("Currently trying to unlock the ");
+                        }
+                        else
+                        {
+                            textPrefix = document.createTextNode("Currently trying to gather at least one ");
+                        }
+
+                        const berryImage = document.createElement("img");
+                        const berryName = BerryType[BerryType.Kasib];
+                        berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                        berryImage.style.height = "20px";
+
+                        const textSuffix = document.createTextNode(`${berryName} berry`);
+
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+                        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+                        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+                    }.bind(this),
                 action: function ()
                     {
                         for (const index of App.game.farming.plotList.keys())
                         {
-                            Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
+                            this.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
                         }
-                    }
+                    }.bind(this)
             });
 
         // #50 Unlock at least one Haban berry through mutation
@@ -1083,6 +1212,23 @@ class AutomationFarm
                 forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        const textPrefix = document.createTextNode("Currently waiting to harvest any remaining berries, before unlocking the ");
+
+                        const berryImage = document.createElement("img");
+                        const berryName = BerryType[BerryType.Chilan];
+                        berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                        berryImage.style.height = "20px";
+
+                        const textSuffix = document.createTextNode(`${berryName} berry`);
+
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+                        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+                        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+                    }.bind(this),
                 action: function() {}
             });
 
@@ -1106,6 +1252,31 @@ class AutomationFarm
                 forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        let textPrefix;
+                        if (!App.game.farming.unlockedBerries[BerryType.Kasib]())
+                        {
+                            textPrefix = document.createTextNode("Currently trying to unlock the ");
+                        }
+                        else
+                        {
+                            textPrefix = document.createTextNode("Currently trying to gather at least one ");
+                        }
+
+                        const berryImage = document.createElement("img");
+                        const berryName = BerryType[BerryType.Chilan];
+                        berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                        berryImage.style.height = "20px";
+
+                        const textSuffix = document.createTextNode(`${berryName} berry`);
+
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+                        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+                        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+                    }.bind(this),
                 action: function()
                 {
                     // Nothing planted, plant the first batch
@@ -1322,6 +1493,30 @@ class AutomationFarm
                 forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        let slotPosition;
+                        if ((slotIndex != 10) && (slotIndex % 10) == 0)
+                        {
+                            slotPosition = `${slotIndex + 1}st`;
+                        }
+                        else if ((slotIndex != 11) && (slotIndex % 10) == 1)
+                        {
+                            slotPosition = `${slotIndex + 1}nd`;
+                        }
+                        else if ((slotIndex != 12) && (slotIndex % 10) == 2)
+                        {
+                            slotPosition = `${slotIndex + 1}rd`;
+                        }
+                        else
+                        {
+                            slotPosition = `${slotIndex + 1}th`;
+                        }
+
+                        const textElem = document.createTextNode(`Currently trying to unlock the ${slotPosition} slot`);
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textElem);
+                    }.bind(this),
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
@@ -1368,7 +1563,44 @@ class AutomationFarm
                 oakItemToEquip: oakItemNeeded,
                 forbiddenOakItems: oakItemsToRemove,
                 requiredPokemon: requiredPokemonName,
-                requiresDiscord: false
+                requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        let textPrefix;
+                        let berrySpelling = "berry";
+                        if (!App.game.farming.unlockedBerries[BerryType.Kasib]())
+                        {
+                            textPrefix = document.createTextNode("Currently trying to unlock the ");
+                        }
+                        else
+                        {
+                            let countStr;
+                            if (minimumRequiredBerry == 1)
+                            {
+                                countStr = "one";
+                            }
+                            else
+                            {
+                                countStr = minimumRequiredBerry;
+                                berrySpelling = "berries";
+                            }
+
+                            textPrefix = document.createTextNode(`Currently trying to gather at least ${countStr} `);
+                        }
+
+                        const berryImage = document.createElement("img");
+                        const berryName = BerryType[berryType];
+                        berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                        berryImage.style.height = "20px";
+
+                        const textSuffix = document.createTextNode(`${berryName} ${berrySpelling}`);
+
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+                        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+                        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+                    }.bind(this)
             };
 
         this.__internal__setSlotConfigStrategy(step, berriesIndexes);
@@ -1397,6 +1629,35 @@ class AutomationFarm
                 forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        let countStr;
+                        let berrySpelling = "berry";
+                        if (minimumRequiredBerry == 1)
+                        {
+                            countStr = "one";
+                        }
+                        else
+                        {
+                            countStr = minimumRequiredBerry;
+                            berrySpelling = "berries";
+                        }
+
+                        const textPrefix = document.createTextNode(`Currently trying to gather at least ${countStr} `);
+
+                        const berryImage = document.createElement("img");
+                        const berryName = BerryType[berryType];
+                        berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                        berryImage.style.height = "20px";
+
+                        const textSuffix = document.createTextNode(`${berryName} ${berrySpelling}`);
+
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+                        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+                        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+                    }.bind(this),
                 // If not, then farm some needed berries
                 action: function()
                 {
@@ -1503,6 +1764,53 @@ class AutomationFarm
                 forbiddenOakItems: [],
                 requiredPokemon: null,
                 requiresDiscord: false,
+                setFoatingPanelContent: function()
+                    {
+                        const textPrefix = document.createTextNode(`Currently trying to gather at least ${berriesMinAmount} of the following berries:`);
+
+                        const berryList = document.createElement("div");
+                        berryList.style.margin = "auto";
+                        berryList.style.textAlign = "left";
+                        berryList.style.width = "fit-content";
+
+                        let listedCount = 0;
+                        for (const berryType of berriesToGather)
+                        {
+                            // Don't list berries that reached the needed amount
+                            if (App.game.farming.berryList[berryType]() >= berriesMinAmount)
+                            {
+                                continue;
+                            }
+
+                            // List up to 8 berries
+                            if (listedCount == 8)
+                            {
+                                berryList.appendChild(document.createElement("br"));
+                                berryList.appendChild(document.createTextNode("- and more..."));
+                                break;
+                            }
+
+                            if (listedCount > 0)
+                            {
+                                berryList.appendChild(document.createElement("br"));
+                            }
+                            listedCount++;
+
+                            berryList.appendChild(document.createTextNode("- "));
+
+                            const berryImage = document.createElement("img");
+                            const berryName = BerryType[berryType];
+                            berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                            berryImage.style.height = "20px";
+                            berryList.appendChild(berryImage);
+
+                            berryList.appendChild(document.createTextNode(berryName));
+                        }
+
+                        this.__internal__contentFloatingContentContainer.innerHTML = "";
+                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                        this.__internal__contentFloatingContentContainer.appendChild(berryList);
+                    }.bind(this),
                 // If not, then farm some needed berries
                 action: function()
                 {
@@ -1547,12 +1855,10 @@ class AutomationFarm
     }
 
     /**
-     * @brief Chooses the next unlock strategy based on the current farming state
+     * @brief Tries to find the next unlock strategy and set the internal member accordingly
      */
-    static __internal__chooseUnlockStrategy()
+    static __internal__trySetNextUnlockStrategy()
     {
-        this.__internal__currentStrategy = null;
-
         for (const strategy of this.__internal__unlockStrategySelection)
         {
             // Don't consider strategies if the berry cannot be unlocked and it was flagged as optionnal
@@ -1564,12 +1870,30 @@ class AutomationFarm
 
             if (strategy.isNeeded())
             {
-                this.__internal__currentStrategy = strategy;
-                break;
+                if (this.__internal__currentStrategy != strategy)
+                {
+                    this.__internal__currentStrategy = strategy;
+
+                    // Only update the panel if the strategy changed
+                    this.__internal__updateFloatingPanel();
+                }
+
+                return;
             }
         }
 
-        // If no strategy can be found, turn off the feature and disable the button
+        // No strategy found, drop the previous value
+        this.__internal__currentStrategy = null;
+    }
+
+    /**
+     * @brief Chooses the next unlock strategy based on the current farming state
+     */
+    static __internal__chooseUnlockStrategy()
+    {
+        this.__internal__trySetNextUnlockStrategy();
+
+        // If no strategy was found, turn off the feature and disable the button
         if (this.__internal__currentStrategy === null)
         {
             this.__internal__disableAutoUnlock("No more automated unlock possible");

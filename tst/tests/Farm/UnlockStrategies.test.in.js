@@ -1,5 +1,8 @@
 import "tst/utils/tests.utils.js";
 
+// Browser document object stub
+import "tst/stubs/document.browser.stub.js";
+
 // Import pokéclicker App
 import "tst/imports/Pokeclicker.import.js";
 
@@ -39,6 +42,10 @@ class Automation
         static Finalize = 1;
     };
 }
+
+// Set a stub object for the tests
+Automation.Farm.__internal__contentFloatingContainer = __test__stubs__getHTMLElementStub();
+Automation.Farm.__internal__contentFloatingContentContainer = __test__stubs__getHTMLElementStub();
 
 // Disable warning notifications
 Automation.Notifications.sendWarningNotif = function() {};
@@ -218,11 +225,11 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
         }
         else if (currentBerryTime != lastBerryTime)
         {
-            berryPlantOrder.push([...berryPlantOrder[berryPlantOrder.length - 1]]);
+            berryPlantOrder.push([...berryPlantOrder.at(-1)]);
         }
         lastBerryTime = currentBerryTime;
 
-        berryPlantOrder[berryPlantOrder.length - 1].push(berryType);
+        berryPlantOrder.at(-1).push(berryType);
     }
 
     const targetAge = App.game.farming.berryData[expectedOrder[0]].growthTime[PlotStage.Bloom];
