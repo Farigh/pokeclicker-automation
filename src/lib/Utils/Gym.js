@@ -203,7 +203,7 @@ class AutomationUtilsGym
                 {
                     let gemTypeData = this.__internal__gymGemTypeMap.get(type);
 
-                    if ((gemTypeData.length == 0) || gemTypeData[gemTypeData.length - 1].gymName != gymName)
+                    if ((gemTypeData.length == 0) || gemTypeData.at(-1).gymName != gymName)
                     {
                         let gymTown = gym.town;
                         // If a ligue champion is the target, the gymTown points to the champion instead of the town
@@ -229,7 +229,7 @@ class AutomationUtilsGym
                     }
                     else
                     {
-                        gemTypeData[gemTypeData.length - 1].pokemonMathingType += 1;
+                        gemTypeData.at(-1).pokemonMathingType += 1;
                     }
                 }
             }

@@ -26,7 +26,6 @@ class AutomationBattleCafe
     \*********************************************************************/
 
     static __internal__battleCafeInGameModal = null;
-    static __internal__battleCafePanel = null;
     static __internal__battleCafeSweetContainers = [];
     static __internal__currentlyVisibleSweet = null;
     static __internal__caughtPokemonIndicators = new Map();
@@ -42,7 +41,6 @@ class AutomationBattleCafe
         let battleCafeTitle = '☕ Battle Café ☕';
         const battleCafeContainer =
             Automation.Menu.addFloatingCategory("automationBattleCafe", battleCafeTitle, this.__internal__battleCafeInGameModal);
-        this.__internal__battleCafePanel = battleCafeContainer.parentElement;
 
         this.__internal__addInfo(null, -1, battleCafeContainer);
 

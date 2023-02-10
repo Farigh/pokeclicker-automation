@@ -114,6 +114,32 @@ class AutomationMenu
         // Doing so will automatically hide/show it at the same time as the targeted modal
         ingameModal.appendChild(container);
 
+        // Initialize the floating panel resize observer, if needed
+        if (this.__internal__floatingPanelResizeObserver == null)
+        {
+            // Add a resize observer that updates the floating panel top property so it will always be positionned correctly
+            this.__internal__floatingPanelResizeObserver = new ResizeObserver(function(entries)
+                {
+                    for (const entry of entries)
+                    {
+                        const panelDiv = entry.target;
+
+                        // When the in-game modal is hidden, the div size will be 0
+                        if (panelDiv.offsetHeight == 0)
+                        {
+                            // Don't compute
+                            return;
+                        }
+
+                        // Position it at least 30px and at most 200px from the top, with at least a 30px bottom margin to match the in-game ones
+                        panelDiv.style.top = `max(30px, min(200px, 100vh - ${panelDiv.offsetHeight}px - 30px))`;
+                    }
+                });
+        }
+
+        // Add the new category to the observer
+        this.__internal__floatingPanelResizeObserver.observe(container);
+
         return contentDiv;
     }
 
@@ -819,6 +845,7 @@ class AutomationMenu
     \*********************************************************************/
 
     static __internal__automationContainer = null;
+    static __internal__floatingPanelResizeObserver = null;
     static __internal__lockedBalls = [];
     static __internal__pokeballListElems = [];
 
@@ -1005,8 +1032,7 @@ class AutomationMenu
             }
             .automationFloatingCategory
             {
-                top: 50%;
-                transform: translateY(-50%);
+                top: 50px;
                 left: calc(50% + 400px);
                 border-top-left-radius: 0px;
                 border-bottom-left-radius: 0px;
