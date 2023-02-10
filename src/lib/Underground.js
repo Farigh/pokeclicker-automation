@@ -454,7 +454,7 @@ class AutomationUnderground
      *    - If the item is revealed (at least one tile is revealed)
      *    - The status of each tile of the item:
      *        - Its x and y coordinates
-     *        - Wether it's revealed
+     *        - Whether it's revealed
      *        - How many layers it's covered with
      *
      * @returns The gathered information
