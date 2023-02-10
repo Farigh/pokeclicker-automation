@@ -1364,7 +1364,7 @@ class AutomationFarm
         |*   Gen 2   *|
         \*************/
 
-        // #20 Unlock and gather at least 24 Lum berry through mutation
+        // #20 Unlock and gather at least 1 Lum berry through mutation
         const lumConfig = {};
         lumConfig[BerryType.Sitrus] = [ 0, 4, 20, 24 ];
         lumConfig[BerryType.Oran] = [ 1, 3, 21, 23 ];
@@ -1374,7 +1374,10 @@ class AutomationFarm
         lumConfig[BerryType.Rawst] = [ 10, 14 ];
         lumConfig[BerryType.Chesto] = [ 11, 13 ];
         lumConfig[BerryType.Cheri] = [ 12 ];
-        this.__internal__addUnlockMutationStrategy(BerryType.Lum, lumConfig, 24);
+        this.__internal__addUnlockMutationStrategy(BerryType.Lum, lumConfig, 1);
+
+        // Then try to get 24 of them
+        this.__internal__increaseHarvestRateStrategy(BerryType.Lum, 24);
     }
 
     /**

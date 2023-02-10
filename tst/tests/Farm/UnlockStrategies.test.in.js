@@ -204,7 +204,6 @@ function checkCurrentLayout(orderIndex, expectedConfig, expectedOrder)
             continue;
         }
 
-        // Expect any other slot to be empty
         expect(plot.isEmpty()).toBe(true);
     }
 }
@@ -2313,9 +2312,6 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         // Expect the strategy to be pointing to the right one
         expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[91]);
 
-        // Give the player 23 Lum berries, since this step requires to get 24 of them, it would block the next test
-        App.game.farming.__berryListCount[BerryType.Lum] = 23;
-
         // The layout should look like that
         // |a|b|c|b|a|
         // |d| |e| |d|  with:  a : Sitrus    d : Leppa    g : Chesto
@@ -2337,6 +2333,29 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
     });
 
     // Test the 93rd unlock
+    test('Farm 24 Lum berries', () =>
+    {
+        // Expect the strategy to be pointing to the right one
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[92]);
+
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|b|a| |a|  with:  a : Passho
+        // |a|a|a|a|a|         b : Lum
+        // |a| |a| |a|
+        // |a|a|a|a|a|
+        const expectedConfig = {};
+        expectedConfig[BerryType.Lum] = [ 6 ];
+        expectedConfig[BerryType.Passho] = App.game.farming.plotList.map((_, index) => index).filter(index => ![ 6, 8, 16, 18].includes(index));
+        const expectedOrder = [ BerryType.Passho, BerryType.Lum ];
+        runBerryMutationTest(BerryType.Lum, expectedConfig, expectedOrder);
+
+        // Give the player 24 Lum berries, to move to the next farming strategy
+        App.game.farming.__berryListCount[BerryType.Lum] = 24;
+        Automation.Farm.__internal__farmLoop();
+    });
+
+    // Test the 94th unlock
     test('Unlock Enigma berry', () =>
     {
         expectFocusOnUnlocksToBeDisabled(function()
@@ -2367,7 +2386,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         Automation.Farm.__internal__farmLoop();
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[92]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[93]);
 
         // Check the stategy needed pokemon
         expect(Automation.Farm.__internal__currentStrategy.requiresDiscord).toBe(true);
