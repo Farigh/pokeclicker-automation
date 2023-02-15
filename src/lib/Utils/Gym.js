@@ -55,9 +55,12 @@ class AutomationUtilsGym
                 continue;
             }
 
-            const currentGymClickAttack = Automation.Utils.Route.isInMagikarpJumpIsland(gymData.region, gymData.subRegion)
-                                        ? magikarpPlayerClickAttack
-                                        : playerClickAttack;
+            const isMagikarpJump = Automation.Utils.Route.isInMagikarpJumpIsland(gymData.region, gymData.subRegion);
+            const gymRegion = isMagikarpJump ? Automation.Utils.Battle.SpecialRegion.MagikarpJump
+                                             : gymData.region;
+
+            const currentGymClickAttack = isMagikarpJump ? magikarpPlayerClickAttack
+                                                         : playerClickAttack;
 
             let currentGymGemPerTick = 0;
             for (const pokemon of gym.pokemons)
@@ -69,7 +72,7 @@ class AutomationUtilsGym
                 }
 
                 const currentPokemonTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
-                    pokemon.maxHealth, currentGymClickAttack, totalAtkPerSecondByRegion[gymData.region]);
+                    pokemon.maxHealth, currentGymClickAttack, totalAtkPerSecondByRegion.get(gymRegion));
                 currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
             }
 

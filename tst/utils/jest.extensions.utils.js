@@ -7,7 +7,7 @@ expect.extend(
 
         for (const [ index, data ] of received.entries())
         {
-            let expectedData = expected[index];
+            let expectedData = (expected instanceof Map) ? expected.get(index) : expected[index];
             if (expectedData != data)
             {
                 errorBuffer += `Data at index '${index}' does not match\n`

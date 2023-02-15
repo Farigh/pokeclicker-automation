@@ -3,6 +3,8 @@
  */
 class AutomationUtilsBattle
 {
+    static SpecialRegion = { MagikarpJump: "MagikarpJump" };
+
     /**
      * @brief Initializes the class members
      *
@@ -73,6 +75,13 @@ class AutomationUtilsBattle
         let attack = 0;
         for (const pokemon of App.game.party.caughtPokemon)
         {
+            // Magikarp Jump only considers magikarps
+            if ((region == this.SpecialRegion.MagikarpJump)
+                && (Math.floor(pokemon.id) != 129))
+            {
+                continue;
+            }
+
             if (!this.__internal__PokemonAttackMap.has(pokemon.id))
             {
                 continue;
@@ -162,16 +171,20 @@ class AutomationUtilsBattle
      *
      * @param {number} playerClickAttack: The current player click attack
      *
-     * @returns The list of lowest possible attack for each region
+     * @returns The map of lowest possible attack for each region
      */
     static getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack)
     {
-        let worstAtks = [];
+        // Populate the list with pokeclicker regular regions
+        let regionList = Array.from(Array(GameConstants.MAX_AVAILABLE_REGION + 1).keys());
 
-        // Populate the list
-        for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
+        // Add the MagikarpJump special region
+        regionList.push(this.SpecialRegion.MagikarpJump);
+
+        let worstAtks = new Map();
+        for (const regionId of regionList)
         {
-            worstAtks.push((20 * playerClickAttack) + this.getPlayerWorstPokemonAttack(regionId));
+            worstAtks.set(regionId, (20 * playerClickAttack) + this.getPlayerWorstPokemonAttack(regionId));
         }
 
         return worstAtks;
@@ -188,7 +201,8 @@ class AutomationUtilsBattle
     {
         let worstAtk = Number.MAX_SAFE_INTEGER;
 
-        let weatherType = Weather.regionalWeather[region]();
+        const weatherType = (region == this.SpecialRegion.MagikarpJump) ? Weather.regionalWeather[GameConstants.Region.alola]()
+                                                                        : Weather.regionalWeather[region]();
 
         for (const type of Array(Gems.nTypes).keys())
         {
