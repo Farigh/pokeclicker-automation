@@ -236,9 +236,10 @@ test('Check getPlayerWorstAttackPerSecondForAllRegions() output', () =>
     let playerClickAttack = 1000;
     let result = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
-    expect(result.length).toEqual(GameConstants.MAX_AVAILABLE_REGION + 1);
+    expect(result.size).toEqual(GameConstants.MAX_AVAILABLE_REGION + 2);
 
-    let expectedResult = [ 22452, 22012, 22216, 22175, 21903, 21598, 21709 ];
+    let expectedResult = new Map([ [ 0, 22452 ], [ 1, 22012 ], [ 2, 22216 ], [ 3, 22175 ], [ 4, 21903 ], [ 5, 21598 ], [ 6, 21709 ],
+                                   [ Automation.Utils.Battle.SpecialRegion.MagikarpJump, 20000 ] ]);
 
     // Check consistency
     expect(result).toBeEqualToRange(expectedResult);
@@ -251,7 +252,8 @@ test('Check getPlayerWorstAttackPerSecondForAllRegions() output', () =>
 
     // Ensure the values were updated
     result = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
-    expectedResult = [ 22452, 22012, 22217, 22175, 21904, 21598, 21709 ];
+    expectedResult = new Map([ [ 0, 22452 ], [ 1, 22012 ], [ 2, 22217 ], [ 3, 22175 ], [ 4, 21904 ], [ 5, 21598 ], [ 6, 21709 ],
+                               [ Automation.Utils.Battle.SpecialRegion.MagikarpJump, 20000 ] ]);
     expect(result).toBeEqualToRange(expectedResult);
 });
 

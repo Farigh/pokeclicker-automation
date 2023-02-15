@@ -167,9 +167,19 @@ class AutomationUtilsRoute
         const playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
 
         // In case click attack is 0, use the pokemon attack instead (no-click challenge)
-        const playerSingleAttackByRegion = (playerClickAttack == 0)
-                                         ? Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack)
-                                         : Array(GameConstants.MAX_AVAILABLE_REGION + 1).fill(playerClickAttack);
+        let playerSingleAttackByRegion;
+        if (playerClickAttack == 0)
+        {
+            playerSingleAttackByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
+        }
+        else
+        {
+            playerSingleAttackByRegion = new Map();
+            for (let regionId = GameConstants.Region.kanto; regionId <= GameConstants.MAX_AVAILABLE_REGION; regionId++)
+            {
+                playerSingleAttackByRegion.set(regionId, playerClickAttack);
+            }
+        }
 
         // We need to find a new road if:
         //    - The highest region changed
@@ -177,9 +187,9 @@ class AutomationUtilsRoute
         //    - We are currently on the highest route of the map
         //    - The next best route is still over-powered
         const needsNewRoad = (this.__internal__lastHighestRegion !== player.highestRegion())
-                          || (this.__internal__lastBestRouteData.maxHealth > playerSingleAttackByRegion[this.__internal__lastBestRouteData.route.region])
+                          || (this.__internal__lastBestRouteData.maxHealth > playerSingleAttackByRegion.get(this.__internal__lastBestRouteData.route.region))
                           || ((this.__internal__lastNextBestRouteData != null)
-                              && (this.__internal__lastNextBestRouteData.maxHealth < playerSingleAttackByRegion[this.__internal__lastNextBestRouteData.route.region]));
+                              && (this.__internal__lastNextBestRouteData.maxHealth < playerSingleAttackByRegion.get(this.__internal__lastNextBestRouteData.route.region)));
 
         if (needsNewRoad)
         {
@@ -203,7 +213,7 @@ class AutomationUtilsRoute
                     continue;
                 }
 
-                if (routeData.maxHealth < playerSingleAttackByRegion[routeData.route.region])
+                if (routeData.maxHealth < playerSingleAttackByRegion.get(routeData.route.region))
                 {
                     this.__internal__lastBestRouteData = routeData;
 
@@ -280,8 +290,8 @@ class AutomationUtilsRoute
             let routeIncome = this.__internal__routeRawIncomeMap.get(route.region).get(route.number) * dungeonTokenBonus * (currentRouteRate / 100);
 
             const routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-            const nbGameTickToDefeat =
-                Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecondByRegion[route.region]);
+            const nbGameTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
+                routeAvgHp, playerClickAttack, totalAtkPerSecondByRegion.get(route.region));
             routeIncome = (routeIncome / (nbGameTickToDefeat + catchTimeTicks));
 
             // Compare with a 1/1000 precision
@@ -349,8 +359,8 @@ class AutomationUtilsRoute
             let currentRouteRate = currentRouteCount / pokemons.length;
 
             const routeAvgHp = PokemonFactory.routeHealth(route.number, route.region);
-            const nbGameTickToDefeat =
-                Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(routeAvgHp, playerClickAttack, totalAtkPerSecondByRegion[route.region]);
+            const nbGameTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
+                routeAvgHp, playerClickAttack, totalAtkPerSecondByRegion.get(route.region));
             currentRouteRate = currentRouteRate / nbGameTickToDefeat;
 
             // Compare with a 1/1000 precision
