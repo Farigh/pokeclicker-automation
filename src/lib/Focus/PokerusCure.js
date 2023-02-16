@@ -34,9 +34,34 @@ class AutomationFocusPokerusCure
             });
     }
 
+    /**
+     * @brief Builds the 'Focus on Pokérus Cure' advanced settings tab
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __buildAdvancedSettings(parent)
+    {
+        // Disable Beastball usage by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.AllowBeastBallUsage, false);
+
+        // OakItem loadout setting
+        const tooltip = "Allows the automation to use Beastball to catch UltraBeast pokémons."
+                      + Automation.Menu.TooltipSeparator
+                      + "If this option is disabled, or you don't have Beastballs,\n"
+                      + "UltraBeast pokémons will be ignored.";
+        const button = Automation.Menu.addLabeledAdvancedSettingsToggleButton("Use Beastballs to catch UltraBeast pokémons",
+                                                                              this.__internal__advancedSettings.AllowBeastBallUsage,
+                                                                              tooltip,
+                                                                              parent);
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
+
+    static __internal__advancedSettings = {
+        AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage"
+    };
 
     static __internal__pokerusCureLoop = null;
     static __internal__pokerusRouteData = [];
@@ -121,7 +146,11 @@ class AutomationFocusPokerusCure
 
         // Equip an "Already caught contagious" pokeball
         this.__internal__pokeballToRestore = App.game.pokeballs.alreadyCaughtContagiousSelection;
-        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(Automation.Focus.__pokeballToUseSelectElem.value);
+
+        const pokeballToUse = (this.__internal__currentRouteData.needsBeastBall) ? GameConstants.Pokeball.Beastball
+                                                                                 : Automation.Focus.__pokeballToUseSelectElem.value;
+
+        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(pokeballToUse);
 
         // Move to the best route
         Automation.Utils.Route.moveToRoute(this.__internal__currentRouteData.route.number, this.__internal__currentRouteData.route.region);
@@ -143,6 +172,9 @@ class AutomationFocusPokerusCure
         // Set the next best route
         this.__internal__currentRouteData = this.__internal__pokerusRouteData.find(
             (data) => this.__internal__doesAnyPokemonNeedCuring(data.route, true), this);
+
+        // Determine if the beast ball is the only catching option
+        this.__internal__currentRouteData.needsBeastBall = this.__internal__doesRouteNeedBeastBalls(this.__internal__currentRouteData.route);
     }
 
     /**
@@ -163,6 +195,7 @@ class AutomationFocusPokerusCure
      * @brief Checks if any pokémon from the given @p route needs to be cured
      *
      * @param route: The route to check
+     *
      * @param {boolean} onlyConsiderAvailableContagiousPokemons: Whether only currently available and contagious pokémon should be considered
      *
      * @returns True if every pokémons are cured, false otherwise
@@ -172,23 +205,43 @@ class AutomationFocusPokerusCure
         const pokemonList = onlyConsiderAvailableContagiousPokemons ? RouteHelper.getAvailablePokemonList(route.number, route.region)
                                                                     : this.__internal__getEveryPokemonForRoute(route);
 
-        for (const pokemonName of pokemonList)
-        {
-            const pokemon = App.game.party.getPokemonByName(pokemonName);
+        // Skip UltraBeast pokémons if the player disabled the feature or there is no Beastball left
+        const skipUltraBeasts = (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.AllowBeastBallUsage) == "false")
+                             || (App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Beastball) === 0);
 
-            // A pokémon is a candidate to catch if
-            //  - It's not already cured
-            //  - It's contagious or we are listing every uncured pokemon
-            const isCandidatePokemon = (pokemon?.pokerus != GameConstants.Pokerus.Resistant)
-                                    && (!onlyConsiderAvailableContagiousPokemons || (pokemon?.pokerus == GameConstants.Pokerus.Contagious));
-
-            if (isCandidatePokemon)
+        return pokemonList.some((pokemonName) =>
             {
-                return true;
-            }
-        }
+                const pokemon = App.game.party.getPokemonByName(pokemonName);
 
-        return false;
+                if (onlyConsiderAvailableContagiousPokemons && skipUltraBeasts && (GameConstants.UltraBeastType[pokemonName] != undefined))
+                {
+                    return false;
+                }
+
+                // A pokémon is a candidate to catch if
+                //  - It's not already cured
+                //  - It's contagious or we are listing every uncured pokemon
+                return (pokemon?.pokerus != GameConstants.Pokerus.Resistant)
+                    && (!onlyConsiderAvailableContagiousPokemons || (pokemon?.pokerus == GameConstants.Pokerus.Contagious))
+            });
+    }
+
+    /**
+     * @brief Determines if the given @p route only contains contagious UltraBeasts.
+     *        In such case the beast ball is the only possible pokeball to catch them.
+     *
+     * @param route: The route to check
+     *
+     * @returns True if the route only contains contagious UltraBeasts, false otherwise.
+     */
+    static __internal__doesRouteNeedBeastBalls(route)
+    {
+        return RouteHelper.getAvailablePokemonList(route.number, route.region).every((pokemonName) =>
+            {
+                const pokemon = App.game.party.getPokemonByName(pokemonName);
+                return (pokemon?.pokerus != GameConstants.Pokerus.Contagious)
+                    || (GameConstants.UltraBeastType[pokemonName] != undefined)
+            });
     }
 
     /**
