@@ -336,6 +336,13 @@ class AutomationFocus
 
         const achievementsTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Achievements", focusSettingsTabsGroup);
         this.Achievements.__buildAdvancedSettings(achievementsTabContainer);
+
+        /***************************\
+        |*  Pokérus Cure settings  *|
+        \***************************/
+
+        const pokerusCureTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Pokérus Cure", focusSettingsTabsGroup);
+        this.PokerusCure.__buildAdvancedSettings(pokerusCureTabContainer);
     }
 
     /**
