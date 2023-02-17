@@ -17,21 +17,4 @@ class FarmController
 
         plot.__isEmpty = true;
     }
-
-    static selectedBerry(selectBerry = null)
-    {
-        if (selectBerry != null)
-        {
-            this.__selectedBerry = selectBerry;
-        }
-
-        return this.__selectedBerry;
-    }
-
-    /***************************\
-    |*   Test-only interface   *|
-    \***************************/
-
-    // Select Cheri berry by default
-    static __selectedBerry = BerryType.Cheri;
 }

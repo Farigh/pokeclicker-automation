@@ -380,7 +380,7 @@ class AutomationMenu
      *
      * @param {Array}  options: The options to register, the following data is expected { element, value, selected }
      * @param {string} label: The text label to place before the list
-     * @param {string} tooltip: The tooltip text to display upon hovering the list or the label (leave blank to disable)
+     * @param {string} tooltip: The tooltip text to display upon hovering the label (leave blank to disable)
      *
      * @returns The created element container (It's the caller's responsibility to add it to the DOM at some point)
      */
@@ -391,14 +391,16 @@ class AutomationMenu
         container.style.paddingLeft = "10px";
         container.style.paddingRight = "10px";
 
+        // Add the list label
+        const labelElem = document.createElement("span");
+        labelElem.innerText = `${label} :`;
+        container.appendChild(labelElem);
+
         if (tooltip != "")
         {
-            container.classList.add("hasAutomationTooltip");
-            container.setAttribute("automation-tooltip-text", tooltip);
+            labelElem.classList.add("hasAutomationTooltip");
+            labelElem.setAttribute("automation-tooltip-text", tooltip);
         }
-
-        // Add the list label
-        container.appendChild(document.createTextNode(`${label} :`));
 
         // Add the list container
         const listContainer = document.createElement("div");
@@ -896,8 +898,8 @@ class AutomationMenu
 
         this.__internal__populatePokeballOptions(savedValue, selectElem, addNoneOption);
 
-        // Set a watcher in case some balls are not unloced yet
-        if (this.__internal__pokeballListElems.length == 0)
+        // Set a watcher in case some balls are not unlocked yet
+        if (this.__internal__lockedBalls.length != 0)
         {
             const watcher = setInterval(function()
             {
