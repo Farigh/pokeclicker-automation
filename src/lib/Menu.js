@@ -376,6 +376,142 @@ class AutomationMenu
     }
 
     /**
+     * @brief Creates a dropdown list that accepts HTML as option's content
+     *
+     * @param {Array}  options: The options to register, the following data is expected { element, value, selected }
+     * @param {string} label: The text label to place before the list
+     * @param {string} tooltip: The tooltip text to display upon hovering the list or the label (leave blank to disable)
+     *
+     * @returns The created element container (It's the caller's responsibility to add it to the DOM at some point)
+     */
+    static createDropdownListWithHtmlOptions(options, label, tooltip = "")
+    {
+        // Add the main container
+        const container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+
+        if (tooltip != "")
+        {
+            container.classList.add("hasAutomationTooltip");
+            container.setAttribute("automation-tooltip-text", tooltip);
+        }
+
+        // Add the list label
+        container.appendChild(document.createTextNode(`${label} :`));
+
+        // Add the list container
+        const listContainer = document.createElement("div");
+        listContainer.classList.add("automationCustomDropdownContainer");
+        container.appendChild(listContainer);
+
+        // Add the list button
+        const listButton = document.createElement("button");
+        listButton.classList.add("automationCustomDropdown");
+        listButton.classList.add("custom-select"); // Reuse the pokeclicker class to match style
+        listContainer.appendChild(listButton);
+
+        // Set option callback
+        const setOptionCallback = function(optionElem)
+            {
+                // Save the selected value on the container
+                container.selectedValue = optionElem.value;
+
+                // Update the displayed value
+                listButton.innerHTML = "";
+                listButton.appendChild(optionElem.cloneNode(true));
+
+                // If a callback is registered, call it
+                if (container.onValueChange)
+                {
+                    container.onValueChange();
+                }
+            };
+
+        // Add the list options
+        const listOptions = document.createElement("div");
+        listOptions.classList.add("automationCustomDropdownOptions");
+        listContainer.appendChild(listOptions);
+        for (const option of options)
+        {
+            const optionContainer = document.createElement("div");
+            optionContainer.classList.add("automationCustomDropdownOption");
+            optionContainer.appendChild(option.element);
+
+            option.element.value = option.value;
+
+            optionContainer.onclick = function()
+            {
+                listOptions.classList.remove("visible");
+                // On click, update the selected value display
+                setOptionCallback(option.element);
+            };
+
+            if (option.selected)
+            {
+                listButton.innerHTML = "";
+                listButton.appendChild(option.element.cloneNode(true));
+                container.selectedValue = option.value;
+            }
+
+            listOptions.appendChild(optionContainer);
+        }
+
+        // Clicking the button should toggle the list visibility
+        listButton.onclick = function ()
+            {
+                listOptions.classList.toggle('visible');
+
+                // Put the currently selected berry on top of the scroll view
+                if (listOptions.classList.contains('visible'))
+                {
+                    let offset = 0;
+
+                    for (const option of options)
+                    {
+                        if (option.value == container.selectedValue)
+                        {
+                            break;
+                        }
+
+                        if (!option.element.hidden)
+                        {
+                            offset += option.element.offsetHeight;
+                        }
+                    }
+
+                    listOptions.scrollTop = Math.min(offset, listOptions.scrollTopMax);
+                }
+            };
+
+        // Hide the list if the user clicks anywhere else
+        listButton.onfocusout = function () { listOptions.classList.remove('visible'); };
+
+        // Handle arrow key-press events
+        listButton.onkeydown = function (event)
+            {
+                event = event || window.event;
+
+                if ((event.key == "ArrowUp") || (event.key == "ArrowDown"))
+                {
+                    const currentOption = options.find((opt) => opt.value == container.selectedValue);
+                    const newOptionContainer = (event.key == "ArrowDown") ? currentOption.element.parentElement.nextSibling
+                                                                          : currentOption.element.parentElement.previousSibling;
+
+                    if (newOptionContainer)
+                    {
+                        setOptionCallback(newOptionContainer.firstChild);
+                        listOptions.classList.remove("visible");
+                    }
+
+                    event.preventDefault();
+                }
+            };
+
+        return container;
+    }
+
+    /**
      * @brief Creates a sort direction (input) element
      *
      * @param {string} id: The input id (that will be used for the corresponding local storage item id as well)
@@ -1154,6 +1290,64 @@ class AutomationMenu
                 top: calc(100% + 2px);
             }
 
+            /**************************\
+            |*  Custom dropdown list  *|
+            \**************************/
+
+            .automationCustomDropdownContainer
+            {
+                display: inline-block;
+                margin-left: 4px;
+            }
+
+            .automationCustomDropdown
+            {
+                border-radius: 5px;
+                background-color: #ffffff;
+                border: 1px solid #cccccc;
+                text-align: left;
+                height: 25px !important;
+                padding: 0px !important;
+            }
+
+            .automationCustomDropdownOptions
+            {
+                visibility: hidden;
+                opacity: 0;
+
+                /* trigger visibility after 0.5s to allow clicks to go through */
+                transition: visibility 0.5s linear;
+
+                text-align: left;
+                overflow-y: auto;
+                max-height: 200px;
+                background-color: #FFFFFF;
+                color: #282828;
+                width: 100%;
+                max-width: 350px;
+                box-shadow: 0 6px 12px rgba(0,0,0,.175);
+                border: 1px solid rgba(0,0,0,.15);
+                border-radius: 5px;
+                width: fit-content;
+                position: absolute;
+            }
+
+            .automationCustomDropdownOptions.visible
+            {
+                visibility: visible;
+                opacity: 1;
+            }
+
+            .automationCustomDropdownOption
+            {
+                padding-right: 20px;
+            }
+
+            .automationCustomDropdownOption:hover
+            {
+                background-color: #E0E0E6;
+            }
+
             /***************\
             |*   Setting   *|
             \***************/
@@ -1480,6 +1674,7 @@ class AutomationMenu
             /*****************************\
             |*   Sort direction button   *|
             \*****************************/
+
             .automationDirectionSortButton
             {
                 position: relative;
