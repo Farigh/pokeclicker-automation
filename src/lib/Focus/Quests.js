@@ -191,8 +191,7 @@ class AutomationFocusQuests
             Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
 
             // Select cheri berry to avoid long riping time
-            Automation.Farm.ForcePlantBerriesAsked = true;
-            FarmController.selectedBerry(BerryType.Cheri);
+            Automation.Farm.ForcePlantBerriesAsked = BerryType.Cheri;
 
             Automation.Farm.toggleAutoFarming(true);
         }
@@ -201,7 +200,7 @@ class AutomationFocusQuests
             // Reset farming automation user-selected state
             Automation.Farm.toggleAutoFarming();
 
-            Automation.Farm.ForcePlantBerriesAsked = false;
+            Automation.Farm.ForcePlantBerriesAsked = null;
             Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
             Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
         }
@@ -217,7 +216,7 @@ class AutomationFocusQuests
         this.__internal__autoQuestLoop = null;
 
         // Reset demands
-        Automation.Farm.ForcePlantBerriesAsked = false;
+        Automation.Farm.ForcePlantBerriesAsked = null;
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         // Reset other modes status
@@ -483,14 +482,14 @@ class AutomationFocusQuests
         {
             if (Automation.Utils.isInstanceOf(quest, "HarvestBerriesQuest"))
             {
-                this.__internal__enableFarmingForBerryType(quest.berryType);
+                Automation.Farm.ForcePlantBerriesAsked = quest.berryType;
                 isFarmingSpecificBerry = true;
             }
             else if (Automation.Utils.isInstanceOf(quest, "GainFarmPointsQuest")
                      && !isFarmingSpecificBerry)
             {
                 let bestBerry = this.__internal__getMostSuitableBerryForQuest(quest);
-                this.__internal__enableFarmingForBerryType(bestBerry);
+                Automation.Farm.ForcePlantBerriesAsked = bestBerry;
             }
         }
     }
@@ -751,17 +750,6 @@ class AutomationFocusQuests
         }
 
         return true;
-    }
-
-    /**
-     * @brief Sets the game's selected berry to @p berryType
-     *
-     * @see AutomationFarm for the use of such value
-     */
-    static __internal__enableFarmingForBerryType(berryType)
-    {
-        // Select the berry type to farm
-        FarmController.selectedBerry(berryType);
     }
 
     /**
