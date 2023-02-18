@@ -189,6 +189,18 @@ class AutomationFocusPokerusCure
                 this.__internal__pokerusRouteData.push({ route });
             }
         }
+
+        // Put Magikarp jump last
+        this.__internal__pokerusRouteData.sort((routeA, routeB) =>
+            {
+                const isAmagikarp = Automation.Utils.Route.isInMagikarpJumpIsland(routeA.route.region, routeA.route.subRegion);
+                const isBmagikarp = Automation.Utils.Route.isInMagikarpJumpIsland(routeB.route.region, routeB.route.subRegion);
+
+                if (isAmagikarp && !isBmagikarp) return 1;
+                if (isBmagikarp && !isAmagikarp) return -1;
+
+                return 0;
+            });
     }
 
     /**
