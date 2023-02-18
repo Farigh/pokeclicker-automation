@@ -8,8 +8,8 @@ class AutomationFocusAchievements
     \******************************************************************************/
 
     static __internal__advancedSettings = {
-        DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast"
-    };
+                                              DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast"
+                                          };
 
     /**
      * @brief Adds the Achievements functionality to the 'Focus on' list

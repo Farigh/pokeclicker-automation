@@ -49,10 +49,10 @@ class AutomationFocusPokerusCure
                       + Automation.Menu.TooltipSeparator
                       + "If this option is disabled, or you don't have Beastballs,\n"
                       + "UltraBeast pokémons will be ignored.";
-        const button = Automation.Menu.addLabeledAdvancedSettingsToggleButton("Use Beastballs to catch UltraBeast pokémons",
-                                                                              this.__internal__advancedSettings.AllowBeastBallUsage,
-                                                                              tooltip,
-                                                                              parent);
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Use Beastballs to catch UltraBeast pokémons",
+                                                               this.__internal__advancedSettings.AllowBeastBallUsage,
+                                                               tooltip,
+                                                               parent);
     }
 
     /*********************************************************************\
@@ -60,8 +60,8 @@ class AutomationFocusPokerusCure
     \*********************************************************************/
 
     static __internal__advancedSettings = {
-        AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage"
-    };
+                                              AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage"
+                                          };
 
     static __internal__pokerusCureLoop = null;
     static __internal__pokerusRouteData = [];

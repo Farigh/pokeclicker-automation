@@ -10,10 +10,12 @@ class AutomationFarm
                           FeatureEnabled: "Farming-Enabled",
                           FocusOnUnlocks: "Farming-FocusOnUnlocks",
                           OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate",
-                          HarvestLate: "Farming-HarvestLate"
+                          HarvestLate: "Farming-HarvestLate",
+                          SelectedBerryToPlant: "Farming-SelectedBerryToPlant"
                       };
 
-    static ForcePlantBerriesAsked = false;
+    // The berry type forced to plant by other features
+    static ForcePlantBerriesAsked = null;
 
     /**
      * @brief Builds the menu, and initializes internal data
@@ -25,6 +27,7 @@ class AutomationFarm
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.HarvestLate, false);
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedBerryToPlant, BerryType.Cheri);
 
             this.__internal__buildMenu();
         }
@@ -99,7 +102,10 @@ class AutomationFarm
     static __internal__farmingContainer = null;
     static __internal__contentFloatingContainer = null;
     static __internal__contentFloatingContentContainer = null;
+    static __internal__berriesDropdownList = null;
     static __internal__farmInGameModal = null;
+
+    static __internal__lockedBerries = [];
 
     static __internal__farmingLoop = null;
 
@@ -209,7 +215,102 @@ class AutomationFarm
                                            }
                                       }.bind(this), false);
 
+        // Selected berry drop-down list
+        this.__internal__buildBerryDropdownList(farmingSettingPanel);
+
         this.__internal__buildFloatingModal();
+    }
+
+    /**
+     * @brief Builds the advanced setting berry selection dropdown list
+     *
+     * @param {Element} parent: The parent div
+     */
+    static __internal__buildBerryDropdownList(parent)
+    {
+        const selectOptions = [];
+
+        let savedSelectedBerry = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant));
+
+        // It should never happen, but we never know
+        if (!App.game.farming.unlockedBerries[savedSelectedBerry]())
+        {
+            // If a locked berry was saved, fallback to the Cheri one
+            Automation.Utils.LocalStorage.setValue(this.Settings.SelectedBerryToPlant, BerryType.Cheri);
+            savedSelectedBerry = BerryType.Cheri;
+        }
+
+        // Make a copy, to avoid tempering with the ingame data, since sort is performed inplace
+        const berryListCopy = [...FarmController.berryListFiltered()];
+        // Sort the berries alphabetically
+        berryListCopy.sort((a, b) => (BerryType[a] < BerryType[b]) ? -1 : 1);
+
+        // Add each berries
+        for (const berryId of berryListCopy)
+        {
+            const berryName = BerryType[berryId];
+
+            const element = document.createElement("div");
+
+            // Add berry image
+            const image = document.createElement("img");
+            image.src = `assets/images/items/berry/${berryName}.png`;
+            image.style.height = "22px";
+            image.style.marginRight = "5px";
+            image.style.marginLeft = "5px";
+            element.appendChild(image);
+
+            // Hide any berry that is not yet unlocked
+            if (!App.game.farming.unlockedBerries[berryId]())
+            {
+                this.__internal__lockedBerries.push({ berryId, element });
+                element.hidden = true;
+            }
+
+            // Add berry name
+            element.appendChild(document.createTextNode(berryName));
+
+            selectOptions.push({ value: berryId, element, selected: (berryId == savedSelectedBerry) });
+        }
+
+        const tooltip = "Choose which berry the automation should farm.\n"
+                      + "This setting is ignored if the berry/plot unlock is enabled.";
+        this.__internal__berriesDropdownList = Automation.Menu.createDropdownListWithHtmlOptions(selectOptions, "Berry to farm", tooltip);
+        this.__internal__berriesDropdownList.getElementsByTagName('button')[0].style.width = "118px";
+
+        this.__internal__berriesDropdownList.onValueChange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.SelectedBerryToPlant, this.__internal__berriesDropdownList.selectedValue);
+            }.bind(this);
+
+        parent.appendChild(this.__internal__berriesDropdownList);
+
+        // Set a watcher in case some barries are not unlocked yet
+        if (this.__internal__lockedBerries.length != 0)
+        {
+            const watcher = setInterval(function()
+            {
+                // Reverse iterate to avoid any problem that would be cause by element removal
+                for (var i = this.__internal__lockedBerries.length - 1; i >= 0; i--)
+                {
+                    const barryData = this.__internal__lockedBerries[i];
+                    if (App.game.farming.unlockedBerries[barryData.berryId]())
+                    {
+                        // Make the element visible
+                        barryData.element.hidden = false;
+
+                        // Remove the pokéball from the locked list
+                        this.__internal__lockedBerries.splice(i, 1);
+                    }
+                }
+
+                if (this.__internal__lockedBerries.length == 0)
+                {
+                    // No more missing berries, unregister the loop
+                    clearInterval(watcher);
+                }
+            }.bind(this), 5000); // Refresh every 5s
+        }
     }
 
     /**
@@ -260,7 +361,7 @@ class AutomationFarm
 
         // Try to unlock berries, if enabled
         if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true")
-            && !this.ForcePlantBerriesAsked)
+            && (this.ForcePlantBerriesAsked == null))
         {
             this.__internal__chooseUnlockStrategy();
 
@@ -285,7 +386,8 @@ class AutomationFarm
         this.__internal__updateFloatingPanel();
 
         // Otherwise, fallback to planting berries
-        this.__internal__plantAllBerries();
+        const berryToPlant = this.ForcePlantBerriesAsked ?? parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant));
+        this.__internal__plantAllBerries(berryToPlant);
 
         if (this.__internal__currentStrategy !== null)
         {
@@ -316,7 +418,7 @@ class AutomationFarm
         }
 
         // Only update the floating content panel if needed
-        const selectedBerryType = FarmController.selectedBerry();
+        const selectedBerryType = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant));
         if (this.__internal__lastFarmingBerryType != selectedBerryType)
         {
             const textPrefix = document.createTextNode("Currently planting ");
@@ -440,7 +542,7 @@ class AutomationFarm
             const isCurrentBerryTheTarget = (this.__internal__currentStrategy?.berryToUnlock == plot.berry);
 
             // Always harvest if it was asked, or the current plot berry is the target one
-            if (!this.ForcePlantBerriesAsked && !isCurrentBerryTheTarget)
+            if ((this.ForcePlantBerriesAsked == null) && !isCurrentBerryTheTarget)
             {
                 // Never harvest if the strategy requires the berries to die
                 if (this.__internal__currentStrategy?.harvestStrategy === this.__internal__harvestTimingType.LetTheBerryDie)
@@ -484,22 +586,23 @@ class AutomationFarm
     }
 
     /**
-     * @brief If any spot is available, plants the selected berry (from the in-game menu)
+     * @brief If any spot is available, plants the @p berryToPlant
+     *
+     * @param berryToPlant: The berry type to plant
      */
-    static __internal__plantAllBerries()
+    static __internal__plantAllBerries(berryToPlant)
     {
         if (this.__internal__freeSlotCount > 0)
         {
-            const selectedBerryType = FarmController.selectedBerry();
-            const selectedBerryCount = App.game.farming.berryList[selectedBerryType]();
+            const selectedBerryCount = App.game.farming.berryList[berryToPlant]();
 
             if (selectedBerryCount > 0)
             {
-                App.game.farming.plantAll(selectedBerryType);
+                App.game.farming.plantAll(berryToPlant);
 
                 this.__internal__plantedBerryCount = Math.min(this.__internal__freeSlotCount, selectedBerryCount);
 
-                const berryName = BerryType[selectedBerryType];
+                const berryName = BerryType[berryToPlant];
                 const berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
                 this.__internal__sendNotif("Planted some " + berryName + " " + berryImage);
             }
@@ -1448,17 +1551,14 @@ class AutomationFarm
                 // If not unlocked, then farm some needed berries
                 action: function()
                 {
-                    if (App.game.farming.plotBerryCost(slotIndex).amount > App.game.farming.berryList[berryType]())
-                    {
-                        FarmController.selectedBerry(berryType);
-                    }
-                    else
+                    let berryToPlant = berryType;
+                    if (App.game.farming.plotBerryCost(slotIndex).amount <= App.game.farming.berryList[berryType]())
                     {
                         // Not enough farm point, lets plant some Cheri berries to get some fast
-                        FarmController.selectedBerry(BerryType.Cheri);
+                        berryToPlant = BerryType.Cheri;
                     }
-                    Automation.Farm.__internal__plantAllBerries();
-                }
+                    this.__internal__plantAllBerries(berryToPlant);
+                }.bind(this)
             });
     }
 
@@ -1742,9 +1842,8 @@ class AutomationFarm
                     }
                 }
 
-                // If no more berries are needed, plant Cheris on the remaining plots
-                FarmController.selectedBerry(BerryType.Cheri);
-                Automation.Farm.__internal__plantAllBerries();
+                // If no more berries are needed, plant Cheri berries on the remaining plots
+                this.__internal__plantAllBerries(BerryType.Cheri);
 
                 // Refresh the floating panel if needed
                 strategy.setFoatingPanelContent();

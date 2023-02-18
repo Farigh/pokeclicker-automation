@@ -417,6 +417,9 @@ beforeAll(() =>
         // Expect the farming loop to not be set
         expect(Automation.Farm.__internal__farmingLoop).toBe(null);
 
+        // Simulate the selected berry to being defaulted to the Cheri one
+        Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.SelectedBerryToPlant, BerryType.Cheri);
+
         // Simulate Farming feature being enabled by default (done in the Automation.InitSteps.BuildMenu)
         Automation.Utils.LocalStorage.setValue(Automation.Farm.Settings.FeatureEnabled, true);
         expect(Automation.Utils.LocalStorage.getValue(Automation.Farm.Settings.FeatureEnabled)).toBe("true");
