@@ -251,6 +251,7 @@ class AutomationFarm
             const berryName = BerryType[berryId];
 
             const element = document.createElement("div");
+            element.style.paddingTop = "1px";
 
             // Add berry image
             const image = document.createElement("img");
@@ -258,6 +259,8 @@ class AutomationFarm
             image.style.height = "22px";
             image.style.marginRight = "5px";
             image.style.marginLeft = "5px";
+            image.style.position = "relative";
+            image.style.bottom = "1px";
             element.appendChild(image);
 
             // Hide any berry that is not yet unlocked
