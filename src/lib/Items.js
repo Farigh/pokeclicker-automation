@@ -70,8 +70,11 @@ class AutomationItems
         this.__internal__oakUpgradeContainer = document.createElement("div");
         this.__internal__upgradeContainer.appendChild(this.__internal__oakUpgradeContainer);
 
-        // Only display the menu when the elements are unlocked
-        this.__internal__oakUpgradeContainer.hidden = !App.game.oakItems.canAccess();
+        // Only display the menu when the elements are unlocked or are all maxed out
+        const hasAccessToOakItems = App.game.oakItems.canAccess();
+        this.__internal__oakUpgradeContainer.hidden = !hasAccessToOakItems
+                                                   || App.game.oakItems.itemList.every((item) => item.isMaxLevel());
+        this.__internal__oakUpgradeContainer.hiddenForAccessReason = !hasAccessToOakItems;
 
         let oakItemTooltip = "Automatically ugrades Oak items when possible"
                            + Automation.Menu.TooltipSeparator
@@ -85,7 +88,9 @@ class AutomationItems
         this.__internal__upgradeContainer.appendChild(this.__internal__gemUpgradeContainer);
 
         // Only display the menu when the elements are unlocked
-        this.__internal__gemUpgradeContainer.hidden = !App.game.gems.canAccess();
+        const hasAccessToGems = App.game.gems.canAccess();
+        this.__internal__gemUpgradeContainer.hidden = !hasAccessToGems || this.__internal__areEveryGemsMaxedOut();
+        this.__internal__gemUpgradeContainer.hiddenForAccessReason = !hasAccessToGems;
 
         let gemsTooltip = "Automatically uses Gems to upgrade attack effectiveness";
         let gemUpgradeButton =
@@ -96,8 +101,7 @@ class AutomationItems
         this.__internal__upgradeContainer.hidden = this.__internal__oakUpgradeContainer.hidden && this.__internal__gemUpgradeContainer.hidden;
 
         // Set the watcher to display the option once the mechanic has been unlocked
-        if (this.__internal__oakUpgradeContainer.hidden
-            || this.__internal__gemUpgradeContainer.hidden)
+        if (!hasAccessToOakItems || !hasAccessToGems)
         {
             this.__internal__setItemUpgradeUnlockWatcher();
         }
@@ -111,15 +115,18 @@ class AutomationItems
     {
         let watcher = setInterval(function()
         {
-            if (this.__internal__oakUpgradeContainer.hidden
-                && App.game.oakItems.canAccess())
+            const wasOakItemHiddenForAccessReason = this.__internal__oakUpgradeContainer.hidden
+                                                 && this.__internal__oakUpgradeContainer.hiddenForAccessReason;
+
+            if (wasOakItemHiddenForAccessReason && App.game.oakItems.canAccess())
             {
                 this.__internal__oakUpgradeContainer.hidden = false;
                 this.__internal__toggleAutoOakUpgrade();
             }
 
-            if (this.__internal__gemUpgradeContainer.hidden
-                && App.game.gems.canAccess())
+            const wasGemsHiddenForAccessReason = this.__internal__gemUpgradeContainer.hidden
+                                              && this.__internal__gemUpgradeContainer.hiddenForAccessReason;
+            if (wasGemsHiddenForAccessReason && App.game.gems.canAccess())
             {
                 this.__internal__gemUpgradeContainer.hidden = false;
                 this.__internal__toggleAutoGemUpgrade();
@@ -127,7 +134,8 @@ class AutomationItems
 
             this.__internal__upgradeContainer.hidden = this.__internal__oakUpgradeContainer.hidden && this.__internal__gemUpgradeContainer.hidden;
 
-            if (!this.__internal__oakUpgradeContainer.hidden && !this.__internal__gemUpgradeContainer.hidden)
+            if ((!this.__internal__oakUpgradeContainer.hidden || !wasOakItemHiddenForAccessReason)
+                && (!this.__internal__gemUpgradeContainer.hidden) || !wasGemsHiddenForAccessReason)
             {
                 clearInterval(watcher);
             }
@@ -151,7 +159,7 @@ class AutomationItems
             enable = (Automation.Utils.LocalStorage.getValue(this.Settings.UpgradeOakItems) === "true");
         }
 
-        if (enable)
+        if (enable && !this.__internal__oakUpgradeContainer.hidden)
         {
             // Only set a loop if there is none active
             if (this.__internal__autoOakUpgradeLoop === null)
@@ -191,7 +199,7 @@ class AutomationItems
             enable = (Automation.Utils.LocalStorage.getValue(this.Settings.UpgradeGems) === "true");
         }
 
-        if (enable)
+        if (enable && !this.__internal__gemUpgradeContainer.hidden)
         {
             // Only set a loop if there is none active
             if (this.__internal__autoGemUpgradeLoop === null)
@@ -224,18 +232,33 @@ class AutomationItems
             return;
         }
 
+        let areAllItemsMaxedOut = true;
+
         for (const item of App.game.oakItems.itemList)
         {
-            if (!item.isUnlocked() || item.isMaxLevel() || !item.hasEnoughExp())
+            // Only try to update items that can be
+            if (item.isUnlocked() && !item.isMaxLevel() && item.hasEnoughExp())
             {
-                continue;
+                let itemCost = item.calculateCost();
+                if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
+                {
+                    // We can't use item.isMaxLevel() after the buy() call here, since the game will update it asynchronously
+                    item.buy();
+                }
             }
 
-            let itemCost = item.calculateCost();
-            if (itemCost.amount < App.game.wallet.currencies[itemCost.currency]())
-            {
-                item.buy();
-            }
+            areAllItemsMaxedOut &= item.isMaxLevel();
+        }
+
+        if (areAllItemsMaxedOut)
+        {
+            // Hide the feature
+            this.__internal__oakUpgradeContainer.hiddenForAccessReason = false;
+            this.__internal__oakUpgradeContainer.hidden = true;
+            this.__internal__upgradeContainer.hidden = this.__internal__oakUpgradeContainer.hidden && this.__internal__gemUpgradeContainer.hidden;
+
+            // Stop the loop
+            this.__internal__toggleAutoOakUpgrade(false);
         }
     }
 
@@ -248,19 +271,61 @@ class AutomationItems
      */
     static __internal__gemUpgradeLoop()
     {
+        let areAllGemsMaxedOut = true;
         // Iterate over gem types
         for (const type of Array(Gems.nTypes).keys())
         {
             // Iterate over affinity (backward)
             for (const affinity of Array(Gems.nEffects).keys())
             {
-                if (App.game.gems.isValidUpgrade(type, affinity)
-                    && !App.game.gems.hasMaxUpgrade(type, affinity)
+                // Ignore invalid upgrades
+                if (!App.game.gems.isValidUpgrade(type, affinity))
+                {
+                    continue;
+                }
+
+                if (!App.game.gems.hasMaxUpgrade(type, affinity)
                     && App.game.gems.canBuyGemUpgrade(type, affinity))
                 {
                     App.game.gems.buyGemUpgrade(type, affinity);
                 }
+
+                areAllGemsMaxedOut &= App.game.gems.hasMaxUpgrade(type, affinity);
             }
         }
+
+        if (areAllGemsMaxedOut)
+        {
+            // Hide the feature
+            this.__internal__gemUpgradeContainer.hiddenForAccessReason = false;
+            this.__internal__gemUpgradeContainer.hidden = true;
+            this.__internal__upgradeContainer.hidden = this.__internal__oakUpgradeContainer.hidden && this.__internal__gemUpgradeContainer.hidden;
+
+            // Stop the loop
+            this.__internal__toggleAutoGemUpgrade(false);
+        }
+    }
+
+    /**
+     * @brief Determines if every type affinity has been maxed-out
+     *
+     * @returns True if no more upgrade are available, false otherwise
+     */
+    static __internal__areEveryGemsMaxedOut()
+    {
+        // Iterate over gem types
+        for (const type of Array(Gems.nTypes).keys())
+        {
+            // Iterate over affinity
+            for (const affinity of Array(Gems.nEffects).keys())
+            {
+                if (App.game.gems.isValidUpgrade(type, affinity) && !App.game.gems.hasMaxUpgrade(type, affinity))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }
