@@ -15,7 +15,8 @@ class AutomationDungeon
     static InternalModes = {
                                None: 0,
                                StopAfterThisRun: 1,
-                               ForceDungeonCompletion: 2
+                               ForceDungeonCompletion: 2,
+                               ForcePokemonFight: 3
                            };
 
     static AutomationRequestedMode = this.InternalModes.None;
@@ -280,11 +281,14 @@ class AutomationDungeon
      */
     static __internal__dungeonFightLoop()
     {
+        const forceDungeonProcessing = (this.AutomationRequestedMode == this.InternalModes.ForceDungeonCompletion)
+                                    || (this.AutomationRequestedMode == this.InternalModes.ForcePokemonFight);
 
-        const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true");
+        const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
+                         && (this.AutomationRequestedMode != this.InternalModes.ForcePokemonFight);
         const skipChests = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true");
         const skipBoss = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true")
-                      && (this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion);
+                      && !forceDungeonProcessing;
 
         // Just to be safe, it should never happen, since the button should have been disabled
         if (avoidFights && skipChests && skipBoss)
@@ -305,7 +309,7 @@ class AutomationDungeon
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if ((this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion)
+            if (!forceDungeonProcessing
                 && ((this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
                     || this.__internal__playerActionOccured
                     || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
@@ -752,6 +756,7 @@ class AutomationDungeon
 
                 // The 'stop on pokedex' feature might be enable and the pokedex already completed
                 if ((this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion)
+                    && (this.AutomationRequestedMode != this.InternalModes.ForcePokemonFight)
                     && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                     && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
                 {
