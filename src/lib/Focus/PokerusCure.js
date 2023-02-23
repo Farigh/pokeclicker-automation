@@ -215,7 +215,7 @@ class AutomationFocusPokerusCure
                 return;
             }
 
-            // Bypass user settings like the stop on pokedex one
+            // Bypass user settings, especially the 'Skip fights' one
             Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
 
             // Enable auto dungeon fight
@@ -324,8 +324,7 @@ class AutomationFocusPokerusCure
      */
     static __internal__doesRouteHaveAnyPokemonNeedingCure(route, onlyConsiderAvailableContagiousPokemons = false)
     {
-        const pokemonList = onlyConsiderAvailableContagiousPokemons ? RouteHelper.getAvailablePokemonList(route.number, route.region)
-                                                                    : this.__internal__getEveryPokemonForRoute(route);
+        const pokemonList = this.__internal__getEveryPokemonForRoute(route, onlyConsiderAvailableContagiousPokemons);
 
         return this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons);
     }
@@ -387,7 +386,7 @@ class AutomationFocusPokerusCure
      */
     static __internal__doesRouteNeedBeastBalls(route)
     {
-        return RouteHelper.getAvailablePokemonList(route.number, route.region).every((pokemonName) =>
+        return this.__internal__getEveryPokemonForRoute(route, true).every((pokemonName) =>
             {
                 const pokemon = App.game.party.getPokemonByName(pokemonName);
                 return (pokemon?.pokerus != GameConstants.Pokerus.Contagious)
@@ -415,13 +414,17 @@ class AutomationFocusPokerusCure
     }
 
     /**
-     * @brief Gets the list of possible pokémon for the given @p route, regardless of their conditions
+     * @brief Gets the list of possible pokémon for the given @p route
      *
      * @param route: The route to get the pokémon of
+     * @param {boolean} onlyConsiderAvailablePokemons: Whether only currently available pokémon should be considered
+     *
+     * @note We can't use RouteHelper.getAvailablePokemonList even when getting only available pokemon,
+     *       since it consider the current player's location for weather conditions
      *
      * @returns The list of pokémon
      */
-    static __internal__getEveryPokemonForRoute(route)
+    static __internal__getEveryPokemonForRoute(route, onlyConsiderAvailablePokemons)
     {
         // Inspired from https://github.com/pokeclicker/pokeclicker/blob/f7d8db69c219a1a1e47be919f4b9b1f0de8cde9e/src/scripts/wildBattle/RouteHelper.ts#L15-L39
 
@@ -435,13 +438,47 @@ class AutomationFocusPokerusCure
         let pokemonList = possiblePokemons.land;
 
         // Water Pokémon
-        pokemonList = pokemonList.concat(possiblePokemons.water);
+        if (!onlyConsiderAvailablePokemons || ((pokemonList.length == 0) || App.game.keyItems.hasKeyItem(KeyItemType.Super_rod)))
+        {
+            pokemonList = pokemonList.concat(possiblePokemons.water);
+        }
 
         // Headbutt Pokémon
         pokemonList = pokemonList.concat(possiblePokemons.headbutt);
 
         // Special requirement Pokémon
-        pokemonList = pokemonList.concat(...possiblePokemons.special.map(p => p.pokemon));
+        let specialPokemonList = possiblePokemons.special;
+
+        if (onlyConsiderAvailablePokemons)
+        {
+            specialPokemonList = specialPokemonList.filter((p) =>
+                {
+                    const requirements = (Automation.Utils.isInstanceOf(p.req, "MultiRequirement")) ? p.req.requirements
+                                                                                                    : [ p.req ];
+
+                    for (const requirement of requirements)
+                    {
+                        if (Automation.Utils.isInstanceOf(requirement, "WeatherRequirement"))
+                        {
+                            if (!requirement.weather.includes(Weather.regionalWeather[route.region]()))
+                            {
+                                return false;
+                            }
+                        }
+                        else
+                        {
+                            if (!requirement.isCompleted())
+                            {
+                                return false;
+                            }
+                        }
+                    }
+
+                    return true;
+                });
+        }
+
+        pokemonList = pokemonList.concat(...specialPokemonList.map(p => p.pokemon));
 
         // Filter duplicate entries
         pokemonList.filter((item, index) => pokemonList.indexOf(item) === index);
