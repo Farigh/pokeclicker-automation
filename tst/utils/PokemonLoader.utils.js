@@ -392,7 +392,7 @@ for (const gymName in GymList)
     }
     let townRegion = TownList[gymTown].region;
 
-    // Ony get the first two regions
+    // Only get the first two regions
     if (townRegion > GameConstants.Region.johto)
     {
         break;
@@ -421,7 +421,7 @@ prevRegion = -1;
 routeRegisteredPokemons = new Set();
 for (const route of Routes.regionRoutes)
 {
-    // Ony get the first two regions
+    // Only get the first two regions
     if (route.region > GameConstants.Region.johto)
     {
         break;
