@@ -45,7 +45,10 @@ class AutomationFocusPokerusCure
         // Disable Beastball usage by default
         Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.AllowBeastBallUsage, false);
 
-        // OakItem loadout setting
+        // Disable Alternate forms skipping by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.SkipAlternateForms, false);
+
+        // Beastball usage setting
         const tooltip = "Allows the automation to use Beastball to catch UltraBeast pokémons."
                       + Automation.Menu.TooltipSeparator
                       + "If this option is disabled, or you don't have Beastballs,\n"
@@ -54,6 +57,13 @@ class AutomationFocusPokerusCure
                                                                this.__internal__advancedSettings.AllowBeastBallUsage,
                                                                tooltip,
                                                                parent);
+
+        // Alternate forms skipping setting
+        const alternateTooltip = "If enabled, only pokémon's base form will be considered";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Skip Alternate form pokémons",
+                                                               this.__internal__advancedSettings.SkipAlternateForms,
+                                                               alternateTooltip,
+                                                               parent);
     }
 
     /*********************************************************************\
@@ -61,7 +71,8 @@ class AutomationFocusPokerusCure
     \*********************************************************************/
 
     static __internal__advancedSettings = {
-                                              AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage"
+                                              AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage",
+                                              SkipAlternateForms: "Focus-PokerusCure-SkipAlternateForms"
                                           };
 
     static __internal__pokerusCureLoop = null;
@@ -483,6 +494,13 @@ class AutomationFocusPokerusCure
         // Filter duplicate entries
         pokemonList.filter((item, index) => pokemonList.indexOf(item) === index);
 
+        // Filter alternate forms, if asked for
+        if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
+        {
+            // Alternate forms have a floating point id
+            pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
+        }
+
         return pokemonList;
     }
 
@@ -518,6 +536,13 @@ class AutomationFocusPokerusCure
             {
                 pokemonList.push(boss.name);
             }
+        }
+
+        // Filter alternate forms, if asked for
+        if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
+        {
+            // Alternate forms have a floating point id
+            pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
         }
 
         return pokemonList;
