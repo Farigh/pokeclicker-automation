@@ -104,7 +104,7 @@ class AutomationBattleCafe
         {
             // Spin count info
             container.style.marginLeft = "10px";
-            if (spinType == GameConstants.AlcremieSpins.at7Above10)
+            if (spinType == GameConstants.AlcremieSpins.at5Above10)
             {
                 tooltip += "11 times or more "
                 summary += "11+";
