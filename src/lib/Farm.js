@@ -1597,7 +1597,7 @@ class AutomationFarm
                 requiresDiscord: false,
                 setFoatingPanelContent: function()
                     {
-                        const isberryUnlocked = App.game.farming.unlockedBerries[berryType]();
+                        const isberryUnlocked = !!App.game.farming.unlockedBerries[berryType]();
 
                         if (this.__internal__floatingPanelStateData == isberryUnlocked)
                         {
