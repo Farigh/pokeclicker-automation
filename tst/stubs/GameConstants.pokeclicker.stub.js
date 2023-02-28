@@ -6,6 +6,11 @@ class GameConstants
         return Math.min(Math.max(num, min), max);
     }
 
+    static formatTime(number)
+    {
+        return "";
+    }
+
     static getGymIndex(gymName)
     {
         return this.RegionGyms.flat().findIndex((g) => g === gymName);
@@ -78,6 +83,8 @@ class GameConstants
         MediumRestore: 1,
         SmallRestore: 0
     };
+
+    static FARM_PLOT_WIDTH = 5;
 
     static FossilToPokemon =
         {

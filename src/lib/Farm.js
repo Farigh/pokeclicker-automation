@@ -1211,7 +1211,9 @@ class AutomationFarm
         this.__internal__addUnlockMutationStrategy(BerryType.Tanga, tangaConfig);
 
         // #49 Unlock at least four Kasib berries through mutation
-        this.__internal__addUnlockMutationStrategy(BerryType.Kasib, {}, 4);
+        const kasibConfig = {};
+        kasibConfig[BerryType.Cheri] = App.game.farming.plotList.map((_, index) => index);
+        this.__internal__addUnlockMutationStrategy(BerryType.Kasib, kasibConfig, 4);
         const kasibBerryStrategy = this.__internal__unlockStrategySelection.at(-1);
         kasibBerryStrategy.harvestStrategy = this.__internal__harvestTimingType.LetTheBerryDie;
         kasibBerryStrategy.action = function()
@@ -1304,7 +1306,10 @@ class AutomationFarm
             });
 
         // #53 Unlock at least one Chilan berry through mutation
-        this.__internal__addUnlockMutationStrategy(BerryType.Chilan, {});
+        // TODO (06/03/2023): Find a way to detail this strategy in the floating panel
+        const chilanConfig = {};
+        chilanConfig[BerryType.Chople] = App.game.farming.plotList.map((_, index) => index);
+        this.__internal__addUnlockMutationStrategy(BerryType.Chilan, chilanConfig);
         const chilanBerryStrategy = this.__internal__unlockStrategySelection.at(-1);
         chilanBerryStrategy.action = function()
             {
@@ -1594,56 +1599,98 @@ class AutomationFarm
                 oakItemToEquip: oakItemNeeded,
                 forbiddenOakItems: oakItemsToRemove,
                 requiredPokemon: requiredPokemonName,
-                requiresDiscord: false,
-                setFoatingPanelContent: function()
-                    {
-                        const isberryUnlocked = !!App.game.farming.unlockedBerries[berryType]();
-
-                        if (this.__internal__floatingPanelStateData == isberryUnlocked)
-                        {
-                            // No changes, no update needed
-                            return;
-                        }
-
-                        // Save the berry unlocked state
-                        this.__internal__floatingPanelStateData = isberryUnlocked;
-
-                        let textPrefix;
-                        let berrySpelling = "berry";
-                        if (!isberryUnlocked)
-                        {
-                            textPrefix = document.createTextNode("Currently trying to unlock the ");
-                        }
-                        else
-                        {
-                            let countStr;
-                            if (minimumRequiredBerry == 1)
-                            {
-                                countStr = "one";
-                            }
-                            else
-                            {
-                                countStr = minimumRequiredBerry;
-                                berrySpelling = "berries";
-                            }
-
-                            textPrefix = document.createTextNode(`Currently trying to gather at least ${countStr} `);
-                        }
-
-                        const berryImage = document.createElement("img");
-                        const berryName = BerryType[berryType];
-                        berryImage.src = `assets/images/items/berry/${berryName}.png`;
-                        berryImage.style.height = "20px";
-
-                        const textSuffix = document.createTextNode(`${berryName} ${berrySpelling}`);
-
-                        this.__internal__contentFloatingContentContainer.innerHTML = "";
-                        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
-                        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
-                        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
-                        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
-                    }.bind(this)
+                requiresDiscord: false
             };
+
+        step.setFoatingPanelContent = function()
+            {
+                const isberryUnlocked = !!App.game.farming.unlockedBerries[berryType]();
+
+                if (this.__internal__floatingPanelStateData == isberryUnlocked)
+                {
+                    // No changes, no update needed
+                    return;
+                }
+
+                // Save the berry unlocked state
+                this.__internal__floatingPanelStateData = isberryUnlocked;
+
+                let textPrefix;
+                let berrySpelling = "berry";
+                if (!isberryUnlocked)
+                {
+                    textPrefix = document.createTextNode("Currently trying to unlock the ");
+                }
+                else
+                {
+                    let countStr;
+                    if (minimumRequiredBerry == 1)
+                    {
+                        countStr = "one";
+                    }
+                    else
+                    {
+                        countStr = minimumRequiredBerry;
+                        berrySpelling = "berries";
+                    }
+
+                    textPrefix = document.createTextNode(`Currently trying to gather at least ${countStr} `);
+                }
+
+                const berryImage = document.createElement("img");
+                const berryName = BerryType[berryType];
+                berryImage.src = `assets/images/items/berry/${berryName}.png`;
+                berryImage.style.height = "20px";
+
+                const textSuffix = document.createTextNode(`${berryName} ${berrySpelling}`);
+
+                // Add the strategy plantation pattern details
+                const strategyContainer = document.createElement("div");
+                strategyContainer.style.marginTop = "10px";
+
+                // Add the title with arrows on both sides
+                const leftArrow = document.createElement("span");
+                leftArrow.textContent = "⮦";
+                leftArrow.style.position = "relative";
+                leftArrow.style.top = "5px";
+                strategyContainer.appendChild(leftArrow);
+
+                strategyContainer.appendChild(document.createTextNode(" Strategy used "));
+
+                const rightArrow = document.createElement("span");
+                rightArrow.textContent = "⮧";
+                rightArrow.style.position = "relative";
+                rightArrow.style.top = "5px";
+                strategyContainer.appendChild(rightArrow);
+
+                // Add the table
+                const plantationPatternTable = this.__internal__createPlantationPatternTable(berriesIndexes);
+                plantationPatternTable.style.margin = "auto";
+                plantationPatternTable.style.marginTop = "3px";
+                strategyContainer.appendChild(plantationPatternTable);
+
+                this.__internal__contentFloatingContentContainer.innerHTML = "";
+                this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+                this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+                this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+                this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
+                this.__internal__contentFloatingContentContainer.appendChild(strategyContainer);
+
+                // Explain the strategy in this case
+                if (step.harvestStrategy == this.__internal__harvestTimingType.LetTheBerryDie)
+                {
+                    const strategyDetail = document.createElement("div");
+                    strategyDetail.style.marginTop = "8px";
+                    strategyDetail.style.fontStyle = "italic";
+                    strategyDetail.style.fontSize = "12px";
+                    strategyDetail.style.lineHeight = "14px";
+                    strategyDetail.style.padding = "0px 5px";
+
+                    strategyDetail.appendChild(document.createTextNode("* The berries will be left to die to allow the mutation to happen"));
+
+                    this.__internal__contentFloatingContentContainer.appendChild(strategyDetail);
+                }
+            }.bind(this);
 
         this.__internal__setSlotConfigStrategy(step, berriesIndexes);
         this.__internal__unlockStrategySelection.push(step);
@@ -2202,8 +2249,7 @@ class AutomationFarm
     {
         // Sort berries from longer riping time to shorter
         // We need to use parseInt here to convert the object key from string to int
-        const berriesOrder = [...Object.keys(berriesIndexes)].map(x => parseInt(x)).sort(
-            (a, b) => App.game.farming.berryData[b].growthTime[PlotStage.Bloom] - App.game.farming.berryData[a].growthTime[PlotStage.Bloom]);
+        const berriesOrder = this.__internal__getBerryPlantingOrder(berriesIndexes);
 
         // Compute config representation
         const config = new Array(App.game.farming.plotList.length).fill(BerryType.None);
@@ -2306,6 +2352,113 @@ class AutomationFarm
                 step.setFoatingPanelContent();
             }
         }.bind(this);
+    }
+
+    /**
+     * @brief Builds a table representing the plantation corresponding to the given @p berriesIndexes
+     *
+     * @param berriesIndexes: The berries to plant and their indexes ({ <berryType>: [ indexes... ], ... })
+     */
+    static __internal__createPlantationPatternTable(berriesIndexes)
+    {
+        // Build the plantation content representation
+        const plantationBerries = new Array(App.game.farming.plotList.length).fill(BerryType.None)
+
+        for (const berryType in berriesIndexes)
+        {
+            for (const index of berriesIndexes[berryType])
+            {
+                plantationBerries[index] = berryType;
+            }
+        }
+
+        // Compute the berries delay
+        const berriesOrder = this.__internal__getBerryPlantingOrder(berriesIndexes);
+        const berriesDelay = new Map();
+
+        const maxRipeTime = App.game.farming.berryData[berriesOrder[0]].growthTime[PlotStage.Bloom];
+
+        for (const berryType of berriesOrder)
+        {
+            const currentRipeTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+            berriesDelay.set(berryType, GameConstants.formatTime(maxRipeTime - currentRipeTime));
+        }
+        const longestBerryRipeTime = berriesDelay.get(parseInt(berriesOrder[0]));
+
+        // Build the table
+        const plantationTable = document.createElement("table");
+        plantationTable.style.borderWidth = "0px";
+        plantationTable.style.lineHeight = "20px";
+        plantationTable.style.backgroundColor = "#554238";
+
+        let currentRow;
+        for (const plotIndex of App.game.farming.plotList.keys())
+        {
+            // A new row need to be created
+            if ((plotIndex % GameConstants.FARM_PLOT_WIDTH) == 0)
+            {
+                currentRow = document.createElement("tr");
+                plantationTable.appendChild(currentRow);
+            }
+
+            // Add a new cell
+            const currentCell = document.createElement("td");
+            currentCell.style.height = "25px";
+            currentCell.style.width = "25px";
+            currentCell.style.backgroundImage = 'url("assets/images/farm/soil.png")';
+            currentCell.style.backgroundRepeat = "no-repeat";
+            currentCell.style.backgroundSize = "23px 23px";
+            currentCell.style.backgroundPosition = "center";
+
+            currentRow.appendChild(currentCell);
+
+            const berryType = plantationBerries[plotIndex];
+            if (berryType == BerryType.None)
+            {
+                // No berry, nothing else to do
+                continue;
+            }
+
+            // Add the berry image
+            const berryImg = document.createElement("img");
+            berryImg.src = `assets/images/items/berry/${BerryType[berryType]}.png`;
+            berryImg.style.height = "20px";
+            currentCell.appendChild(berryImg);
+
+            // Add the tooltip
+            let tooltip = `${BerryType[berryType]}`;
+
+            // Only display the delay if it's not the longest ripe-time berry
+            if (berryType != berriesOrder[0])
+            {
+                const delay = berriesDelay.get(parseInt(berryType));
+                if (delay != longestBerryRipeTime)
+                {
+                    tooltip += `\n\nIt will be planted\n`
+                             + `${delay} after the\n`
+                             + `${BerryType[berriesOrder[0]]} berry`;
+                }
+            }
+            currentCell.classList.add("hasAutomationTooltip");
+            currentCell.classList.add("berryStrategyAutomationTooltip");
+            currentCell.classList.add("shortTransitionAutomationTooltip");
+            currentCell.setAttribute("automation-tooltip-text", tooltip);
+        }
+
+        return plantationTable;
+    }
+
+    /**
+     * @brief Gets the given @p berriesIndexes planting order needed to ripe them all at the same time
+     *
+     * @param berriesIndexes: The berries to plant and their indexes ({ <berryType>: [ indexes... ], ... })
+     *
+     * @returns The berries listed from the longest to the shortest riping time
+     */
+    static __internal__getBerryPlantingOrder(berriesIndexes)
+    {
+        return [...Object.keys(berriesIndexes)].map(x => parseInt(x)).sort(
+            (a, b) => App.game.farming.berryData[b].growthTime[PlotStage.Bloom] - App.game.farming.berryData[a].growthTime[PlotStage.Bloom]);
     }
 
     /**
