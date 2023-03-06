@@ -1,9 +1,13 @@
 function __test__stubs__getHTMLElementStub()
 {
     return {
+        classList: {
+                add: function() {}
+            },
         innerHTML: "",
         style: {},
-        appendChild: function() {}
+        appendChild: function() {},
+        setAttribute: function() {}
     };
 }
 

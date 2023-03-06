@@ -1292,6 +1292,22 @@ class AutomationMenu
                 top: calc(100% + 2px);
             }
 
+            .hasAutomationTooltip.berryStrategyAutomationTooltip::after,
+            .hasAutomationTooltip.berryStrategyAutomationTooltip::before
+            {
+                transform: translateX(-50%);
+                left: calc(50%);
+            }
+            .hasAutomationTooltip.berryStrategyAutomationTooltip::after
+            {
+                top: calc(100% - 6px);
+            }
+            .hasAutomationTooltip.berryStrategyAutomationTooltip::before
+            {
+                top: calc(100%);
+                font-size: 13px;
+            }
+
             /**************************\
             |*  Custom dropdown list  *|
             \**************************/
