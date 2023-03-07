@@ -91,14 +91,14 @@ class AutomationBattleCafe
         parent.appendChild(container);
 
         let summary = "";
-        let tooltip = "By spining "
+        let tooltip = "By spining for "
         let pokemonName = "Milcery (Cheesy)";
         if (spinType == -1)
         {
-            container.style.textAlign = "left";
-            summary = "Random"
+            container.style.textAlign = "center";
+            summary = "3600"
             container.style.marginLeft = "5px";
-            tooltip += "any sweet you can randomly get "
+            tooltip += "3600 seconds in any direction, with any sweet,";
         }
         else
         {
@@ -106,7 +106,7 @@ class AutomationBattleCafe
             container.style.marginLeft = "10px";
             if (spinType == GameConstants.AlcremieSpins.at5Above10)
             {
-                tooltip += "11 times or more "
+                tooltip += "11 seconds or more "
                 summary += "11+";
             }
             else if ((spinType == GameConstants.AlcremieSpins.dayClockwiseAbove5)
@@ -114,12 +114,12 @@ class AutomationBattleCafe
                      || (spinType == GameConstants.AlcremieSpins.dayCounterclockwiseAbove5)
                      || (spinType == GameConstants.AlcremieSpins.nightCounterclockwiseAbove5))
             {
-                tooltip += "5 times or more "
+                tooltip += "5 seconds or more "
                 summary += "5+";
             }
             else
             {
-                tooltip += "from 1 to 4 times "
+                tooltip += "1 to 4 seconds "
                 summary += "1→4";
             }
 
@@ -140,12 +140,12 @@ class AutomationBattleCafe
                 tooltip += "counter-clockwise"
             }
             pokemonName = sweetData[spinType].name;
-            tooltip += "\nyou can get "
         }
+        tooltip += ""
 
         let pokemonId = pokemonMap[pokemonName].id;
         summary += ` : #${pokemonId}`;
-        tooltip += pokemonName;
+        tooltip += `\nyou can get ${pokemonName}`;
 
         // Set the tooltip
         container.classList.add("hasAutomationTooltip");
