@@ -978,6 +978,26 @@ class AutomationMenu
              + ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`;
     }
 
+    /**
+     * @brief Gets the pokérus status image corresponding to the given @p pokerusStatus
+     *
+     * @note The Uninfected status has no image
+     *
+     * @param pokerusStatus: The pokeclicker's pokérus status
+     *
+     * @returns The corresponding image
+     */
+    static getPokerusStatusImage(pokerusStatus)
+    {
+        if (pokerusStatus == GameConstants.Pokerus.Uninfected)
+        {
+            return "";
+        }
+
+        return `<img style="position: relative; bottom: 1px; height: 12px;"`
+             + ` src="assets/images/breeding/pokerus/${GameConstants.Pokerus[pokerusStatus]}.png">`;
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
