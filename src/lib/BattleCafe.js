@@ -29,6 +29,7 @@ class AutomationBattleCafe
     static __internal__battleCafeSweetContainers = [];
     static __internal__currentlyVisibleSweet = null;
     static __internal__caughtPokemonIndicators = new Map();
+    static __internal__pokemonPokerusIndicators = new Map();
 
     /**
      * @brief Builds the 'Battle Café' menu panel
@@ -41,6 +42,11 @@ class AutomationBattleCafe
         let battleCafeTitle = '☕ Battle Café ☕';
         const battleCafeContainer =
             Automation.Menu.addFloatingCategory("automationBattleCafe", battleCafeTitle, this.__internal__battleCafeInGameModal);
+
+        // Update the style to fit the width according to the panel content
+        const mainContainer = battleCafeContainer.parentElement;
+        mainContainer.style.width = "unset";
+        mainContainer.style.minWidth = "145px";
 
         this.__internal__addInfo(null, -1, battleCafeContainer);
 
@@ -161,6 +167,13 @@ class AutomationBattleCafe
         container.appendChild(caughtIndicatorElem);
         this.__internal__caughtPokemonIndicators.set(
             pokemonName, { container: caughtIndicatorElem, pokemonId: pokemonId, currentStatus: null });
+
+        // Add the pokérus status placeholder
+        const pokerusIndicatorElem = document.createElement("span");
+        pokerusIndicatorElem.style.marginRight = "4px";
+        container.appendChild(pokerusIndicatorElem);
+        this.__internal__pokemonPokerusIndicators.set(
+            pokemonName, { container: pokerusIndicatorElem, pokemonId: pokemonId, currentStatus: null });
     }
 
     /**
@@ -206,13 +219,25 @@ class AutomationBattleCafe
      */
     static __internal__refreshCaughtStatus(pokemonName)
     {
-        const internalData = this.__internal__caughtPokemonIndicators.get(pokemonName);
-        const caughtStatus = Automation.Utils.getPokemonCaughtStatus(internalData.pokemonId);
+        // Refresh the caught status
+        const internalCaughtData = this.__internal__caughtPokemonIndicators.get(pokemonName);
+        const caughtStatus = Automation.Utils.getPokemonCaughtStatus(internalCaughtData.pokemonId);
 
-        if (caughtStatus != internalData.currentStatus)
+        if (caughtStatus != internalCaughtData.currentStatus)
         {
-            internalData.container.innerHTML = Automation.Menu.getCaughtStatusImage(caughtStatus);
-            internalData.currentStatus = caughtStatus;
+            internalCaughtData.container.innerHTML = Automation.Menu.getCaughtStatusImage(caughtStatus);
+            internalCaughtData.currentStatus = caughtStatus;
+        }
+
+        // Refresh the pokérus status
+        const internalPokerusData = this.__internal__pokemonPokerusIndicators.get(pokemonName);
+        const pokerusStatus = Automation.Utils.getPokemonPokerusStatus(internalPokerusData.pokemonId);
+
+        if (pokerusStatus != internalPokerusData.currentStatus)
+        {
+            internalPokerusData.container.innerHTML = Automation.Menu.getPokerusStatusImage(pokerusStatus);
+            internalPokerusData.container.style.paddingLeft = (internalPokerusData.container.innerHTML == "") ? "0px" : "3px";
+            internalPokerusData.currentStatus = pokerusStatus;
         }
     }
 }
