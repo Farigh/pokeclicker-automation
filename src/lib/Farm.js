@@ -11,6 +11,7 @@ class AutomationFarm
                           FocusOnUnlocks: "Farming-FocusOnUnlocks",
                           OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate",
                           HarvestLate: "Farming-HarvestLate",
+                          UseRichMulch: "Farming-UseRichMulch",
                           SelectedBerryToPlant: "Farming-SelectedBerryToPlant"
                       };
 
@@ -27,6 +28,7 @@ class AutomationFarm
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.HarvestLate, false);
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseRichMulch, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedBerryToPlant, BerryType.Cheri);
 
             this.__internal__buildMenu();
@@ -186,10 +188,20 @@ class AutomationFarm
 
         // Gather as late as possible button
         const gatherAsLateAsPossibleTooltip = "Enabling this setting will harvest the berries right before they die.\n"
-                                            + "This is useful when you want the aura instead of the berry itself.\n";
+                                            + "This is useful when you want the aura instead of the berry itself.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton("Harvest berries as late as possible",
                                                                this.Settings.HarvestLate,
                                                                gatherAsLateAsPossibleTooltip,
+                                                               farmingSettingPanel);
+
+        // Use rich mulch before harvesting button
+        const richMulchBeforeHarvestTooltip = "Enabling this setting will apply rich mulch to the plot right before harvesting."
+                                            + Automation.Menu.TooltipSeparator
+                                            + "Mulch will not be applied if their is no available stock.\n"
+                                            + "Nor will it be if the plot already has some mulch applied.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Apply rich mulch before harvesting",
+                                                               this.Settings.UseRichMulch,
+                                                               richMulchBeforeHarvestTooltip,
                                                                farmingSettingPanel);
 
         // Disable the harvest late feature if the Focus on unlocks is enabled
@@ -516,6 +528,7 @@ class AutomationFarm
 
         const focusOnUnlocksEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true";
         const harvestLateEnabled = !focusOnUnlocksEnabled && (Automation.Utils.LocalStorage.getValue(this.Settings.HarvestLate) === "true");
+        const richMulchEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true";
         const overallGrowthMultiplier = App.game.farming.getGrowthMultiplier();
 
         // Mutations can only occur while the berry is fully ripe, so we need to collect them the later possible
@@ -565,10 +578,28 @@ class AutomationFarm
                 }
             }
 
-            App.game.farming.harvest(index);
+            this.__internal__mulchAndHarvest(index, richMulchEnabled);
+
             this.__internal__harvestCount++;
             this.__internal__freeSlotCount++;
         }
+    }
+
+    /**
+     * @brief Apply rich mulch if the player enabled the feature, then harvests the given slot
+     *
+     * @param {number} index: The plot index to harvest
+     * @param {boolean} applyRichMulch: If set to true, rich mulch will be applied
+     */
+    static __internal__mulchAndHarvest(index, applyRichMulch = (Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true"))
+    {
+        // Only apply rich mulch if the plot doesn't already have mulch
+        if (applyRichMulch && (App.game.farming.plotList[index].mulch === MulchType.None))
+        {
+            App.game.farming.addMulch(index, MulchType.Rich_Mulch);
+        }
+
+        App.game.farming.harvest(index);
     }
 
     /**
@@ -1750,6 +1781,8 @@ class AutomationFarm
                 // If not, then farm some needed berries
                 action: function()
                 {
+                    const richMulchEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true";
+
                     let berryLocations = [];
                     for (const [ index, plot ] of App.game.farming.plotList.entries())
                     {
@@ -1758,8 +1791,8 @@ class AutomationFarm
                             // Harvest the berry with a little margin, so we are sure that the Passho aura is active
                             if ((plot.age - plot.berryData.growthTime[PlotStage.Bloom]) > 30)
                             {
+                                this.__internal__mulchAndHarvest(index, richMulchEnabled);
                                 this.__internal__harvestCount++;
-                                App.game.farming.harvest(index);
                             }
                             else
                             {
