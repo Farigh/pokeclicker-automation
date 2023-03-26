@@ -499,14 +499,15 @@ class AutomationTrivia
         {
             for (const data of PartyController.getStoneEvolutionsCaughtData(pokemon.id, GameConstants.StoneType[stone]))
             {
-                // Some evolution might be locked with the folowing reason (as of v0.10.9):
+                // Some evolution might be locked with the folowing reason (as of v0.10.10):
                 //  - You must be in the <Region name>
                 //  - Your local part of the day must be <Time of day>
-                //  - Can't mega evolve <Pokémon name> yet
+                //  - <Pokémon name> holds no Mega Stone (or a more detailed hint)).
                 if (data.locked)
                 {
-                    // Only filter the mega-evolvable requirements
-                    if (data.lockHint.startsWith("Can't mega evolve"))
+                    // Keep region or time of day evolution restrictions, as the player can satisfy those pretty easily
+                    if (!data.lockHint.startsWith("Your local part of the day must be")
+                        && !data.lockHint.startsWith("You must be in the"))
                     {
                         continue;
                     }
