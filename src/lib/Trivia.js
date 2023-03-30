@@ -502,7 +502,7 @@ class AutomationTrivia
                 // Some evolution might be locked with the folowing reason (as of v0.10.10):
                 //  - You must be in the <Region name>
                 //  - Your local part of the day must be <Time of day>
-                //  - <Pokémon name> holds no Mega Stone (or a more detailed hint)).
+                //  - <Pokémon name> holds no Mega Stone (or a more detailed hint).
                 if (data.locked)
                 {
                     // Keep region or time of day evolution restrictions, as the player can satisfy those pretty easily

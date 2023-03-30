@@ -372,7 +372,7 @@ class AutomationFocusQuests
             return;
         }
 
-        // Sort quest to work on the most relevent one
+        // Sort quest to work on the most relevant one
         currentQuests.sort(this.__internal__sortQuestByPriority, this);
 
         // Filter the quests that do not need specific action

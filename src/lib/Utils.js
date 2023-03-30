@@ -139,7 +139,7 @@ class AutomationUtils
     /**
      * @brief Checks if the given @p obj is an instance of @p instanceName as javascripts `instanceof` would,
      *        but without requiring the class to be accessible.
-     *        This is usefull if the class was created in a module and the object is not accessible from the document.
+     *        This is useful if the class was created in a module and the object is not accessible from the document.
      *
      * @param obj: The object to check
      * @param {string} instanceName: The name of the class to expect
