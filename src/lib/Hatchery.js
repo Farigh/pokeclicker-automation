@@ -12,6 +12,7 @@ class AutomationHatchery
                           NotAlternateFormFirst: "Hatchery-NotAlternateFormFirst",
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UnlockMegaEvolutions: "Hatchery-UnlockMegaEvolutions",
+                          SkipAlreadyUnlockedMegaEvolutions: "Hatchery-SkipAlreadyUnlockedMegaEvolutions",
                           UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
                           PrioritizedSorting: "Hatchery-PrioritizedSorting",
@@ -34,6 +35,13 @@ class AutomationHatchery
         {
             // Disable mega evolution unlock mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UnlockMegaEvolutions, false);
+
+            // Don't allow to farm mega evolution power if the mega-evolution has already been unlocked by default
+            // (only relevant for real evolution challenge)
+            if (App.game.challenges.list.realEvolutions.active())
+            {
+                Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipAlreadyUnlockedMegaEvolutions, true);
+            }
 
             // Disable no-shiny mode by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.NotShinyFirst, false);
@@ -269,6 +277,21 @@ class AutomationHatchery
                                    + "a certain attack increase compared to its base attack.";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Focus on mega evolution requirements unlock", this.Settings.UnlockMegaEvolutions, megaEvolutionTooltip, categoryContainer);
+
+        // Add the skip already unlocked mega evolution setting (only relevant for real evolution challenge)
+        if (App.game.challenges.list.realEvolutions.active())
+        {
+            const skipMegaEvolutionTooltip = "The automation will not consider any mega-evolvable pokémon\n"
+                                           + "for which the mega evolution has already been unlocked"
+                                           + Automation.Menu.TooltipSeparator
+                                           + "Disabling this option might be useful to allow EV farming\n"
+                                           + "since it needs to reach the mega requirement a second time\n"
+                                           + "in this case.";
+            Automation.Menu.addLabeledAdvancedSettingsToggleButton("Don't consider already unlocked mega evolutions",
+                                                                   this.Settings.SkipAlreadyUnlockedMegaEvolutions,
+                                                                   skipMegaEvolutionTooltip,
+                                                                   categoryContainer);
+        }
     }
 
 
@@ -527,7 +550,7 @@ class AutomationHatchery
             opt.textContent = regionData.name;
 
             // Only hide locked region for the region filter.
-            // Indeed, it might be usefull for the regional debuff to prepare to the upcoming region(s).
+            // Indeed, it might be useful for the regional debuff to prepare to the upcoming region(s).
             if ((setting === this.Settings.PrioritizedRegion) && !regionData.isUnlocked())
             {
                 this.__internal__lockedRegions.push(regionData);
@@ -1204,6 +1227,12 @@ class AutomationHatchery
     static __internal__getUnderleveledMegaEvolutions()
     {
         const isRealEvolutionChallengeEnabled = App.game.challenges.list.realEvolutions.active();
+        const skipAlreadyUnlockedMegaEvolutions =
+            Automation.Utils.LocalStorage.getValue(this.Settings.SkipAlreadyUnlockedMegaEvolutions) === "true";
+
+        // Don't farm for pokémons that the player has already unlocked, if the real evolution challenge is enabled
+        // since the base pokémon stats gets transfered to the evolution in this mode, unless the user disabled this behaviour.
+        const dontFarmAlreadyUnlockedMega = isRealEvolutionChallengeEnabled && skipAlreadyUnlockedMegaEvolutions;
 
         return App.game.party.caughtPokemon.filter((partyPokemon) =>
             {
@@ -1219,9 +1248,7 @@ class AutomationHatchery
                             return false;
                         }
 
-                        // Don't farm for pokémons that the player has already unlocked if the real evolution challenge is enabled
-                        // Since the base pokémon stats gets transfered to the evolution in this mode
-                        if (isRealEvolutionChallengeEnabled)
+                        if (dontFarmAlreadyUnlockedMega)
                         {
                             return App.game.party.getPokemonByName(evolution.evolvedPokemon) == undefined;
                         }
@@ -1229,10 +1256,11 @@ class AutomationHatchery
                         return true;
                     });
 
+
                 // Don't consider pokémon that does not have a mega evolution
                 if (hasMegaEvolution)
                 {
-                    // Only consider pokémon with an incomplete mega-stone requirement (buid it since the pokémon might not have unlocked it yet)
+                    // Only consider pokémon with an incomplete mega-stone requirement (build it since the pokémon might not have unlocked it yet)
                     return !(new MegaStone(partyPokemon.id, partyPokemon.baseAttack, partyPokemon._attack).canEvolve());
                 }
 
