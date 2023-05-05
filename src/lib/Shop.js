@@ -128,9 +128,9 @@ class AutomationShop
             {
                 for (const itemData of this.__internal__shopItems)
                 {
-                    if (itemData.rowElem && itemData.rowElem.hidden && itemData.isUnlocked())
+                    if (itemData.htmlElems.row && itemData.htmlElems.row.hidden && itemData.isUnlocked())
                     {
-                        itemData.rowElem.hidden = false;
+                        itemData.htmlElems.row.hidden = false;
                         const tabElems = this.__internal__tabs.get(itemData.item.currency);
                         if (tabElems)
                         {
@@ -283,40 +283,38 @@ class AutomationShop
      */
     static __internal__addItemToTheList(table, itemData)
     {
-        const tableRow = document.createElement("tr");
-        tableRow.hidden = !itemData.isUnlocked(); // Hide the item row if needed
-        table.appendChild(tableRow);
-
-        // Update the item data
-        itemData.rowElem = tableRow;
+        // Add a table row
+        itemData.htmlElems.row = document.createElement("tr");
+        itemData.htmlElems.row.hidden = !itemData.isUnlocked(); // Hide the item row if needed
+        table.appendChild(itemData.htmlElems.row);
 
         // Add the purchase warning cell
         const purchaseWarningCell = document.createElement("td");
         purchaseWarningCell.style.paddingLeft = "7px";
-        tableRow.appendChild(purchaseWarningCell);
+        itemData.htmlElems.row.appendChild(purchaseWarningCell);
 
         const warningTooltip = "No accessible shop to buy this item"
                              + Automation.Menu.TooltipSeparator
                              + "This can happen when you change region and you\n"
                              + "cannot travel back to the previous region shops yet";
 
-        itemData.warningElement = document.createElement("span");
-        itemData.warningElement.classList.add("hasAutomationTooltip");
-        itemData.warningElement.classList.add("warningAutomationTooltip");
-        itemData.warningElement.classList.add("shortTransitionAutomationTooltip");
-        itemData.warningElement.style.cursor = "help";
-        itemData.warningElement.setAttribute("automation-tooltip-text", warningTooltip);
-        itemData.warningElement.hidden = true; // Hide it by default
-        purchaseWarningCell.appendChild(itemData.warningElement);
+        itemData.htmlElems.warning = document.createElement("span");
+        itemData.htmlElems.warning.classList.add("hasAutomationTooltip");
+        itemData.htmlElems.warning.classList.add("warningAutomationTooltip");
+        itemData.htmlElems.warning.classList.add("shortTransitionAutomationTooltip");
+        itemData.htmlElems.warning.style.cursor = "help";
+        itemData.htmlElems.warning.setAttribute("automation-tooltip-text", warningTooltip);
+        itemData.htmlElems.warning.hidden = true; // Hide it by default
+        purchaseWarningCell.appendChild(itemData.htmlElems.warning);
 
         const warningIcon = document.createElement("span");
         warningIcon.classList.add("automationWarningIcon");
-        itemData.warningElement.appendChild(warningIcon);
+        itemData.htmlElems.warning.appendChild(warningIcon);
 
         // Add the toggle button
         const toogleCell = document.createElement("td");
         toogleCell.style.paddingLeft = "4px";
-        tableRow.appendChild(toogleCell);
+        itemData.htmlElems.row.appendChild(toogleCell);
 
         const itemEnabledKey = this.__internal__advancedSettings.ItemEnabled(itemData.item.name);
         const buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(itemEnabledKey);
@@ -324,8 +322,8 @@ class AutomationShop
         buttonElem.addEventListener("click", function()
             {
                 // Display the warning if the item purchase its enable and the item can't be purchased at the moment
-                itemData.warningElement.hidden = (Automation.Utils.LocalStorage.getValue(itemEnabledKey) != "true")
-                                              || itemData.isPurchasable();
+                itemData.htmlElems.warning.hidden = (Automation.Utils.LocalStorage.getValue(itemEnabledKey) != "true")
+                                                 || itemData.isPurchasable();
             }, false);
 
         toogleCell.appendChild(buttonElem);
@@ -334,22 +332,22 @@ class AutomationShop
         const tableBuyLabelCell = document.createElement("td");
         tableBuyLabelCell.style.paddingLeft = "4px";
         tableBuyLabelCell.style.paddingRight = "4px";
-        tableRow.appendChild(tableBuyLabelCell);
+        itemData.htmlElems.row.appendChild(tableBuyLabelCell);
 
         tableBuyLabelCell.appendChild(document.createTextNode("Buy"));
 
         const tableBuyCountCell = document.createElement("td");
-        tableRow.appendChild(tableBuyCountCell);
-        const buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
-        buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name));
-        buyCount.style.width = "100%"; // Make it take the whole cell space
-        buyCount.style.margin = "0px";
-        buyCount.style.textAlign = "right";
-        tableBuyCountCell.appendChild(buyCount);
+        itemData.htmlElems.row.appendChild(tableBuyCountCell);
+        itemData.htmlElems.buyCount = Automation.Menu.createTextInputElement(4, "[0-9]");
+        itemData.htmlElems.buyCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name));
+        itemData.htmlElems.buyCount.style.width = "100%"; // Make it take the whole cell space
+        itemData.htmlElems.buyCount.style.margin = "0px";
+        itemData.htmlElems.buyCount.style.textAlign = "right";
+        tableBuyCountCell.appendChild(itemData.htmlElems.buyCount);
 
         const tableTargetLabelCell = document.createElement("td");
         tableTargetLabelCell.style.paddingRight = "4px";
-        tableRow.appendChild(tableTargetLabelCell);
+        itemData.htmlElems.row.appendChild(tableTargetLabelCell);
 
         // Item image
         const imageContainer = document.createElement("span");
@@ -371,40 +369,40 @@ class AutomationShop
         tableTargetLabelCell.appendChild(document.createTextNode("until the player has"));
 
         const tableUntilCountCell = document.createElement("td");
-        tableRow.appendChild(tableUntilCountCell);
-        const untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
-        untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name));
-        untilCount.style.width = "100%"; // Make it take the whole cell space
-        untilCount.style.margin = "0px";
-        untilCount.style.textAlign = "right";
-        tableUntilCountCell.appendChild(untilCount);
+        itemData.htmlElems.row.appendChild(tableUntilCountCell);
+        itemData.htmlElems.untilCount = Automation.Menu.createTextInputElement(10, "[0-9]");
+        itemData.htmlElems.untilCount.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name));
+        itemData.htmlElems.untilCount.style.width = "100%"; // Make it take the whole cell space
+        itemData.htmlElems.untilCount.style.margin = "0px";
+        itemData.htmlElems.untilCount.style.textAlign = "right";
+        tableUntilCountCell.appendChild(itemData.htmlElems.untilCount);
 
         // Savemark cell (will be added after the max-price ones)
         const tableLastCell = document.createElement("td");
 
         // Max price (only set if the item is subject to multiplier decrease)
-        let maxPrice = null;
         if (itemData.item.multiplierDecrease)
         {
             // Table price cells
             const tableMaxPriceLabelCell = document.createElement("td");
             tableMaxPriceLabelCell.style.paddingLeft = "4px";
             tableMaxPriceLabelCell.style.paddingRight = "4px";
-            tableRow.appendChild(tableMaxPriceLabelCell);
+            itemData.htmlElems.row.appendChild(tableMaxPriceLabelCell);
 
             tableMaxPriceLabelCell.appendChild(document.createTextNode("at max base price"));
 
             // Table max price
             const tableMaxPriceCell = document.createElement("td");
-            tableRow.appendChild(tableMaxPriceCell);
-            maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
-            maxPrice.style.width = "100%"; // Make it take the whole cell space
-            maxPrice.style.margin = "0px";
-            maxPrice.style.textAlign = "right";
-            maxPrice.innerHTML = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name));
-            tableMaxPriceCell.appendChild(maxPrice);
+            itemData.htmlElems.row.appendChild(tableMaxPriceCell);
+            itemData.htmlElems.maxPrice = Automation.Menu.createTextInputElement(10, "[0-9]");
+            itemData.htmlElems.maxPrice.style.width = "100%"; // Make it take the whole cell space
+            itemData.htmlElems.maxPrice.style.margin = "0px";
+            itemData.htmlElems.maxPrice.style.textAlign = "right";
+            itemData.htmlElems.maxPrice.innerHTML =
+                Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name));
+            tableMaxPriceCell.appendChild(itemData.htmlElems.maxPrice);
 
-            maxPrice.oninput = function() { this.__internal__basePriceOnInputCallback(maxPrice, itemData); }.bind(this);
+            itemData.htmlElems.maxPrice.oninput = function() { this.__internal__basePriceOnInputCallback(itemData); }.bind(this);
 
             // Add the currency image
             const currencyCell = document.createElement("td");
@@ -412,56 +410,60 @@ class AutomationShop
             currencyImage.src = `assets/images/currency/${GameConstants.Currency[itemData.item.currency]}.svg`;
             currencyImage.style.height = "25px";
             currencyCell.appendChild(currencyImage);
-            tableRow.appendChild(currencyCell);
+            itemData.htmlElems.row.appendChild(currencyCell);
         }
         else
         {
             // Keep the spacing and put the save mark right next to the last input text
             tableLastCell.colSpan = 4;
+
+            itemData.htmlElems.maxPrice = null;
         }
 
         // The save status checkmark
-        const checkmark = Automation.Menu.createAnimatedCheckMarkElement();
-        tableLastCell.appendChild(checkmark);
-        tableRow.appendChild(tableLastCell);
+        itemData.htmlElems.checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+        tableLastCell.appendChild(itemData.htmlElems.checkmark);
+        itemData.htmlElems.row.appendChild(tableLastCell);
 
         // Set common oninput callbacks
-        buyCount.oninput = function()
+        itemData.htmlElems.buyCount.oninput = function()
             {
-                this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
+                this.__internal__setSaveItemChangesTimeout(itemData);
             }.bind(this);
-        untilCount.oninput = function()
+        itemData.htmlElems.untilCount.oninput = function()
             {
-                this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPrice);
+                this.__internal__setSaveItemChangesTimeout(itemData);
             }.bind(this);
 
-        return tableRow.hidden;
+        return itemData.htmlElems.row.hidden;
     }
 
     /**
      * @brief Ensures that a valid baseprice was entered (ie. above the item minimum price)
+     *
+     * @param itemData: The item data
      */
-    static __internal__basePriceOnInputCallback(maxPriceElem, itemData)
+    static __internal__basePriceOnInputCallback(itemData)
     {
-        if (maxPriceElem.innerText < itemData.item.basePrice)
+        if (itemData.htmlElems.maxPrice.innerText < itemData.item.basePrice)
         {
-            maxPriceElem.classList.add("invalid");
+            itemData.htmlElems.maxPrice.classList.add("invalid");
             // Let the time to the user to edit the value before setting back the minimum possible value
             let timeout = setTimeout(function()
                 {
                     // Only update the value if it's still under the minimum possible
-                    if (maxPriceElem.innerText < itemData.item.basePrice)
+                    if (itemData.htmlElems.maxPrice.innerText < itemData.item.basePrice)
                     {
-                        maxPriceElem.innerText = itemData.item.basePrice;
-                        maxPriceElem.classList.remove("invalid");
+                        itemData.htmlElems.maxPrice.innerText = itemData.item.basePrice;
+                        itemData.htmlElems.maxPrice.classList.remove("invalid");
 
                         // Move the cursor at the end of the input if still focused
                         var range = document.createRange();
 
-                        if (maxPriceElem === document.activeElement)
+                        if (itemData.htmlElems.maxPrice === document.activeElement)
                         {
                             var set = window.getSelection();
-                            range.setStart(maxPriceElem.childNodes[0], maxPriceElem.innerText.length);
+                            range.setStart(itemData.htmlElems.maxPrice.childNodes[0], itemData.htmlElems.maxPrice.innerText.length);
                             range.collapse(true);
                             set.removeAllRanges();
                             set.addRange(range);
@@ -479,9 +481,9 @@ class AutomationShop
         }
         else
         {
-            maxPriceElem.classList.remove("invalid");
+            itemData.htmlElems.maxPrice.classList.remove("invalid");
         }
-        this.__internal__setSaveItemChangesTimeout(itemData.item.name, checkmark, buyCount, untilCount, maxPriceElem);
+        this.__internal__setSaveItemChangesTimeout(itemData);
     }
 
     /**
@@ -554,7 +556,7 @@ class AutomationShop
         // Iterate using `of` instead of `Object.entries` to keep the order
         for (const itemData of Object.values(sellableItems))
         {
-            const shopItem = { item: itemData.item }
+            const shopItem = { item: itemData.item, htmlElems: {} }
             shopItem.isUnlocked = () => itemData.towns.some(townName => TownList[townName].isUnlocked());
 
             // This may restrict some items that are actually purchasable, but only until the player unlocks the port again
@@ -624,15 +626,11 @@ class AutomationShop
     /**
      * @brief Saves the settings related to the given @p itemName
      *
-     * @param {string}  itemName: The name of the item to save the settings of
-     * @param {Element} checkmark: The checkmark save indicator element
-     * @param {Element} buyCount: The buy count input element
-     * @param {Element} untilCount: The until count input element
-     * @param {Element} maxPrice: The max price input element
+     * @param itemData: The item data
      */
-    static __internal__setSaveItemChangesTimeout(itemName, checkmark, buyCount, untilCount, maxPrice)
+    static __internal__setSaveItemChangesTimeout(itemData)
     {
-        const mapKey = `${itemName}-Save`;
+        const mapKey = `${itemData.item.name}-Save`;
 
         if (this.__internal__activeTimeouts.has(mapKey))
         {
@@ -642,17 +640,17 @@ class AutomationShop
 
         const timeout = setTimeout(function()
             {
-                Automation.Menu.showCheckmark(checkmark, 2000);
+                Automation.Menu.showCheckmark(itemData.htmlElems.checkmark, 2000);
 
                 // Save the buying amount
-                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.BuyAmount(itemName),
-                                                       Automation.Utils.tryParseInt(buyCount.innerText));
-                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.TargetAmount(itemName),
-                                                       Automation.Utils.tryParseInt(untilCount.innerText));
-                if (maxPrice)
+                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.BuyAmount(itemData.item.name),
+                                                       Automation.Utils.tryParseInt(itemData.htmlElems.buyCount.innerText));
+                Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name),
+                                                       Automation.Utils.tryParseInt(itemData.htmlElems.untilCount.innerText));
+                if (itemData.htmlElems.maxPrice)
                 {
-                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemName),
-                                                           Automation.Utils.tryParseInt(maxPrice.innerText));
+                    Automation.Utils.LocalStorage.setValue(this.__internal__advancedSettings.MaxBuyUnitPrice(itemData.item.name),
+                                                           Automation.Utils.tryParseInt(itemData.htmlElems.maxPrice.innerText));
                 }
             }.bind(this), 3000); // Save the changes after 3s without edition
 
@@ -734,10 +732,10 @@ class AutomationShop
             // Skip any not-purchasable item
             if (!itemData.isPurchasable())
             {
-                itemData.warningElement.hidden = false;
+                itemData.htmlElems.warning.hidden = false;
                 continue;
             }
-            itemData.warningElement.hidden = true;
+            itemData.htmlElems.warning.hidden = true;
 
             const targetAmount = parseInt(Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.TargetAmount(itemData.item.name)));
 
