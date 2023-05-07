@@ -17,9 +17,9 @@ class AutomationGym
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Hide the gym fight panel by default
-            let gymTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
+            let gymTitle = '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
                          +     '&nbsp;Gym fight&nbsp;'
-                         + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
+                         + '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
             let gymDiv = Automation.Menu.addCategory("gymFightButtons", gymTitle);
             this.__internal__gymFightButton = gymDiv.parentElement;
             this.__internal__gymFightButton.hidden = true;
