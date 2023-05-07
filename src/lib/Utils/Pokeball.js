@@ -59,7 +59,7 @@ class AutomationUtilsPokeball
 
         // Only consider Contagious pokémons
         this.__internal__automationFilter.options.pokerus = pokeballFilterOptions.pokerus.createSetting();
-        this.__internal__automationFilter.options.pokerus.observableValue(Pokerus.Contagious);
+        this.__internal__automationFilter.options.pokerus.observableValue(GameConstants.Pokerus.Contagious);
 
         this.enableAutomationFilter();
     }
