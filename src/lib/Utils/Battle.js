@@ -216,22 +216,6 @@ class AutomationUtilsBattle
         return worstAtk;
     }
 
-    /**
-     * @brief Only sets the already caught pokéball if the player has unlocked the feature in-game
-     *
-     * @param pokeballType: The pokéball type to set
-     */
-    static setAlreadyCaughtContagiousSelection(pokeballType)
-    {
-        if (App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus))
-        {
-            App.game.pokeballs.alreadyCaughtContagiousSelection = pokeballType;
-
-            // Don't check the condition next time
-            this.setAlreadyCaughtContagiousSelection = function(type) { App.game.pokeballs.alreadyCaughtContagiousSelection = type; };
-        }
-    }
-
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/

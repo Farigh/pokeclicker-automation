@@ -94,8 +94,8 @@ class AutomationFocusAchievements
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
 
-        // Restore the ball to catch default value
-        Automation.Focus.__resetBallSelection();
+        // Restore pokéball filters
+        Automation.Utils.Pokeball.disableAutomationFilter();
     }
 
     /**
@@ -159,8 +159,8 @@ class AutomationFocusAchievements
      */
     static __internal__workOnAchievement()
     {
-        // Reset any equipped pokeball
-        Automation.Focus.__resetBallSelection();
+        // Restore pokéball filters
+        Automation.Utils.Pokeball.disableAutomationFilter();
 
         if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "RouteKillRequirement"))
         {

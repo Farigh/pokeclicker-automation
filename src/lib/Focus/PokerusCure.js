@@ -111,8 +111,8 @@ class AutomationFocusPokerusCure
         clearInterval(this.__internal__pokerusCureLoop);
         this.__internal__pokerusCureLoop = null;
 
-        // Restore pokéballs
-        Automation.Focus.__resetBallSelection();
+        // Restore pokéball filters
+        Automation.Utils.Pokeball.disableAutomationFilter();
 
         // Reset other modes status
         Automation.Click.toggleAutoClick();
@@ -188,7 +188,7 @@ class AutomationFocusPokerusCure
         // Ensure that the player has some balls available
         if (!Automation.Focus.__ensurePlayerHasEnoughBalls(Automation.Focus.__pokeballToUseSelectElem.value))
         {
-            Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(Automation.Focus.__defaultContagiousCaughtPokeballSelectElem.value);
+            Automation.Utils.disableAutomationFilter();
             return;
         }
 
@@ -196,7 +196,7 @@ class AutomationFocusPokerusCure
         if ((this.__internal__currentDungeonData != null)
             && App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < this.__internal__currentDungeonData.dungeon.tokenCost)
         {
-            Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(Automation.Focus.__defaultContagiousCaughtPokeballSelectElem.value);
+            Automation.Utils.disableAutomationFilter();
             Automation.Focus.__goToBestRouteForDungeonToken();
             return;
         }
@@ -207,8 +207,8 @@ class AutomationFocusPokerusCure
         // Equip an "Already caught contagious" pokeball
         const pokeballToUse = (currentLocationData.needsBeastBall) ? GameConstants.Pokeball.Beastball
                                                                    : Automation.Focus.__pokeballToUseSelectElem.value;
-        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(pokeballToUse);
-        App.game.pokeballs.alreadyCaughtSelection = GameConstants.Pokeball.None;
+
+        Automation.Utils.Pokeball.onlyCatchContagiousWith(pokeballToUse);
 
         if (this.__internal__currentRouteData)
         {
