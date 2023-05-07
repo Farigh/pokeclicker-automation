@@ -46,8 +46,6 @@ class AutomationFocus
 
     static __noFunctionalityRefresh = -1;
     static __pokeballToUseSelectElem = null;
-    static __defaultCaughtPokeballSelectElem = null;
-    static __defaultContagiousCaughtPokeballSelectElem = null;
 
     /**
      * @brief Makes sure no instance is in progress
@@ -97,8 +95,7 @@ class AutomationFocus
         this.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
-        App.game.pokeballs.alreadyCaughtSelection = this.__pokeballToUseSelectElem.value;
-        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__pokeballToUseSelectElem.value);
+        Automation.Utils.Pokeball.catchEverythingWith(this.__pokeballToUseSelectElem.value);
 
         // Move to the highest unlocked route
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__pokeballToUseSelectElem.value);
@@ -205,15 +202,6 @@ class AutomationFocus
         }
 
         return true;
-    }
-
-    /**
-     * @brief Resets the player's ball selection according to the settings
-     */
-    static __resetBallSelection()
-    {
-        App.game.pokeballs.alreadyCaughtSelection = this.__defaultCaughtPokeballSelectElem.value;
-        Automation.Utils.Battle.setAlreadyCaughtContagiousSelection(this.__defaultContagiousCaughtPokeballSelectElem.value);
     }
 
     /*********************************************************************\
@@ -364,54 +352,6 @@ class AutomationFocus
                                             this.Settings.BallToUseToCatch,
                                             "Pokeball to use for catching :",
                                             pokeballToUseTooltip);
-
-        // Default Pokeball for caught pokémons
-        const defaultCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch\n"
-                                           + "already caught pokémon, when no catching is needed"
-                                           + Automation.Menu.TooltipSeparator
-                                           + "This setting will not be taken into account while focusing on quests.\n"
-                                           + "In this case no pokéball will be equipped to complete quests faster"
-                                           + disclaimer;
-        this.__defaultCaughtPokeballSelectElem =
-            Automation.Menu.addPokeballList("focusDefaultCaughtBallSelection",
-                                            generalTabContainer,
-                                            this.Settings.DefaultCaughtBall,
-                                            "Default value for caught pokémon pokéball :",
-                                            defaultCaughtPokeballTooltip,
-                                            true);
-
-        // Default Pokeball for contatgious caught pokémons
-        const defaultContagiousCaughtPokeballTooltip = "Defines which pokeball will be equipped to catch already\n"
-                                                     + "caught contagious pokémon, when no catching is needed"
-                                                     + Automation.Menu.TooltipSeparator
-                                                     + "This setting will not be taken into account while focusing on quests.\n"
-                                                     + "In this case no pokéball will be equipped to complete quests faster"
-                                                     + disclaimer;
-        this.__defaultContagiousCaughtPokeballSelectElem =
-            Automation.Menu.addPokeballList("focusDefaultContagiousCaughtBallSelection",
-                                            generalTabContainer,
-                                            this.Settings.DefaultContagiousCaughtBall,
-                                            "Default value for contagious caught pokémon pokéball :",
-                                            defaultContagiousCaughtPokeballTooltip,
-                                            true);
-
-        // Hide it by default if the player did not unlock the in-game option
-        this.__defaultContagiousCaughtPokeballSelectElem.parentElement.hidden = !App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus);
-
-        // Set an interval to make the option visible once unlocked
-        if (this.__defaultContagiousCaughtPokeballSelectElem.parentElement.hidden)
-        {
-            const watcher = setInterval(function()
-                {
-                    if (App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus))
-                    {
-                        this.__defaultContagiousCaughtPokeballSelectElem.parentElement.hidden = false;
-
-                        // Feature unlocked, unregister the loop
-                        clearInterval(watcher);
-                    }
-                }.bind(this), 5000); // Refresh every 5s
-        }
     }
 
     /**
@@ -514,7 +454,7 @@ class AutomationFocus
                 stop: function ()
                     {
                         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
-                        this.__resetBallSelection();
+                        Automation.Utils.Pokeball.disableAutomationFilter();
                     }.bind(this),
                 refreshRateAsMs: 3000 // Refresh every 3s
             });

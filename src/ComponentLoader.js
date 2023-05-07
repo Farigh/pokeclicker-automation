@@ -33,6 +33,7 @@ class AutomationComponentLoader
         this.__addScript("src/lib/Utils/Gym.js");
         this.__addScript("src/lib/Utils/LocalStorage.js");
         this.__addScript("src/lib/Utils/OakItem.js");
+        this.__addScript("src/lib/Utils/Pokeball.js");
         this.__addScript("src/lib/Utils/Route.js");
 
         this.__loadingOrder += 1;

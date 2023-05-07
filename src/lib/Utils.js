@@ -8,6 +8,7 @@ class AutomationUtils
     static Gym = AutomationUtilsGym;
     static LocalStorage = AutomationUtilsLocalStorage;
     static OakItem = AutomationUtilsOakItem;
+    static Pokeball = AutomationUtilsPokeball;
     static Route = AutomationUtilsRoute;
 
     /**
@@ -20,6 +21,7 @@ class AutomationUtils
         this.Battle.initialize(initStep);
         this.Gym.initialize(initStep);
         this.Route.initialize(initStep);
+        this.Pokeball.initialize(initStep);
     }
 
     /**
