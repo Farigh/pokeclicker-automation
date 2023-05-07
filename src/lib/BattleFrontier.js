@@ -15,9 +15,9 @@
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Hide the Battle Frontier fight panel by default
-            const title = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
+            const title = '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">'
                         +     '&nbsp;Battle Frontier&nbsp;'
-                        + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
+                        + '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
             const panelContainer = Automation.Menu.addCategory("battleFrontierFightButtons", title);
 
             this.__internal__autoBattleFrontierPanel = panelContainer.parentElement;

@@ -114,9 +114,9 @@ class AutomationDungeon
     static __internal__buildMenu()
     {
         // Hide the dungeon fight panel by default
-        const dungeonTitle = '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position: relative; bottom: 3px; transform: scaleX(-1);">'
+        const dungeonTitle = '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position: relative; bottom: 3px; transform: scaleX(-1);">'
                            +     '&nbsp;Dungeon fight&nbsp;'
-                           + '<img src="assets/images/trainers/Crush Kin.png" height="20px" style="position: relative; bottom: 3px;">';
+                           + '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position: relative; bottom: 3px;">';
         const dungeonDiv = Automation.Menu.addCategory("dungeonFightButtons", dungeonTitle);
         this.__internal__dungeonFightButton = dungeonDiv.parentElement;
         this.__internal__dungeonFightButton.hidden = true;
