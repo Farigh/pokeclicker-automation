@@ -52,11 +52,10 @@ class AutomationUtilsRoute
             return;
         }
 
-        let town = TownList[townName];
+        const town = TownList[townName];
 
         // Don't move if the game would not allow it
-        if (!this.canMoveToRegion(town.region)
-            || !town.isUnlocked())
+        if (!this.canMoveToTown(town))
         {
             return;
         }
@@ -124,6 +123,19 @@ class AutomationUtilsRoute
         }
 
         return true;
+    }
+
+    /**
+     * @brief Determines if the player can move to the given @p town
+     *
+     * @param town: The game's town instance
+     *
+     * @returns True if the player can move to the town, false otherwise
+     */
+    static canMoveToTown(town)
+    {
+        // Moving to a town can only be performed if the player can move to its region and the town is accessible
+        return this.canMoveToRegion(town.region) && town.isUnlocked();
     }
 
     /**
