@@ -249,7 +249,9 @@ class AutomationFocusPokerusCure
 
         // Set the next best route
         this.__internal__currentRouteData = this.__internal__pokerusRouteData.find(
-            (data) => this.__internal__doesRouteHaveAnyPokemonNeedingCure(data.route, true), this);
+            (data) => this.__internal__doesRouteHaveAnyPokemonNeedingCure(data.route, true)
+                      // Don't consider route that the player can't access yet
+                   && (Automation.Utils.Route.canMoveToRoute(data.route.number, data.route.region, data.route)), this);
 
         // Determine if the beast ball is the only catching option
         if (this.__internal__currentRouteData)
@@ -273,7 +275,9 @@ class AutomationFocusPokerusCure
 
         // Set the next best route
         this.__internal__currentDungeonData = this.__internal__pokerusDungeonData.find(
-            (data) => this.__internal__doesDungeonHaveAnyPokemonNeedingCure(data.dungeon, true), this);
+            (data) => this.__internal__doesDungeonHaveAnyPokemonNeedingCure(data.dungeon, true)
+                      // Don't consider dungeon that the player can't access yet
+                   && Automation.Utils.Route.canMoveToTown(TownList[data.dungeon.name]), this);
 
         // Determine if the beast ball is the only catching option
         if (this.__internal__currentDungeonData)
@@ -290,7 +294,9 @@ class AutomationFocusPokerusCure
     {
         for (const route of Routes.regionRoutes)
         {
-            if (this.__internal__doesRouteHaveAnyPokemonNeedingCure(route))
+            // Don't add routes that are not yet available to the player, nor ones that are already cured
+            if ((route.region <= GameConstants.MAX_AVAILABLE_REGION)
+                && this.__internal__doesRouteHaveAnyPokemonNeedingCure(route))
             {
                 this.__internal__pokerusRouteData.push({ route });
             }
@@ -316,7 +322,16 @@ class AutomationFocusPokerusCure
     {
         for (const dungeonName of Object.keys(dungeonList))
         {
-            let dungeon = dungeonList[dungeonName];
+            const town = TownList[dungeonName];
+
+            // Don't add dungeons that are not yet available to the player
+            if (town.region > GameConstants.MAX_AVAILABLE_REGION)
+            {
+                continue;
+            }
+
+            const dungeon = dungeonList[dungeonName];
+            // Don't add dungeons that are already cured
             if (this.__internal__doesDungeonHaveAnyPokemonNeedingCure(dungeon))
             {
                 this.__internal__pokerusDungeonData.push({ dungeon });
