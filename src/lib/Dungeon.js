@@ -317,8 +317,11 @@ class AutomationDungeon
                 this.__internal__resetSavedStates();
                 DungeonRunner.initializeDungeon(player.town().dungeon);
 
-                // Disable automation filter
-                Automation.Utils.Pokeball.disableAutomationFilter();
+                // Disable automation filter, unless it's an automation process
+                if (!forceDungeonProcessing)
+                {
+                    Automation.Utils.Pokeball.disableAutomationFilter();
+                }
             }
         }
         else if (App.game.gameState === GameConstants.GameState.dungeon)
