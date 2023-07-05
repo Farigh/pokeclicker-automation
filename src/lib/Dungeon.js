@@ -387,7 +387,7 @@ class AutomationDungeon
                         this.__internal__chestPositions = [];
                         this.__internal__floorEndPosition = null;
                         // Do not call DungeonRunner.nextFloor() directly, as it has no checks
-                        DungeonRunner.handleClick();
+                        DungeonRunner.handleInteraction();
                     }
                     else
                     {
