@@ -17,7 +17,7 @@ class AutomationUtilsOakItem
                            OakItemType.Amulet_Coin,
                            OakItemType.Rocky_Helmet,
                            OakItemType.Exp_Share,
-                           OakItemType.Blaze_Cassette
+                           OakItemType.Magma_Stone
                        ];
 
         /**
@@ -36,7 +36,7 @@ class AutomationUtilsOakItem
         static PokemonExp = [
                                 OakItemType.Rocky_Helmet,
                                 OakItemType.Exp_Share,
-                                OakItemType.Blaze_Cassette,
+                                OakItemType.Magma_Stone,
                                 OakItemType.Amulet_Coin
                             ];
     }
