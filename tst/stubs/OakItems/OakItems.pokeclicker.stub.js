@@ -60,7 +60,7 @@ class OakItems
         this.itemList[OakItemType.Exp_Share]  = new OakItem(OakItemType.Exp_Share, 'EXP Share');
         this.itemList[OakItemType.Sprayduck] = new OakItem(OakItemType.Sprayduck, 'Sprayduck');
         this.itemList[OakItemType.Shiny_Charm] = new OakItem(OakItemType.Shiny_Charm, 'Shiny Charm');
-        this.itemList[OakItemType.Blaze_Cassette] = new OakItem(OakItemType.Blaze_Cassette, 'Blaze Cassette');
+        this.itemList[OakItemType.Magma_Stone] = new OakItem(OakItemType.Magma_Stone, 'Magma Stone');
         this.itemList[OakItemType.Cell_Battery] = new OakItem(OakItemType.Cell_Battery, 'Cell Battery');
         this.itemList[OakItemType.Squirtbottle] = new OakItem(OakItemType.Squirtbottle, 'Squirtbottle');
         this.itemList[OakItemType.Sprinklotad] = new OakItem(OakItemType.Sprinklotad, 'Sprinklotad');

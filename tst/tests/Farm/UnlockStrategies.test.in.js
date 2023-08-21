@@ -1497,7 +1497,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expectedConfig[BerryType.Figy] = [ 2, 15, 19 ];
         expectedConfig[BerryType.Razz] = [ 7, 20, 24 ];
         const expectedOrder = [ BerryType.Spelon, BerryType.Tamato, BerryType.Figy, BerryType.Razz ];
-        runBerryMutationTest(BerryType.Occa, expectedConfig, expectedOrder, null, [ OakItemType.Blaze_Cassette ]);
+        runBerryMutationTest(BerryType.Occa, expectedConfig, expectedOrder, null, [ OakItemType.Magma_Stone ]);
     });
 
     // Test the 57th unlock
@@ -1842,7 +1842,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
     // Test the 71st unlock
     test('Unlock Chople berry', () =>
     {
-        const oakItemNeeded = OakItemType.Blaze_Cassette;
+        const oakItemNeeded = OakItemType.Magma_Stone;
 
         // Expect the strategy to have been disabled
         expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);

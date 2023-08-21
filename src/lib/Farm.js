@@ -1205,7 +1205,7 @@ class AutomationFarm
             BerryType.Occa, this.__internal__plantFourBerriesForMutationConfig(BerryType.Tamato, BerryType.Figy, BerryType.Spelon, BerryType.Razz),
             1,
             null,
-            [ OakItemType.Blaze_Cassette ]);
+            [ OakItemType.Magma_Stone ]);
 
         // #45 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
         this.__internal__addUnlockMutationStrategy(
@@ -1297,7 +1297,7 @@ class AutomationFarm
         // #42 Unlock at least one Chople berry through mutation (moved this far to avoid any problem, since it uses Oak items)
         const chopleConfig = {};
         chopleConfig[BerryType.Spelon] = allSlotIndexes;
-        this.__internal__addUnlockMutationStrategy(BerryType.Chople, chopleConfig, 1, OakItemType.Blaze_Cassette);
+        this.__internal__addUnlockMutationStrategy(BerryType.Chople, chopleConfig, 1, OakItemType.Magma_Stone);
 
         // The next mutation need to grow berries while others are ripe, so we need to start on a empty farm
         this.__internal__unlockStrategySelection.push(
