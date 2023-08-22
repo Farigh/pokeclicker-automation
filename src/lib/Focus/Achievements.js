@@ -255,7 +255,7 @@ class AutomationFocusAchievements
         {
             Automation.Utils.Route.moveToTown(targetedDungeonName);
 
-            // Let a tick to the menu to show up
+            // Let a tick for the menu to show up
             return;
         }
 
