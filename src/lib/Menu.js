@@ -1471,7 +1471,7 @@ class AutomationMenu
             .automation-setting-menu-container[automation-visible]
             {
                 max-width: 650px;
-                max-height: 600px;
+                max-height: 650px;
 
                 transition-property:        max-width, max-height;
                 transition-timing-function:   ease-in,    ease-in;

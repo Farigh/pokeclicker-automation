@@ -222,7 +222,7 @@ class AutomationFocusPokerusCure
             {
                 Automation.Utils.Route.moveToTown(this.__internal__currentDungeonData.dungeon.name);
 
-                // Let a tick to the menu to show up
+                // Let a tick for the menu to show up
                 return;
             }
 

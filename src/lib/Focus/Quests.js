@@ -69,6 +69,7 @@ class AutomationFocusQuests
         this.__internal__questLabels["DefeatPokemonsQuest"] = "Defeat <n> Pokémon on <Route>.";
         this.__internal__questLabels["CapturePokemonsQuest"] = "Capture <n> Pokémon.";
         this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture <n> <Type> Pokémon.";
+        this.__internal__questLabels["ClearBattleFrontier"] = "Clear <n> stages in the Battle Frontier.";
         this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
         this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
         this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
@@ -224,8 +225,11 @@ class AutomationFocusQuests
         Automation.Farm.toggleAutoFarming();
         Automation.Underground.toggleAutoMining();
 
-        // Stop gym auto-fight
+        // Stop any gym auto-fight
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
+
+        // Stop any Battle Frontier fight
+        Automation.BattleFrontier.ForceStop();
 
         // Re-enable other modes button
         Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
@@ -250,20 +254,25 @@ class AutomationFocusQuests
         // Make sure to always have some balls to catch pokemons
         this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__pokeballToUseSelectElem.value, 10);
 
-        // Disable best route if needed
-        Automation.Menu.forceAutomationState("bestRouteClickEnabled", false);
-
         this.__internal__claimCompletedQuests();
         this.__internal__selectNewQuests();
 
+        const filteredQuests = this.__internal__getFilteredCurrentQuests();
+
         // Skip any unwanted quest
-        if (this.__internal__getFilteredCurrentQuests().length == 0)
+        if (filteredQuests.length == 0)
         {
+            // Stop any running Battle Frontier instance
+            if (App.game.gameState == GameConstants.GameState.battleFrontier)
+            {
+                Automation.BattleFrontier.ForceStop();
+            }
+
             this.__internal__skipRemainingQuests();
         }
         else
         {
-            this.__internal__workOnQuest();
+            this.__internal__workOnQuest(filteredQuests);
             this.__internal__workOnBackgroundQuests();
         }
     }
@@ -354,22 +363,18 @@ class AutomationFocusQuests
 
     /**
      * @brief Works on the most efficient quest available.
+     *
+     * @param currentQuests: The currently active quests to process
      */
-    static __internal__workOnQuest()
+    static __internal__workOnQuest(currentQuests)
     {
         // Already fighting, nothing to do for now
-        if (Automation.Utils.isInInstanceState())
+        if ((App.game.gameState != GameConstants.GameState.battleFrontier) && Automation.Utils.isInInstanceState())
         {
             Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
             return;
         }
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
-
-        const currentQuests = this.__internal__getFilteredCurrentQuests();
-        if (currentQuests.length == 0)
-        {
-            return;
-        }
 
         // Sort quest to work on the most relevant one
         currentQuests.sort(this.__internal__sortQuestByPriority, this);
@@ -387,6 +392,18 @@ class AutomationFocusQuests
             });
 
         const quest = filteredQuests[0];
+
+        if (Automation.Utils.isInstanceOf(quest, "ClearBattleFrontier"))
+        {
+            this.__internal__workOnClearBattleFrontier();
+            return;
+        }
+        else if (App.game.gameState == GameConstants.GameState.battleFrontier)
+        {
+            // Cleanup battle frontier, if needed
+            Automation.BattleFrontier.ForceStop();
+            return;
+        }
 
         // Defeat gym quest
         if (Automation.Utils.isInstanceOf(quest, "CapturePokemonsQuest")
@@ -517,6 +534,37 @@ class AutomationFocusQuests
     }
 
     /**
+     * @brief Works on a quest requiring to clear Battle Frontier battles.
+     */
+    static __internal__workOnClearBattleFrontier()
+    {
+        if (BattleFrontierRunner.started())
+        {
+            // Nothing else to do
+            return;
+        }
+
+        // Move to Battle Frontier town if not already there
+        const battleFrontierTownName = "Battle Frontier";
+        if (!Automation.Utils.Route.isPlayerInTown(battleFrontierTownName))
+        {
+            Automation.Utils.Route.moveToTown(battleFrontierTownName);
+        }
+
+        // Enter Battle Frontier
+        if (App.game.gameState != GameConstants.GameState.battleFrontier)
+        {
+            App.game.battleFrontier.enter();
+
+            // Let a tick for the menu to show up
+            return;
+        }
+
+        // Start the automation
+        Automation.Menu.forceAutomationState(Automation.BattleFrontier.Settings.FeatureEnabled, true);
+    }
+
+    /**
      * @brief Works on a DefeatDungeonQuest.
      *
      * If the player does not have enough dungeon token to enter the dungeon, some balls are equipped
@@ -544,7 +592,7 @@ class AutomationFocusQuests
         {
             Automation.Utils.Route.moveToTown(quest.dungeon);
 
-            // Let a tick to the menu to show up
+            // Let a tick for the menu to show up
             return;
         }
 
@@ -846,6 +894,9 @@ class AutomationFocusQuests
 
         if (Automation.Utils.isInstanceOf(a, "DefeatPokemonsQuest")) return -1;
         if (Automation.Utils.isInstanceOf(b, "DefeatPokemonsQuest")) return 1;
+
+        if (Automation.Utils.isInstanceOf(a, "ClearBattleFrontier")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "ClearBattleFrontier")) return 1;
 
         // Then the gain pokedollar one
         if (Automation.Utils.isInstanceOf(a, "GainMoneyQuest")) return -1;

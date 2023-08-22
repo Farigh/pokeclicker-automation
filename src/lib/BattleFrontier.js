@@ -40,6 +40,21 @@
         }
     }
 
+    /**
+     * @brief Forces the automation to stop
+     */
+    static ForceStop()
+    {
+        // Stop the automation
+        this.__internal__toggleBattleFrontierFight(false);
+
+        // Exit the battle frontier
+        BattleFrontierRunner.end();
+
+        // Leave the menu
+        App.game.battleFrontier.leave();
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
@@ -110,7 +125,7 @@
             return;
         }
 
-        // Start a new run, using the checkpoint if available
+        // Start a new run, using the last checkpoint if available
         BattleFrontierRunner.start(true);
     }
 
