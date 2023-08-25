@@ -63,7 +63,8 @@ class AutomationUtilsGym
                                                          : playerClickAttack;
 
             let currentGymGemPerTick = 0;
-            for (const pokemon of gym.pokemons)
+            const gymPokemons = gym.getPokemonList()
+            for (const pokemon of gymPokemons)
             {
                 const pokemonData = pokemonMap[pokemon.name];
                 if (!pokemonData.type.includes(pokemonType))
@@ -77,7 +78,7 @@ class AutomationUtilsGym
             }
 
             // TODO (26/06/2022): Be more precise, all pokemons do not have the same health
-            currentGymGemPerTick /= gym.pokemons.length;
+            currentGymGemPerTick /= gymPokemons.length;
 
             // Compare with a 1/1000 precision
             if (Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000))
@@ -151,7 +152,7 @@ class AutomationUtilsGym
 
             const weatherType = Weather.regionalWeather[townRegion]();
 
-            const ticksToWin = gym.pokemons.reduce(
+            const ticksToWin = gym.getPokemonList().reduce(
                 (count, pokemon) =>
                 {
                     const partyAttack =
@@ -198,7 +199,7 @@ class AutomationUtilsGym
         {
             let gym = GymList[gymName];
 
-            for (const pokemon of gym.pokemons)
+            for (const pokemon of gym.getPokemonList())
             {
                 let pokemonData = pokemonMap[pokemon.name];
 
@@ -225,14 +226,8 @@ class AutomationUtilsGym
                                              gymName: gymName,
                                              gymTown: gymTown,
                                              region: TownList[gymTown].region,
-                                             subRegion: TownList[gymTown].subRegion,
-                                             pokemonMathingType: 1,
-                                             totalPokemons: gym.pokemons.length
+                                             subRegion: TownList[gymTown].subRegion
                                          });
-                    }
-                    else
-                    {
-                        gemTypeData.at(-1).pokemonMathingType += 1;
                     }
                 }
             }

@@ -10,4 +10,9 @@ class Gym extends TownContent
         this.town = town;
         this.pokemons = pokemons;
     }
+
+    getPokemonList()
+    {
+        return this.pokemons
+    }
 }
