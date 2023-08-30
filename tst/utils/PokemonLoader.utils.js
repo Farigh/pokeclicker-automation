@@ -10,6 +10,7 @@ class PokemonLoader
         this.__tryRegisterPokemon("Rayquaza", 384, 2, 45, { hitpoints: 105, attack: 150 }, [ PokemonType.Dragon, PokemonType.Flying ], 120);
         this.__tryRegisterPokemon("Dialga", 483, 3, 3, { hitpoints: 100, attack: 120 }, [ PokemonType.Steel, PokemonType.Dragon ], 120);
         this.__tryRegisterPokemon("Palkia", 484, 3, 3, { hitpoints: 90, attack: 120 }, [ PokemonType.Water, PokemonType.Dragon ], 120);
+        this.__tryRegisterPokemon("Snover", 459, 3, 120, { hitpoints: 60, attack: 62 }, [ PokemonType.Grass, PokemonType.Ice ], 20);
     }
 
     /**
@@ -354,7 +355,7 @@ dataPrinter = function (pokename)
          + `, ${pokedata.eggCycles});\n`;
 }
 
-for (const pokename of [ "Kyogre", "Groudon", "Rayquaza", "Dialga", "Palkia" ])
+for (const pokename of [ "Kyogre", "Groudon", "Rayquaza", "Dialga", "Palkia", "Snover" ])
 {
     buffer += dataPrinter(pokename);
 }

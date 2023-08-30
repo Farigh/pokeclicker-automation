@@ -1837,9 +1837,33 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expectedConfig[BerryType.Charti] = [ 5, 9, 10, 11, 12, 13, 14, 15, 19 ];
         const expectedOrder = [ BerryType.Shuca, BerryType.Charti ];
         runBerryMutationTest(BerryType.Babiri, expectedConfig, expectedOrder);
+
+        // Give the player 20 Babiri berries, to move to the next farming strategy
+        App.game.farming.__berryListCount[BerryType.Babiri] = 20;
+        Automation.Farm.__internal__farmLoop();
     });
 
     // Test the 71st unlock
+    test('Unlock Snover berry', () =>
+    {
+        checkPokemonNeededBehaviour("Snover");
+
+        // Expect the strategy to be pointing to the right one
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[70]);
+
+        // The layout should look like that
+        // |a|a|a|a|a|
+        // |a|a|a|a|a|  with:  a : Babiri
+        // |a|a|a|a|a|
+        // |a|a|a| | |
+        // |a|a| | | |
+        const expectedConfig = {};
+        expectedConfig[BerryType.Babiri] = App.game.farming.plotList.map((_, index) => index).filter(x => ![ 18, 19, 22, 23, 24 ].includes(x));
+        const expectedOrder = [ BerryType.Babiri ];
+        runBerryMutationTest(BerryType.Snover, expectedConfig, expectedOrder);
+    });
+
+    // Test the 72nd unlock
     test('Unlock Chople berry', () =>
     {
         const oakItemNeeded = OakItemType.Magma_Stone;
@@ -1848,7 +1872,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[70]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[71]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -1866,7 +1890,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
     test('Wait for plots to be emptied', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[71]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
 
         for (const [ index, plot ] of App.game.farming.plotList.entries())
         {
@@ -1881,19 +1905,19 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
             if (index != App.game.farming.plotList.length - 1)
             {
                 // The automation should not move to the next stage until every slots are empty
-                expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[71]);
+                expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
             }
         }
 
         // Expect the strategy to be pointing to the next one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[73]);
     });
 
-    // Test the 73rd unlock step 1
+    // Test the 74th unlock step 1
     test('Unlock Chilan berry > step 1', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[73]);
 
         const chilanUnlockFirstStep = function()
             {
@@ -1934,11 +1958,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         Automation.Farm.__internal__farmLoop();
     });
 
-    // Test the 73rd unlock step 2
+    // Test the 74th unlock step 2
     test('Unlock Chilan berry > step 2', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[72]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[73]);
 
         runBerryMutationTestNoTiming(
             BerryType.Chilan,
@@ -1966,7 +1990,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expect(App.game.farming.unlockedBerries[BerryType.Chilan]()).toBe(true);
     });
 
-    // Test the 74th unlock
+    // Test the 75th unlock
     test('Unlock Kebia berry', () =>
     {
         const oakItemNeeded = OakItemType.Rocky_Helmet;
@@ -1975,7 +1999,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded);
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[73]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[74]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -1995,11 +2019,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
 \*/
 describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
 {
-    // Test the 75th unlock
+    // Test the 76th unlock
     test('Unlock Micle berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[74]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[75]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2013,11 +2037,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Micle, expectedConfig, expectedOrder, null, [ OakItemType.Rocky_Helmet ]);
     });
 
-    // Test the 76th unlock
+    // Test the 77th unlock
     test('Unlock Custap berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[75]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[76]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2031,11 +2055,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Custap, expectedConfig, expectedOrder, null, [ OakItemType.Sprinklotad ]);
     });
 
-    // Test the 77th unlock
+    // Test the 78th unlock
     test('Unlock Jaboca berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[76]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[77]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2049,11 +2073,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Jaboca, expectedConfig, expectedOrder);
     });
 
-    // Test the 78th unlock
+    // Test the 79th unlock
     test('Unlock Rowap berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[77]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[78]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2067,13 +2091,13 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Rowap, expectedConfig, expectedOrder);
     });
 
-    // Test the 79th unlock
+    // Test the 80th unlock
     test('Unlock Liechi berry', () =>
     {
         checkPokemonNeededBehaviour("Kyogre");
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[78]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[79]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2087,22 +2111,22 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Liechi, expectedConfig, expectedOrder);
     });
 
-    // Test the 80th unlock
+    // Test the 81st unlock
     test('Farm 4 Liechi berries', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[79]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[80]);
 
         expectIncreaseHarvestRateStrategy(BerryType.Liechi)
     });
 
-    // Test the 81st unlock
+    // Test the 82nd unlock
     test('Unlock Ganlon berry', () =>
     {
         checkPokemonNeededBehaviour("Groudon");
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[80]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[81]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2116,20 +2140,20 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Ganlon, expectedConfig, expectedOrder);
     });
 
-    // Test the 82nd unlock
+    // Test the 83rd unlock
     test('Farm 4 Ganlon berries', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[81]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[82]);
 
         expectIncreaseHarvestRateStrategy(BerryType.Ganlon)
     });
 
-    // Test the 83rd unlock
+    // Test the 84th unlock
     test('Unlock Kee berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[82]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[83]);
 
         // The layout should look like that
         // |a| | |a| |
@@ -2144,7 +2168,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Kee, expectedConfig, expectedOrder);
     });
 
-    // Test the 84th unlock
+    // Test the 85th unlock
     test('Unlock Salac berry', () =>
     {
         // Give back the player 4 of each needed berries, those were consumed by the previous test
@@ -2154,7 +2178,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         checkPokemonNeededBehaviour("Rayquaza");
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[83]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[84]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2168,20 +2192,20 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Salac, expectedConfig, expectedOrder);
     });
 
-    // Test the 85th unlock
+    // Test the 86th unlock
     test('Farm 4 Salac berries', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[84]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[85]);
 
         expectIncreaseHarvestRateStrategy(BerryType.Salac)
     });
 
-    // Test the 86th unlock
+    // Test the 87th unlock
     test('Unlock Petaya berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[85]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[86]);
 
         // The layout should look like that
         // |a| |b| |c|  with: a : Kasib    f : Chople   k : Babiri   p : Passho
@@ -2214,20 +2238,20 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Petaya, expectedConfig, expectedOrder);
     });
 
-    // Test the 87th unlock
+    // Test the 88th unlock
     test('Farm 4 Petaya berries', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[86]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[87]);
 
         expectIncreaseHarvestRateStrategy(BerryType.Petaya)
     });
 
-    // Test the 88th unlock
+    // Test the 89th unlock
     test('Unlock Maranga berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[87]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[88]);
 
         // The layout should look like that
         // |a| | |a| |
@@ -2242,13 +2266,13 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Maranga, expectedConfig, expectedOrder);
     });
 
-    // Test the 89th unlock
+    // Test the 90th unlock
     test('Unlock Apicot berry', () =>
     {
         checkPokemonNeededBehaviour("Palkia");
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[88]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[89]);
 
         // Give the player enough berries (only 19 berry available out of 23 needed)
         App.game.farming.__berryListCount[BerryType.Chilan] = 23;
@@ -2265,13 +2289,13 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Apicot, expectedConfig, expectedOrder);
     });
 
-    // Test the 90th unlock
+    // Test the 91st unlock
     test('Unlock Lansat berry', () =>
     {
         checkPokemonNeededBehaviour("Dialga");
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[89]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[90]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2285,11 +2309,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
         runBerryMutationTest(BerryType.Lansat, expectedConfig, expectedOrder);
     });
 
-    // Test the 91st unlock
+    // Test the 92nd unlock
     test('Unlock Starf berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[90]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[91]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2309,11 +2333,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 5 unlocks`, () =>
 \*/
 describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
 {
-    // Test the 92nd unlock
+    // Test the 93rd unlock
     test('Unlock Lum berry', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[91]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[92]);
 
         // The layout should look like that
         // |a|b|c|b|a|
@@ -2335,11 +2359,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         runBerryMutationTest(BerryType.Lum, expectedConfig, expectedOrder);
     });
 
-    // Test the 93rd unlock
+    // Test the 94th unlock
     test('Farm 24 Lum berries', () =>
     {
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[92]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[93]);
 
         // The layout should look like that
         // |a|a|a|a|a|
@@ -2358,7 +2382,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         Automation.Farm.__internal__farmLoop();
     });
 
-    // Test the 94th unlock
+    // Test the 95th unlock
     test('Unlock Enigma berry', () =>
     {
         expectFocusOnUnlocksToBeDisabled(function()
@@ -2389,7 +2413,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Bonus berries`, () =>
         Automation.Farm.__internal__farmLoop();
 
         // Expect the strategy to be pointing to the right one
-        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[93]);
+        expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[94]);
 
         // Check the stategy needed pokemon
         expect(Automation.Farm.__internal__currentStrategy.requiresDiscord).toBe(true);

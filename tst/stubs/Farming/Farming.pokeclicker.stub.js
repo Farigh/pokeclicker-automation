@@ -131,7 +131,7 @@ class Farming
     |*   Test-only interface   *|
     \***************************/
 
-    // From: https://github.com/pokeclicker/pokeclicker/blob/c61223cdc8db0bd9f8a7fc7927ec17edc7bd2605/src/scripts/farming/Farming.ts#L77
+    // From: https://github.com/pokeclicker/pokeclicker/blob/1277c32c2567d57dfa7700c46b22d816cc0b74a4/src/scripts/farming/Farming.ts#L74
     __initBerryData()
     {
         // First Generation
@@ -198,6 +198,7 @@ class Farming
         this.berryData[BerryType.Babiri] = new Berry(BerryType.Babiri, [7200, 16200, 32400, 64800, 129600], 36);
         this.berryData[BerryType.Chilan] = new Berry(BerryType.Chilan, [240, 1430, 2970, 7200, 14400], 10);
         this.berryData[BerryType.Roseli] = new Berry(BerryType.Roseli, [2410, 5040, 12600, 25200, 50400], 38);
+        this.berryData[BerryType.Snover] = new Berry(BerryType.Snover, [3600, 7200, 10800, 14400, 28800], 5);
 
         // Fifth Generation
         this.berryData[BerryType.Micle] = new Berry(BerryType.Micle, [3960, 7920, 15840, 31680, 63360], 1);
