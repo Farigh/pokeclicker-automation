@@ -217,7 +217,7 @@ class AutomationFocusQuests
 
         // Reset demands
         Automation.Farm.ForcePlantBerriesAsked = null;
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
 
         // Reset other modes status
         Automation.Click.toggleAutoClick();
@@ -374,7 +374,6 @@ class AutomationFocusQuests
             Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
             return;
         }
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
 
         // Sort quest to work on the most relevant one
         currentQuests.sort(this.__internal__sortQuestByPriority, this);

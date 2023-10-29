@@ -89,8 +89,7 @@ class AutomationFocusAchievements
         clearInterval(this.__internal__achievementLoop);
         this.__internal__achievementLoop = null;
 
-        Automation.Dungeon.AutomationRequestedMode = Automation.Utils.isInInstanceState() ? Automation.Dungeon.InternalModes.StopAfterThisRun
-                                                                                          : Automation.Dungeon.InternalModes.None;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
 
@@ -164,12 +163,12 @@ class AutomationFocusAchievements
 
         if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "RouteKillRequirement"))
         {
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
+            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
             this.__internal__workOnRouteKillRequirement();
         }
         else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearGymRequirement"))
         {
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.None;
+            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
             this.__internal__workOnClearGymRequirement();
         }
         else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearDungeonRequirement"))
