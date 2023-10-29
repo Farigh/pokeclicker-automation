@@ -233,6 +233,12 @@ class AutomationDungeon
             enable = (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true");
         }
 
+        // Cleanup StopAfterThisRun internal mode that was set while the dungeon was not running
+        if (this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
+        {
+            this.AutomationRequestedMode = this.InternalModes.None;
+        }
+
         if (enable)
         {
             // Only set a loop if there is none active
