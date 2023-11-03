@@ -52,12 +52,19 @@ class AutomationDungeon
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__CatchModes = {
+        Uncaught: { id: 0, shiny: false, shadow: false },
+        UncaughtShiny: { id: 1, shiny: true, shadow: false },
+        UncaughtShadow: { id: 2, shiny: false, shadow: true },
+        UncaughtShadowOrShiny: { id: 3, shiny: true, shadow: true }
+    };
+
     static __internal__autoDungeonLoop = null;
     static __internal__pokedexSwitch = null;
     static __internal__dungeonFightButton = null;
     static __internal__dungeonBossCatchPokeballSelectElem = null;
 
-    static __internal__isShinyCatchStopMode = false;
+    static __internal__currentCatchMode = this.__internal__CatchModes.Uncaught;
     static __internal__floorEndPosition = null;
     static __internal__chestPositions = [];
     static __internal__isFirstMove = true;
@@ -100,6 +107,7 @@ class AutomationDungeon
                              {
                                  opacity: 100%;
                                  box-shadow: 0px 0px 2px 1px #178fd7;
+                                 z-index: 4;
                              }
                              #automation-dungeon-pokedex-img:hover::after
                              {
@@ -134,7 +142,7 @@ class AutomationDungeon
         const autoStopDungeonTooltip = "Automatically disables the dungeon loop\n"
                                      + "once all pokémon are caught in this dungeon."
                                      + Automation.Menu.TooltipSeparator
-                                     + "You can switch between pokémon and shiny completion\n"
+                                     + "You can switch between pokémon, shiny and shadow completion\n"
                                      + "by clicking on the pokéball image.";
 
         const buttonLabel =
@@ -209,11 +217,25 @@ class AutomationDungeon
     static __internal__toggleCatchStopMode()
     {
         // Switch mode
-        this.__internal__isShinyCatchStopMode = !this.__internal__isShinyCatchStopMode;
+        this.__internal__currentCatchMode = (this.__internal__currentCatchMode == this.__internal__CatchModes.UncaughtShadowOrShiny)
+                                              ? this.__internal__CatchModes.Uncaught
+                                              : Object.entries(this.__internal__CatchModes).find(
+                                                    x => x[1].id == (this.__internal__currentCatchMode.id + 1))[1];
 
         // Update the image accordingly
-        const image = (this.__internal__isShinyCatchStopMode) ? "Pokeball-shiny" : "Pokeball";
-        this.__internal__pokedexSwitch.innerHTML = `<img src="assets/images/pokeball/${image}.svg" height="17px">`;
+        const image = (this.__internal__currentCatchMode.shiny) ? "Pokeball-shiny" : "Pokeball";
+
+        const shadowImgStyle = "position: absolute; right: -4px; bottom: 1px; height: 25px;";
+        const shadowImageBackground = (this.__internal__currentCatchMode.shadow)
+                                    ? `<img src="assets/images/status/shadow.svg" style="${shadowImgStyle} z-index: 1;">`
+                                    : "";
+        const shadowImageForground = (this.__internal__currentCatchMode.shadow)
+                                   ? `<img src="assets/images/status/shadow.svg" style="${shadowImgStyle} z-index: 3; opacity: 0.2;">`
+                                   : "";
+
+        const pokeballImgStyle = `style="position: relative; height: 17px; z-index: 2;"`;
+        this.__internal__pokedexSwitch.innerHTML =
+            `${shadowImageBackground}<img src="assets/images/pokeball/${image}.svg" ${pokeballImgStyle}>${shadowImageForground}`;
     }
 
     /**
@@ -308,7 +330,7 @@ class AutomationDungeon
                 && ((this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
                     || this.__internal__playerActionOccured
                     || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
-                        && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))))
+                        && this.__internal__isDungeonCompleted())))
             {
                 if (this.__internal__playerActionOccured)
                 {
@@ -747,14 +769,19 @@ class AutomationDungeon
                 if ((this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion)
                     && (this.AutomationRequestedMode != this.InternalModes.ForcePokemonFight)
                     && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
-                    && DungeonRunner.dungeonCompleted(player.town().dungeon, this.__internal__isShinyCatchStopMode))
+                    && this.__internal__isDungeonCompleted())
                 {
                     disableNeeded = true;
                     disableReason += (disableReason !== "") ? "\nAnd all " : "All ";
 
-                    if (this.__internal__isShinyCatchStopMode)
+                    if (this.__internal__currentCatchMode.shiny)
                     {
                         disableReason += "shiny ";
+                    }
+
+                    if (this.__internal__currentCatchMode.shadow)
+                    {
+                        disableReason += "shadow ";
                     }
 
                     disableReason += "pokémons are already caught,\nand the option to stop in this case is enabled";
@@ -789,6 +816,24 @@ class AutomationDungeon
                 Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, false);
             }
         }
+    }
+
+    /**
+     * @brief Ensures that the current dungeon objectives are completed
+     *
+     * @returns True if the dungeon objectives are completed, False otherwise
+     */
+    static __internal__isDungeonCompleted()
+    {
+        const currentDungeon = player.town().dungeon;
+        if (this.__internal__currentCatchMode.shadow
+            && currentDungeon.allAvailableShadowPokemon().some(
+                p => App.game.party.getPokemonByName(p)?.shadow < GameConstants.ShadowStatus.Shadow))
+        {
+            return false;
+        }
+
+        return DungeonRunner.dungeonCompleted(currentDungeon, this.__internal__currentCatchMode.shiny);
     }
 
     /**
