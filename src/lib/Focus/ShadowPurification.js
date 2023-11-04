@@ -22,7 +22,10 @@ class AutomationFocusShadowPurification
             {
                 id: "ShadowPurification",
                 name: "Shadow purify",
-                tooltip: "Hunts for pokémons that are corrupted by shadow",
+                tooltip: "Hunts for pokémons that are corrupted by shadow"
+                       + Automation.Menu.TooltipSeparator
+                       + "The Purify Chamber will automatically be used when the\n"
+                       + "max flow is reached, on the currently selected pokémon.",
                 run: function (){ this.__internal__start(); }.bind(this),
                 stop: function (){ this.__internal__stop(); }.bind(this),
                 isUnlocked: isUnlockedCallback,
@@ -111,13 +114,22 @@ class AutomationFocusShadowPurification
         {
             this.__internal__captureShadowPokemons();
         }
+        // No more dungeons, focus on purification
+        else if (App.game.party.caughtPokemon.some((p) => p.shadow == GameConstants.ShadowStatus.Shadow))
+        {
+            Automation.Dungeon.stopAfterThisRun();
+
+            // Move to the best route for Exp, since the Purify Chamber flow charges based on it
+            Automation.Utils.Route.moveToBestRouteForExp();
+
+            // Try to purify a shadow pokémon
+            this.__internal__tryToPurifyShadowPokemon();
+        }
         else
         {
-            // TODO: farm XP until every pokemon are purified
-
             // No more location available, stop the focus
             Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
-            Automation.Notifications.sendWarningNotif("No more dungeon available to capture Shadow pokémons.\nTurning the feature off",
+            Automation.Notifications.sendWarningNotif("No more available Shadow pokémons to capture or Purify.\nTurning the feature off",
                                                       "Focus");
         }
     }
@@ -162,8 +174,20 @@ class AutomationFocusShadowPurification
         // Enable auto dungeon fight
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
+        // Set the callback to purify pokemon in between runs when possible
+        Automation.Dungeon.setBeforeNewRunCallBack(this.__internal__tryToPurifyShadowPokemon.bind(this));
+
         // Bypass user settings, especially the 'Skip fights' one
         Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+    }
+
+    /**
+     * @brief Purifies the currently selected shadow pokémon of the Purify Chamber, if the flow is maxed-out
+     */
+    static __internal__tryToPurifyShadowPokemon()
+    {
+        // No need to check, this function calls App.game.purifyChamber.canPurify() beforehand
+        App.game.purifyChamber.purify();
     }
 
     /**
