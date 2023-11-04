@@ -45,6 +45,12 @@
      */
     static ForceStop()
     {
+        if (App.game.gameState != GameConstants.GameState.battleFrontier)
+        {
+            // Nothing to do
+            return;
+        }
+
         // Stop the automation
         this.__internal__toggleBattleFrontierFight(false);
 

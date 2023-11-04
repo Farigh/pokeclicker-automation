@@ -334,8 +334,12 @@ class AutomationHatchery
 
         let previouslySelectedType = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType);
 
+        // Sort the types alphabetically
+        const gemListCopy = [...Array(Gems.nTypes).keys()];
+        gemListCopy.sort((a, b) => (PokemonType[a] < PokemonType[b]) ? -1 : 1);
+
         // Populate the list
-        for (const gemType of Array(Gems.nTypes).keys())
+        for (const gemType of gemListCopy)
         {
             opt = document.createElement("option");
 

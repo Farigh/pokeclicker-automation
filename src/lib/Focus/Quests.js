@@ -78,6 +78,7 @@ class AutomationFocusQuests
         this.__internal__questLabels["MineLayersQuest"] = "Mine <n> layer in the Underground.";
         this.__internal__questLabels["MineItemsQuest"] = "Mine <n> item in the Underground.";
         this.__internal__questLabels["CatchShiniesQuest"] = "Catch 1 shiny Pokémon.";
+        this.__internal__questLabels["CatchShadowsQuest"] = "Catch <n> Shadow Pokémon.";
         this.__internal__questLabels["DefeatGymQuest"] = "Defeat <Gym leader> <n> times.";
         this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon> <n> times.";
         this.__internal__questLabels["UsePokeballQuest"] = "Use <n> <Balls type>.";
@@ -217,7 +218,7 @@ class AutomationFocusQuests
 
         // Reset demands
         Automation.Farm.ForcePlantBerriesAsked = null;
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
+        Automation.Dungeon.stopAfterThisRun();
 
         // Reset other modes status
         Automation.Click.toggleAutoClick();
@@ -251,9 +252,6 @@ class AutomationFocusQuests
      */
     static __internal__questLoop()
     {
-        // Make sure to always have some balls to catch pokemons
-        this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__pokeballToUseSelectElem.value, 10);
-
         this.__internal__claimCompletedQuests();
         this.__internal__selectNewQuests();
 
@@ -371,7 +369,7 @@ class AutomationFocusQuests
         // Already fighting, nothing to do for now
         if ((App.game.gameState != GameConstants.GameState.battleFrontier) && Automation.Utils.isInInstanceState())
         {
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
+            Automation.Dungeon.stopAfterThisRun();
             return;
         }
 
@@ -414,9 +412,16 @@ class AutomationFocusQuests
         {
             this.__internal__workOnCapturePokemonTypesQuest(quest);
         }
+        else if (Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest"))
+        {
+            // Use the 1st available dungeon with shadow pokémons for now
+            const dungeonName = "Phenac City Battles";
+            this.__internal__workOnDefeatDungeonQuest(dungeonName, true);
+        }
         else if (Automation.Utils.isInstanceOf(quest, "DefeatDungeonQuest"))
         {
-            this.__internal__workOnDefeatDungeonQuest(quest);
+            const catchShadows = currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest"));
+            this.__internal__workOnDefeatDungeonQuest(quest.dungeon, catchShadows);
         }
         else if (Automation.Utils.isInstanceOf(quest, "DefeatGymQuest"))
         {
@@ -512,7 +517,7 @@ class AutomationFocusQuests
     /**
      * @brief Works on a CapturePokemonTypesQuest.
      *
-     * It will equip balls to catch already caught pokemons
+     * It will equip balls to catch any pokemon matching the quest type
      * and move to the most efficient route for the quest requested pokemon type.
      *
      * @param quest: The game's quest object
@@ -572,34 +577,45 @@ class AutomationFocusQuests
      *
      * @see AutomationDungeon class
      *
-     * @param quest: The game's quest object
+     * @param  {string} dungeonName: The name of the dungeon to defeat
+     * @param {boolean} catchShadows: Set to true if the shadow pokémon catch filter needs to be set, false otherwise
      */
-    static __internal__workOnDefeatDungeonQuest(quest)
+    static __internal__workOnDefeatDungeonQuest(dungeonName, catchShadows)
     {
         // If we don't have enough tokens, go farm some
-        if (TownList[quest.dungeon].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
+        if (TownList[dungeonName].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
         {
             this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.value);
             return;
         }
 
-        // Restore pokéball filters
-        Automation.Utils.Pokeball.disableAutomationFilter();
+        if (catchShadows)
+        {
+            this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+            Automation.Utils.Pokeball.restrictCaptureToShadow(true);
+            Automation.Utils.Pokeball.enableAutomationFilter();
+        }
+        else
+        {
+            // Disable pokéball filters
+            Automation.Utils.Pokeball.disableAutomationFilter();
+        }
 
         // Move to dungeon if needed
-        if (!Automation.Utils.Route.isPlayerInTown(quest.dungeon))
+        if (!Automation.Utils.Route.isPlayerInTown(dungeonName))
         {
-            Automation.Utils.Route.moveToTown(quest.dungeon);
+            Automation.Utils.Route.moveToTown(dungeonName);
 
             // Let a tick for the menu to show up
             return;
         }
 
-        // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
-
         // Enable auto dungeon fight
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
+
+        // Bypass user settings like the stop on pokedex one
+        Automation.Dungeon.AutomationRequestedMode = (catchShadows) ? Automation.Dungeon.InternalModes.ForcePokemonFight
+                                                                    : Automation.Dungeon.InternalModes.ForceDungeonCompletion;
     }
 
     /**
@@ -887,6 +903,10 @@ class AutomationFocusQuests
 
         if (Automation.Utils.isInstanceOf(a, "DefeatDungeonQuest")) return -1;
         if (Automation.Utils.isInstanceOf(b, "DefeatDungeonQuest")) return 1;
+
+        // Select catch shadow quest after the DefeatDungeonQuest in case said dungeon has shadow pokémons
+        if (Automation.Utils.isInstanceOf(a, "CatchShadowsQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "CatchShadowsQuest")) return 1;
 
         if (Automation.Utils.isInstanceOf(a, "DefeatGymQuest")) return -1;
         if (Automation.Utils.isInstanceOf(b, "DefeatGymQuest")) return 1;

@@ -226,11 +226,11 @@ class AutomationFocusPokerusCure
                 return;
             }
 
-            // Bypass user settings, especially the 'Skip fights' one
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
-
             // Enable auto dungeon fight
             Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
+
+            // Bypass user settings, especially the 'Skip fights' one
+            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
         }
     }
 

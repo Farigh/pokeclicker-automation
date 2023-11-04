@@ -89,7 +89,7 @@ class AutomationFocusAchievements
         clearInterval(this.__internal__achievementLoop);
         this.__internal__achievementLoop = null;
 
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
+        Automation.Dungeon.stopAfterThisRun();
 
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
 
@@ -163,12 +163,12 @@ class AutomationFocusAchievements
 
         if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "RouteKillRequirement"))
         {
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
+            Automation.Dungeon.stopAfterThisRun();
             this.__internal__workOnRouteKillRequirement();
         }
         else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearGymRequirement"))
         {
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.StopAfterThisRun;
+            Automation.Dungeon.stopAfterThisRun();
             this.__internal__workOnClearGymRequirement();
         }
         else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearDungeonRequirement"))
@@ -258,11 +258,11 @@ class AutomationFocusAchievements
             return;
         }
 
-        // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
-
         // Enable auto dungeon fight
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
+
+        // Bypass user settings like the stop on pokedex one
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
     }
 
     /**
