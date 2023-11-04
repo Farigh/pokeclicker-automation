@@ -65,6 +65,24 @@ class AutomationUtilsPokeball
     }
 
     /**
+     * @brief Restricts the pokemon filter to Shadow pokémons
+     *
+     * @param includeAlreadyCaught: Already caught shadow pokémons will be considered as well
+     */
+    static restrictCaptureToShadow(includeAlreadyCaught)
+    {
+        // Only consider Shadow pokémons
+        this.__internal__automationFilter.options.shadow = pokeballFilterOptions.shadow.createSetting();
+
+        // Filter caught shadow
+        if (!includeAlreadyCaught)
+        {
+            this.__internal__automationFilter.options.caughtShadow = pokeballFilterOptions.caughtShadow.createSetting();
+            this.__internal__automationFilter.options.caughtShadow.observableValue(false);
+        }
+    }
+
+    /**
      * @brief Restricts the pokemon filter to the given @p pokemonType
      *
      * @param pokemonType: The pokemon type to capture
