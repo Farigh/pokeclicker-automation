@@ -294,7 +294,7 @@ class AutomationDungeon
             this.AutomationRequestedMode = this.InternalModes.None;
             this.__internal__stopAfterThisRun = false;
 
-            // Disable automation filter
+            // Disable automation catch filter
             Automation.Utils.Pokeball.disableAutomationFilter();
         }
     }

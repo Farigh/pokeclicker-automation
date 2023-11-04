@@ -239,7 +239,7 @@ class AutomationFocusQuests
         Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
         Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
-        // Restore pokéball filters
+        // Disable automation catch filter
         Automation.Utils.Pokeball.disableAutomationFilter();
     }
 
@@ -445,7 +445,7 @@ class AutomationFocusQuests
         }
         else // Other type of quest don't need much
         {
-            // Restore pokéball filters
+            // Disable automation catch filter
             Automation.Utils.Pokeball.disableAutomationFilter();
 
             if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")))
@@ -597,7 +597,7 @@ class AutomationFocusQuests
         }
         else
         {
-            // Disable pokéball filters
+            // Disable automation catch filter
             Automation.Utils.Pokeball.disableAutomationFilter();
         }
 
@@ -707,7 +707,7 @@ class AutomationFocusQuests
             this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
             // Use the user's default setting, if no other quest requires pokéball
-        Automation.Utils.Pokeball.disableAutomationFilter();
+            Automation.Utils.Pokeball.disableAutomationFilter();
 
             // Go kill some pokemon
             Automation.Utils.Route.moveToBestRouteForExp();

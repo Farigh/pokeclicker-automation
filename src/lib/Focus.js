@@ -7,6 +7,7 @@ class AutomationFocus
     static Achievements = AutomationFocusAchievements;
     static Quests = AutomationFocusQuests;
     static PokerusCure = AutomationFocusPokerusCure;
+    static ShadowPurification = AutomationFocusShadowPurification;
 
     static Settings = {
                           FeatureEnabled: "Focus-Enabled",
@@ -462,6 +463,7 @@ class AutomationFocus
         this.Quests.__registerFunctionalities(this.__internal__functionalities);
         this.Achievements.__registerFunctionalities(this.__internal__functionalities);
         this.PokerusCure.__registerFunctionalities(this.__internal__functionalities);
+        this.ShadowPurification.__registerFunctionalities(this.__internal__functionalities);
 
         this.__internal__addGemsFocusFunctionalities();
     }
