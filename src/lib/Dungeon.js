@@ -49,10 +49,23 @@ class AutomationDungeon
 
     /**
      * @brief Asks the Dungeon automation to stop after the current run
+     *
+     * @note This will reset any "after run" callback
      */
     static stopAfterThisRun()
     {
         this.__internal__stopAfterThisRun = true;
+        this.__internal__beforeNewRunCallBack = function (){};
+    }
+
+    /**
+     * @brief Sets the @p callback to call before running a new dungeon run
+     *
+     * @param {function} callback: The function to call
+     */
+    static setBeforeNewRunCallBack(callback)
+    {
+        this.__internal__beforeNewRunCallBack = callback;
     }
 
     /*********************************************************************\
@@ -60,6 +73,7 @@ class AutomationDungeon
     \*********************************************************************/
 
     static __internal__stopAfterThisRun = false;
+    static __internal__beforeNewRunCallBack = function (){};
 
     static __internal__CatchModes = {
         Uncaught: { id: 0, shiny: false, shadow: false },
@@ -294,7 +308,7 @@ class AutomationDungeon
             this.AutomationRequestedMode = this.InternalModes.None;
             this.__internal__stopAfterThisRun = false;
 
-            // Disable automation filter
+            // Disable automation catch filter
             Automation.Utils.Pokeball.disableAutomationFilter();
         }
     }
@@ -356,6 +370,8 @@ class AutomationDungeon
             }
             else
             {
+                this.__internal__beforeNewRunCallBack();
+
                 this.__internal__resetSavedStates();
                 DungeonRunner.initializeDungeon(player.town().dungeon);
 

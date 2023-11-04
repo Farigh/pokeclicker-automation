@@ -83,11 +83,11 @@ class AutomationFocusPokerusCure
     static __internal__currentDungeonData = null;
 
     /**
-     * @brief Starts the achievements automation
+     * @brief Starts the pokérus cure automation
      */
     static __internal__start()
     {
-        // Set achievement loop
+        // Set pokérus cure loop
         this.__internal__pokerusCureLoop = setInterval(this.__internal__focusOnPokerusCure.bind(this), 10000); // Runs every 10 seconds
         this.__internal__focusOnPokerusCure();
 
@@ -100,7 +100,7 @@ class AutomationFocusPokerusCure
     }
 
     /**
-     * @brief Stops the achievements automation
+     * @brief Stops the pokérus cure automation
      */
     static __internal__stop()
     {
@@ -111,7 +111,7 @@ class AutomationFocusPokerusCure
         clearInterval(this.__internal__pokerusCureLoop);
         this.__internal__pokerusCureLoop = null;
 
-        // Restore pokéball filters
+        // Disable automation catch filter
         Automation.Utils.Pokeball.disableAutomationFilter();
 
         // Reset other modes status
@@ -122,7 +122,7 @@ class AutomationFocusPokerusCure
     }
 
     /**
-     * @brief The achievement main loop
+     * @brief The pokérus cure main loop
      *
      * @note If the user is in a state in which he cannot be moved, the feature is automatically disabled.
      */
@@ -222,7 +222,8 @@ class AutomationFocusPokerusCure
             {
                 Automation.Utils.Route.moveToTown(this.__internal__currentDungeonData.dungeon.name);
 
-                // Let a tick for the menu to show up
+                // Let a second for the menu to show up
+                setTimeout(this.__internal__captureInfectedPokemons.bind(this), 1000);
                 return;
             }
 
@@ -265,7 +266,7 @@ class AutomationFocusPokerusCure
      */
     static __internal__setNextPokerusDungeon()
     {
-        // Remove the current route from the list if completed
+        // Remove the current dungeon from the list if completed
         if ((this.__internal__currentDungeonData != null)
             && !this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon))
         {
@@ -273,7 +274,7 @@ class AutomationFocusPokerusCure
             this.__internal__pokerusDungeonData.splice(index, 1);
         }
 
-        // Set the next best route
+        // Set the next best dungeon
         this.__internal__currentDungeonData = this.__internal__pokerusDungeonData.find(
             (data) => this.__internal__doesDungeonHaveAnyPokemonNeedingCure(data.dungeon, true)
                       // Don't consider dungeon that the player can't access yet
@@ -343,7 +344,6 @@ class AutomationFocusPokerusCure
      * @brief Checks if any pokémon from the given @p route needs to be cured
      *
      * @param route: The route to check
-     *
      * @param {boolean} onlyConsiderAvailableContagiousPokemons: Whether only currently available and contagious pokémon should be considered
      *
      * @returns True if every pokémons are cured, false otherwise
@@ -359,7 +359,6 @@ class AutomationFocusPokerusCure
      * @brief Checks if any pokémon from the given @p dungeon needs to be cured
      *
      * @param dungeon: The dungeon to check
-     *
      * @param {boolean} onlyConsiderAvailableContagiousPokemons: Whether only currently available and contagious pokémon should be considered
      *
      * @returns True if every pokémons are cured, false otherwise
@@ -529,7 +528,7 @@ class AutomationFocusPokerusCure
      */
     static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons)
     {
-        const pokemonList = dungeon.pokemonList;
+        let pokemonList = dungeon.pokemonList;
 
         // Add pokemon bosses
         for (const boss of dungeon.bossList)

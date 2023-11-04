@@ -1,5 +1,5 @@
 /**
- * @class The AutomationUtilsPokeball regroups helpers related to pokeclicker ball filters
+ * @class The AutomationUtilsPokeball regroups helpers related to pokeclicker's catch filters
  */
 class AutomationUtilsPokeball
 {
@@ -21,7 +21,7 @@ class AutomationUtilsPokeball
     }
 
     /**
-     * @brief Disables the automation filter
+     * @brief Disables automation catch filter
      */
     static disableAutomationFilter()
     {
@@ -29,7 +29,7 @@ class AutomationUtilsPokeball
     }
 
     /**
-     * @brief Enables the automation filter
+     * @brief Enables the automation catch filter
      */
     static enableAutomationFilter()
     {
