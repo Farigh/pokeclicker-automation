@@ -14,9 +14,8 @@ class AutomationDungeon
 
     static InternalModes = {
                                None: 0,
-                               StopAfterThisRun: 1,
-                               ForceDungeonCompletion: 2,
-                               ForcePokemonFight: 3
+                               ForceDungeonCompletion: 1,
+                               ForcePokemonFight: 2
                            };
 
     static AutomationRequestedMode = this.InternalModes.None;
@@ -48,9 +47,19 @@ class AutomationDungeon
         }
     }
 
+    /**
+     * @brief Asks the Dungeon automation to stop after the current run
+     */
+    static stopAfterThisRun()
+    {
+        this.__internal__stopAfterThisRun = true;
+    }
+
     /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
+
+    static __internal__stopAfterThisRun = false;
 
     static __internal__CatchModes = {
         Uncaught: { id: 0, shiny: false, shadow: false },
@@ -256,9 +265,10 @@ class AutomationDungeon
         }
 
         // Cleanup StopAfterThisRun internal mode that was set while the dungeon was not running
-        if (this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
+        if (this.__internal__stopAfterThisRun)
         {
             this.AutomationRequestedMode = this.InternalModes.None;
+            this.__internal__stopAfterThisRun = false;
         }
 
         if (enable)
@@ -279,6 +289,10 @@ class AutomationDungeon
             // Unregister the loop
             clearInterval(this.__internal__autoDungeonLoop);
             this.__internal__autoDungeonLoop = null;
+
+            // Reset any automation mode
+            this.AutomationRequestedMode = this.InternalModes.None;
+            this.__internal__stopAfterThisRun = false;
 
             // Disable automation filter
             Automation.Utils.Pokeball.disableAutomationFilter();
@@ -326,11 +340,11 @@ class AutomationDungeon
             // Reset button status if either:
             //    - it was requested by another module
             //    - the pokedex is full for this dungeon, and it has been ask for
-            if (!forceDungeonProcessing
-                && ((this.AutomationRequestedMode == this.InternalModes.StopAfterThisRun)
-                    || this.__internal__playerActionOccured
-                    || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
-                        && this.__internal__isDungeonCompleted())))
+            if (this.__internal__stopAfterThisRun
+                || (!forceDungeonProcessing
+                    && (this.__internal__playerActionOccured
+                        || ((Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) === "true")
+                            && this.__internal__isDungeonCompleted()))))
             {
                 if (this.__internal__playerActionOccured)
                 {
