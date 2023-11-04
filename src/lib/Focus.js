@@ -485,7 +485,11 @@ class AutomationFocus
         const isUnlockedCallback = function (){ return App.game.gems.canAccess(); };
         this.__internal__addFunctionalitySeparator("==== Gems ====", isUnlockedCallback);
 
-        for (const gemType of Array(Gems.nTypes).keys())
+        // Sort the types alphabetically
+        const gemListCopy = [...Array(Gems.nTypes).keys()];
+        gemListCopy.sort((a, b) => (PokemonType[a] < PokemonType[b]) ? -1 : 1);
+
+        for (const gemType of gemListCopy)
         {
             const gemTypeName = PokemonType[gemType];
 
