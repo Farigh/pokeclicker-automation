@@ -8,6 +8,7 @@ class Automation
     static BattleFrontier = AutomationBattleFrontier;
     static Dungeon = AutomationDungeon;
     static Gym = AutomationGym;
+    static Safari = AutomationSafari;
 
     static Click = AutomationClick;
     static Farm = AutomationFarm;
@@ -75,10 +76,11 @@ class Automation
                     // 'Trivia' panel
                     this.Trivia.initialize(initStep);
 
-                    // 'Gym', 'Dungeon' and 'Battle Frontier' panels
+                    // 'Gym', 'Dungeon', 'Battle Frontier' and 'Safari' instances panels
                     this.Gym.initialize(initStep);
                     this.Dungeon.initialize(initStep);
                     this.BattleFrontier.initialize(initStep);
+                    this.Safari.initialize(initStep);
 
                     // Floating panel
                     this.BattleCafe.initialize(initStep);
