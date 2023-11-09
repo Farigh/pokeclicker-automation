@@ -38,13 +38,14 @@ class AutomationComponentLoader
         this.__addScript("src/lib/Utils/Route.js");
 
         this.__loadingOrder += 1;
-        this.__addScript("src/lib/BattleCafe.js");
+        this.__addScript("src/lib/Instances/BattleCafe.js");
+        this.__addScript("src/lib/Instances/BattleFrontier.js");
+        this.__addScript("src/lib/Instances/Dungeon.js");
+        this.__addScript("src/lib/Instances/Gym.js");
+
         this.__addScript("src/lib/Click.js");
-        this.__addScript("src/lib/Dungeon.js");
         this.__addScript("src/lib/Farm.js");
         this.__addScript("src/lib/Focus.js");
-        this.__addScript("src/lib/Gym.js");
-        this.__addScript("src/lib/BattleFrontier.js");
         this.__addScript("src/lib/Hatchery.js");
         this.__addScript("src/lib/Items.js");
         this.__addScript("src/lib/Menu.js");

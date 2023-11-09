@@ -5,12 +5,13 @@ class Automation
 {
     // Aliases on the other classes so every calls in the code can use the `Automation.<Alias>` form
     static BattleCafe = AutomationBattleCafe;
-    static Click = AutomationClick;
+    static BattleFrontier = AutomationBattleFrontier;
     static Dungeon = AutomationDungeon;
+    static Gym = AutomationGym;
+
+    static Click = AutomationClick;
     static Farm = AutomationFarm;
     static Focus = AutomationFocus;
-    static Gym = AutomationGym;
-    static BattleFrontier = AutomationBattleFrontier;
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
     static Notifications = AutomationNotifications;

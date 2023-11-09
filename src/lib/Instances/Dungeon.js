@@ -817,7 +817,7 @@ class AutomationDungeon
                     disableReason += "pokémons are already caught,\nand the option to stop in this case is enabled";
                 }
 
-                // The player does not have enough dugeon token
+                // The player does not have enough dungeon token
                 if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town().dungeon.tokenCost)
                 {
                     disableNeeded = true;
