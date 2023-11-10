@@ -155,6 +155,32 @@ class AutomationSafari
             return;
         }
 
+        // The user left the Safari, disable the feature
+        if (App.game.gameState !== GameConstants.GameState.safari)
+        {
+            Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+
+            // Exit any battle that might have started
+            let loopCount = 0;
+            const process = setInterval(function()
+                            {
+                                if (Safari.inBattle())
+                                {
+                                    // Let the time for the animation to finish...
+                                    setTimeout(SafariBattle.endBattle, 500);
+                                    clearInterval(process);
+                                }
+
+                                ++loopCount;
+                                if (loopCount > 20)
+                                {
+                                    clearInterval(process);
+                                }
+                            }, 50);
+
+            return;
+        }
+
         // No more balls, the safari will exit soon
         if (Safari.balls() == 0) return;
 
