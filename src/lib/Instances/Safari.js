@@ -39,6 +39,7 @@ class AutomationSafari
     static __internal__safariGridData = null;
     static __internal__safariMovesCost = [];
     static __internal__safariMovesList = [];
+    static __internal__encounterCandidates = [];
 
     /**
      * @brief Builds the menu
@@ -177,6 +178,9 @@ class AutomationSafari
                 }
             }
         }
+
+        // Consider both Brass and water for encounter
+        this.__internal__encounterCandidates = [...this.__internal__safariGridData.Grass, ...this.__internal__safariGridData.Water];
     }
 
     /**
@@ -227,7 +231,7 @@ class AutomationSafari
     }
 
     /**
-     * @brief Computes the moves needed to reach to the nearest Grass of Water location
+     * @brief Computes the moves needed to reach to the nearest Grass or Water location
      */
     static __internal__computeMovesToNearestEncounterZone()
     {
@@ -239,8 +243,22 @@ class AutomationSafari
                 && (this.__internal__safariMovesCost[y][x] === cost);
         }.bind(this);
 
-        this.__internal__safariMovesList = [ destination ];
         let cost = this.__internal__safariMovesCost[destination.y][destination.x];
+
+        let destinationNeighbor;
+        // Consider the player's position only if the destination is a neighbor tile and the player is already on a Grass or Water tile
+        if ((cost == 1)
+            && (this.__internal__encounterCandidates.find(t => (t.x == Safari.playerXY.x && t.y == Safari.playerXY.y)) != undefined))
+        {
+            destinationNeighbor = { x: Safari.playerXY.x, y: Safari.playerXY.y };
+        }
+        else
+        {
+            destinationNeighbor = this.__internal__findEncounterNeighborTile(destination);
+        }
+
+        // Add both destination encounter tiles
+        this.__internal__safariMovesList = [ destinationNeighbor, destination ];
 
         // Stop at cost = 1, which is the till right next to the player
         while (cost > 1)
@@ -301,25 +319,39 @@ class AutomationSafari
         // Don't move if the player is still moving
         if (Safari.walking || Safari.isMoving) return;
 
-        if (this.__internal__safariMovesList.length > 0)
+        let dest;
+        if (this.__internal__safariMovesList.length > 2)
         {
-            const dest = this.__internal__safariMovesList.at(-1);
+            dest = this.__internal__safariMovesList.at(-1);
             this.__internal__safariMovesList.pop();
-            this.__internal__moveToTile(dest.x, dest.y);
         }
+        else
+        {
+            // Two moves left, alternate between those until a fight pops
+            dest = this.__internal__safariMovesList.find(t => ((t.x != Safari.playerXY.x) || (t.y != Safari.playerXY.y)));
+        }
+        this.__internal__moveToTile(dest.x, dest.y);
     }
 
+    /**
+     * @brief Gets the tile for encounter closest from the player
+     *
+     * @returns The coordinated of the closest tile for encounter
+     */
     static __internal__selectEncounterDestination()
     {
-        // Consider both Brass and water for encounter
-        const encounterCandidates = [...this.__internal__safariGridData.Grass, ...this.__internal__safariGridData.Water];
-        let candidate = { x: 0, y: 0 };
+        let candidate;
         let candidateCost = Number.MAX_SAFE_INTEGER;
 
-        for (const tile of encounterCandidates)
+        for (const tile of this.__internal__encounterCandidates)
         {
+            // Exclude the player's current position
+            if (tile.x == Safari.playerXY.x && tile.y == Safari.playerXY.y) continue;
+
             const currentCost = this.__internal__safariMovesCost[tile.y][tile.x];
-            if (currentCost < candidateCost)
+            if ((currentCost < candidateCost)
+                // Only consider tiles with adjacent Water or Grass
+                && (this.__internal__findEncounterNeighborTile(tile) != undefined))
             {
                 candidate = tile;
                 candidateCost = currentCost;
@@ -327,6 +359,19 @@ class AutomationSafari
         }
 
         return candidate;
+    }
+
+    /**
+     * @brief Tries to get the given @p tile Grass or Water tile direct neighbor, if any
+     *
+     * @param tile: The tile {x,y} coordinates to check
+     *
+     * @returns The neighbor tile coordinates if any, undefined otherwise
+     */
+    static __internal__findEncounterNeighborTile(tile)
+    {
+        // Check if there is a tile exactly 1 move away from the given tile
+        return this.__internal__encounterCandidates.find(t => ((Math.abs(t.x - tile.x) + Math.abs(t.y - tile.y) == 1)));
     }
 
     /**
