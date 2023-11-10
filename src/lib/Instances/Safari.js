@@ -41,6 +41,8 @@ class AutomationSafari
     static __internal__safariMovesList = [];
     static __internal__encounterCandidates = [];
 
+    static __internal__waitBeforeActing = -1;
+
     /**
      * @brief Builds the menu
      */
@@ -89,6 +91,7 @@ class AutomationSafari
             if (this.__internal__autoSafariLoop === null)
             {
                 // Set auto-safari loop
+                this.__internal__waitBeforeActing = -1;
                 this.__internal__autoSafariLoop = setInterval(this.__internal__safariAutomationLoop.bind(this), 50); // Runs every game tick
             }
         }
@@ -116,6 +119,24 @@ class AutomationSafari
         // Run the safari if not already
         if (!Safari.inProgress())
         {
+            // Enter the safari again (since the end of the first run closed the modal)
+            if (!this.__internal__safariInGameModal.classList.contains("show"))
+            {
+                if (this.__internal__waitBeforeActing == -1)
+                {
+                    // Wait for 0.5s before running the next safari run to prevent a deadlock
+                    this.__internal__waitBeforeActing = 10;
+                    return;
+                }
+                --this.__internal__waitBeforeActing;
+
+                if (this.__internal__waitBeforeActing == 0)
+                {
+                    Safari.startSafari();
+                }
+                return;
+            }
+
             // The user does not have enough Quest points, disable the feature
             if (!Safari.canPay())
             {
@@ -126,10 +147,16 @@ class AutomationSafari
             // Reset internal data
             this.__internal__safariGridData = null;
 
+            // Equip the Oak item catch loadout
+            Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+
             // Only enter the Safari for this loop iteration
             Safari.payEntranceFee();
             return;
         }
+
+        // No more balls, the safari will exit soon
+        if (Safari.balls() == 0) return;
 
         if (this.__internal__safariGridData == null)
         {
@@ -140,7 +167,7 @@ class AutomationSafari
 
         if (Safari.inBattle())
         {
-            // TODO
+            this.__internal__battlePokemon();
             return;
         }
 
@@ -179,7 +206,7 @@ class AutomationSafari
             }
         }
 
-        // Consider both Brass and water for encounter
+        // Consider both Grass and Water for encounters
         this.__internal__encounterCandidates = [...this.__internal__safariGridData.Grass, ...this.__internal__safariGridData.Water];
     }
 
@@ -309,6 +336,27 @@ class AutomationSafari
         // Dont use Safari.step as it would break the animation
         Safari.move(direction);
         Safari.stop(direction);
+    }
+
+    /**
+     * @brief Handles the current pokémon encounter
+     */
+    static __internal__battlePokemon()
+    {
+        // Do not attempt anything while the game is busy
+        if (SafariBattle.busy()) return;
+
+        // Thow a rock at the pokémon to improve the catch rate, unless its angry or its catch factor is high enough
+        if ((SafariBattle.enemy.angry == 0)
+            && (SafariBattle.enemy.catchFactor < 90))
+        {
+            SafariBattle.throwRock();
+        }
+        // Try to catch the pokémon
+        else
+        {
+            SafariBattle.throwBall();
+        }
     }
 
     /**
