@@ -5,12 +5,14 @@ class Automation
 {
     // Aliases on the other classes so every calls in the code can use the `Automation.<Alias>` form
     static BattleCafe = AutomationBattleCafe;
-    static Click = AutomationClick;
+    static BattleFrontier = AutomationBattleFrontier;
     static Dungeon = AutomationDungeon;
+    static Gym = AutomationGym;
+    static Safari = AutomationSafari;
+
+    static Click = AutomationClick;
     static Farm = AutomationFarm;
     static Focus = AutomationFocus;
-    static Gym = AutomationGym;
-    static BattleFrontier = AutomationBattleFrontier;
     static Hatchery = AutomationHatchery;
     static Items = AutomationItems;
     static Notifications = AutomationNotifications;
@@ -74,10 +76,11 @@ class Automation
                     // 'Trivia' panel
                     this.Trivia.initialize(initStep);
 
-                    // 'Gym', 'Dungeon' and 'Battle Frontier' panels
+                    // 'Gym', 'Dungeon', 'Battle Frontier' and 'Safari' instances panels
                     this.Gym.initialize(initStep);
                     this.Dungeon.initialize(initStep);
                     this.BattleFrontier.initialize(initStep);
+                    this.Safari.initialize(initStep);
 
                     // Floating panel
                     this.BattleCafe.initialize(initStep);
