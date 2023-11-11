@@ -201,7 +201,7 @@ class AutomationMenu
         let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
         buttonElem.textContent = (isFeatureEnabled ? "On" : "Off");
         buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
-        buttonElem.onclick = function() { Automation.Menu.toggleButtonState(id) };
+        buttonElem.onclick = function() { Automation.Menu.toggleButtonState(id); };
 
         if (tooltip != "")
         {
@@ -301,6 +301,19 @@ class AutomationMenu
         }
 
         const newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
+        this.updateButtonVisualState(button, newStatus)
+
+        Automation.Utils.LocalStorage.setValue(button.id, newStatus);
+    }
+
+    /**
+     * @brief Updates the given @p button visual state based on the @p newStatus
+     *
+     * @param {Element} button: The button element
+     * @param {boolean} newStatus: The button new state
+     */
+    static updateButtonVisualState(button, newStatus)
+    {
         if (newStatus)
         {
             // Only update the class if the button was not disabled
@@ -321,8 +334,6 @@ class AutomationMenu
             }
             button.innerText = "Off";
         }
-
-        Automation.Utils.LocalStorage.setValue(button.id, newStatus);
     }
 
     /**

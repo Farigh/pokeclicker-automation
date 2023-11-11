@@ -51,21 +51,51 @@ class AutomationSafari
         this.__internal__safariInGameModal = document.getElementById("safariModal");
 
         // Hide the safari fight panel by default
-        const safariTitle = '<img src="assets/images/npcs/Bookworms.png" height="20px" style="position: relative; bottom: 3px;">'
-                          +     '&nbsp;Safari&nbsp;'
-                          + '<img src="assets/images/npcs/Bookworms.png" height="20px" style="position: relative; bottom: 3px; transform: scaleX(-1);">';
+        const autoHuntButton = this.__internal__addSafariPanel("automationSafari", this.__internal__safariInGameModal);
+        autoHuntButton.id = this.Settings.FeatureEnabled; // Restore the id of the main button to be able to use the Menu helpers
 
-        const safariContainer =
-            Automation.Menu.addFloatingCategory("automationSafari", safariTitle, this.__internal__safariInGameModal);
+        // Add the on/off button to the battle container as well since it will go on top of the main modal
+        const autoHuntBattleButton = this.__internal__addSafariPanel("automationSafariBattle", document.getElementById("safariBattleModal"));
+
+        // Bind both buttons behaviour
+        autoHuntButton.onclick = function()
+        {
+            const newStatus = !(Automation.Utils.LocalStorage.getValue(Automation.Safari.Settings.FeatureEnabled) == "true");
+            Automation.Utils.LocalStorage.setValue(Automation.Safari.Settings.FeatureEnabled, newStatus);
+            Automation.Menu.updateButtonVisualState(autoHuntButton, newStatus);
+            Automation.Menu.updateButtonVisualState(autoHuntBattleButton, newStatus);
+            Automation.Safari.__internal__toggleSafariAutomation();
+        };
+        autoHuntBattleButton.onclick = autoHuntButton.onclick;
+    }
+
+    /**
+     * @brief Adds a safari panel to the given @p ingameModal
+     *
+     * @param {string} categoryId: The id that will be given to the resulting div
+     * @param {Element} ingameModal: The in-game modal to add the category to
+     *
+     * @returns The feature on/off button element
+     */
+    static __internal__addSafariPanel(containerId, ingameModal)
+    {
+        const title = '<img src="assets/images/npcs/Bookworms.png" height="20px" style="position: relative; bottom: 3px;">'
+                    +     '&nbsp;Safari&nbsp;'
+                    + '<img src="assets/images/npcs/Bookworms.png" height="20px" style="position: relative; bottom: 3px; transform: scaleX(-1);">';
+
+        const container = Automation.Menu.addFloatingCategory(containerId, title, ingameModal);
 
         // Add an on/off button
-        const autoSafariTooltip = "Automatically starts the safari and tries to catch pokémons"
-                                + Automation.Menu.TooltipSeparator
-                                + "The safari will run until it runs out of Quest points.\n"
-                                + "⚠️ The entrance fee can be cost-heavy.";
-        const autoHuntButton =
-            Automation.Menu.addAutomationButton("Auto Hunt", this.Settings.FeatureEnabled, autoSafariTooltip, safariContainer, true);
-        autoHuntButton.addEventListener("click", this.__internal__toggleSafariAutomation.bind(this), false);
+        const tooltip = "Automatically starts the safari and tries to catch pokémons"
+                      + Automation.Menu.TooltipSeparator
+                      + "The safari will run until it runs out of Quest points.\n"
+                      + "⚠️ The entrance fee can be cost-heavy.";
+        const featureButton = Automation.Menu.addAutomationButton("Auto Hunt", this.Settings.FeatureEnabled, tooltip, container, true);
+
+        // Update the id to avoid collapsing ids
+        featureButton.id += `-${containerId}`;
+
+        return featureButton;
     }
 
     /**
