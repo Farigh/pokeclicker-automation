@@ -1314,6 +1314,10 @@ class AutomationMenu
             {
                 left: calc(100% - 15px);
             }
+            .hasAutomationTooltip.safariAutomationTooltip::after
+            {
+                left: calc(100% - 21px);
+            }
             .hasAutomationTooltip.toggleAutomationTooltip::after
             {
                 top: calc(100% - 4px);
