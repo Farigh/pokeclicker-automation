@@ -4,7 +4,8 @@
 class AutomationSafari
 {
     static Settings = {
-                          FeatureEnabled: "Safari-HuntEnabled"
+                          FeatureEnabled: "Safari-HuntEnabled",
+                          InfinitRepeat: "Safari-InfinitRepeat"
                       };
 
     /**
@@ -51,22 +52,36 @@ class AutomationSafari
         this.__internal__safariInGameModal = document.getElementById("safariModal");
 
         // Hide the safari fight panel by default
-        const autoHuntButton = this.__internal__addSafariPanel("automationSafari", this.__internal__safariInGameModal);
-        autoHuntButton.id = this.Settings.FeatureEnabled; // Restore the id of the main button to be able to use the Menu helpers
+        const safariElems = this.__internal__addSafariPanel("automationSafari", this.__internal__safariInGameModal);
+        safariElems.featureButton.id = this.Settings.FeatureEnabled; // Restore the id of the main button to be able to use the Menu helpers
 
         // Add the on/off button to the battle container as well since it will go on top of the main modal
-        const autoHuntBattleButton = this.__internal__addSafariPanel("automationSafariBattle", document.getElementById("safariBattleModal"));
+        const safariBattleElems = this.__internal__addSafariPanel("automationSafariBattle", document.getElementById("safariBattleModal"));
 
-        // Bind both buttons behaviour
-        autoHuntButton.onclick = function()
+        // Bind both on/off buttons behaviour
+        safariElems.featureButton.onclick = function()
         {
             const newStatus = !(Automation.Utils.LocalStorage.getValue(Automation.Safari.Settings.FeatureEnabled) == "true");
             Automation.Utils.LocalStorage.setValue(Automation.Safari.Settings.FeatureEnabled, newStatus);
-            Automation.Menu.updateButtonVisualState(autoHuntButton, newStatus);
-            Automation.Menu.updateButtonVisualState(autoHuntBattleButton, newStatus);
+            Automation.Menu.updateButtonVisualState(safariElems.featureButton, newStatus);
+            Automation.Menu.updateButtonVisualState(safariBattleElems.featureButton, newStatus);
             Automation.Safari.__internal__toggleSafariAutomation();
         };
-        autoHuntBattleButton.onclick = autoHuntButton.onclick;
+        safariBattleElems.featureButton.onclick = safariElems.featureButton.onclick;
+
+        // Bind both repeat buttons behaviour
+        safariElems.repeatButton.onclick = function()
+        {
+            const newStatus = !(Automation.Utils.LocalStorage.getValue(Automation.Safari.Settings.InfinitRepeat) == "true");
+            Automation.Utils.LocalStorage.setValue(Automation.Safari.Settings.InfinitRepeat, newStatus);
+
+            // Update both buttons content
+            safariElems.repeatOnceSpan.hidden = newStatus;
+            safariBattleElems.repeatOnceSpan.hidden = newStatus;
+            safariElems.repeatInfinitSpan.hidden = !newStatus;
+            safariBattleElems.repeatInfinitSpan.hidden = !newStatus;
+        };
+        safariBattleElems.repeatButton.onclick = safariElems.repeatButton.onclick;
     }
 
     /**
@@ -84,18 +99,71 @@ class AutomationSafari
                     + '<img src="assets/images/npcs/Bookworms.png" height="20px" style="position: relative; bottom: 3px; transform: scaleX(-1);">';
 
         const container = Automation.Menu.addFloatingCategory(containerId, title, ingameModal);
+        container.parentElement.style.width = "157px";
 
-        // Add an on/off button
+        /**************************\
+        |***   Feature button   ***|
+        \**************************/
+
         const tooltip = "Automatically starts the safari and tries to catch pokémons"
                       + Automation.Menu.TooltipSeparator
-                      + "The safari will run until it runs out of Quest points.\n"
                       + "⚠️ The entrance fee can be cost-heavy.";
         const featureButton = Automation.Menu.addAutomationButton("Auto Hunt", this.Settings.FeatureEnabled, tooltip, container, true);
+        featureButton.parentElement.style.display = "inline-block";
+        featureButton.parentElement.style.paddingRight = "2px";
+        featureButton.parentElement.classList.add("safariAutomationTooltip");
 
         // Update the id to avoid collapsing ids
         featureButton.id += `-${containerId}`;
 
-        return featureButton;
+        /**************************\
+        |***   Repeat button    ***|
+        \**************************/
+
+        // Set to solo run by default
+        Automation.Utils.LocalStorage.setValue(this.Settings.InfinitRepeat, false);
+
+        const repeatButtonContainer = document.createElement("div");
+        repeatButtonContainer.style.display = "inline-block";
+        repeatButtonContainer.style.paddingRight = "10px";
+        container.appendChild(repeatButtonContainer);
+
+        const repeatButtonTooltip = "Set the automation mode."
+                                  + Automation.Menu.TooltipSeparator
+                                  + "You can swith between:\n"
+                                  + "One run, then stop | Infinit reruns";
+
+        // The repeat button
+        const repeatButton = Automation.Menu.createButtonElement(`${this.Settings.InfinitRepeat}-${containerId}`);
+        repeatButton.textContent = "⮔";
+        repeatButton.style.fontSize = "2.4em";
+        repeatButton.style.color = "#f5f5f5";
+        repeatButton.style.bottom = "4px";
+        repeatButtonContainer.classList.add("hasAutomationTooltip");
+        repeatButtonContainer.setAttribute("automation-tooltip-text", repeatButtonTooltip);
+        repeatButtonContainer.appendChild(repeatButton);
+
+        // The repeat once indicator
+        const repeatOnceSpan = document.createElement("span");
+        repeatOnceSpan.textContent = "1";
+        repeatOnceSpan.style.position = "absolute";
+        repeatOnceSpan.style.left = "50%";
+        repeatOnceSpan.style.top = "2px";
+        repeatOnceSpan.style.fontSize = "0.34em";
+        repeatOnceSpan.style.fontWeight = "800";
+        repeatButton.appendChild(repeatOnceSpan);
+
+        const repeatInfinitSpan = document.createElement("span");
+        repeatInfinitSpan.textContent = "∞";
+        repeatInfinitSpan.hidden = true;
+        repeatInfinitSpan.style.position = "absolute";
+        repeatInfinitSpan.style.left = "calc(50% - 4px)";
+        repeatInfinitSpan.style.top = "1px";
+        repeatInfinitSpan.style.fontSize = "0.5em";
+        repeatInfinitSpan.style.fontWeight = "400";
+        repeatButton.appendChild(repeatInfinitSpan);
+
+        return { featureButton, repeatButton, repeatOnceSpan, repeatInfinitSpan };
     }
 
     /**
@@ -163,6 +231,13 @@ class AutomationSafari
                 if (this.__internal__waitBeforeActing == 0)
                 {
                     Safari.startSafari();
+
+                    // Disable the feature, if the user asked for a single run
+                    if (Automation.Utils.LocalStorage.getValue(this.Settings.InfinitRepeat) != "true")
+                    {
+                        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+                        return;
+                    }
                 }
                 return;
             }
