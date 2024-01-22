@@ -525,16 +525,13 @@ class AutomationUnderground
         let totalProfit = 0;
         for (const [ dealIndex, deal ] of deals.entries())
         {
-            const item1Index = player.mineInventoryIndex(deal.item1.id);
-            const item1 = player.mineInventory()[item1Index];
-
             // Do not trade if either:
             //   - The player does not own the source item
             //   - The source is locked
             //   - The destination is not diamond-valued
             //   - The source is not diamond-valued and the player did not allow such trade
-            if (!item1
-                || (item1.sellLocked && item1.sellLocked())
+            if (!deal.item1
+                || (deal.item1.sellLocked && deal.item1.sellLocked())
                 || (deal.item2.valueType != UndergroundItemValueType.Diamond)
                 || (!shouldTradeAll && (deal.item1.valueType != UndergroundItemValueType.Diamond)))
             {
@@ -553,7 +550,8 @@ class AutomationUnderground
             const tradeProfit = toValue - fromValue;
             if (tradeProfit > 0)
             {
-                const maxPossibleTrades = Math.floor(item1.amount() / deal.amount1);
+                const item1amount = player.itemList[deal.item1.itemName]();
+                const maxPossibleTrades = Math.floor(item1amount / deal.amount1);
 
                 if (maxPossibleTrades > 0)
                 {

@@ -1,4 +1,4 @@
-// Stub of https://github.com/pokeclicker/pokeclicker/blob/d074daf605eb59bb7991fbf8c6e417de040d2d20/src/modules/underground/UndergroundItems.ts#L10
+// Stub of https://github.com/pokeclicker/pokeclicker/blob/e67493d7fb5bfc75750253ebb44a377898271358/src/modules/underground/UndergroundItems.ts#L11
 class UndergroundItems
 {
     /***************************\
@@ -24,14 +24,18 @@ class UndergroundItems
 }
 
 // Fossils/Fossil Pieces
-UndergroundItems.addItem(new UndergroundItem('Helix Fossil', 200, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Dome Fossil', 201, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Old Amber', 202, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Root Fossil', 203, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Claw Fossil', 204, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Armor Fossil', 205, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Skull Fossil', 206, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Cover Fossil', 207, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Plume Fossil', 208, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Jaw Fossil', 209, UndergroundItemValueType.Fossil));
-UndergroundItems.addItem(new UndergroundItem('Sail Fossil', 210, UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(200, 'Helix_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(201, 'Dome_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(202, 'Old_amber', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(203, 'Root_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(204, 'Claw_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(205, 'Armor_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(206, 'Skull_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(207, 'Cover_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(208, 'Plume_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(209, 'Jaw_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(210, 'Sail_fossil', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(211, 'Fossilized_bird', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(212, 'Fossilized_fish', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(213, 'Fossilized_drake', UndergroundItemValueType.Fossil));
+UndergroundItems.addItem(new UndergroundItem(214, 'Fossilized_dino', UndergroundItemValueType.Fossil));

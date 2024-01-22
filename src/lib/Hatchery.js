@@ -797,8 +797,8 @@ class AutomationHatchery
      */
     static __internal__addFossilsToHatchery()
     {
-        const currentlyHeldFossils = Object.keys(GameConstants.FossilToPokemon).map(
-            f => player.mineInventory().find(i => i.name == f)).filter((f) => f ? f.amount() : false);
+        const currentlyHeldFossils =
+            UndergroundItems.list.filter(it => it.valueType === UndergroundItemValueType.Fossil && player.itemList[it.itemName]() > 0);
 
         let i = 0;
         while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
@@ -815,14 +815,14 @@ class AutomationHatchery
             //   - the pokémon associated to the fossil is not already held by the player
             //   - the fossil is not already in hatchery
             if (App.game.breeding.hasFreeEggSlot()
-                && (fossil.amount() > 0)
+                && (player.itemList[fossil.itemName]() > 0)
                 && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[fossil.name]) <= player.highestRegion()
                 && !hasPokemon
                 && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
                                               && (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
             {
                 // Hatching a fossil is performed by selling it
-                Underground.sellMineItem(fossil.id);
+                Underground.sellMineItem(fossil);
                 Automation.Notifications.sendNotif("Added a " + fossil.name + " to the Hatchery!", "Hatchery");
             }
 

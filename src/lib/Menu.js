@@ -42,7 +42,7 @@ class AutomationMenu
         // Only consider the BuildMenu init step
         if (initStep != Automation.InitSteps.BuildMenu) return;
 
-        let boltImage = '<img src="assets/images/badges/Bolt.png" height="20px">';
+        let boltImage = '<img src="assets/images/badges/Bolt.svg" height="20px">';
         let automationTitle = `${boltImage}Automation${boltImage}`;
         this.AutomationButtonsDiv = this.addCategory("automationButtons", automationTitle);
     }
