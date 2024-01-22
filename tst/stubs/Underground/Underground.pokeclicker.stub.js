@@ -38,12 +38,10 @@ class Underground
         return success;
     }
 
-    static sellMineItem(id, amount = 1)
+    static sellMineItem(item, amount = 1)
     {
-        const item = player.mineInventory().find(i => i.id == id);
         // Stripped sell locking feature stuff
-
-        const curAmt = item.amount();
+        const curAmt = player.itemList[item.itemName]();
 
         if (curAmt > 0)
         {
