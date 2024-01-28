@@ -69,7 +69,7 @@ class AutomationFocusQuests
         this.__internal__questLabels["DefeatPokemonsQuest"] = "Defeat <n> Pokémon on <Route>.";
         this.__internal__questLabels["CapturePokemonsQuest"] = "Capture <n> Pokémon.";
         this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture <n> <Type> Pokémon.";
-        this.__internal__questLabels["ClearBattleFrontier"] = "Clear <n> stages in the Battle Frontier.";
+        this.__internal__questLabels["ClearBattleFrontierQuest"] = "Clear <n> stages in the Battle Frontier.";
         this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
         this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
         this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
@@ -390,9 +390,9 @@ class AutomationFocusQuests
 
         const quest = filteredQuests[0];
 
-        if (Automation.Utils.isInstanceOf(quest, "ClearBattleFrontier"))
+        if (Automation.Utils.isInstanceOf(quest, "ClearBattleFrontierQuest"))
         {
-            this.__internal__workOnClearBattleFrontier();
+            this.__internal__workOnClearBattleFrontierQuest();
             return;
         }
         else if (App.game.gameState == GameConstants.GameState.battleFrontier)
@@ -540,7 +540,7 @@ class AutomationFocusQuests
     /**
      * @brief Works on a quest requiring to clear Battle Frontier battles.
      */
-    static __internal__workOnClearBattleFrontier()
+    static __internal__workOnClearBattleFrontierQuest()
     {
         if (BattleFrontierRunner.started())
         {
@@ -914,8 +914,8 @@ class AutomationFocusQuests
         if (Automation.Utils.isInstanceOf(a, "DefeatPokemonsQuest")) return -1;
         if (Automation.Utils.isInstanceOf(b, "DefeatPokemonsQuest")) return 1;
 
-        if (Automation.Utils.isInstanceOf(a, "ClearBattleFrontier")) return -1;
-        if (Automation.Utils.isInstanceOf(b, "ClearBattleFrontier")) return 1;
+        if (Automation.Utils.isInstanceOf(a, "ClearBattleFrontierQuest")) return -1;
+        if (Automation.Utils.isInstanceOf(b, "ClearBattleFrontierQuest")) return 1;
 
         // Then the gain pokedollar one
         if (Automation.Utils.isInstanceOf(a, "GainMoneyQuest")) return -1;
