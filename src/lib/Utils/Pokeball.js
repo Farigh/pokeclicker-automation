@@ -180,7 +180,7 @@ class AutomationUtilsPokeball
         let newOrderedList = App.game.pokeballFilters.list().map(
             ({ name, options, ball, enabled, inverted }) =>
             {
-                const newFilter = new PokeballFilter(name, {}, ball(), enabled, inverted);
+                const newFilter = new PokeballFilter(name, {}, ball(), enabled(), inverted());
                 newFilter.options = options;
                 return newFilter;
             });
