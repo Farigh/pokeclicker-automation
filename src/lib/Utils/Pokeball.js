@@ -122,7 +122,7 @@ class AutomationUtilsPokeball
         this.__internal__automationFilter._name(this.__internal__automationFilterName);
 
         // Make sure it has priority over other filters
-        this.__internal__prioritizeAutomationFiler();
+        this.__internal__prioritizeAutomationFilter();
     }
 
     /**
@@ -142,10 +142,11 @@ class AutomationUtilsPokeball
             this.__internal__automationFilter._name(this.__internal__automationFilterName);
         }
 
-        // Make sure it is the last filter
-        if (App.game.pokeballFilters.list().at(-1).uuid != Automation.Utils.Pokeball.__internal__automationFilter.uuid)
+        // Make sure it is the highest priority filter
+        const priorityMaxIndex = Settings.getSetting('catchFilters.invertPriorityOrder').value ? -1 : 1;
+        if (App.game.pokeballFilters.list().at(priorityMaxIndex).uuid != Automation.Utils.Pokeball.__internal__automationFilter.uuid)
         {
-            this.__internal__prioritizeAutomationFiler();
+            this.__internal__prioritizeAutomationFilter();
         }
     }
 
@@ -172,10 +173,33 @@ class AutomationUtilsPokeball
     /**
      * @brief Puts the filter last so it has priority over other filters
      */
-    static __internal__prioritizeAutomationFiler()
+    static __internal__prioritizeAutomationFilter()
     {
-        // Move the filter last to make sure it has priority over other filters
-        const newOrder = App.game.pokeballFilters.list().sort((filter) => (filter.uuid == this.__internal__automationFilter.uuid) ? 1 : -1);
-        App.game.pokeballFilters.list(newOrder);
+        // Copy all filters to prevent UI desynchronization (inspired from the in-game reset feature)
+        const automationIndex = App.game.pokeballFilters.list().findIndex((filter) => (filter.uuid == this.__internal__automationFilter.uuid));
+        let newOrderedList = App.game.pokeballFilters.list().map(
+            ({ name, options, ball, enabled, inverted }) =>
+            {
+                const newFilter = new PokeballFilter(name, {}, ball(), enabled, inverted);
+                newFilter.options = options;
+                return newFilter;
+            });
+
+        // Remove the automation filter from the list and save it as the new internal filter
+        this.__internal__automationFilter = newOrderedList.splice(automationIndex, 1)[0];
+
+        // The user can invert the priority using a game setting
+        if (Settings.getSetting('catchFilters.invertPriorityOrder').value)
+        {
+            // Add the filter last to make sure it has priority over other filters
+            newOrderedList.push(this.__internal__automationFilter);
+        }
+        else
+        {
+            // Add the filter first to make sure it has priority over other filters
+            newOrderedList.unshift(this.__internal__automationFilter);
+        }
+
+        App.game.pokeballFilters.list(newOrderedList);
     }
 }
