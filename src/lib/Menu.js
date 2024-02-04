@@ -1735,6 +1735,7 @@ class AutomationMenu
                 width: 25px;
                 height: 25px;
                 white-space: pre;
+                top: 8px;
             }
             .automationDirectionSortButton label
             {
