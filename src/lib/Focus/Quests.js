@@ -73,7 +73,7 @@ class AutomationFocusQuests
         this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
         this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
         this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
-        this.__internal__questLabels["GainGemsQuest"] = "Gain <n> Fire gems.";
+        this.__internal__questLabels["GainGemsQuest"] = "Gain <n> <Type> gems.";
         this.__internal__questLabels["HatchEggsQuest"] = "Hatch <n> Eggs.";
         this.__internal__questLabels["MineLayersQuest"] = "Mine <n> layer in the Underground.";
         this.__internal__questLabels["MineItemsQuest"] = "Mine <n> item in the Underground.";
