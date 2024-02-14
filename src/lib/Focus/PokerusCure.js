@@ -230,8 +230,17 @@ class AutomationFocusPokerusCure
             // Enable auto dungeon fight
             Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
-            // Bypass user settings, especially the 'Skip fights' one
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+            // Only force pokemon fights if one of those needs curing
+            if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.nonBossPokemons, true))
+            {
+                // Bypass user settings, especially the 'Skip fights' one
+                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+            }
+            else
+            {
+                // Go straight to the boss if every other pokemons have been cured
+                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+            }
         }
     }
 
@@ -280,9 +289,13 @@ class AutomationFocusPokerusCure
                       // Don't consider dungeon that the player can't access yet
                    && Automation.Utils.Route.canMoveToTown(TownList[data.dungeon.name]), this);
 
-        // Determine if the beast ball is the only catching option
         if (this.__internal__currentDungeonData)
         {
+            // Save current instance non-boss pokémons for dungeon strategy optimisation
+            this.__internal__currentDungeonData.nonBossPokemons =
+                this.__internal__getEveryPokemonForDungeon(this.__internal__currentDungeonData.dungeon, false, true);
+
+            // Determine if the beast ball is the only catching option
             this.__internal__currentDungeonData.needsBeastBall =
                 this.__internal__doesDungeonNeedBeastBalls(this.__internal__currentDungeonData.dungeon);
         }
@@ -523,32 +536,36 @@ class AutomationFocusPokerusCure
      *
      * @param dungeon: The dungeon to get the pokémon of
      * @param {boolean} onlyConsiderAvailablePokemons: Whether only currently available pokémon should be considered
+     * @param {boolean} skipBosses: Whether boss pokémons should be skipped
      *
      * @returns The list of pokémon
      */
-    static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons)
+    static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons, skipBosses = false)
     {
         let pokemonList = dungeon.pokemonList;
 
-        // Add pokemon bosses
-        for (const boss of dungeon.bossList)
+        if (!skipBosses)
         {
-            // Only consider pokémons
-            if (!Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon"))
+            // Add pokemon bosses
+            for (const boss of dungeon.bossList)
             {
-                continue;
-            }
+                // Only consider pokémons
+                if (!Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon"))
+                {
+                    continue;
+                }
 
-            // Don't consider locked bosses, if we're only considering available pokémons
-            if (onlyConsiderAvailablePokemons)
-            {
-                const isBossLocked = boss.options?.requirement ? !boss.options?.requirement.isCompleted() : false;
-                if (isBossLocked) continue;
-            }
+                // Don't consider locked bosses, if we're only considering available pokémons
+                if (onlyConsiderAvailablePokemons)
+                {
+                    const isBossLocked = boss.options?.requirement ? !boss.options?.requirement.isCompleted() : false;
+                    if (isBossLocked) continue;
+                }
 
-            if (!pokemonList.includes(boss.name))
-            {
-                pokemonList.push(boss.name);
+                if (!pokemonList.includes(boss.name))
+                {
+                    pokemonList.push(boss.name);
+                }
             }
         }
 
