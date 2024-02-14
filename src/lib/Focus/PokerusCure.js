@@ -230,8 +230,17 @@ class AutomationFocusPokerusCure
             // Enable auto dungeon fight
             Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
-            // Bypass user settings, especially the 'Skip fights' one
-            Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+            // Only force pokemon fights if one of those needs curing
+            if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.nonBossPokemons, true))
+            {
+                // Bypass user settings, especially the 'Skip fights' one
+                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+            }
+            else
+            {
+                // Go straight to the boss if every other pokemons have been cured
+                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+            }
         }
     }
 
@@ -280,9 +289,13 @@ class AutomationFocusPokerusCure
                       // Don't consider dungeon that the player can't access yet
                    && Automation.Utils.Route.canMoveToTown(TownList[data.dungeon.name]), this);
 
-        // Determine if the beast ball is the only catching option
         if (this.__internal__currentDungeonData)
         {
+            // Save current instance non-boss pokémons for dungeon strategy optimisation
+            this.__internal__currentDungeonData.nonBossPokemons =
+                this.__internal__getEveryPokemonForDungeon(this.__internal__currentDungeonData.dungeon, false, true);
+
+            // Determine if the beast ball is the only catching option
             this.__internal__currentDungeonData.needsBeastBall =
                 this.__internal__doesDungeonNeedBeastBalls(this.__internal__currentDungeonData.dungeon);
         }
@@ -476,31 +489,7 @@ class AutomationFocusPokerusCure
 
         if (onlyConsiderAvailablePokemons)
         {
-            specialPokemonList = specialPokemonList.filter((p) =>
-                {
-                    const requirements = (Automation.Utils.isInstanceOf(p.req, "MultiRequirement")) ? p.req.requirements
-                                                                                                    : [ p.req ];
-
-                    for (const requirement of requirements)
-                    {
-                        if (Automation.Utils.isInstanceOf(requirement, "WeatherRequirement"))
-                        {
-                            if (!requirement.weather.includes(Weather.regionalWeather[route.region]()))
-                            {
-                                return false;
-                            }
-                        }
-                        else
-                        {
-                            if (!requirement.isCompleted())
-                            {
-                                return false;
-                            }
-                        }
-                    }
-
-                    return true;
-                });
+            specialPokemonList = specialPokemonList.filter((p) => this.__internal__isRequirementCompleted(p.req, route.region), this);
         }
 
         pokemonList = pokemonList.concat(...specialPokemonList.map(p => p.pokemon));
@@ -523,32 +512,40 @@ class AutomationFocusPokerusCure
      *
      * @param dungeon: The dungeon to get the pokémon of
      * @param {boolean} onlyConsiderAvailablePokemons: Whether only currently available pokémon should be considered
+     * @param {boolean} skipBosses: Whether boss pokémons should be skipped
      *
      * @returns The list of pokémon
      */
-    static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons)
+    static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons, skipBosses = false)
     {
         let pokemonList = dungeon.pokemonList;
 
-        // Add pokemon bosses
-        for (const boss of dungeon.bossList)
+        if (!skipBosses)
         {
-            // Only consider pokémons
-            if (!Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon"))
-            {
-                continue;
-            }
+            const dungeonRegion = TownList[dungeon.name].region;
 
-            // Don't consider locked bosses, if we're only considering available pokémons
-            if (onlyConsiderAvailablePokemons)
+            // Add pokemon bosses
+            for (const boss of dungeon.bossList)
             {
-                const isBossLocked = boss.options?.requirement ? !boss.options?.requirement.isCompleted() : false;
-                if (isBossLocked) continue;
-            }
+                // Only consider pokémons
+                if (!Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon"))
+                {
+                    continue;
+                }
 
-            if (!pokemonList.includes(boss.name))
-            {
-                pokemonList.push(boss.name);
+                // Don't consider locked bosses, if we're only considering available pokémons
+                if (onlyConsiderAvailablePokemons)
+                {
+                    const isBossLocked = boss.options?.requirement
+                                       ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion)
+                                       : false;
+                    if (isBossLocked) continue;
+                }
+
+                if (!pokemonList.includes(boss.name))
+                {
+                    pokemonList.push(boss.name);
+                }
             }
         }
 
@@ -560,5 +557,39 @@ class AutomationFocusPokerusCure
         }
 
         return pokemonList;
+    }
+
+    /**
+     * @brief Check the @p requirement completion with respect of the provided @p region
+     *
+     * @param requirement: The requirement to check to completion of
+     * @param region: The region in which the requirement must be validated
+     *
+     * @returns true if the requirement is completed, false otherwise
+     */
+    static __internal__isRequirementCompleted(requirement, region)
+    {
+        const requirements = (Automation.Utils.isInstanceOf(requirement, "MultiRequirement")) ? requirement.requirements
+                                                                                              : [ requirement ];
+
+        for (const req of requirements)
+        {
+            if (Automation.Utils.isInstanceOf(req, "WeatherRequirement"))
+            {
+                if (!req.weather.includes(Weather.regionalWeather[region]()))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!req.isCompleted())
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }
