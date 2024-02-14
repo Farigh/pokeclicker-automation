@@ -489,31 +489,7 @@ class AutomationFocusPokerusCure
 
         if (onlyConsiderAvailablePokemons)
         {
-            specialPokemonList = specialPokemonList.filter((p) =>
-                {
-                    const requirements = (Automation.Utils.isInstanceOf(p.req, "MultiRequirement")) ? p.req.requirements
-                                                                                                    : [ p.req ];
-
-                    for (const requirement of requirements)
-                    {
-                        if (Automation.Utils.isInstanceOf(requirement, "WeatherRequirement"))
-                        {
-                            if (!requirement.weather.includes(Weather.regionalWeather[route.region]()))
-                            {
-                                return false;
-                            }
-                        }
-                        else
-                        {
-                            if (!requirement.isCompleted())
-                            {
-                                return false;
-                            }
-                        }
-                    }
-
-                    return true;
-                });
+            specialPokemonList = specialPokemonList.filter((p) => this.__internal__isRequirementCompleted(p.req, route.region), this);
         }
 
         pokemonList = pokemonList.concat(...specialPokemonList.map(p => p.pokemon));
@@ -546,6 +522,8 @@ class AutomationFocusPokerusCure
 
         if (!skipBosses)
         {
+            const dungeonRegion = TownList[dungeon.name].region;
+
             // Add pokemon bosses
             for (const boss of dungeon.bossList)
             {
@@ -558,7 +536,9 @@ class AutomationFocusPokerusCure
                 // Don't consider locked bosses, if we're only considering available pokémons
                 if (onlyConsiderAvailablePokemons)
                 {
-                    const isBossLocked = boss.options?.requirement ? !boss.options?.requirement.isCompleted() : false;
+                    const isBossLocked = boss.options?.requirement
+                                       ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion)
+                                       : false;
                     if (isBossLocked) continue;
                 }
 
@@ -577,5 +557,39 @@ class AutomationFocusPokerusCure
         }
 
         return pokemonList;
+    }
+
+    /**
+     * @brief Check the @p requirement completion with respect of the provided @p region
+     *
+     * @param requirement: The requirement to check to completion of
+     * @param region: The region in which the requirement must be validated
+     *
+     * @returns true if the requirement is completed, false otherwise
+     */
+    static __internal__isRequirementCompleted(requirement, region)
+    {
+        const requirements = (Automation.Utils.isInstanceOf(requirement, "MultiRequirement")) ? requirement.requirements
+                                                                                              : [ requirement ];
+
+        for (const req of requirements)
+        {
+            if (Automation.Utils.isInstanceOf(req, "WeatherRequirement"))
+            {
+                if (!req.weather.includes(Weather.regionalWeather[region]()))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                if (!req.isCompleted())
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }
