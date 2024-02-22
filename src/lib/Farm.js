@@ -1172,7 +1172,7 @@ class AutomationFarm
         pinkanConfig[BerryType.Qualot] = [ 10, 14 ];
         pinkanConfig[BerryType.Magost] = [ 11, 13 ];
         pinkanConfig[BerryType.Watmel] = [ 12 ];
-        this.__internal__addUnlockMutationStrategy(BerryType.Pinkan, pinkanConfig);
+        this.__internal__addUnlockMutationStrategy(BerryType.Pinkan, pinkanConfig, 1, null, [ OakItemType.Sprinklotad ]);
 
         // Make the pinkan berry optional, since it's not required by any other berry strategy
         const pinkanStrategy = this.__internal__unlockStrategySelection.at(-1);
