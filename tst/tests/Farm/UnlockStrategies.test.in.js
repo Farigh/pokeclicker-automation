@@ -1417,7 +1417,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         expectedConfig[BerryType.Watmel] = [ 12 ];
         const expectedOrder = [ BerryType.Watmel, BerryType.Magost, BerryType.Qualot, BerryType.Mago,
                                 BerryType.Nanab, BerryType.Persim, BerryType.Pecha ];
-        runBerryMutationTest(BerryType.Pinkan, expectedConfig, expectedOrder);
+        runBerryMutationTest(BerryType.Pinkan, expectedConfig, expectedOrder, null, [ OakItemType.Sprinklotad ]);
     });
 
     // Test the Gen 3 berry gathering
