@@ -145,14 +145,14 @@ class AutomationFocusShadowPurification
         // Ensure that the player has some balls available
         if (!Automation.Focus.__ensurePlayerHasEnoughBalls(Automation.Focus.__pokeballToUseSelectElem.value))
         {
-            Automation.Utils.disableAutomationFilter();
+            Automation.Utils.Pokeball.disableAutomationFilter();
             return;
         }
 
         // Go farm some dungeon token if needed
         if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < this.__internal__currentDungeonData.dungeon.tokenCost)
         {
-            Automation.Utils.disableAutomationFilter();
+            Automation.Utils.Pokeball.disableAutomationFilter();
             Automation.Focus.__goToBestRouteForDungeonToken();
             return;
         }
