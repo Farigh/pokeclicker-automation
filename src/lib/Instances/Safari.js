@@ -5,6 +5,7 @@ class AutomationSafari
 {
     static Settings = {
                           FeatureEnabled: "Safari-HuntEnabled",
+                          FocusOnBaitAchievements: "Safari-BaitAchievements",
                           InfinitRepeat: "Safari-InfinitRepeat"
                       };
 
@@ -17,6 +18,9 @@ class AutomationSafari
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            // Set the advanced settings default values
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FocusOnBaitAchievements, false);
+
             this.__internal__buildMenu();
 
             // Disable the feature by default
@@ -24,6 +28,10 @@ class AutomationSafari
         }
         else
         {
+            // Initialize internal data
+            this.__internal__baitAchievements =
+                AchievementHandler.achievementList.filter(a => (Automation.Utils.isInstanceOf(a.property, "SafariBaitRequirement")));
+
             // Set the div visibility watcher
             setInterval(this.__internal__updateDivContent.bind(this), 200); // Refresh every 0.2s
         }
@@ -43,6 +51,8 @@ class AutomationSafari
     static __internal__encounterCandidates = [];
 
     static __internal__waitBeforeActing = -1;
+
+    static __internal__baitAchievements = [];
 
     /**
      * @brief Builds the menu
@@ -82,6 +92,22 @@ class AutomationSafari
             safariBattleElems.repeatInfinitSpan.hidden = !newStatus;
         };
         safariBattleElems.repeatButton.onclick = safariElems.repeatButton.onclick;
+
+        // Build advanced settings panel (only for the main panel)
+        const safariSettingPanel = Automation.Menu.addSettingPanel(safariElems.featureButton.parentElement.parentElement);
+
+        const titleDiv = Automation.Menu.createTitleElement("Safari advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        safariSettingPanel.appendChild(titleDiv);
+
+        // Focus on unlock button
+        const achievementLabel = "Use bait to unlock the achievement";
+        const achievementTooltip = "Uses bait on pokemon instead of trying to catch them\n"
+                                 + "Stops once all related achievements are unlocked";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(achievementLabel,
+                                                               this.Settings.FocusOnBaitAchievements,
+                                                               achievementTooltip,
+                                                               safariSettingPanel);
     }
 
     /**
@@ -126,7 +152,7 @@ class AutomationSafari
         const repeatButtonContainer = document.createElement("div");
         repeatButtonContainer.style.display = "inline-block";
         repeatButtonContainer.style.paddingRight = "10px";
-        container.appendChild(repeatButtonContainer);
+        featureButton.parentElement.parentElement.appendChild(repeatButtonContainer);
 
         const repeatButtonTooltip = "Set the automation mode."
                                   + Automation.Menu.TooltipSeparator
@@ -477,9 +503,15 @@ class AutomationSafari
         // Do not attempt anything while the game is busy
         if (SafariBattle.busy()) return;
 
+        // If the user asked to complete the bait achievements, throw baits until it's done
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnBaitAchievements) === "true")
+            && (this.__internal__baitAchievements.filter(a => !a.isCompleted()).length != 0))
+        {
+            SafariBattle.throwBait();
+        }
         // Thow a rock at the pokémon to improve the catch rate, unless its angry or its catch factor is high enough
-        if ((SafariBattle.enemy.angry == 0)
-            && (SafariBattle.enemy.catchFactor < 90))
+        else if ((SafariBattle.enemy.angry == 0)
+                 && (SafariBattle.enemy.catchFactor < 90))
         {
             SafariBattle.throwRock();
         }
