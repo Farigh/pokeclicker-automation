@@ -4,6 +4,7 @@
 class AutomationSafari
 {
     static Settings = {
+                          CollectItems: "Safari-CollectItems",
                           FeatureEnabled: "Safari-HuntEnabled",
                           FocusOnBaitAchievements: "Safari-BaitAchievements",
                           InfinitRepeat: "Safari-InfinitRepeat"
@@ -19,6 +20,7 @@ class AutomationSafari
         if (initStep == Automation.InitSteps.BuildMenu)
         {
             // Set the advanced settings default values
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.CollectItems, true);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FocusOnBaitAchievements, false);
 
             this.__internal__buildMenu();
@@ -41,6 +43,12 @@ class AutomationSafari
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
+    static __internal__moveTypes = {
+        None: 0,
+        Collect: 1,
+        Encounter: 2
+    };
+
     static __internal__autoSafariLoop = null;
 
     static __internal__safariInGameModal = null;
@@ -48,6 +56,7 @@ class AutomationSafari
     static __internal__safariGridData = null;
     static __internal__safariMovesCost = [];
     static __internal__safariMovesList = [];
+    static __internal__safariLastMoveType = this.__internal__moveTypes.None;
     static __internal__encounterCandidates = [];
 
     static __internal__waitBeforeActing = -1;
@@ -100,13 +109,23 @@ class AutomationSafari
         titleDiv.style.marginBottom = "10px";
         safariSettingPanel.appendChild(titleDiv);
 
-        // Focus on unlock button
-        const achievementLabel = "Use bait to unlock the achievement";
+        // Focus on bait achievements button
+        const achievementLabel = "Prioritize bait use to unlock achievements";
         const achievementTooltip = "Uses bait on pokemon instead of trying to catch them\n"
                                  + "Stops once all related achievements are unlocked";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(achievementLabel,
                                                                this.Settings.FocusOnBaitAchievements,
                                                                achievementTooltip,
+                                                               safariSettingPanel);
+
+
+        // Focus on bait achievements button
+        const itemsCollectionLabel = "Collect items";
+        const itemsCollectionTooltip = "The automation will move to the closest item\n"
+                                     + "as soon as one appears";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(itemsCollectionLabel,
+                                                               this.Settings.CollectItems,
+                                                               itemsCollectionTooltip,
                                                                safariSettingPanel);
     }
 
@@ -318,13 +337,19 @@ class AutomationSafari
         if (this.__internal__safariGridData == null)
         {
             this.__internal__processSafariGrid();
-            this.__internal__computeMovesCosts();
-            this.__internal__computeMovesToNearestEncounterZone();
         }
 
         if (Safari.inBattle())
         {
             this.__internal__battlePokemon();
+            return;
+        }
+
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.CollectItems) === "true")
+            && (Safari.itemGrid().length != 0))
+        {
+            // Move the player to the nearest item
+            this.__internal__moveToNearestItem();
             return;
         }
 
@@ -372,6 +397,7 @@ class AutomationSafari
      */
     static __internal__computeMovesCosts()
     {
+        // The use of fill + map is necessary, otherwise it would add a ref to the same array to each row ...
         this.__internal__safariMovesCost =
             new Array(Safari.grid.length).fill(0).map(() => new Array(Safari.grid[1].length).fill(Number.MAX_SAFE_INTEGER));
 
@@ -418,13 +444,9 @@ class AutomationSafari
      */
     static __internal__computeMovesToNearestEncounterZone()
     {
+        // Recompute move costs based on the player's position
+        this.__internal__computeMovesCosts();
         const destination = this.__internal__selectEncounterDestination();
-
-        const isNextStep = function(x, y, cost)
-        {
-            return (this.__internal__safariMovesCost[y] !== undefined)
-                && (this.__internal__safariMovesCost[y][x] === cost);
-        }.bind(this);
 
         let cost = this.__internal__safariMovesCost[destination.y][destination.x];
 
@@ -442,6 +464,51 @@ class AutomationSafari
 
         // Add both destination encounter tiles
         this.__internal__safariMovesList = [ destinationNeighbor, destination ];
+
+        this.__internal__addPathToTheMoveList();
+    }
+
+    /**
+     * @brief Computes the moves needed to reach to the nearest item location
+     */
+    static __internal__computeMovesToNearestItem()
+    {
+        // Recompute move costs based on the player's position
+        this.__internal__computeMovesCosts();
+
+        let candidate;
+        let candidateCost = Number.MAX_SAFE_INTEGER;
+
+        for (const tile of Safari.itemGrid())
+        {
+            const currentCost = this.__internal__safariMovesCost[tile.y][tile.x];
+            if (currentCost < candidateCost)
+            {
+                candidate = tile;
+                candidateCost = currentCost;
+            }
+        }
+
+        this.__internal__safariMovesList = [ { x: candidate.x, y: candidate.y } ];
+
+        this.__internal__addPathToTheMoveList();
+    }
+
+    /**
+     * @brief Computes the path to the setup destination
+     *
+     * @note The destination must be the last element of the internal @see __internal__safariMovesList
+     */
+    static __internal__addPathToTheMoveList()
+    {
+        const destination = this.__internal__safariMovesList.at(-1);
+        let cost = this.__internal__safariMovesCost[destination.y][destination.x];
+
+        const isNextStep = function(x, y, cost)
+        {
+            return (this.__internal__safariMovesCost[y] !== undefined)
+                && (this.__internal__safariMovesCost[y][x] === cost);
+        }.bind(this);
 
         // Stop at cost = 1, which is the till right next to the player
         while (cost > 1)
@@ -522,10 +589,50 @@ class AutomationSafari
     }
 
     /**
+     * @brief Moves to the nearest item to collect
+     */
+    static __internal__moveToNearestItem()
+    {
+        // Is the item has been collected, we need to find the next item to reach
+        let isItemStillAtDest = false;
+        if (this.__internal__safariLastMoveType === this.__internal__moveTypes.Collect)
+        {
+            const itemLocation = this.__internal__safariMovesList[0];
+            isItemStillAtDest = Safari.itemGrid().filter(a => ((a.x == itemLocation.x) && (a.y == itemLocation.y))).length != 0;
+        }
+
+        // Get the next move list if needed
+        if ((this.__internal__safariLastMoveType !== this.__internal__moveTypes.Collect)
+            || !isItemStillAtDest)
+        {
+            this.__internal__computeMovesToNearestItem();
+            this.__internal__safariLastMoveType = this.__internal__moveTypes.Collect;
+        }
+
+        // Don't move if the player is still moving
+        if (Safari.walking || Safari.isMoving) return;
+
+        let dest = this.__internal__safariMovesList.at(-1);
+        if (this.__internal__safariMovesList.length > 1)
+        {
+            this.__internal__safariMovesList.pop();
+        }
+
+        this.__internal__moveToTile(dest.x, dest.y);
+    }
+
+    /**
      * @brief Moves to the nearest Grass of Water location to look for pokemons
      */
     static __internal__moveToNearestEncounterZone()
     {
+        // Get the next move list if needed
+        if (this.__internal__safariLastMoveType !== this.__internal__moveTypes.Encounter)
+        {
+            this.__internal__computeMovesToNearestEncounterZone();
+            this.__internal__safariLastMoveType = this.__internal__moveTypes.Encounter;
+        }
+
         // Don't move if the player is still moving
         if (Safari.walking || Safari.isMoving) return;
 
