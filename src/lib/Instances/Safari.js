@@ -233,6 +233,9 @@ class AutomationSafari
             // Only set a loop if there is none active
             if (this.__internal__autoSafariLoop === null)
             {
+                // Reset the internal data
+                this.__internal__safariLastMoveType = this.__internal__moveTypes.None;
+
                 // Set auto-safari loop
                 this.__internal__waitBeforeActing = -1;
                 this.__internal__autoSafariLoop = setInterval(this.__internal__safariAutomationLoop.bind(this), 50); // Runs every game tick
@@ -542,23 +545,39 @@ class AutomationSafari
      */
     static __internal__moveToTile(x, y)
     {
+        let expectedMoveDest = { x: Safari.playerXY.x, y: Safari.playerXY.y };
+
         let direction = "up";
         if (Safari.playerXY.x > x)
         {
             direction = "left";
+            expectedMoveDest.x--;
         }
         else if (Safari.playerXY.x < x)
         {
             direction = "right";
+            expectedMoveDest.x++;
         }
         else if (Safari.playerXY.y < y)
         {
             direction = "down";
+            expectedMoveDest.y++;
+        }
+        else
+        {
+            expectedMoveDest.y--;
         }
 
         // Dont use Safari.step as it would break the animation
         Safari.move(direction);
         Safari.stop(direction);
+
+        // If the destination in not walkable, reset the safari state, so a new path can be computed
+        const destTile = Safari.grid[expectedMoveDest.y][expectedMoveDest.x];
+        if (!GameConstants.SAFARI_LEGAL_WALK_BLOCKS.includes(destTile))
+        {
+            this.__internal__safariLastMoveType = this.__internal__moveTypes.None;
+        }
     }
 
     /**
