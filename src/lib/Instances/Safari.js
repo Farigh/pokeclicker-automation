@@ -372,46 +372,45 @@ class AutomationSafari
      */
     static __internal__computeMovesCosts()
     {
-        // The use of fill + map is necessary, otherwise it would add a ref to the same array to each row ...
         this.__internal__safariMovesCost =
             new Array(Safari.grid.length).fill(0).map(() => new Array(Safari.grid[1].length).fill(Number.MAX_SAFE_INTEGER));
 
-        const tryUpdateNeighbor = function(x, y, newCost)
-        {
-            // Invalid position
-            if ((this.__internal__safariMovesCost[y] === undefined)
-                || (this.__internal__safariMovesCost[y][x] === undefined))
-            {
-                return;
-            }
-
-            if (newCost < this.__internal__safariMovesCost[y][x])
-            {
-                this.__internal__safariMovesCost[y][x] = newCost;
-                updateNeighbors(x, y);
-            }
-        }.bind(this);
-
-        const updateNeighbors = function(x, y)
-        {
-            const cost = this.__internal__safariMovesCost[y][x] + 1;
-            tryUpdateNeighbor(x, y - 1, cost);
-            tryUpdateNeighbor(x, y + 1, cost);
-            tryUpdateNeighbor(x - 1, y, cost);
-            tryUpdateNeighbor(x + 1, y, cost);
-        }.bind(this);
-
         // Set the cost of Obstacles to -1
-        for (const tile of this.__internal__safariGridData.Obstacles)
+        for (const tile of Automation.Safari.__internal__safariGridData.Obstacles)
         {
             this.__internal__safariMovesCost[tile.y][tile.x] = -1;
         }
 
+        // Start at the users position
+        let toUpdateNext = [ { x: Safari.playerXY.x, y: Safari.playerXY.y } ];
+
         // Set the move costs from the starting point to 0
         this.__internal__safariMovesCost[Safari.playerXY.y][Safari.playerXY.x] = 0;
 
-        // Start at the users position
-        updateNeighbors(Safari.playerXY.x, Safari.playerXY.y);
+        while (toUpdateNext.length != 0)
+        {
+            const nextPos = toUpdateNext.shift();
+
+            const cost = this.__internal__safariMovesCost[nextPos.y][nextPos.x] + 1;
+            for (const pos of [ { x: nextPos.x, y: nextPos.y - 1 },
+                                { x: nextPos.x, y: nextPos.y + 1 },
+                                { x: nextPos.x - 1, y: nextPos.y },
+                                { x: nextPos.x + 1, y: nextPos.y } ])
+            {
+                // Invalid position
+                if ((this.__internal__safariMovesCost[pos.y] === undefined)
+                    || (this.__internal__safariMovesCost[pos.y][pos.x] === undefined))
+                {
+                    continue;
+                }
+
+                if (cost < this.__internal__safariMovesCost[pos.y][pos.x])
+                {
+                    this.__internal__safariMovesCost[pos.y][pos.x] = cost;
+                    toUpdateNext.push({ x: pos.x, y: pos.y });
+                }
+            }
+        }
     }
 
     /**
