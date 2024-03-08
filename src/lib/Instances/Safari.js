@@ -190,6 +190,7 @@ class AutomationSafari
 
         // The repeat once indicator
         const repeatOnceSpan = document.createElement("span");
+        repeatOnceSpan.hidden = (Automation.Utils.LocalStorage.getValue(Automation.Safari.Settings.InfinitRepeat) == "true");
         repeatOnceSpan.textContent = "1";
         repeatOnceSpan.style.position = "absolute";
         repeatOnceSpan.style.left = "50%";
@@ -200,7 +201,7 @@ class AutomationSafari
 
         const repeatInfinitSpan = document.createElement("span");
         repeatInfinitSpan.textContent = "∞";
-        repeatInfinitSpan.hidden = true;
+        repeatInfinitSpan.hidden = !repeatOnceSpan.hidden;
         repeatInfinitSpan.style.position = "absolute";
         repeatInfinitSpan.style.left = "calc(50% - 4px)";
         repeatInfinitSpan.style.top = "1px";
