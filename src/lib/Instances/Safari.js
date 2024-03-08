@@ -655,16 +655,15 @@ class AutomationSafari
         // Don't move if the player is still moving
         if (Safari.walking || Safari.isMoving) return;
 
-        let dest;
+        let dest = this.__internal__safariMovesList.at(-1);
         if (this.__internal__safariMovesList.length > 2)
         {
-            dest = this.__internal__safariMovesList.at(-1);
             this.__internal__safariMovesList.pop();
         }
-        else
+        else if ((dest.x == Safari.playerXY.x) && (dest.y == Safari.playerXY.y))
         {
             // Two moves left, alternate between those until a fight pops
-            dest = this.__internal__safariMovesList.find(t => ((t.x != Safari.playerXY.x) || (t.y != Safari.playerXY.y)));
+            dest = this.__internal__safariMovesList[0];
         }
         this.__internal__moveToTile(dest.x, dest.y);
     }
