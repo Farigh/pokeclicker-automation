@@ -233,8 +233,8 @@ class AutomationSafari
             // Only set a loop if there is none active
             if (this.__internal__autoSafariLoop === null)
             {
-                // Reset the internal data
-                this.__internal__safariLastMoveType = this.__internal__moveTypes.None;
+                // Reset internal data
+                this.__internal__resetInternalData();
 
                 // Set auto-safari loop
                 this.__internal__waitBeforeActing = -1;
@@ -251,7 +251,7 @@ class AutomationSafari
             Automation.Utils.Pokeball.disableAutomationFilter();
 
             // Reset internal data
-            this.__internal__safariGridData = null;
+            this.__internal__resetInternalData();
         }
     }
 
@@ -298,7 +298,7 @@ class AutomationSafari
             }
 
             // Reset internal data
-            this.__internal__safariGridData = null;
+            this.__internal__resetInternalData();
 
             // Equip the Oak item catch loadout
             Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
@@ -402,7 +402,7 @@ class AutomationSafari
     {
         // The use of fill + map is necessary, otherwise it would add a ref to the same array to each row ...
         this.__internal__safariMovesCost =
-            new Array(Safari.grid.length).fill(0).map(() => new Array(Safari.grid[1].length).fill(Number.MAX_SAFE_INTEGER));
+            new Array(Safari.grid.length).fill(0).map(() => new Array(Safari.grid[0].length).fill(Number.MAX_SAFE_INTEGER));
 
         // Set the cost of Obstacles to -1
         for (const tile of Automation.Safari.__internal__safariGridData.Obstacles)
@@ -750,5 +750,15 @@ class AutomationSafari
         {
             Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, false);
         }
+    }
+
+    /**
+     * @brief Ensures the internal data are reset to their initial state
+     */
+    static __internal__resetInternalData()
+    {
+        // Reset internal data
+        this.__internal__safariGridData = null;
+        this.__internal__safariLastMoveType = this.__internal__moveTypes.None;
     }
 }
