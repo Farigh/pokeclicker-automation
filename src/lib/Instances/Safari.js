@@ -23,6 +23,9 @@ class AutomationSafari
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.CollectItems, true);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FocusOnBaitAchievements, false);
 
+            // Set to solo run by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.InfinitRepeat, false);
+
             this.__internal__buildMenu();
 
             // Disable the feature by default
@@ -164,9 +167,6 @@ class AutomationSafari
         /**************************\
         |***   Repeat button    ***|
         \**************************/
-
-        // Set to solo run by default
-        Automation.Utils.LocalStorage.setValue(this.Settings.InfinitRepeat, false);
 
         const repeatButtonContainer = document.createElement("div");
         repeatButtonContainer.style.display = "inline-block";
