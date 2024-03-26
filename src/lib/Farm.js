@@ -861,7 +861,7 @@ class AutomationFarm
 
         if (App.game.farming.hasBerry(berryType))
         {
-            App.game.farming.plant(index, berryType, true);
+            App.game.farming.plant(index, berryType);
             this.__internal__plantedBerryCount++;
             return true;
         }
@@ -1916,7 +1916,7 @@ class AutomationFarm
                         if (App.game.farming.plotList[plotIndex].isUnlocked
                             && App.game.farming.plotList[plotIndex].isEmpty())
                         {
-                            App.game.farming.plant(plotIndex, berryType, true);
+                            App.game.farming.plant(plotIndex, berryType);
 
                             // Subtract the harvest amount (-1 for the planted berry)
                             neededAmount -= (berryHarvestAmount - 1);
