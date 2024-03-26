@@ -370,9 +370,15 @@ class AutomationFocusAchievements
     static __internal__getRegionFromCategoryName(categoryName)
     {
         // Handle Sevii Island content at the same time as Hoenn content
-        if (categoryName == "sevii")
+        if ((categoryName == "sevii"))
         {
             return GameConstants.Region.hoenn;
+        }
+
+        // Handle Orre content at the same time as Sinnoh content
+        if ((categoryName == "orre"))
+        {
+            return GameConstants.Region.sinnoh;
         }
 
         // Handle Magikarp Jump Island content at the same time as Galar content, unless the user chose to do it last
