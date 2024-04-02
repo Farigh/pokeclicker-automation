@@ -1383,6 +1383,9 @@ class AutomationMenu
                 border-radius: 5px;
                 width: fit-content;
                 position: absolute;
+
+                /* Work around any overlapping issues */
+                z-index: 9999;
             }
 
             .automationCustomDropdownOptions.visible
