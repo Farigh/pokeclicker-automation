@@ -9,7 +9,8 @@ class AutomationDungeon
                           BossCatchPokeballToUse: "Dungeon-BossCatchPokeballToUse",
                           AvoidEncounters: "Dungeon-AvoidEncounters",
                           SkipChests: "Dungeon-SkipChests",
-                          SkipBoss: "Dungeon-SkipBoss"
+                          SkipBoss: "Dungeon-SkipBoss",
+                          SelectedChestMinRarity: "Dungeon-SelectedChestMinRarity"
                       };
 
     static InternalModes = {
@@ -33,6 +34,9 @@ class AutomationDungeon
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AvoidEncounters, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipChests, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipBoss, false);
+
+            // Set the default chest rarity to "common" (ie. pickup any chest rarity)
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedChestMinRarity, this.__internal__chestTypes.common);
 
             this.__internal__injectDungeonCss();
             this.__internal__buildMenu();
@@ -82,10 +86,22 @@ class AutomationDungeon
         UncaughtShadowOrShiny: { id: 3, shiny: true, shadow: true }
     };
 
+    // Unfortunately, pokeclicker does not use any enum we can rely on for chest rarity so we have to have our own copy
+    // See: https://github.com/pokeclicker/pokeclicker/blob/91575e729ace2cdcbd034b39cfb08e25d1863310/src/scripts/dungeons/DungeonRunner.ts#L146-L152
+    static __internal__chestTypes = {
+                                        "common" : 0,
+                                        "rare" : 1,
+                                        "epic" : 2,
+                                        "legendary" : 3,
+                                        "mythic" : 4
+                                    };
+
     static __internal__autoDungeonLoop = null;
     static __internal__pokedexSwitch = null;
     static __internal__dungeonFightButton = null;
     static __internal__dungeonBossCatchPokeballSelectElem = null;
+
+    static __internal__chestMinRarityDropdownList = null;
 
     static __internal__currentCatchMode = this.__internal__CatchModes.Uncaught;
     static __internal__floorEndPosition = null;
@@ -207,6 +223,9 @@ class AutomationDungeon
                                             bossCatchPokeballTooltip,
                                             true);
 
+        // Add the chest min rarity setting
+        this.__internal__buildChestMinRarityDropdownList(dungeonSettingsPanel);
+
         // Add some space
         dungeonSettingsPanel.appendChild(document.createElement("br"));
 
@@ -232,6 +251,59 @@ class AutomationDungeon
                               + "It will exit the dungeon as soon as the other automation conditions are met";
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip the boss fight", this.Settings.SkipBoss, skipBossTooltip, dungeonSettingsPanel);
+    }
+
+    /**
+     * @brief Builds the advanced setting chest min rarity selection dropdown list
+     *
+     * @param {Element} parent: The parent div
+     */
+    static __internal__buildChestMinRarityDropdownList(parent)
+    {
+        const selectOptions = [];
+        const savedSelectedRarity = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedChestMinRarity));
+
+        for (const rarityName in this.__internal__chestTypes)
+        {
+            const element = document.createElement("div");
+            element.style.paddingTop = "1px";
+
+            // Add the chest rarity image
+            const image = document.createElement("img");
+            image.src = `assets/images/dungeons/chest-${rarityName}.png`;
+            image.style.height = "19px";
+            image.style.marginRight = "5px";
+            image.style.marginLeft = "5px";
+            image.style.position = "relative";
+            image.style.bottom = "1px";
+            element.appendChild(image);
+
+            // Add the chest rarity name (uppercase the 1st letter)
+            element.appendChild(document.createTextNode(rarityName.charAt(0).toUpperCase() + rarityName.slice(1)));
+
+            const chestId = this.__internal__chestTypes[rarityName];
+            selectOptions.push({ value: chestId, element, selected: (chestId == savedSelectedRarity) });
+        }
+
+        const tooltip = "Choose which chest the automation should consider picking up.\n"
+                      + "Any rarity lower than the selected one will be ignored."
+                      + Automation.Menu.TooltipSeparator
+                      + "This setting is ignored if the \"Skip chests pickup\" feature is enabled.";
+        this.__internal__chestMinRarityDropdownList =
+            Automation.Menu.createDropdownListWithHtmlOptions(selectOptions, "Lowest chest rarity to pick up", tooltip);
+        this.__internal__chestMinRarityDropdownList.getElementsByTagName('button')[0].style.width = "140px";
+
+        this.__internal__chestMinRarityDropdownList.onValueChange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.SelectedChestMinRarity,
+                                                       this.__internal__chestMinRarityDropdownList.selectedValue);
+
+                // TODO: Refresh __internal__chestPositions since the value changed
+                // (not possible for now because of the problem with visible but not reachable chests problem that appeared with
+                //  the bigger flashlight range update)
+            }.bind(this);
+
+        parent.appendChild(this.__internal__chestMinRarityDropdownList);
     }
 
     /**
@@ -868,12 +940,22 @@ class AutomationDungeon
 
     /**
      * @brief Adds the given @p position to the check list, if not already added.
+     *
+     * @param cell: The internal cell element
      */
-    static __internal__addChestPosition(position)
+    static __internal__addChestPosition(cell)
     {
-        if (!this.__internal__chestPositions.some((pos) => (pos.x == position.x) && (pos.y == position.y) && (pos.floor == position.floor)))
+        // Don't add the chest if its rarity is lower than the user selected one
+        const currentChestRarity = this.__internal__chestTypes[cell.tile.metadata.tier]
+        if (currentChestRarity < this.__internal__chestMinRarityDropdownList.selectedValue)
         {
-            this.__internal__chestPositions.push(position);
+            return;
+        }
+
+        // Don't add the chest if it was already added to the list
+        if (!this.__internal__chestPositions.some((pos) => (pos.x == cell.x) && (pos.y == cell.y) && (pos.floor == cell.floor)))
+        {
+            this.__internal__chestPositions.push(cell);
         }
     }
 
