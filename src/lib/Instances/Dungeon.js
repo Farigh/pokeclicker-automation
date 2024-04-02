@@ -8,7 +8,6 @@ class AutomationDungeon
                           StopOnPokedex: "Dungeon-FightStopOnPokedex",
                           BossCatchPokeballToUse: "Dungeon-BossCatchPokeballToUse",
                           AvoidEncounters: "Dungeon-AvoidEncounters",
-                          SkipChests: "Dungeon-SkipChests",
                           SkipBoss: "Dungeon-SkipBoss",
                           SelectedChestMinRarity: "Dungeon-SelectedChestMinRarity"
                       };
@@ -32,11 +31,24 @@ class AutomationDungeon
         {
             // Disable encounters, chests and boss skipping by default
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AvoidEncounters, false);
-            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipChests, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipBoss, false);
 
             // Set the default chest rarity to "common" (ie. pickup any chest rarity)
-            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedChestMinRarity, this.__internal__chestTypes.common);
+            const formerChestOption = "Dungeon-SkipChests";
+            const formerChestOptionValue = Automation.Utils.LocalStorage.getValue(formerChestOption);
+            if (Automation.Utils.LocalStorage.getValue(formerChestOption) != undefined)
+            {
+                // TODO Remove this conversion at some point
+                const defaultValue = (formerChestOptionValue == "true") ? this.__internal__chestTypes.skipall : this.__internal__chestTypes.common;
+
+                // Convert the former setting "Dungeon-SkipChests" to the new chest rarity one
+                Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedChestMinRarity, defaultValue);
+                Automation.Utils.LocalStorage.unsetValue(formerChestOption);
+            }
+            else
+            {
+                Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedChestMinRarity, this.__internal__chestTypes.common);
+            }
 
             this.__internal__injectDungeonCss();
             this.__internal__buildMenu();
@@ -93,7 +105,8 @@ class AutomationDungeon
                                         "rare" : 1,
                                         "epic" : 2,
                                         "legendary" : 3,
-                                        "mythic" : 4
+                                        "mythic" : 4,
+                                        "skipall" : 9999 // If this value is selected, any chest will be skipped
                                     };
 
     static __internal__autoDungeonLoop = null;
@@ -240,11 +253,6 @@ class AutomationDungeon
         Automation.Menu.addLabeledAdvancedSettingsToggleButton(
             "Skip as many fights as possible", this.Settings.AvoidEncounters, avoidEncountersTooltip, dungeonSettingsPanel);
 
-        // Add the skip chests button
-        const skipChestsTooltip = "Don't pick dungeon chests at all.";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-            "Skip chests pickup", this.Settings.SkipChests, skipChestsTooltip, dungeonSettingsPanel);
-
         // Add the skip boss button
         const skipBossTooltip = "Don't fight the dungeon boss at all."
                               + Automation.Menu.TooltipSeparator
@@ -278,17 +286,37 @@ class AutomationDungeon
             image.style.bottom = "1px";
             element.appendChild(image);
 
-            // Add the chest rarity name (uppercase the 1st letter)
-            element.appendChild(document.createTextNode(rarityName.charAt(0).toUpperCase() + rarityName.slice(1)));
-
             const chestId = this.__internal__chestTypes[rarityName];
+
+            if (chestId == this.__internal__chestTypes.skipall)
+            {
+                image.src = `assets/images/dungeons/chest-common.png`;
+                image.style.filter = "grayscale(100%)";
+
+                // Add the forbidden emoji on top of the grayed chest image
+                const spanElem = document.createElement("span");
+                spanElem.style.display = "inline-block";
+                spanElem.style.position = "relative";
+                spanElem.style.width = "0px";
+                spanElem.style.right = "27px";
+                spanElem.appendChild(document.createTextNode("🚫"));
+                element.appendChild(spanElem);
+
+                // Add label
+                element.appendChild(document.createTextNode("Skip all"));
+            }
+            else
+            {
+                // Add the chest rarity name (uppercase the 1st letter)
+                element.appendChild(document.createTextNode(rarityName.charAt(0).toUpperCase() + rarityName.slice(1)));
+            }
             selectOptions.push({ value: chestId, element, selected: (chestId == savedSelectedRarity) });
         }
 
         const tooltip = "Choose which chest the automation should consider picking up.\n"
                       + "Any rarity lower than the selected one will be ignored."
                       + Automation.Menu.TooltipSeparator
-                      + "This setting is ignored if the \"Skip chests pickup\" feature is enabled.";
+                      + "Setting this to \"Skip all\" will prevent any chest pick up.";
         this.__internal__chestMinRarityDropdownList =
             Automation.Menu.createDropdownListWithHtmlOptions(selectOptions, "Lowest chest rarity to pick up", tooltip);
         this.__internal__chestMinRarityDropdownList.getElementsByTagName('button')[0].style.width = "140px";
@@ -403,7 +431,7 @@ class AutomationDungeon
 
         const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
                          && (this.AutomationRequestedMode != this.InternalModes.ForcePokemonFight);
-        const skipChests = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true");
+        const skipChests = (this.__internal__chestMinRarityDropdownList.selectedValue == this.__internal__chestTypes.skipall);
         const skipBoss = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true")
                       && !forceDungeonProcessing;
 
@@ -474,14 +502,13 @@ class AutomationDungeon
             const nonVisibleTiles = this.__internal__isRecovering ? flatBoard.filter((tile) => !tile.isVisited)
                                                                   : flatBoard.filter((tile) => !tile.isVisible);
             const visibleEnemiesCount = flatBoard.filter((tile) => tile.isVisible && (tile.type() === GameConstants.DungeonTile.enemy)).length;
-            const visibleChestsCount = this.__internal__chestPositions.length;
+            const discoveredChestsLeftToOpenCount = this.__internal__chestPositions.length;
             const foundFloorEndTile = this.__internal__floorEndPosition != null;
             // Check if all relevant tiles have been explored for each category
             // Either we are skipping fights, or all fights are won
             const areAllBattleDefeated = avoidFights || (visibleEnemiesCount === (DungeonRunner.map.totalFights() - DungeonRunner.encountersWon()));
             // Either we are skipping chests, or all remaining chests are visible
-            const areAllChestsCollected = skipChests
-                                       || (visibleChestsCount === (DungeonRunner.map.totalChests() - DungeonRunner.chestsOpened()))
+            const areAllChestsCollected = (discoveredChestsLeftToOpenCount === this.__internal__getChestLeftToOpenCount())
                                        || (foundFloorEndTile && !DungeonRunner.map.flash && avoidFights);
 
             // If all conditions are met, or all cells are visible clean up the map and move on
@@ -492,7 +519,7 @@ class AutomationDungeon
                 {
                     // There are some enemies left to fight, the rest of the loop will handle them
                 }
-                else if (!skipChests && (visibleChestsCount > 0))
+                else if (discoveredChestsLeftToOpenCount > 0)
                 {
                     // There are some chests left to collect, collect the first of them
                     const chestLocation = this.__internal__chestPositions.pop();
@@ -900,7 +927,7 @@ class AutomationDungeon
 
                 // All objectives are marked to be skipped
                 if ((Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
-                    && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipChests) === "true")
+                    && (this.__internal__chestMinRarityDropdownList.selectedValue == this.__internal__chestTypes.skipall)
                     && (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true"))
                 {
                     disableNeeded = true;
@@ -946,7 +973,7 @@ class AutomationDungeon
     static __internal__addChestPosition(cell)
     {
         // Don't add the chest if its rarity is lower than the user selected one
-        const currentChestRarity = this.__internal__chestTypes[cell.tile.metadata.tier]
+        const currentChestRarity = this.__internal__chestTypes[cell.tile.metadata.tier];
         if (currentChestRarity < this.__internal__chestMinRarityDropdownList.selectedValue)
         {
             return;
@@ -957,6 +984,30 @@ class AutomationDungeon
         {
             this.__internal__chestPositions.push(cell);
         }
+    }
+
+    /**
+     * @brief Gets the number of unopened chest left in the dungeon matching the user criteria
+     *
+     * @returns The number of unopened chest
+     */
+    static __internal__getChestLeftToOpenCount()
+    {
+        let result = 0;
+        for (const tile of DungeonRunner.map.board().flat().flat())
+        {
+            if (tile.type() == GameConstants.DungeonTile.chest)
+            {
+                const currentChestRarity = Automation.Dungeon.__internal__chestTypes[tile.metadata.tier];
+
+                if (currentChestRarity >= this.__internal__chestMinRarityDropdownList.selectedValue)
+                {
+                    result++;
+                }
+            }
+        }
+
+        return result;
     }
 
     /**

@@ -798,7 +798,7 @@ class AutomationHatchery
     static __internal__addFossilsToHatchery()
     {
         const currentlyHeldFossils =
-            UndergroundItems.list.filter(it => it.valueType === UndergroundItemValueType.Fossil && player.itemList[it.itemName]() > 0);
+            UndergroundItems.list.filter((it) => it.valueType === UndergroundItemValueType.Fossil && player.itemList[it.itemName]() > 0);
 
         let i = 0;
         while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
