@@ -64,6 +64,22 @@ class AutomationDungeon
     }
 
     /**
+     * @brief Checks if the given dungeon has any shadow pokémon
+     *
+     * @param {string} dungeonName: The name of the dungeon
+     *
+     * @return true if the dungeon has shadow pokémons, false otherwise
+     */
+    static hasShadowPokemons(dungeonName)
+    {
+        const town = TownList[dungeonName];
+
+        // Orre is the only subregion where shadow pokemons appear
+        return (town.region == GameConstants.Region.hoenn)
+            && (town.subRegion == GameConstants.HoennSubRegions.Orre);
+    }
+
+    /**
      * @brief Asks the Dungeon automation to stop after the current run
      *
      * @note This will reset any "after run" callback
@@ -446,7 +462,7 @@ class AutomationDungeon
         //    - The player is in a town (dungeons are attached to town)
         //    - The player has bought the dungeon ticket
         //    - The player has enough dungeon token
-        if (App.game.gameState === GameConstants.GameState.town
+        if ((App.game.gameState === GameConstants.GameState.town)
             && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
             && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))

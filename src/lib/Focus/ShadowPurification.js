@@ -217,11 +217,8 @@ class AutomationFocusShadowPurification
     {
         for (const dungeonName of Object.keys(dungeonList))
         {
-            const town = TownList[dungeonName];
-
-            // Orre is the only subregion where Shadow pokemon appears
-            if ((town.region != GameConstants.Region.hoenn)
-                || (town.subRegion != GameConstants.HoennSubRegions.Orre))
+            // Only consider dungeons that have shadow pokémons
+            if (!Automation.Dungeon.hasShadowPokemons(dungeonName))
             {
                 continue;
             }

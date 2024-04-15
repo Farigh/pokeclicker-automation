@@ -420,7 +420,8 @@ class AutomationFocusQuests
         }
         else if (Automation.Utils.isInstanceOf(quest, "DefeatDungeonQuest"))
         {
-            const catchShadows = currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest"));
+            const catchShadows = currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest"))
+                              && Automation.Dungeon.hasShadowPokemons(quest.dungeon);
             this.__internal__workOnDefeatDungeonQuest(quest.dungeon, catchShadows);
         }
         else if (Automation.Utils.isInstanceOf(quest, "DefeatGymQuest"))
