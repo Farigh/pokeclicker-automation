@@ -243,7 +243,7 @@ class AutomationFocusAchievements
     {
         let targetedDungeonName = GameConstants.RegionDungeons.flat()[this.__internal__currentAchievement.property.dungeonIndex];
         // If we don't have enough tokens, go farm some
-        if (TownList[targetedDungeonName].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
+        if (TownList[targetedDungeonName].dungeon.tokenCost > App.game.wallet.currencies[GameConstants.Currency.dungeonToken]())
         {
             Automation.Focus.__goToBestRouteForDungeonToken();
             return;

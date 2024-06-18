@@ -19,7 +19,7 @@ class MapHelper
 
         if (this.accessToRoute(route, region))
         {
-            player.__route = route;
+            player.route = route;
             // Skipped subregion
             if (player.region != region)
             {

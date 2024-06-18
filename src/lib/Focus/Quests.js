@@ -584,7 +584,7 @@ class AutomationFocusQuests
     static __internal__workOnDefeatDungeonQuest(dungeonName, catchShadows)
     {
         // If we don't have enough tokens, go farm some
-        if (TownList[dungeonName].dungeon.tokenCost > App.game.wallet.currencies[Currency.dungeonToken]())
+        if (TownList[dungeonName].dungeon.tokenCost > App.game.wallet.currencies[GameConstants.Currency.dungeonToken]())
         {
             this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.value);
             return;

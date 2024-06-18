@@ -73,7 +73,7 @@ beforeEach(() =>
     App.game.party.__reset();
     App.game.party.caughtPokemon = onlyEggsPokemons;
     player.region = -1;
-    player.__route = -1;
+    player.route = -1;
 });
 
 // Test moveToBestRouteForExp() method
@@ -85,7 +85,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToBestRouteForExp() met
         App.game.party.__clickAttack = 500;
 
         Automation.Utils.Route.moveToBestRouteForExp();
-        expect(player.route()).toEqual(3);
+        expect(player.route).toEqual(3);
         expect(player.region).toEqual(GameConstants.Region.kanto);
     });
 
@@ -95,7 +95,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToBestRouteForExp() met
         App.game.party.__clickAttack = 95000;
 
         Automation.Utils.Route.moveToBestRouteForExp();
-        expect(player.route()).toEqual(37);
+        expect(player.route).toEqual(37);
         expect(player.region).toEqual(GameConstants.Region.johto);
     });
 
@@ -106,7 +106,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToBestRouteForExp() met
         App.game.challenges.list.disableClickAttack.__active = true;
 
         Automation.Utils.Route.moveToBestRouteForExp();
-        expect(player.route()).toEqual(25);
+        expect(player.route).toEqual(25);
         expect(player.region).toEqual(GameConstants.Region.kanto);
     });
 });
@@ -123,7 +123,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIn
         App.game.party.__clickAttack = 5;
 
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Pokeball);
-        expect(player.route()).toEqual(2);
+        expect(player.route).toEqual(2);
         expect(player.region).toEqual(GameConstants.Region.kanto);
     });
 
@@ -136,7 +136,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIn
         App.game.party.__clickAttack = 5;
 
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
-        expect(player.route()).toEqual(22);
+        expect(player.route).toEqual(22);
         expect(player.region).toEqual(GameConstants.Region.kanto);
     });
 
@@ -145,7 +145,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIn
         App.game.party.__clickAttack = 10000;
 
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
-        expect(player.route()).toEqual(29);
+        expect(player.route).toEqual(29);
         expect(player.region).toEqual(GameConstants.Region.johto);
     });
 
@@ -155,7 +155,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check moveToHighestDungeonTokenIn
         App.game.challenges.list.disableClickAttack.__active = true;
 
         Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(GameConstants.Pokeball.Ultraball);
-        expect(player.route()).toEqual(25);
+        expect(player.route).toEqual(25);
         expect(player.region).toEqual(GameConstants.Region.kanto);
     });
 });
