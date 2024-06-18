@@ -517,7 +517,7 @@ class AutomationDungeon
             // If recovering, only end if all tiles are visited, otherwise, when all cells are visible
             const nonVisibleTiles = this.__internal__isRecovering ? flatBoard.filter((tile) => !tile.isVisited)
                                                                   : flatBoard.filter((tile) => !tile.isVisible);
-            const visibleEnemiesCount = flatBoard.filter((tile) => tile.isVisible && (tile.type() === GameConstants.DungeonTile.enemy)).length;
+            const visibleEnemiesCount = flatBoard.filter((tile) => tile.isVisible && (tile.type() === GameConstants.DungeonTileType.enemy)).length;
             const discoveredChestsLeftToOpenCount = this.__internal__chestPositions.length;
             const foundFloorEndTile = this.__internal__floorEndPosition != null;
             // Check if all relevant tiles have been explored for each category
@@ -685,8 +685,8 @@ class AutomationDungeon
         const allCells = currentBoard.flatMap((row, y) => row.map((tile, x) => ({ tile, x, y, floor })));
         const accessibleUnvisitedTiles = allCells.filter(
             ({ tile, x, y, floor }) => tile.isVisible && !tile.isVisited && DungeonRunner.map.hasAccessToTile({ x, y, floor }));
-        const nonEnemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTile.enemy);
-        const enemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTile.enemy);
+        const nonEnemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTileType.enemy);
+        const enemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTileType.enemy);
         if (nonEnemyCells.length > 0)
         {
             const bestEmptyCell = this.__internal__getCellWithMostNonVisitedNeightbours(nonEnemyCells);
@@ -747,12 +747,12 @@ class AutomationDungeon
     static __internal__markCell(cell)
     {
         const cellType = cell.tile.type();
-        if ((cellType === GameConstants.DungeonTile.boss)
-            || (cellType === GameConstants.DungeonTile.ladder))
+        if ((cellType === GameConstants.DungeonTileType.boss)
+            || (cellType === GameConstants.DungeonTileType.ladder))
         {
             this.__internal__floorEndPosition = cell;
         }
-        else if (cellType === GameConstants.DungeonTile.chest)
+        else if (cellType === GameConstants.DungeonTileType.chest)
         {
             this.__internal__addChestPosition(cell);
         }
@@ -845,7 +845,7 @@ class AutomationDungeon
                     startingTile = currentLocation;
                 }
 
-                if ((tile.type() !== GameConstants.DungeonTile.entrance)
+                if ((tile.type() !== GameConstants.DungeonTileType.entrance)
                     && this.__internal__isFirstMove)
                 {
                     this.__internal__playerActionOccured = true;
@@ -1012,7 +1012,7 @@ class AutomationDungeon
         let result = 0;
         for (const tile of DungeonRunner.map.board().flat().flat())
         {
-            if (tile.type() == GameConstants.DungeonTile.chest)
+            if (tile.type() == GameConstants.DungeonTileType.chest)
             {
                 const currentChestRarity = Automation.Dungeon.__internal__chestTypes[tile.metadata.tier];
 
