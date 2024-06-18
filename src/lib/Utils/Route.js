@@ -80,8 +80,8 @@ class AutomationUtilsRoute
      */
     static isPlayerInTown(townName)
     {
-        // player.town() points to the last visited town, so we need to check if the current route is 0 as well
-        return (player.route == 0) && (player.town().name == townName);
+        // player.town points to the last visited town, so we need to check if the current route is 0 as well
+        return (player.route == 0) && (player.town.name == townName);
     }
 
     /**

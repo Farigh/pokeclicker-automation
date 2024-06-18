@@ -463,9 +463,9 @@ class AutomationDungeon
         //    - The player has bought the dungeon ticket
         //    - The player has enough dungeon token
         if ((App.game.gameState === GameConstants.GameState.town)
-            && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")
+            && Automation.Utils.isInstanceOf(player.town, "DungeonTown")
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
-            && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
+            && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town.dungeon.tokenCost))
         {
             // Reset button status if either:
             //    - it was requested by another module
@@ -489,7 +489,7 @@ class AutomationDungeon
                 this.__internal__beforeNewRunCallBack();
 
                 this.__internal__resetSavedStates();
-                DungeonRunner.initializeDungeon(player.town().dungeon);
+                DungeonRunner.initializeDungeon(player.town.dungeon);
 
                 // Disable automation filter, unless it's an automation process
                 if (!forceDungeonProcessing)
@@ -517,7 +517,7 @@ class AutomationDungeon
             // If recovering, only end if all tiles are visited, otherwise, when all cells are visible
             const nonVisibleTiles = this.__internal__isRecovering ? flatBoard.filter((tile) => !tile.isVisited)
                                                                   : flatBoard.filter((tile) => !tile.isVisible);
-            const visibleEnemiesCount = flatBoard.filter((tile) => tile.isVisible && (tile.type() === GameConstants.DungeonTile.enemy)).length;
+            const visibleEnemiesCount = flatBoard.filter((tile) => tile.isVisible && (tile.type() === GameConstants.DungeonTileType.enemy)).length;
             const discoveredChestsLeftToOpenCount = this.__internal__chestPositions.length;
             const foundFloorEndTile = this.__internal__floorEndPosition != null;
             // Check if all relevant tiles have been explored for each category
@@ -685,8 +685,8 @@ class AutomationDungeon
         const allCells = currentBoard.flatMap((row, y) => row.map((tile, x) => ({ tile, x, y, floor })));
         const accessibleUnvisitedTiles = allCells.filter(
             ({ tile, x, y, floor }) => tile.isVisible && !tile.isVisited && DungeonRunner.map.hasAccessToTile({ x, y, floor }));
-        const nonEnemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTile.enemy);
-        const enemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTile.enemy);
+        const nonEnemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() !== GameConstants.DungeonTileType.enemy);
+        const enemyCells = accessibleUnvisitedTiles.filter(({ tile }) => tile.type() === GameConstants.DungeonTileType.enemy);
         if (nonEnemyCells.length > 0)
         {
             const bestEmptyCell = this.__internal__getCellWithMostNonVisitedNeightbours(nonEnemyCells);
@@ -747,12 +747,12 @@ class AutomationDungeon
     static __internal__markCell(cell)
     {
         const cellType = cell.tile.type();
-        if ((cellType === GameConstants.DungeonTile.boss)
-            || (cellType === GameConstants.DungeonTile.ladder))
+        if ((cellType === GameConstants.DungeonTileType.boss)
+            || (cellType === GameConstants.DungeonTileType.ladder))
         {
             this.__internal__floorEndPosition = cell;
         }
-        else if (cellType === GameConstants.DungeonTile.chest)
+        else if (cellType === GameConstants.DungeonTileType.chest)
         {
             this.__internal__addChestPosition(cell);
         }
@@ -845,7 +845,7 @@ class AutomationDungeon
                     startingTile = currentLocation;
                 }
 
-                if ((tile.type() !== GameConstants.DungeonTile.entrance)
+                if ((tile.type() !== GameConstants.DungeonTileType.entrance)
                     && this.__internal__isFirstMove)
                 {
                     this.__internal__playerActionOccured = true;
@@ -892,7 +892,7 @@ class AutomationDungeon
     {
         this.__internal__dungeonFightButton.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
                                                        || ((App.game.gameState === GameConstants.GameState.town)
-                                                           && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")));
+                                                           && Automation.Utils.isInstanceOf(player.town, "DungeonTown")));
 
         if (!this.__internal__dungeonFightButton.hidden)
         {
@@ -933,7 +933,7 @@ class AutomationDungeon
                 }
 
                 // The player does not have enough dungeon token
-                if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town().dungeon.tokenCost)
+                if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town.dungeon.tokenCost)
                 {
                     disableNeeded = true;
 
@@ -970,7 +970,7 @@ class AutomationDungeon
      */
     static __internal__isDungeonCompleted()
     {
-        const currentDungeon = player.town().dungeon;
+        const currentDungeon = player.town.dungeon;
         if (this.__internal__currentCatchMode.shadow
             && currentDungeon.allAvailableShadowPokemon().some(
                 p => App.game.party.getPokemonByName(p)?.shadow < GameConstants.ShadowStatus.Shadow))
@@ -1012,7 +1012,7 @@ class AutomationDungeon
         let result = 0;
         for (const tile of DungeonRunner.map.board().flat().flat())
         {
-            if (tile.type() == GameConstants.DungeonTile.chest)
+            if (tile.type() == GameConstants.DungeonTileType.chest)
             {
                 const currentChestRarity = Automation.Dungeon.__internal__chestTypes[tile.metadata.tier];
 
