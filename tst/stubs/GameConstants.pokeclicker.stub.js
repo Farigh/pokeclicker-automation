@@ -265,6 +265,3 @@ class GameConstants
     static GYM_GEMS = 5;
     static MAX_AVAILABLE_REGION = this.Region.alola;
 }
-
-// Aliases
-let Currency = GameConstants.Currency;

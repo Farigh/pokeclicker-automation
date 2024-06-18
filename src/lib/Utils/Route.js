@@ -267,7 +267,7 @@ class AutomationUtilsRoute
         const catchTimeTicks = App.game.pokeballs.calculateCatchTime(ballTypeToUse) / 50;
 
         // The bonus is the same, no matter the amount
-        const dungeonTokenBonus = App.game.wallet.calcBonus(new Amount(1, Currency.dungeonToken));
+        const dungeonTokenBonus = App.game.wallet.calcBonus(new Amount(1, GameConstants.Currency.dungeonToken));
 
         const pokeballBonus = App.game.pokeballs.getCatchBonus(ballTypeToUse);
         const oakBonus = App.game.oakItems.calculateBonus(OakItemType.Magic_Ball);

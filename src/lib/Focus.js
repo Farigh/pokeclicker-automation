@@ -192,7 +192,7 @@ class AutomationFocus
             const pokeballItem = ItemList[pokeballName];
 
             // No more money, or too expensive, go farm some money
-            if ((App.game.wallet.currencies[Currency.money]() < pokeballItem.totalPrice(10))
+            if ((App.game.wallet.currencies[GameConstants.Currency.money]() < pokeballItem.totalPrice(10))
                 || (pokeballItem.totalPrice(1) !== pokeballItem.basePrice))
             {
                 this.__internal__goToBestGymForMoney();
