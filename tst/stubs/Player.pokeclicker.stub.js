@@ -12,7 +12,7 @@ class Player
         this.__itemListCount = [];
 
         this.__highestRegion = 0;
-        this.__route = 0;
+        this.route = 0;
 
         this.__initItemList();
     }
@@ -25,11 +25,6 @@ class Player
     loseItem(itemName, amount)
     {
         this.__itemListCount[itemName] -= amount;
-    }
-
-    route()
-    {
-        return this.__route;
     }
 
     /***************************\

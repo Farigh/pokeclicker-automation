@@ -28,7 +28,7 @@ class AutomationUtilsRoute
     static moveToRoute(route, region)
     {
         // Don't move if the player is already there, or the game would not allow it
-        if (((player.route() === route) && (player.region === region))
+        if (((player.route === route) && (player.region === region))
             || !this.canMoveToRoute(route, region))
         {
             return;
@@ -81,7 +81,7 @@ class AutomationUtilsRoute
     static isPlayerInTown(townName)
     {
         // player.town() points to the last visited town, so we need to check if the current route is 0 as well
-        return (player.route() == 0) && (player.town().name == townName);
+        return (player.route == 0) && (player.town().name == townName);
     }
 
     /**
