@@ -114,7 +114,7 @@ class AutomationGym
             const selectedGym = GymList[Automation.Gym.GymSelectElem.value];
 
             if ((Automation.Gym.GymSelectElem.selectedIndex < 0)
-                || (selectedGym.parent.name !== player.town().name))
+                || (selectedGym.parent.name !== player.town.name))
             {
                 Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
                 return;
@@ -136,19 +136,19 @@ class AutomationGym
         if (App.game.gameState === GameConstants.GameState.town)
         {
             // If we are in the same town as previous cycle
-            if (this.__internal__previousTown === player.town().name)
+            if (this.__internal__previousTown === player.town.name)
             {
-                this.__internal__updateGymList(player.town().name, false);
+                this.__internal__updateGymList(player.town.name, false);
             }
             else
             {
-                if (player.town().content.filter((x) => GymList[x.town]).length > 0)
+                if (player.town.content.filter((x) => GymList[x.town]).length > 0)
                 {
-                    this.__internal__updateGymList(player.town().name, true);
+                    this.__internal__updateGymList(player.town.name, true);
 
                     Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
                 }
-                this.__internal__previousTown = player.town().name;
+                this.__internal__previousTown = player.town.name;
             }
 
             this.__internal__gymFightButton.hidden = (this.__internal__currentGymListSize == 0);

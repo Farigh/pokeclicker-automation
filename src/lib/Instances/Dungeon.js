@@ -463,9 +463,9 @@ class AutomationDungeon
         //    - The player has bought the dungeon ticket
         //    - The player has enough dungeon token
         if ((App.game.gameState === GameConstants.GameState.town)
-            && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")
+            && Automation.Utils.isInstanceOf(player.town, "DungeonTown")
             && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
-            && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town().dungeon.tokenCost))
+            && (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() >= player.town.dungeon.tokenCost))
         {
             // Reset button status if either:
             //    - it was requested by another module
@@ -489,7 +489,7 @@ class AutomationDungeon
                 this.__internal__beforeNewRunCallBack();
 
                 this.__internal__resetSavedStates();
-                DungeonRunner.initializeDungeon(player.town().dungeon);
+                DungeonRunner.initializeDungeon(player.town.dungeon);
 
                 // Disable automation filter, unless it's an automation process
                 if (!forceDungeonProcessing)
@@ -892,7 +892,7 @@ class AutomationDungeon
     {
         this.__internal__dungeonFightButton.hidden = !((App.game.gameState === GameConstants.GameState.dungeon)
                                                        || ((App.game.gameState === GameConstants.GameState.town)
-                                                           && Automation.Utils.isInstanceOf(player.town(), "DungeonTown")));
+                                                           && Automation.Utils.isInstanceOf(player.town, "DungeonTown")));
 
         if (!this.__internal__dungeonFightButton.hidden)
         {
@@ -933,7 +933,7 @@ class AutomationDungeon
                 }
 
                 // The player does not have enough dungeon token
-                if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town().dungeon.tokenCost)
+                if (App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < player.town.dungeon.tokenCost)
                 {
                     disableNeeded = true;
 
@@ -970,7 +970,7 @@ class AutomationDungeon
      */
     static __internal__isDungeonCompleted()
     {
-        const currentDungeon = player.town().dungeon;
+        const currentDungeon = player.town.dungeon;
         if (this.__internal__currentCatchMode.shadow
             && currentDungeon.allAvailableShadowPokemon().some(
                 p => App.game.party.getPokemonByName(p)?.shadow < GameConstants.ShadowStatus.Shadow))
