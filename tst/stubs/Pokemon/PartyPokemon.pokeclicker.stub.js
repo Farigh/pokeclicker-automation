@@ -6,6 +6,7 @@ class PartyPokemon
     {
         this.attackBonusPercent = 0;
         this.attackBonusAmount = 0;
+        this.category = [0]
         this.breading = false;
         this.baseAttack = baseAttack;
         this.effortPoints = 0;
@@ -40,5 +41,36 @@ class PartyPokemon
     {
         const power = App.game.challenges.list.slowEVs.active() ? GameConstants.EP_CHALLENGE_MODIFIER : 1;
         return Math.floor(this.effortPoints / GameConstants.EP_EV_RATIO / power);
+    }
+
+    /***************************\
+    |*   Test-only interface   *|
+    \***************************/
+
+    __addCategory(id)
+    {
+        if (id == 0)
+        {
+            this.category = [0];
+        }
+        else if (!this.category.includes(id))
+        {
+            this.category.push(id);
+        }
+    }
+
+    __removeCategory(id)
+    {
+        if ((id == 0) && (this.category.length == 1))
+        {
+            // Can't remove None category without another category present
+            return;
+        }
+
+        const index = this.category.indexOf(id);
+        if (index > -1)
+        {
+            this.category.splice(index, 1);
+        }
     }
 }

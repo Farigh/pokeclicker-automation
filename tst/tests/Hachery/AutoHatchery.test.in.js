@@ -88,6 +88,7 @@ function resetSettings()
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedType, PokemonType.None);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, GameConstants.Region.none);
     Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedSorting, SortOptions.breedingEfficiency);
+    Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedCategory, -1);
 }
 
 /************************\
@@ -123,6 +124,7 @@ beforeAll(() =>
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedRegion)).toBe("-1");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedType)).toBe("-1");
         expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.RegionalDebuffRegion)).toBe("-1");
+        expect(Automation.Utils.LocalStorage.getValue(Automation.Hatchery.Settings.PrioritizedCategory)).toBe("-1");
     });
 
 beforeEach(() =>
@@ -587,6 +589,58 @@ describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order > R
 
         // Set the regional debuff
         Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.RegionalDebuffRegion, testCase.regionId);
+
+        // Simulate the loop
+        Automation.Hatchery.__internal__hatcheryLoop();
+
+        for (const i of testCase.expectedPokemons.keys())
+        {
+            expect(App.game.breeding.__eggList[i].pokemon).toEqual(testCase.expectedPokemons[i]);
+            expect(App.game.breeding.__eggList[i].isNone()).toBe(false);
+        }
+    });
+});
+
+describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding order > Category priority`, () =>
+{
+    /** @note Those orders might change if new pokemon were to be added, or their value changed */
+    let categoryTestCases =
+        [
+            { categoryId: -1, categoryName: "Any", expectedPokemons: [ "Sawk", "Pikachu", "Throh", "Hitmonlee" ] },
+            {
+                categoryId: PokemonCategories.categories()[0].id,
+                categoryName: PokemonCategories.categories()[0].name(),
+                expectedPokemons: [ "Sawk", "Throh", "Hitmonlee", "Qwilfish"]
+            },
+            {
+                categoryId: PokemonCategories.categories()[1].id,
+                categoryName: PokemonCategories.categories()[1].name(),
+                expectedPokemons: [ "Pikachu", "Machop", "Sawk", "Throh" ]
+            },
+        ];
+
+    test.each(categoryTestCases)("Test breeding order with category set to $categoryName", (testCase) =>
+    {
+        addSomePokemonsToThePlayersParty();
+
+        // Put the all pokemons to lvl 100
+        for (const pokemon of App.game.party.caughtPokemon)
+        {
+            pokemon.level = 100;
+        }
+
+        // Put some pokemons in the favorite category
+        for (const pokemon of App.game.party.caughtPokemon)
+        {
+            if (["Machop", "Pikachu"].includes(pokemonMap[pokemon.id].name))
+            {
+                pokemon.__addCategory(PokemonCategories.categories()[1].id);
+                pokemon.__removeCategory(PokemonCategories.categories()[0].id);
+            }
+        }
+
+        // Set the category priority
+        Automation.Utils.LocalStorage.setValue(Automation.Hatchery.Settings.PrioritizedCategory, testCase.categoryId);
 
         // Simulate the loop
         Automation.Hatchery.__internal__hatcheryLoop();

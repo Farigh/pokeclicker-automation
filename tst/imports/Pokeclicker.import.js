@@ -96,6 +96,7 @@ import "tst/stubs/MapHelper.pokeclicker.stub.js";
 import "tst/stubs/Player.pokeclicker.stub.js";
 import "tst/stubs/Save.pokeclicker.stub.js";
 import "tst/stubs/Statistics.pokeclicker.stub.js";
+import "tst/stubs/Category.pokeclicker.stub.js";
 
 // Import the main class
 import "tst/stubs/App.pokeclicker.stub.js";
