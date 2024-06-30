@@ -19,6 +19,7 @@ class AutomationHatchery
                           PrioritizedSortingDescending: "Hatchery-PrioritizedSortingDescending",
                           PrioritizedType: "Hatchery-PrioritizedType",
                           PrioritizedRegion: "Hatchery-PrioritizedRegion",
+                          PrioritizedCategory: "Hatchery-PrioritizedCategory",
                           RegionalDebuffRegion: "Hatchery-RegionalDebuffRegion"
                       };
 
@@ -59,6 +60,9 @@ class AutomationHatchery
 
             // Set default regional debuff to None
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.RegionalDebuffRegion, GameConstants.Region.none);
+
+            // Set default category priority to Any
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.PrioritizedCategory, -1);
 
             this.__internal__buildRegionDataList();
             this.__internal__buildSeviiIslandPokemonLists();
@@ -120,6 +124,7 @@ class AutomationHatchery
     static __internal__hatcheryContainer = null;
     static __internal__autoHatcheryLoop = null;
     static __internal__regionSelectElem = null;
+    static __internal__categorySelectElem = null;
     static __internal__lockedRegions = [];
 
     static __internal__seviiIslandPokemonIds = [];
@@ -134,6 +139,7 @@ class AutomationHatchery
     static __internal__sortingFunctions = [];
     static __internal__sortRegionSetting = null;
     static __internal__sortTypeSetting = null;
+    static __internal__sortCategoryIdSetting = null;
     static __internal__sortMegaEvolutionsFirstSetting = null;
     static __internal__sortNotShinyFirstSetting = null;
     static __internal__sortNotAlternateFormFirstSetting = null;
@@ -210,6 +216,14 @@ class AutomationHatchery
         // Add sorting selector
         const sortingSelector = this.__internal__buildSortingSelectorList();
         categoryContainer.appendChild(sortingSelector);
+
+        /*************************\
+        |* Category prioritizing *|
+        \*************************/
+
+        // Add category selector
+        const categorySelector = this.__internal__buildCategorySelectorList();
+        categoryContainer.appendChild(categorySelector);
 
         /***********************\
         |* Region prioritizing *|
@@ -294,7 +308,6 @@ class AutomationHatchery
         }
     }
 
-
     /**
      * @brief Builds the type selector drop-down list
      *
@@ -367,7 +380,121 @@ class AutomationHatchery
 
         return container;
     }
+    /**
+     * @brief Updates the category selector list in case of in-game category edition
+     *
+     * When a category is modified, created or deleted, update it's respective select option
+     */
+    static __internal__updateCategorySelector(isInitialization)
+    {
+        const previouslySelectedCategoryId = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedCategory));
 
+        if (!isInitialization)
+        {
+            // Remove any deleted categories
+            const ingameCategories = PokemonCategories.categories().map((category) => category.id);
+            for (let optionIndex = this.__internal__categorySelectElem.options.length - 1; optionIndex > 1; optionIndex--)
+            {
+                const optionValue = parseInt(this.__internal__categorySelectElem.options[optionIndex].value);
+                if (!ingameCategories.includes(optionValue))
+                {
+                    // If deleted category was used as filter, fallback to the "Any" one
+                    if (previouslySelectedCategoryId == optionValue)
+                    {
+                        Automation.Utils.LocalStorage.setValue(this.Settings.PrioritizedCategory, -1);
+                    }
+                    this.__internal__categorySelectElem.options.remove(optionIndex);
+                }
+            }
+
+            // Update existing options.
+            for (const option of this.__internal__categorySelectElem.options)
+            {
+                // Skip the internal "Any" option
+                if (option.id == -1)
+                {
+                    continue;
+                }
+
+                const ingameCategory = PokemonCategories.categories().find((category) => category.id == parseInt(option.value))
+                if (option.textContent != ingameCategory.name())
+                {
+                    option.textContent = ingameCategory.name();
+                }
+            }
+        }
+
+        // Add option for new categories
+        const existingOptionValues = [...this.__internal__categorySelectElem.options].map((opt) => parseInt(opt.value));
+        for (const category of PokemonCategories.categories())
+        {
+            if (!existingOptionValues.includes(category.id))
+            {
+                const opt = document.createElement("option");
+
+                // Set the category name as the content
+                opt.textContent = category.name();
+
+                opt.value = category.id;
+                opt.id = category.id;
+
+                // Restore the previouly selected option
+                if (isInitialization && (category.id == previouslySelectedCategoryId))
+                {
+                    // Restore previous session selected element
+                    opt.selected = true;
+                }
+
+                this.__internal__categorySelectElem.options.add(opt);
+            }
+        }
+    }
+
+    /**
+     * @brief Builds the category selector drop-down list
+     *
+     * @returns the created element
+     */
+    static __internal__buildCategorySelectorList()
+    {
+        const tooltip = "The pokémons of the selected category will be added in priority"
+
+        const container = document.createElement("div");
+        container.style.paddingLeft = "10px";
+        container.style.paddingRight = "10px";
+        container.classList.add("hasAutomationTooltip");
+        container.setAttribute("automation-tooltip-text", tooltip);
+
+        const label = "Prioritize pokémon of the following category:";
+        container.appendChild(document.createTextNode(label));
+
+        this.__internal__categorySelectElem = Automation.Menu.createDropDownListElement("selectedCategory-Hatchery");
+        this.__internal__categorySelectElem.style.position = "relative";
+        this.__internal__categorySelectElem.style.bottom = "2px";
+        this.__internal__categorySelectElem.style.width = "110px";
+        this.__internal__categorySelectElem.style.marginLeft = "4px";
+        this.__internal__categorySelectElem.style.paddingLeft = "3px";
+        container.appendChild(this.__internal__categorySelectElem);
+
+        // Add the "Any" category
+        let opt = document.createElement("option");
+        opt.textContent = "Any";
+        opt.value = -1;
+        opt.id = -1;
+        this.__internal__categorySelectElem.options.add(opt);
+
+        // Populate the list with categories
+        this.__internal__updateCategorySelector(true);
+        setInterval(function() { this.__internal__updateCategorySelector(false) }.bind(this), 10000); // Check every 10 seconds
+
+        // Update the local storage if the value is changed by the user
+        this.__internal__categorySelectElem.onchange = function()
+            {
+                Automation.Utils.LocalStorage.setValue(this.Settings.PrioritizedCategory, this.__internal__categorySelectElem.value);
+            }.bind(this);
+
+        return container;
+    }
 
     /**
      * @brief Builds the sorting selector drop-down list
@@ -671,6 +798,9 @@ class AutomationHatchery
      */
     static __internal__buildSortingFunctionsList()
     {
+        // Category priority
+        this.__internal__sortingFunctions.push(this.__internal__sortByCategory.bind(this));
+
         // Region priority
         this.__internal__sortingFunctions.push(this.__internal__sortByRegion.bind(this));
 
@@ -851,6 +981,7 @@ class AutomationHatchery
         this.__internal__sortNotAlternateFormFirstSetting = (Automation.Utils.LocalStorage.getValue(this.Settings.NotAlternateFormFirst) === "true");
         this.__internal__sortRegionSetting = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedRegion);
         this.__internal__sortTypeSetting = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedType));
+        this.__internal__sortCategoryIdSetting = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedCategory));
 
         // Initialize the sort by attribute function
         this.__internal__setAttributeSortingFunction();
@@ -900,6 +1031,36 @@ class AutomationHatchery
         {
             this.__internal__sortByAttributeFunction = SortOptionConfigs[sortAttribute].getValue;
         }
+    }
+
+    /**
+     * @brief Sorts the given @p a and @p b pokémons depending on their category
+     *
+     * @param a: The 1st pokémon to compare
+     * @param b: The 2nd pokémon to compare
+     *
+     * @returns -1 if @p a is in the selected category and not @p b,
+     *           1 if @p b is in the selected category and not @p a,
+     *           0 otherwise
+     */
+    static __internal__sortByCategory(a, b)
+    {
+        if (this.__internal__sortCategoryIdSetting != -1)
+        {
+            const isACategoryValid = a.category.includes(this.__internal__sortCategoryIdSetting);
+            const isBCategoryValid = b.category.includes(this.__internal__sortCategoryIdSetting);
+
+            if (isACategoryValid && !isBCategoryValid)
+            {
+                return -1;
+            }
+            if (!isACategoryValid && isBCategoryValid)
+            {
+                return 1;
+            }
+        }
+
+        return 0;
     }
 
     /**
