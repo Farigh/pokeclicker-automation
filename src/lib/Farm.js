@@ -7,12 +7,13 @@
 class AutomationFarm
 {
     static Settings = {
+                          AutoCatchWanderers: "Farming-AutoCatchWanderers",
                           FeatureEnabled: "Farming-Enabled",
                           FocusOnUnlocks: "Farming-FocusOnUnlocks",
-                          OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate",
                           HarvestLate: "Farming-HarvestLate",
-                          UseRichMulch: "Farming-UseRichMulch",
-                          SelectedBerryToPlant: "Farming-SelectedBerryToPlant"
+                          OakItemLoadoutUpdate: "Farming-OakItemLoadoutUpdate",
+                          SelectedBerryToPlant: "Farming-SelectedBerryToPlant",
+                          UseRichMulch: "Farming-UseRichMulch"
                       };
 
     // The berry type forced to plant by other features
@@ -27,6 +28,7 @@ class AutomationFarm
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AutoCatchWanderers, true);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.HarvestLate, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseRichMulch, false);
             Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedBerryToPlant, BerryType.Cheri);
@@ -169,6 +171,16 @@ class AutomationFarm
         titleDiv.style.marginBottom = "10px";
         farmingSettingPanel.appendChild(titleDiv);
 
+        // Automatically catch wanderers button
+        const catchWanderersLabel = "Catch wandering pokémons";
+        const catchWanderersTooltip = "When a wandering pokémon appears it tries to catch it.\n"
+                                      "The in-game pokéball filters are used to determine the ball to use.\n"
+                                      "If no filter matches, the pokémon will flee.";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(catchWanderersLabel,
+                                                               this.Settings.AutoCatchWanderers,
+                                                               catchWanderersTooltip,
+                                                               farmingSettingPanel);
+
         // Focus on unlock button
         const unlockLabel = "Focus on unlocking plots and new berries";
         const unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
@@ -177,7 +189,7 @@ class AutomationFarm
                                                                                     unlockTooltip,
                                                                                     farmingSettingPanel);
 
-        // Disable ak items button
+        // Disable oak items button
         const disableOakItemTooltip = "Modifies the oak item loadout when required for a mutation to occur"
                                     + Automation.Menu.TooltipSeparator
                                     + "⚠️ Disabling this functionality will prevent some berries from being unlocked";
@@ -371,6 +383,8 @@ class AutomationFarm
      */
     static __internal__farmLoop()
     {
+        this.__internal__catchWanderingPokemons();
+
         this.__internal__harvestAsEfficientAsPossible();
         this.__internal__tryToUnlockNewSpots();
 
@@ -514,6 +528,26 @@ class AutomationFarm
         }
     }
 
+    static __internal__catchWanderingPokemons()
+    {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoCatchWanderers) !== "true")
+        {
+            // The player disabled the feature, nothing to do
+            return;
+        }
+
+        for (const plot of App.game.farming.plotList)
+        {
+            if (plot.isEmpty() || !plot.canCatchWanderer())
+            {
+                continue;
+            }
+
+            // Throw a ball at the wandering pokémon
+            App.game.farming.handleWanderer(plot);
+        }
+    }
+
     /**
      * @brief Chooses the best harvesting time depending on the desired action.
      *
@@ -593,8 +627,16 @@ class AutomationFarm
      */
     static __internal__mulchAndHarvest(index, applyRichMulch = (Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true"))
     {
+        const plot = App.game.farming.plotList[index];
+
+        // Don't harvest if the plot contains a wandering pokémon being captured
+        if (plot.wanderer && plot.wanderer.catching())
+        {
+            return;
+        }
+
         // Only apply rich mulch if the plot doesn't already have mulch
-        if (applyRichMulch && (App.game.farming.plotList[index].mulch === MulchType.None))
+        if (applyRichMulch && (plot.mulch === MulchType.None))
         {
             App.game.farming.addMulch(index, MulchType.Rich_Mulch);
         }
