@@ -593,6 +593,7 @@ class AutomationFocusQuests
         if (catchShadows)
         {
             this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+            Automation.Utils.Pokeball.catchEverythingWith(Automation.Focus.__pokeballToUseSelectElem.value);
             Automation.Utils.Pokeball.restrictCaptureToShadow(true);
             Automation.Utils.Pokeball.enableAutomationFilter();
         }
