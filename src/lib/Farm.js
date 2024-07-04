@@ -528,6 +528,9 @@ class AutomationFarm
         }
     }
 
+    /**
+     * @brief Catches any wandering pokémon present on any farm plot
+     */
     static __internal__catchWanderingPokemons()
     {
         if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoCatchWanderers) !== "true")
