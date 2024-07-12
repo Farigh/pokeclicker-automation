@@ -853,25 +853,8 @@ class AutomationHatchery
         // Now add lvl 100 pokémons to empty slots if we can
         if (App.game.breeding.hasFreeEggSlot())
         {
-            // Get the list of pokémon candidate to breeding, sorted according to the player's settings
-            let pokemonToBreed = [];
-            const sortedPokemonToBreed = this.__internal__getSortedBreedablePokemonCandidates();
-
-            // Spread pokerus if enabled
-            if (Automation.Utils.LocalStorage.getValue(this.Settings.SpreadPokerus) === "true")
-            {
-                pokemonToBreed = this.__internal__getPokemonToBreedForPokerusSpreading(sortedPokemonToBreed);
-            }
-
-            // Complete with regular listing if needed
-            for (const pokemon of sortedPokemonToBreed)
-            {
-                if ((pokemonToBreed.length < App.game.breeding.eggList.length)
-                    && !pokemonToBreed.some(p => p.id === pokemon.id))
-                {
-                    pokemonToBreed.push(pokemon);
-                }
-            }
+            // Get top pokemons to breed
+            const pokemonToBreed = this.__internal__getSortedPokemonToBreed();
 
             // Do not add pokémons to the queue as it reduces the overall attack
             // (this will also allow the player to add pokémons, eggs or fossils manually)
@@ -961,20 +944,63 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Gets the pokémons to breed based on the player settings
+     * @brief Gets the next pokémons to breed
      *
      * @returns The sorted list of pokémon to hatch
      */
-    static __internal__getSortedBreedablePokemonCandidates()
+    static __internal__getSortedPokemonToBreed()
     {
         // Get breedable pokémon list
-        const pokemonToBreed = App.game.party.caughtPokemon.filter(
+        const breedablePokemon = App.game.party.caughtPokemon.filter(
             (pokemon) =>
             {
                 // Only consider breedable pokémons (ie. not breeding and lvl 100)
                 return !pokemon.breeding && (pokemon.level == 100);
             });
 
+        // Spread pokerus if enabled and some pokémons are uninfected
+        if ((Automation.Utils.LocalStorage.getValue(this.Settings.SpreadPokerus) === "true")
+            && (breedablePokemon.some(pokemon => (pokemon?.pokerus === GameConstants.Pokerus.Uninfected))))
+        {
+            // Get the complete list of pokémons candidate to breeding, sorted according to the player's settings.
+            // Might be optimized using partialSort but more complicated because we need pokemons of all types
+            // to spread the pokerus
+            const sortedBreedablePokemon = this.__internal__getSortedBreedablePokemonCandidates(breedablePokemon);
+            const pokemonToBreed = this.__internal__getPokemonToBreedForPokerusSpreading(sortedBreedablePokemon);
+
+            // Complete with regular listing if needed
+            for (const pokemon of sortedBreedablePokemon)
+            {
+                if (pokemonToBreed.length >= App.game.breeding.eggList.length)
+                {
+                    break;
+                }
+
+                if (!pokemonToBreed.some(p => p.id === pokemon.id))
+                {
+                    pokemonToBreed.push(pokemon);
+                }
+            }
+
+            return pokemonToBreed;
+        }
+        else
+        {
+            // Get the top N pokémons candidate to breeding, sorted according to the player's settings
+            return this.__internal__getSortedBreedablePokemonCandidates(breedablePokemon, App.game.breeding.eggList.length);
+        }
+    }
+
+    /**
+     * @brief Gets the breedable pokémons based on the player settings
+     *
+     * @param {Array} breedablePokemon: The list of breedable pokemons
+     * @param {number} limit: [optional] The size of the sorted list of pokemons to hatch
+     *
+     * @returns The sorted list of breedable pokémon
+     */
+    static __internal__getSortedBreedablePokemonCandidates(breedablePokemon, limit)
+    {
         this.__internal__sortAttributeDescendingSetting = Automation.Utils.LocalStorage.getValue(this.Settings.PrioritizedSortingDescending) === "true";
         this.__internal__sortMegaEvolutionsFirstSetting = Automation.Utils.LocalStorage.getValue(this.Settings.UnlockMegaEvolutions) === "true";
         this.__internal__sortNotShinyFirstSetting = (Automation.Utils.LocalStorage.getValue(this.Settings.NotShinyFirst) === "true");
@@ -994,7 +1020,7 @@ class AutomationHatchery
         }
 
         // Sort the list
-        pokemonToBreed.sort((a, b) =>
+        const compareCallback = function(a, b)
             {
                 for (const sortFunc of this.__internal__sortingFunctions)
                 {
@@ -1004,11 +1030,12 @@ class AutomationHatchery
                         return result;
                     }
                 }
-
                 return 0;
-            }, this);
+            }.bind(this);
 
-        return pokemonToBreed;
+        return (limit != undefined)
+             ? AutomationUtils.getSortedSubRange(breedablePokemon, limit, compareCallback)
+             : breedablePokemon.sort(compareCallback);
     }
 
     /**

@@ -28,8 +28,8 @@ class AutomationFocusAchievements
                        + "Route Kill, Clear Gym and Clear Dungeon\n"
                        + "The achievements will be completed in region order.\n"
                        + "The current achievement will be pinned to the tracker, if unlocked",
-                run: function (){ this.__internal__start(); }.bind(this),
-                stop: function (){ this.__internal__stop(); }.bind(this),
+                run: function() { this.__internal__start(); }.bind(this),
+                stop: function() { this.__internal__stop(); }.bind(this),
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }

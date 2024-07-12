@@ -87,7 +87,7 @@ class AutomationDungeon
     static stopAfterThisRun()
     {
         this.__internal__stopAfterThisRun = true;
-        this.__internal__beforeNewRunCallBack = function (){};
+        this.__internal__beforeNewRunCallBack = function() {};
     }
 
     /**
@@ -105,7 +105,7 @@ class AutomationDungeon
     \*********************************************************************/
 
     static __internal__stopAfterThisRun = false;
-    static __internal__beforeNewRunCallBack = function (){};
+    static __internal__beforeNewRunCallBack = function() {};
 
     static __internal__CatchModes = {
         Uncaught: { id: 0, shiny: false, shadow: false },

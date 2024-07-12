@@ -7,7 +7,7 @@ class Pokeball
         this.type = type;
         this.catchBonus = catchBonus;
         this.catchTime = catchTime;
-        this.quantity = function(){ return this.__quantity; };
+        this.quantity = function() { return this.__quantity; };
 
         this.__quantity = quantity;
     }

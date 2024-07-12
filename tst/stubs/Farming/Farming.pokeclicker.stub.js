@@ -227,8 +227,8 @@ class Farming
             // Initialize berry count to 0
             this.__berryListCount.push(0);
             this.__isBerryUnlocked.push(i == BerryType.Cheri);
-            this.berryList.push(function(){ return App.game.farming.__berryListCount[i]; });
-            this.unlockedBerries.push(function(){ return App.game.farming.__isBerryUnlocked[i]; });
+            this.berryList.push(function() { return App.game.farming.__berryListCount[i]; });
+            this.unlockedBerries.push(function() { return App.game.farming.__isBerryUnlocked[i]; });
         }
     }
 

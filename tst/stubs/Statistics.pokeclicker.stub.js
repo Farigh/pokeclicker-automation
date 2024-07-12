@@ -26,6 +26,6 @@ class Statistics
     __addPokemon(id)
     {
         this.__pokemonCapturedCount[id] = 0;
-        this.pokemonCaptured[id] = function(){ return App.game.statistics.__pokemonCapturedCount[id]; }
+        this.pokemonCaptured[id] = function() { return App.game.statistics.__pokemonCapturedCount[id]; }
     }
 }

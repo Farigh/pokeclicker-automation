@@ -163,4 +163,61 @@ class AutomationUtils
 
         return false;
     }
+
+    /**
+     * @brief Extracts the first @p maxSortedElementCount smallest elements in the given @p collection, with respect to @p compare.
+     *
+     * @param collection: The collection to partially sort
+     * @param {number} maxSortedElementCount: The maximum number of partially sorted element (collection length at max)
+     * @param {function} compareCallback: the comparison callback to use
+     *
+     * @returns The sorted sub-collection
+     */
+    static getSortedSubRange(collection, maxSortedElementCount, compareCallback)
+    {
+        // Find the best position to insert the given item in the given sorted collection, using the given compare callback
+        const bisect = function(collection, item, compare)
+            {
+                let low = 0;
+                let high = collection.length;
+                while (low < high)
+                {
+                    const candidate = Math.floor((low + high) / 2);
+                    const compareResult = compare(item, collection[candidate]);
+
+                    if (compareResult == 0)
+                    {
+                        // Found the exact same sort value, return the index immediatly
+                        return candidate;
+                    }
+
+                    if (compareResult < 0)
+                    {
+                        high = candidate;
+                    }
+                    else
+                    {
+                        low = candidate + 1;
+                    }
+                }
+                return low;
+            };
+
+        let result = collection.slice(0, maxSortedElementCount).sort(compareCallback);
+        const maxResultLength = result.length;
+        const collectionLength = collection.length;
+        for (let i = maxResultLength; i < collectionLength; ++i)
+        {
+            const item = collection[i];
+            const max = result[maxResultLength - 1];
+            if (compareCallback(item, max) < 0)
+            {
+                // Insert the element, sorted
+                result.splice(bisect(result, item, compareCallback), 0, item);
+                // Shrink the list to fit the max length again
+                result.length = maxResultLength;
+            }
+        }
+        return result;
+    }
 }

@@ -17,7 +17,7 @@ class AutomationFocusPokerusCure
         this.__internal__buildPokerusRouteList();
         this.__internal__buildPokerusDungeonList();
 
-        const isUnlockedCallback = function (){ return App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus); };
+        const isUnlockedCallback = function() { return App.game.keyItems.hasKeyItem(KeyItemType.Pokerus_virus); };
 
         functionalitiesList.push(
             {
@@ -28,8 +28,8 @@ class AutomationFocusPokerusCure
                        + "Pokémons get resistant to the pokérus once they reach 50 EVs.\n"
                        + "This focus will catch pokémons on routes and dungeons where infected\n"
                        + "pokémons can be caught, to increase their EV.",
-                run: function (){ this.__internal__start(); }.bind(this),
-                stop: function (){ this.__internal__stop(); }.bind(this),
+                run: function() { this.__internal__start(); }.bind(this),
+                stop: function() { this.__internal__stop(); }.bind(this),
                 isUnlocked: isUnlockedCallback,
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });

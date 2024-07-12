@@ -130,7 +130,7 @@ class AutomationComponentLoader
     {
         let currentLoadingOrder = -1;
 
-        let watcher = setInterval(function ()
+        let watcher = setInterval(function()
             {
                 let isLoadingCompleted = Object.keys(this.__loadingProgressTable).every(key => this.__loadingProgressTable[key]);
                 let isGameStarted = (App && App.game && App.game.worker && (App.game.worker instanceof Worker));

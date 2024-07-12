@@ -32,9 +32,9 @@ class AutomationFocusQuests
                        + "as it will take over control of those modes"
                        + Automation.Menu.TooltipSeparator
                        + "⚠️ You will hardly be able to manually play with this mode enabled",
-                run: function (){ this.__internal__start(); }.bind(this),
-                stop: function (){ this.__internal__stop(); }.bind(this),
-                isUnlocked: function (){ return App.game.quests.isDailyQuestsUnlocked(); },
+                run: function() { this.__internal__start(); }.bind(this),
+                stop: function() { this.__internal__stop(); }.bind(this),
+                isUnlocked: function() { return App.game.quests.isDailyQuestsUnlocked(); },
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });
     }
