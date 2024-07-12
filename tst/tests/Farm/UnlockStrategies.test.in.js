@@ -321,7 +321,7 @@ function checkItemNeededBehaviour(oakItemNeeded)
 
 function checkPokemonNeededBehaviour(pokemonName)
 {
-    expectFocusOnUnlocksToBeDisabled(function ()
+    expectFocusOnUnlocksToBeDisabled(function()
         {
             // Simulate the player catching the pokemon
             const pokemonId = PokemonHelper.getPokemonByName(pokemonName).id;
@@ -340,7 +340,7 @@ function checkPokemonNeededBehaviour(pokemonName)
 
 function expectFocusOnUnlocksToBeDisabledBecauseOfItem(oakItemNeeded)
 {
-    expectFocusOnUnlocksToBeDisabled(function ()
+    expectFocusOnUnlocksToBeDisabled(function()
     {
         // Simulate the player getting the item
         App.game.oakItems.itemList[oakItemNeeded].__isUnlocked = true;

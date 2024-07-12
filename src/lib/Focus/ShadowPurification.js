@@ -16,7 +16,7 @@ class AutomationFocusShadowPurification
     {
         this.__internal__buildShadowDungeonList();
 
-        const isUnlockedCallback = function (){ return pokeballFilterOptions.shadow.canUse(); };
+        const isUnlockedCallback = function() { return pokeballFilterOptions.shadow.canUse(); };
 
         functionalitiesList.push(
             {
@@ -26,8 +26,8 @@ class AutomationFocusShadowPurification
                        + Automation.Menu.TooltipSeparator
                        + "The Purify Chamber will automatically be used when the\n"
                        + "max flow is reached, on the currently selected pokémon.",
-                run: function (){ this.__internal__start(); }.bind(this),
-                stop: function (){ this.__internal__stop(); }.bind(this),
+                run: function() { this.__internal__start(); }.bind(this),
+                stop: function() { this.__internal__stop(); }.bind(this),
                 isUnlocked: isUnlockedCallback,
                 refreshRateAsMs: Automation.Focus.__noFunctionalityRefresh
             });

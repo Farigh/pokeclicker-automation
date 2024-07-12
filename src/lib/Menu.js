@@ -471,7 +471,7 @@ class AutomationMenu
         }
 
         // Clicking the button should toggle the list visibility
-        listButton.onclick = function ()
+        listButton.onclick = function()
             {
                 listOptions.classList.toggle('visible');
 
@@ -498,10 +498,10 @@ class AutomationMenu
             };
 
         // Hide the list if the user clicks anywhere else
-        listButton.onfocusout = function () { listOptions.classList.remove('visible'); };
+        listButton.onfocusout = function() { listOptions.classList.remove('visible'); };
 
         // Handle arrow key-press events
-        listButton.onkeydown = function (event)
+        listButton.onkeydown = function(event)
             {
                 event = event || window.event;
 

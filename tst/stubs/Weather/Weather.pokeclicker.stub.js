@@ -2,7 +2,7 @@
 class Weather
 {
     static __regionalWeather = new Array(Object.keys(GameConstants.Region).length / 2).fill(WeatherType.Clear);
-    static regionalWeather = this.__regionalWeather.map((v) => function(){ return v; });
+    static regionalWeather = this.__regionalWeather.map((v) => function() { return v; });
 
     static weatherConditions =
         {

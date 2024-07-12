@@ -342,7 +342,7 @@ class PokemonLoader
 /* =======================
 
 buffer = "\n";
-dataPrinter = function (pokename)
+dataPrinter = function(pokename)
 {
     let pokedata = pokemonMap[pokename];
     let pokemonTypes = pokedata.type.map(x => "PokemonType." + PokemonType[x])

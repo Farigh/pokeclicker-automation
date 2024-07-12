@@ -424,7 +424,7 @@ class AutomationFocus
                        + Automation.Menu.TooltipSeparator
                        + "Such route is the highest unlocked one\n"
                        + "with HP lower than Click Attack",
-                run: function (){ this.__internal__goToBestRouteForExp(); }.bind(this),
+                run: function() { this.__internal__goToBestRouteForExp(); }.bind(this),
                 refreshRateAsMs: 10000 // Refresh every 10s
             });
 
@@ -436,8 +436,8 @@ class AutomationFocus
                        + Automation.Menu.TooltipSeparator
                        + "Gyms gives way more money than routes\n"
                        + "The best gym is the one that gives the most money per game tick",
-                run: function (){ this.__internal__goToBestGymForMoney(); }.bind(this),
-                stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                run: function() { this.__internal__goToBestGymForMoney(); }.bind(this),
+                stop: function() { Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                 refreshRateAsMs: 10000 // Refresh every 10s
             });
 
@@ -451,8 +451,8 @@ class AutomationFocus
                        + "the most token per game tick.\n"
                        + "The most efficient Oak items loadout will be equipped.\n"
                        + "The configured balls will automatically be used and bought if needed.",
-                run: function (){ this.__goToBestRouteForDungeonToken(); }.bind(this),
-                stop: function ()
+                run: function() { this.__goToBestRouteForDungeonToken(); }.bind(this),
+                stop: function()
                     {
                         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
                         Automation.Utils.Pokeball.disableAutomationFilter();
@@ -474,7 +474,7 @@ class AutomationFocus
      * @param {string} title: The separator text to display
      * @param {CallableFunction} isUnlockedCallback: The condition to display the separator
      */
-    static __internal__addFunctionalitySeparator(title, isUnlockedCallback = function(){ return true; })
+    static __internal__addFunctionalitySeparator(title, isUnlockedCallback = function() { return true; })
     {
         this.__internal__functionalities.push({ id: "separator", name: title, tooltip: "", isUnlocked: isUnlockedCallback });
     }
@@ -484,7 +484,7 @@ class AutomationFocus
      */
     static __internal__addGemsFocusFunctionalities()
     {
-        const isUnlockedCallback = function (){ return App.game.gems.canAccess(); };
+        const isUnlockedCallback = function() { return App.game.gems.canAccess(); };
         this.__internal__addFunctionalitySeparator("==== Gems ====", isUnlockedCallback);
 
         // Sort the types alphabetically
@@ -504,8 +504,8 @@ class AutomationFocus
                            + "The best location is the one that will give the most\n"
                            + gemTypeName + " gems per game tick.\n"
                            + "Both gyms and routes are considered, the best one will be used.",
-                    run: function (){ this.__goToBestGymOrRouteForGem(gemType); }.bind(this),
-                    stop: function (){ Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
+                    run: function() { this.__goToBestGymOrRouteForGem(gemType); }.bind(this),
+                    stop: function() { Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false); },
                     isUnlocked: isUnlockedCallback,
                     refreshRateAsMs: 10000 // Refresh every 10s
                 });
