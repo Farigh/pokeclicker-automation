@@ -4,5 +4,7 @@
     "workbench.colorCustomizations": {
         "editorRuler.foreground": "#0b80ce"
     },
-    "files.eol": "\n"
+    "files.eol": "\n",
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true
 }
