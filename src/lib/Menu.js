@@ -1318,6 +1318,10 @@ class AutomationMenu
             {
                 left: calc(100% - 21px);
             }
+            .hasAutomationTooltip.clickAttackIntervalAutomationTooltip::after
+            {
+                left: calc(50% - 20px);
+            }
             .hasAutomationTooltip.toggleAutomationTooltip::after
             {
                 top: calc(100% - 4px);
