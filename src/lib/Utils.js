@@ -178,11 +178,11 @@ class AutomationUtils
         // Find the best position to insert the given item in the given sorted collection, using the given compare callback
         const bisect = function(collection, item, compare)
             {
-                let low = 0;
-                let high = collection.length;
-                while (low < high)
+                let lowerBound = 0;
+                let upperBound = collection.length;
+                while (lowerBound < upperBound)
                 {
-                    const candidate = Math.floor((low + high) / 2);
+                    const candidate = Math.floor((lowerBound + upperBound) / 2);
                     const compareResult = compare(item, collection[candidate]);
 
                     if (compareResult == 0)
@@ -193,22 +193,22 @@ class AutomationUtils
 
                     if (compareResult < 0)
                     {
-                        high = candidate;
+                        upperBound = candidate;
                     }
                     else
                     {
-                        low = candidate + 1;
+                        lowerBound = candidate + 1;
                     }
                 }
-                return low;
+                return lowerBound;
             };
 
         let result = collection.slice(0, maxSortedElementCount).sort(compareCallback);
         const maxResultLength = result.length;
         const collectionLength = collection.length;
-        for (let i = maxResultLength; i < collectionLength; ++i)
+        for (let index = maxResultLength; index < collectionLength; ++index)
         {
-            const item = collection[i];
+            const item = collection[index];
             const max = result[maxResultLength - 1];
             if (compareCallback(item, max) < 0)
             {

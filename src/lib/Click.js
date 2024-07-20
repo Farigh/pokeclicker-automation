@@ -3,7 +3,10 @@
  */
 class AutomationClick
 {
-    static Settings = { FeatureEnabled: "Click-Enabled" };
+    static Settings = {
+                          FeatureEnabled: "Click-Enabled",
+                          ClickInterval: "Click-ClickInterval"
+                      };
 
     /**
      * @brief Determines if the feature is currently active
@@ -27,6 +30,9 @@ class AutomationClick
     {
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            // Default to the app hard-cap for click attacks
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.ClickInterval, 50);
+
             this.__internal__buildMenu();
         }
         else if (initStep == Automation.InitSteps.Finalize)
@@ -65,7 +71,7 @@ class AutomationClick
             if (this.__internal__autoClickLoop === null)
             {
                 // Set auto-click loop
-                this.__internal__autoClickLoop = setInterval(this.__internal__autoClick.bind(this), 50); // The app hard-caps click attacks at 50
+                this.__internal__resetClickLoop();
             }
         }
         else
@@ -82,6 +88,7 @@ class AutomationClick
 
     static __internal__autoClickLoop = null;
     static __internal__container = null;
+    static __internal__activeTimeouts = new Map();
 
     /**
      * @brief Builds the menu
@@ -127,6 +134,46 @@ class AutomationClick
                     }
                 }.bind(this), 10000); // Check every 10s
         }
+
+        // Build advanced settings panel
+        const clickSettingPanel = Automation.Menu.addSettingPanel(autoClickButton.parentElement.parentElement);
+
+        const titleDiv = Automation.Menu.createTitleElement("Auto attack advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        clickSettingPanel.appendChild(titleDiv);
+
+        // Click interval setting
+        const clickIntervalContainer = document.createElement("span");
+        clickIntervalContainer.style.display = "inline-block";
+        clickIntervalContainer.style.width = "100%";
+        clickIntervalContainer.style.marginLeft = "10px";
+        clickIntervalContainer.style.textAlign = "left";
+        clickSettingPanel.appendChild(clickIntervalContainer);
+        clickIntervalContainer.appendChild(document.createTextNode("Click interval :"));
+
+        // Add tooltip
+        const clickIntervalTooltip = "Set the interval between each click in milliseconds.";
+        clickIntervalContainer.classList.add("hasAutomationTooltip");
+        clickIntervalContainer.classList.add("clickAttackIntervalAutomationTooltip");
+        clickIntervalContainer.setAttribute("automation-tooltip-text", clickIntervalTooltip);
+
+        // Add the input element
+        const clickIntervalInput = Automation.Menu.createTextInputElement(6, "[0-9]");
+        clickIntervalInput.innerHTML = Automation.Utils.tryParseInt(Automation.Utils.LocalStorage.getValue(this.Settings.ClickInterval), 50);
+        clickIntervalInput.style.margin = "0px 4px";
+        clickIntervalInput.style.textAlign = "left";
+        clickIntervalContainer.appendChild(clickIntervalInput);
+
+        clickIntervalContainer.appendChild(document.createTextNode("ms"));
+
+        // Add the save status checkmark
+        const checkmark = Automation.Menu.createAnimatedCheckMarkElement();
+        checkmark.style.paddingLeft = "3px";
+        checkmark.style.position = "relative";
+        checkmark.style.bottom = "3px";
+        clickIntervalContainer.appendChild(checkmark);
+
+        clickIntervalInput.oninput = function() { this.__internal__clickIntervalOnInputCallback(clickIntervalInput, checkmark); }.bind(this);
     }
 
     /**
@@ -144,6 +191,7 @@ class AutomationClick
         {
             this.__internal__container.hidden = true;
             clearInterval(this.__internal__autoClickLoop);
+            this.__internal__autoClickLoop = null;
             return;
         }
 
@@ -173,5 +221,104 @@ class AutomationClick
         {
             TemporaryBattleBattle.clickAttack()
         }
+    }
+
+    /**
+     * @brief Resets the click loop
+     *
+     * If the loop exists, it will clear it and launch a new one, otherwise it will one launch the loop
+     */
+    static __internal__resetClickLoop()
+    {
+        const clickInterval = Automation.Utils.tryParseInt(Automation.Utils.LocalStorage.getValue(this.Settings.ClickInterval), 50);
+
+        if (this.__internal__autoClickLoop != null)
+        {
+            clearInterval(this.__internal__autoClickLoop);
+        }
+
+        // Set auto-click loop
+        this.__internal__autoClickLoop = setInterval(this.__internal__autoClick.bind(this), clickInterval);
+    }
+
+    /**
+     * @brief Ensures that a valid click interval was entered (ie. an integer greater or equal to 50)
+     *
+     * @param {Element} inputElem: The input element
+     * @param {Element} checkmarkElem: The checkmark element
+     */
+    static __internal__clickIntervalOnInputCallback(inputElem, checkmarkElem)
+    {
+        const invalidTimeoutKey = "invalid";
+
+        if (inputElem.innerText < 50)
+        {
+            inputElem.classList.add("invalid");
+            // Let the time to the user to edit the value before setting back the minimum possible value
+            const timeout = setTimeout(function()
+                {
+                    // Only update the value if it's still under the minimum possible
+                    if (inputElem.innerText < 50)
+                    {
+                        inputElem.innerText = 50;
+                        inputElem.classList.remove("invalid");
+
+                        // Move the cursor at the end of the input if still focused
+                        const range = document.createRange();
+
+                        if (inputElem === document.activeElement)
+                        {
+                            const set = window.getSelection();
+                            range.setStart(inputElem.childNodes[0], inputElem.innerText.length);
+                            range.collapse(true);
+                            set.removeAllRanges();
+                            set.addRange(range);
+                        }
+                    }
+                    this.__internal__activeTimeouts.delete(invalidTimeoutKey);
+                }.bind(this), 1000);
+
+            if (this.__internal__activeTimeouts.has(invalidTimeoutKey))
+            {
+                clearTimeout(this.__internal__activeTimeouts.get(invalidTimeoutKey));
+                this.__internal__activeTimeouts.delete(invalidTimeoutKey);
+            }
+            this.__internal__activeTimeouts.set(invalidTimeoutKey, timeout);
+        }
+        else
+        {
+            inputElem.classList.remove("invalid");
+        }
+        this.__internal__setClickIntervalChangesTimeout(inputElem, checkmarkElem);
+    }
+
+    /**
+     * @brief Saves the click attack interval settings
+     *
+     * @param {Element} inputElem: The input element
+     * @param {Element} checkmarkElem: The checkmark element
+     */
+    static __internal__setClickIntervalChangesTimeout(inputElem, checkmarkElem)
+    {
+        const saveTimeoutKey = "save";
+
+        if (this.__internal__activeTimeouts.has(saveTimeoutKey))
+        {
+            clearTimeout(this.__internal__activeTimeouts.get(saveTimeoutKey));
+            this.__internal__activeTimeouts.delete(saveTimeoutKey);
+        }
+
+        const timeout = setTimeout(function()
+            {
+                Automation.Menu.showCheckmark(checkmarkElem, 2000);
+
+                // Save the click interval value
+                Automation.Utils.LocalStorage.setValue(this.Settings.ClickInterval, Automation.Utils.tryParseInt(inputElem.innerText, 50));
+
+                // Reset the feature loop
+                this.__internal__resetClickLoop();
+            }.bind(this), 3000); // Save the changes after 3s without edition
+
+        this.__internal__activeTimeouts.set(saveTimeoutKey, timeout);
     }
 }
