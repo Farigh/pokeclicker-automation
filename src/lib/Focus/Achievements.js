@@ -11,6 +11,9 @@ class AutomationFocusAchievements
                                               DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast"
                                           };
 
+    // Internal copy of supported achievements left to perform
+    static __internal__filteredAchievementList = [];
+
     /**
      * @brief Adds the Achievements functionality to the 'Focus on' list
      *
@@ -18,6 +21,12 @@ class AutomationFocusAchievements
      */
     static __registerFunctionalities(functionalitiesList)
     {
+        // For now, initialize the achievement list here
+        this.__internal__filteredAchievementList = AchievementHandler.achievementList.filter(
+            (achievement) => Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement")
+                          || Automation.Utils.isInstanceOf(achievement.property, "ClearGymRequirement")
+                          || Automation.Utils.isInstanceOf(achievement.property, "ClearDungeonRequirement"))
+
         functionalitiesList.push(
             {
                 id: "Achievements",
@@ -274,12 +283,19 @@ class AutomationFocusAchievements
     {
         let result = null;
 
-        const availableAchievements = AchievementHandler.achievementList.filter(
+        let hasCompletedAchievements = false;
+        const availableAchievements = this.__internal__filteredAchievementList.filter(
             (achievement) =>
             {
-                // Only handle supported kinds of achievements, if achievable and not already completed
-                if (achievement.isCompleted()
-                    || !achievement.achievable()
+                // Only handle achievements that are not already completed
+                if (achievement.isCompleted())
+                {
+                    hasCompletedAchievements = true;
+                    return false;
+                }
+
+                // Only handle achievable achievements
+                if (!achievement.achievable()
                     || (achievement.property.region > player.highestRegion()))
                 {
                     return false;
@@ -321,6 +337,13 @@ class AutomationFocusAchievements
 
                 return false;
             });
+
+        // Filter the list if any completed achievement were found
+        if (hasCompletedAchievements)
+        {
+            this.__internal__filteredAchievementList = this.__internal__filteredAchievementList.filter(
+                (achievement) => !achievement.isCompleted());
+        }
 
         if (availableAchievements.length > 0)
         {
