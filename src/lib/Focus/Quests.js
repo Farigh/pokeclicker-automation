@@ -138,7 +138,7 @@ class AutomationFocusQuests
             rowElem.appendChild(labelCellElem);
 
             const toggleCellElem = document.createElement("td");
-            toggleCellElem.style.paddingRight = "5px"; // Align toogle with ones outside the sub-content div
+            toggleCellElem.style.paddingRight = "5px"; // Align toggle with ones outside the sub-content div
             rowElem.appendChild(toggleCellElem);
 
             const storageKey = this.__internal__advancedSettings.QuestEnabled(quest);

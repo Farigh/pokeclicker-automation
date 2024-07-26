@@ -1547,7 +1547,7 @@ class AutomationMenu
             }
 
             /*********************\
-            |*   Toogle button   *|
+            |*   Toggle button   *|
             \*********************/
 
             .automation-toggle-button

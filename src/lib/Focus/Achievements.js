@@ -84,12 +84,24 @@ class AutomationFocusAchievements
      */
     static __internal__buildAchievementSelectionSettings(parent)
     {
+        // Add the description
+        const tooltip = "Enabling a quest of a given type will automatically enable\n"
+                      + "any other quests of the same type with a lower target.\n\n"
+                      + "Disabling a quest of a given type will automatically disable\n"
+                      + "any other quests of the same type with a higher target.\n";
+        const descriptionContainer = document.createElement("div");
+        descriptionContainer.style.marginTop = "10px";
         const descriptionElem = document.createElement("span");
-        descriptionElem.textContent = "Choose which achievement should be performed, or skipped";
-        descriptionElem.style.display = "inline-block";
-        descriptionElem.style.marginTop = "10px";
-        parent.appendChild(descriptionElem);
+        descriptionElem.textContent = "Choose which achievement should be performed, or skipped ℹ️";
+        descriptionElem.classList.add("hasAutomationTooltip");
+        descriptionElem.classList.add("rightMostAutomationTooltip");
+        descriptionElem.classList.add("shortTransitionAutomationTooltip");
+        descriptionElem.style.cursor = "help";
+        descriptionElem.setAttribute("automation-tooltip-text", tooltip);
+        descriptionContainer.appendChild(descriptionElem);
+        parent.appendChild(descriptionContainer);
 
+        // Add the toggles table
         const tableContainer = document.createElement("div");
         tableContainer.classList.add("automationTabSubContent");
         parent.appendChild(tableContainer);
@@ -98,7 +110,8 @@ class AutomationFocusAchievements
         tableElem.style.width = "100%";
         tableContainer.appendChild(tableElem);
 
-        for (const achievementData of this.__internal__getAchievementsData())
+        const achievementDataList = this.__internal__getAchievementsData();
+        for (const [ index, achievementData ] of achievementDataList.entries())
         {
             const rowElem = document.createElement("tr");
             tableElem.appendChild(rowElem);
@@ -111,7 +124,7 @@ class AutomationFocusAchievements
             rowElem.appendChild(labelCellElem);
 
             const toggleCellElem = document.createElement("td");
-            toggleCellElem.style.paddingRight = "5px"; // Align toogle with ones outside the sub-content div
+            toggleCellElem.style.paddingRight = "5px"; // Align toggle with ones outside the sub-content div
             rowElem.appendChild(toggleCellElem);
 
             const storageKey = this.__internal__advancedSettings.AchievementEnabled(achievementData.type, achievementData.amount);
@@ -119,11 +132,23 @@ class AutomationFocusAchievements
             // Enable the achievement by default, unless the user chose to disable settings by default
             Automation.Utils.LocalStorage.setDefaultValue(storageKey, !Automation.Menu.DisableSettingsByDefault);
 
-            const toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
-            toggleCellElem.appendChild(toggleButton);
+            achievementData.toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+            toggleCellElem.appendChild(achievementData.toggleButton);
+
+            // Compute previous and next button data
+            let previousData = (index > 0) ? achievementDataList[index - 1] : null;
+            if ((previousData != null) && (previousData.type != achievementData.type))
+            {
+                previousData = null;
+            }
+            let nextData = ((index + 1) < achievementDataList.length) ? achievementDataList[index + 1] : null;
+            if ((nextData != null) && (nextData.type != achievementData.type))
+            {
+                nextData = null;
+            }
 
             // Every time the status of an achievement changes, we need to refresh the currently selected one
-            toggleButton.addEventListener("click", function()
+            achievementData.toggleButton.addEventListener("click", function()
                 {
                     // Don't do anything if the feature is disabled
                     if (this.__internal__currentAchievement)
@@ -131,6 +156,28 @@ class AutomationFocusAchievements
                         // Force current achievement update
                         this.__internal__currentAchievement = null;
                     }
+
+                    const isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(storageKey) === "true");
+
+                    if (isFeatureEnabled && (previousData != null))
+                    {
+                        // We need to turn on the previous one as well, if not already enabled
+                        const previousStorageKey = this.__internal__advancedSettings.AchievementEnabled(previousData.type, previousData.amount);
+                        if (Automation.Utils.LocalStorage.getValue(previousStorageKey) !== "true")
+                        {
+                            previousData.toggleButton.click();
+                        }
+                    }
+                    else if (!isFeatureEnabled && (nextData != null))
+                    {
+                        // We need to turn off the next one as well, if not already enabled
+                        const nextStorageKey = this.__internal__advancedSettings.AchievementEnabled(nextData.type, nextData.amount);
+                        if (Automation.Utils.LocalStorage.getValue(nextStorageKey) === "true")
+                        {
+                            nextData.toggleButton.click();
+                        }
+                    }
+
                 }.bind(this), false);
         }
     }

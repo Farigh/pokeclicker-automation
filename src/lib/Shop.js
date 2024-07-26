@@ -312,9 +312,9 @@ class AutomationShop
         itemData.htmlElems.warning.appendChild(warningIcon);
 
         // Add the toggle button
-        const toogleCell = document.createElement("td");
-        toogleCell.style.paddingLeft = "4px";
-        itemData.htmlElems.row.appendChild(toogleCell);
+        const toggleCell = document.createElement("td");
+        toggleCell.style.paddingLeft = "4px";
+        itemData.htmlElems.row.appendChild(toggleCell);
 
         const itemEnabledKey = this.__internal__advancedSettings.ItemEnabled(itemData.item.name);
         const buttonElem = Automation.Menu.addLocalStorageBoundToggleButton(itemEnabledKey);
@@ -326,7 +326,7 @@ class AutomationShop
                                                  || itemData.isPurchasable();
             }, false);
 
-        toogleCell.appendChild(buttonElem);
+        toggleCell.appendChild(buttonElem);
 
         // Buy count
         const tableBuyLabelCell = document.createElement("td");
