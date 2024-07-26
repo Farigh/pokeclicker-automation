@@ -107,7 +107,7 @@ class AutomationFocusQuests
     {
         const tooltip = "Skipping quests can be cost-heavy"
         const descriptionElem = document.createElement("span");
-        descriptionElem.textContent = "Choose which quest should be performed, or skipped. ⚠️";
+        descriptionElem.textContent = "Choose which quest should be performed, or skipped ⚠️";
         descriptionElem.classList.add("hasAutomationTooltip");
         descriptionElem.classList.add("rightMostAutomationTooltip");
         descriptionElem.classList.add("shortTransitionAutomationTooltip");
@@ -129,12 +129,16 @@ class AutomationFocusQuests
             tableElem.appendChild(rowElem);
 
             const labelCellElem = document.createElement("td");
+            labelCellElem.style.width = "100%"; // Make the cell take the maximum place, for menu consistency
+            labelCellElem.style.paddingLeft = "5px";
+            labelCellElem.style.paddingRight = "7px";
             let label = this.__internal__questLabels[quest];
             label = label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
             labelCellElem.innerHTML = label;
             rowElem.appendChild(labelCellElem);
 
             const toggleCellElem = document.createElement("td");
+            toggleCellElem.style.paddingRight = "5px"; // Align toogle with ones outside the sub-content div
             rowElem.appendChild(toggleCellElem);
 
             const storageKey = this.__internal__advancedSettings.QuestEnabled(quest);

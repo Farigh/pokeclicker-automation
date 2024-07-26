@@ -7,9 +7,11 @@ class AutomationFocusAchievements
     |***    Focus specific members, should only be used by focus sub-classes    ***|
     \******************************************************************************/
 
-    static __internal__advancedSettings = {
-                                              DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast"
-                                          };
+    static __internal__advancedSettings =
+        {
+            DoMagikarpJumpLast: "Focus-Achievements-DoMagikarpIslandLast",
+            AchievementEnabled: function(type, amount) { return `Focus-Achievements-${type}-${amount}-Enabled`; }.bind(this)
+        };
 
     // Internal copy of supported achievements left to perform
     static __internal__filteredAchievementList = [];
@@ -21,12 +23,6 @@ class AutomationFocusAchievements
      */
     static __registerFunctionalities(functionalitiesList)
     {
-        // For now, initialize the achievement list here
-        this.__internal__filteredAchievementList = AchievementHandler.achievementList.filter(
-            (achievement) => Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement")
-                          || Automation.Utils.isInstanceOf(achievement.property, "ClearGymRequirement")
-                          || Automation.Utils.isInstanceOf(achievement.property, "ClearDungeonRequirement"))
-
         functionalitiesList.push(
             {
                 id: "Achievements",
@@ -62,12 +58,16 @@ class AutomationFocusAchievements
 
         button.addEventListener("click", function()
             {
-                // Force current achievement update
+                // Don't do anything if the feature is disabled
                 if (this.__internal__currentAchievement)
                 {
-                    this.__internal__currentAchievement = this.__internal__getNextAchievement();
+                    // Force current achievement update
+                    this.__internal__currentAchievement = null;
                 }
             }.bind(this), false);
+
+        // Build the achievement selection settings
+        this.__internal__buildAchievementSelectionSettings(parent);
     }
 
     /*********************************************************************\
@@ -76,6 +76,64 @@ class AutomationFocusAchievements
 
     static __internal__achievementLoop = null;
     static __internal__currentAchievement = null;
+
+    /**
+     * @brief Builds the achivement selection settings
+     *
+     * @param {Element} parent: The parent div to add the settings to
+     */
+    static __internal__buildAchievementSelectionSettings(parent)
+    {
+        const descriptionElem = document.createElement("span");
+        descriptionElem.textContent = "Choose which achievement should be performed, or skipped";
+        descriptionElem.style.display = "inline-block";
+        descriptionElem.style.marginTop = "10px";
+        parent.appendChild(descriptionElem);
+
+        const tableContainer = document.createElement("div");
+        tableContainer.classList.add("automationTabSubContent");
+        parent.appendChild(tableContainer);
+
+        const tableElem = document.createElement("table");
+        tableElem.style.width = "100%";
+        tableContainer.appendChild(tableElem);
+
+        for (const achievementData of this.__internal__getAchievementsData())
+        {
+            const rowElem = document.createElement("tr");
+            tableElem.appendChild(rowElem);
+
+            const labelCellElem = document.createElement("td");
+            labelCellElem.style.width = "100%"; // Make the cell take the maximum place, for menu consistency
+            labelCellElem.style.paddingLeft = "5px";
+            labelCellElem.style.paddingRight = "7px";
+            labelCellElem.innerHTML = this.__internal__getAchievementLabel(achievementData);
+            rowElem.appendChild(labelCellElem);
+
+            const toggleCellElem = document.createElement("td");
+            toggleCellElem.style.paddingRight = "5px"; // Align toogle with ones outside the sub-content div
+            rowElem.appendChild(toggleCellElem);
+
+            const storageKey = this.__internal__advancedSettings.AchievementEnabled(achievementData.type, achievementData.amount);
+
+            // Enable the achievement by default, unless the user chose to disable settings by default
+            Automation.Utils.LocalStorage.setDefaultValue(storageKey, !Automation.Menu.DisableSettingsByDefault);
+
+            const toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+            toggleCellElem.appendChild(toggleButton);
+
+            // Every time the status of an achievement changes, we need to refresh the currently selected one
+            toggleButton.addEventListener("click", function()
+                {
+                    // Don't do anything if the feature is disabled
+                    if (this.__internal__currentAchievement)
+                    {
+                        // Force current achievement update
+                        this.__internal__currentAchievement = null;
+                    }
+                }.bind(this), false);
+        }
+    }
 
     /**
      * @brief Starts the achievements automation
@@ -301,6 +359,14 @@ class AutomationFocusAchievements
                     return false;
                 }
 
+                // User might have disable this type of achievements
+                const achievementStorageKey = this.__internal__advancedSettings.AchievementEnabled(achievement.property.constructor.name,
+                                                                                                   achievement.property.requiredValue);
+                if (Automation.Utils.LocalStorage.getValue(achievementStorageKey) !== "true")
+                {
+                    return false;
+                }
+
                 // Consider RouteKill achievements, if the player can move to the target route
                 if (Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement"))
                 {
@@ -332,7 +398,8 @@ class AutomationFocusAchievements
                     const dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
                     const town = TownList[dungeonName];
                     return (Automation.Utils.Route.canMoveToRegion(town.region)
-                            && MapHelper.accessToTown(dungeonName));
+                            && MapHelper.accessToTown(dungeonName)
+                            && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket));
                 }
 
                 return false;
@@ -418,5 +485,54 @@ class AutomationFocusAchievements
 
         // Any unknown content (new sub-region) should be considered last
         return GameConstants.Region[categoryName] ?? GameConstants.Region.final;
+    }
+
+    /**
+     * @brief Gets the list of supported achievement description and associated settings storage key
+     *
+     * @return A list of {description, storage key}
+     */
+    static __internal__getAchievementsData()
+    {
+        // Initialize the achievement list
+        this.__internal__filteredAchievementList = AchievementHandler.achievementList.filter(
+            (achievement) => Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement")
+                          || Automation.Utils.isInstanceOf(achievement.property, "ClearGymRequirement")
+                          || Automation.Utils.isInstanceOf(achievement.property, "ClearDungeonRequirement"))
+
+        // Use a set to guarantee unicity
+        let uniqueTypes = new Set();
+
+        let result = [];
+        for (const achievement of this.__internal__filteredAchievementList)
+        {
+            const data = { type: achievement.property.constructor.name, amount: achievement.property.requiredValue };
+            const setKey = `${data.type}-${data.amount}`;
+
+            if (!uniqueTypes.has(setKey))
+            {
+                result.push(data);
+                uniqueTypes.add(setKey);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * @brief Gets the label to display in the advanced settings list for the given @p achievementData
+     *
+     * @param achievementData: The data to compute the label of
+     *
+     * @returns The HTML-formated label
+     */
+    static __internal__getAchievementLabel(achievementData)
+    {
+        const label = (achievementData.type == "RouteKillRequirement") ? `Defeat ${achievementData.amount} Pokémon on <Route>`
+                    : (achievementData.type == "ClearGymRequirement") ? `Defeat <Gym> in <Region> ${achievementData.amount} times`
+                    :/*achievementData.type == "ClearDungeonRequirement"*/ `Clear <Dungeon> ${achievementData.amount} times`;
+
+        // Escape HTML special char
+        return label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
     }
 }
