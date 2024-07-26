@@ -152,7 +152,8 @@ class AutomationClick
         clickIntervalContainer.appendChild(document.createTextNode("Click interval :"));
 
         // Add tooltip
-        const clickIntervalTooltip = "Set the interval between each click in milliseconds.";
+        const clickIntervalTooltip = "Set the interval between each click in milliseconds.\n"
+                                     "Note that the game has a minimum hard-cap of 50ms";
         clickIntervalContainer.classList.add("hasAutomationTooltip");
         clickIntervalContainer.classList.add("clickAttackIntervalAutomationTooltip");
         clickIntervalContainer.setAttribute("automation-tooltip-text", clickIntervalTooltip);

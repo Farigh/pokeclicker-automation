@@ -67,9 +67,9 @@ class AutomationFocusQuests
     static __internal__initializeQuestData()
     {
         this.__internal__questLabels["DefeatPokemonsQuest"] = "Defeat <n> Pokémon on <Route>.";
-        this.__internal__questLabels["CapturePokemonsQuest"] = "Capture <n> Pokémon.";
-        this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture <n> <Type> Pokémon.";
-        this.__internal__questLabels["ClearBattleFrontierQuest"] = "Clear <n> stages in the Battle Frontier.";
+        this.__internal__questLabels["CapturePokemonsQuest"] = "Capture or hatch <n> Pokémon.";
+        this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture or hatch <n> <Type> Pokémon.";
+        this.__internal__questLabels["ClearBattleFrontierQuest"] = "Clear <n> Stages in the Battle Frontier.";
         this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
         this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
         this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
@@ -80,7 +80,7 @@ class AutomationFocusQuests
         this.__internal__questLabels["CatchShiniesQuest"] = "Catch 1 shiny Pokémon.";
         this.__internal__questLabels["CatchShadowsQuest"] = "Catch <n> Shadow Pokémon.";
         this.__internal__questLabels["DefeatGymQuest"] = "Defeat <Gym leader> <n> times.";
-        this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon> <n> times.";
+        this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon name> dungeon in <Town> <n> times.";
         this.__internal__questLabels["UsePokeballQuest"] = "Use <n> <Balls type>.";
         this.__internal__questLabels["UseOakItemQuest"] = "Equip the <Oak item> and <Action>.";
         this.__internal__questLabels["HarvestBerriesQuest"] = "Harvest <n> <Berry type> Berries at the farm.";
@@ -107,7 +107,7 @@ class AutomationFocusQuests
     {
         const tooltip = "Skipping quests can be cost-heavy"
         const descriptionElem = document.createElement("span");
-        descriptionElem.textContent = "Choose which quest should be performed, or skipped. ⚠️";
+        descriptionElem.textContent = "Choose which quest should be performed, or skipped ⚠️";
         descriptionElem.classList.add("hasAutomationTooltip");
         descriptionElem.classList.add("rightMostAutomationTooltip");
         descriptionElem.classList.add("shortTransitionAutomationTooltip");
@@ -129,12 +129,16 @@ class AutomationFocusQuests
             tableElem.appendChild(rowElem);
 
             const labelCellElem = document.createElement("td");
+            labelCellElem.style.width = "100%"; // Make the cell take the maximum place, for menu consistency
+            labelCellElem.style.paddingLeft = "5px";
+            labelCellElem.style.paddingRight = "7px";
             let label = this.__internal__questLabels[quest];
             label = label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
             labelCellElem.innerHTML = label;
             rowElem.appendChild(labelCellElem);
 
             const toggleCellElem = document.createElement("td");
+            toggleCellElem.style.paddingRight = "5px"; // Align toggle with ones outside the sub-content div
             rowElem.appendChild(toggleCellElem);
 
             const storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
