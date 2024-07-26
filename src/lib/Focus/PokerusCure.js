@@ -87,16 +87,16 @@ class AutomationFocusPokerusCure
      */
     static __internal__start()
     {
-        // Set pokérus cure loop
-        this.__internal__pokerusCureLoop = setInterval(this.__internal__focusOnPokerusCure.bind(this), 10000); // Runs every 10 seconds
-        this.__internal__focusOnPokerusCure();
-
         // Disable other modes button
         const disableReason = "The 'Focus on Pokérus cure' feature is enabled";
         Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
 
         // Force enable other modes
         Automation.Click.toggleAutoClick(true);
+
+        // Set pokérus cure loop
+        this.__internal__pokerusCureLoop = setInterval(this.__internal__focusOnPokerusCure.bind(this), 10000); // Runs every 10 seconds
+        this.__internal__focusOnPokerusCure();
     }
 
     /**

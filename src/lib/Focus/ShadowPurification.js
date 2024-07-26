@@ -47,16 +47,16 @@ class AutomationFocusShadowPurification
      */
     static __internal__start()
     {
-        // Set shadow purification loop
-        this.__internal__shadowPurificationLoop = setInterval(this.__internal__focusOnShadowPurification.bind(this), 10000); // Runs every 10 seconds
-        this.__internal__focusOnShadowPurification();
-
         // Disable other modes button
         const disableReason = "The 'Focus on Shadow purify' feature is enabled";
         Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
 
         // Force enable other modes
         Automation.Click.toggleAutoClick(true);
+
+        // Set shadow purification loop
+        this.__internal__shadowPurificationLoop = setInterval(this.__internal__focusOnShadowPurification.bind(this), 10000); // Runs every 10 seconds
+        this.__internal__focusOnShadowPurification();
     }
 
     /**
