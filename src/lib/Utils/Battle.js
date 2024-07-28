@@ -36,21 +36,17 @@ class AutomationUtilsBattle
         // We now need to compute the click attack manually,
         // since the magikarp island has a dedicated computation that will completly ruin everything...
 
-        // From https://github.com/pokeclicker/pokeclicker/blob/cbfa24800d68d08f863c671d99dfc8d3f832db51/src/scripts/party/Party.ts#L287-L304
+        // From https://github.com/pokeclicker/pokeclicker/blob/4921661cd9b1635f9fd745aba62102ac3f5786ff/src/scripts/party/Party.ts#L293
 
-        // Base power
-        // Shiny pokemon help with a 100% boost
-        // Resistant pokemon give a 100% boost
         let caughtPokemon = App.game.party.caughtPokemon;
         if (getMagikarpValue)
         {
             // Only magikarps can attack in magikarp jump subregion
             caughtPokemon = caughtPokemon.filter((p) => Math.floor(p.id) == 129);
         }
-        const caught = caughtPokemon.length;
-        const shiny = caughtPokemon.filter(p => p.shiny).length;
-        const resistant = caughtPokemon.filter(p => p.pokerus >= GameConstants.Pokerus.Resistant).length;
-        const clickAttack = Math.pow(caught + shiny + resistant + 1, 1.4);
+
+        const partyClickBonus = caughtPokemon.reduce((total, p) => total + p.clickAttackBonus(), 1);
+        const clickAttack = Math.pow(partyClickBonus, 1.4);
 
         const bonus = App.game.party.multiplier.getBonus('clickAttack', false);
 

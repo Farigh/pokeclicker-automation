@@ -1,4 +1,4 @@
-// Stub of https://github.com/pokeclicker/pokeclicker/blob/cbeab9a0e658aa84ee2ba028f6ae83421c92776a/src/modules/GameConstants.ts
+// Stub of https://github.com/pokeclicker/pokeclicker/blob/4921661cd9b1635f9fd745aba62102ac3f5786ff/src/modules/GameConstants.ts
 class GameConstants
 {
     static clipNumber(num, min, max)
@@ -170,6 +170,16 @@ class GameConstants
             Resistant: 3,
             Uninfected: 0
         };
+
+    static ShadowStatus =
+        {
+            0: "None",
+            1: "Shadow",
+            2: "Purified",
+            None: 0,
+            Shadow: 1,
+            Purified: 2
+        }
 
     static Region =
         {

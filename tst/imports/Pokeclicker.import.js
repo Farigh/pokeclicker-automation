@@ -50,6 +50,7 @@ import "tst/stubs/Items/FluteEffectRunner.pokeclicker.stub.js";
 import "tst/stubs/Items/Pokeball.pokeclicker.stub.js";
 import "tst/stubs/Items/PokeballItem.pokeclicker.stub.js";
 import "tst/stubs/Items/Pokeballs.pokeclicker.stub.js";
+import "tst/stubs/Items/HeldItem.pokeclicker.stub.js";
 
 // Import pokeclicker OakItems types and classes
 import "tst/stubs/OakItems/OakItem.pokeclicker.stub.js";
