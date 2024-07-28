@@ -164,10 +164,6 @@ class AutomationFocusQuests
         // Only set a loop if there is none active
         if (this.__internal__autoQuestLoop === null)
         {
-            // Set auto-quest loop
-            this.__internal__autoQuestLoop = setInterval(this.__internal__questLoop.bind(this), 1000); // Runs every second
-            this.__internal__questLoop();
-
             // Disable other modes button
             const disableReason = "The 'Focus on Quests' feature is enabled";
             Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
@@ -180,6 +176,10 @@ class AutomationFocusQuests
             Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.toggleAutoHatchery(true);
             Automation.Underground.toggleAutoMining(true);
+
+            // Set auto-quest loop
+            this.__internal__autoQuestLoop = setInterval(this.__internal__questLoop.bind(this), 1000); // Runs every second
+            this.__internal__questLoop();
         }
     }
 
