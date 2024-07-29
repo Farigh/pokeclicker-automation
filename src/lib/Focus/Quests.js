@@ -80,7 +80,7 @@ class AutomationFocusQuests
         this.__internal__questLabels["CatchShiniesQuest"] = "Catch 1 shiny Pokémon.";
         this.__internal__questLabels["CatchShadowsQuest"] = "Catch <n> Shadow Pokémon.";
         this.__internal__questLabels["DefeatGymQuest"] = "Defeat <Gym leader> <n> times.";
-        this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon name> dungeon in <Town> <n> times.";
+        this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon name> dungeon in <Region> <n> times.";
         this.__internal__questLabels["UsePokeballQuest"] = "Use <n> <Balls type>.";
         this.__internal__questLabels["UseOakItemQuest"] = "Equip the <Oak item> and <Action>.";
         this.__internal__questLabels["HarvestBerriesQuest"] = "Harvest <n> <Berry type> Berries at the farm.";
