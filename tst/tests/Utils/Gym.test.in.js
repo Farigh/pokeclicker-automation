@@ -80,7 +80,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Check findBestGymForFarmingType()
         expect(result).not.toBe(null);
         expect(result.Name).toEqual("Elite Bruno");
         expect(result.Town).toEqual("Indigo Plateau Kanto");
-        expect(result.Rate).toBeCloseTo(0.51);
+        expect(result.Rate).toBeCloseTo(0.517);
     });
 
     test('Higher click attack', () =>

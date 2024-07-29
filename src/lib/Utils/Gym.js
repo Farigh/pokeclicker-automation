@@ -62,23 +62,23 @@ class AutomationUtilsGym
             const currentGymClickAttack = isMagikarpJump ? magikarpPlayerClickAttack
                                                          : playerClickAttack;
 
-            let currentGymGemPerTick = 0;
+            let currentGymGemPerClear = 0;
+            let currentGymTickToClear = 0;
             const gymPokemons = gym.getPokemonList()
             for (const pokemon of gymPokemons)
             {
-                const pokemonData = pokemonMap[pokemon.name];
-                if (!pokemonData.type.includes(pokemonType))
-                {
-                    continue;
-                }
-
                 const currentPokemonTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
                     pokemon.maxHealth, currentGymClickAttack, totalAtkPerSecondByRegion.get(gymRegion));
-                currentGymGemPerTick += (GameConstants.GYM_GEMS / currentPokemonTickToDefeat);
+                currentGymTickToClear += currentPokemonTickToDefeat;
+
+                const pokemonData = pokemonMap[pokemon.name];
+                if (pokemonData.type.includes(pokemonType))
+                {
+                    currentGymGemPerClear += GameConstants.GYM_GEMS;
+                }
             }
 
-            // TODO (26/06/2022): Be more precise, all pokemons do not have the same health
-            currentGymGemPerTick /= gymPokemons.length;
+            const currentGymGemPerTick = currentGymGemPerClear / currentGymTickToClear;
 
             // Compare with a 1/1000 precision
             if (Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000))
