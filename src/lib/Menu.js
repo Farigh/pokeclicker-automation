@@ -1043,7 +1043,7 @@ class AutomationMenu
 
         button.setAttribute("disabled", newState ? "true" : "false");
 
-        if (newState &&  (reason !== ""))
+        if (newState && (reason !== ""))
         {
             button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
         }
