@@ -5,7 +5,7 @@ Pokeclicker-automation aims at automating some recurring tasks that can be a bit
 This script collection does not aim at cheating.
 It will never perform actions that the game would not allow.
 
-Last known compatible pokeclicker version: 0.10.21
+Last known compatible pokeclicker version: 0.10.23
 
 For more details, please refer to the [wiki](../../wiki)
 

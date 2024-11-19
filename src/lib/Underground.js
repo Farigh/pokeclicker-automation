@@ -42,6 +42,9 @@ class AutomationUnderground
      */
     static toggleAutoMining(enable)
     {
+        // TODO This feature needs a full rework
+        return;
+
         if (!App.game.underground.canAccess())
         {
             return;
@@ -79,7 +82,6 @@ class AutomationUnderground
 
     static __internal__autoMiningLoop = null;
     static __internal__innerMiningLoop = null;
-    static __internal__autoSellingLoop = null;
 
     static __internal__actionCount = 0;
 
@@ -107,11 +109,24 @@ class AutomationUnderground
                             + "The hammer will then be used if more than 3 blocks\n"
                             + "can be destroyed on an item within its range\n"
                             + "The chisel will then be used to finish the remaining blocks\n";
+
+        // Warn the user that this feature is not available for now
+        autoMiningTooltip = "⚠️ Since v0.10.23 this feature does not work anymore ⚠️"
+                          + Automation.Menu.TooltipSeparator
+                          + "A full rework was performed by the pokeclicker team.\n"
+                          + "This requires a full rework of the automation.";
+
         let miningButton =
             Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
-        miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
+        // TODO Restore this once the feature is back
+        // miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
 
-        this.__internal__buildAdvancedSettings(this.__internal__undergroundContainer);
+        // this.__internal__buildAdvancedSettings(this.__internal__undergroundContainer);
+
+        // Disable the feature until a new one is implemented
+        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+        Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, true);
+        miningButton.parentElement.setAttribute("automation-tooltip-disable-reason", "\n");
     }
 
     /**
