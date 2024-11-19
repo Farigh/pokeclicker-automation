@@ -935,7 +935,7 @@ class AutomationHatchery
                                               && (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
             {
                 // Hatching a fossil is performed by selling it
-                Underground.sellMineItem(fossil);
+                UndergroundController.sellMineItem(fossil);
                 Automation.Notifications.sendNotif("Added a " + fossil.name + " to the Hatchery!", "Hatchery");
             }
 

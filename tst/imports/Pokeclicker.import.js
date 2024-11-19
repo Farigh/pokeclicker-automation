@@ -81,7 +81,7 @@ import "tst/stubs/Town/TownList.pokeclicker.stub.js";
 import "tst/stubs/Type/TypeHelper.pokeclicker.stub.js";
 
 // Import pokeclicker Underground types and classes
-import "tst/stubs/Underground/Underground.pokeclicker.stub.js";
+import "tst/stubs/Underground/UndergroundController.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItem.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItems.pokeclicker.stub.js";
 

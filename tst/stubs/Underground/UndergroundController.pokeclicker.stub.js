@@ -1,5 +1,5 @@
 // Stub of https://github.com/pokeclicker/pokeclicker/blob/d074daf605eb59bb7991fbf8c6e417de040d2d20/src/scripts/underground/Underground.ts#L5
-class Underground
+class UndergroundController
 {
     /***************************\
     |*  Pokéclicker interface  *|
