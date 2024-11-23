@@ -53,6 +53,14 @@ class AutomationUnderground
 
         if (enable)
         {
+            // Warn the user if no autorestart mine have been set
+            if (!Settings.getSetting('autoRestartUndergroundMine').value)
+            {
+                Automation.Notifications.sendWarningNotif("Please consider enabling the ingame 'mine auto restart feature'\n"
+                                                        + "If you don't, the automation will be stuck after clearing the current layout",
+                                                          "Mining");
+            }
+
             // Only set a loop if there is none active
             if (this.__internal__autoMiningLoop === null)
             {
