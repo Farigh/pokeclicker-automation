@@ -113,7 +113,9 @@ class AutomationUnderground
                                 + "Survey will be used as soon as available, unless all items were already found\n"
                                 + "If equipped, the battery discharge will be used as soon as charged\n"
                                 + "Bombs will be used as soon as available, unless all items were already found\n"
-                                + "If the bomb's durability is maxed-out, it will be used regardless";
+                                + "If the bomb's durability is maxed-out, it will be used regardless\n"
+                                + "Then it tries to use the best possible tool to complete a partially found item\n"
+                                + "or find a hidden one";
 
         const miningButton =
             Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
@@ -179,6 +181,7 @@ class AutomationUnderground
      *   - Use a bomb regardless, if its durability is maxed out
      *   - Tries to use the best possible tool to:
      *     - Complete a partially found item (@see __internal__tryUseBestToolOnPartiallyFoundItem)
+     *     - Find a new item (@see __internal__tryUseBestToolToFindNewItem)
      *
      * @return True if an action occured, false otherwise
      */
@@ -222,7 +225,9 @@ class AutomationUnderground
 
         if (!actionOccured && (this.__internal__canUseHammer || this.__internal__canUseChisel))
         {
-            actionOccured = this.__internal__tryUseBestToolOnPartiallyFoundItem();
+            // Try to complete partially found item, then try to find hidden ones
+            actionOccured = this.__internal__tryUseBestToolOnPartiallyFoundItem()
+                         || this.__internal__tryUseBestToolToFindNewItem();
         }
 
         if (actionOccured)
@@ -263,6 +268,29 @@ class AutomationUnderground
     }
 
     /**
+     * @brief Tries to reveal any undiscovered item
+     *
+     * @return True if an action occured, false otherwise
+     */
+    static __internal__tryUseBestToolToFindNewItem()
+    {
+        let selectedBestMove = null;
+
+        for (const index of App.game.underground.mine.grid.keys())
+        {
+            selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHiddenItemBestMove(index));
+        }
+
+        if (selectedBestMove == null)
+        {
+            return false;
+        }
+
+        App.game.underground.tools.useTool(selectedBestMove.tool, selectedBestMove.coord.x, selectedBestMove.coord.y);
+        return true;
+    }
+
+    /**
      * @brief Determines the best tool to use to reveal a partially found item
      *
      * @param itemData: The partially found item data
@@ -286,7 +314,7 @@ class AutomationUnderground
                 selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHammerUseEfficiency(itemData, itemCell));
             }
 
-            // Don't even consider Chisel if it can be used and the best move efficiency is lower than 2 cell layers
+            // Don't even consider Chisel if it can't be used or the best move efficiency exceeds 1 cell layers
             if (!this.__internal__canUseChisel || ((selectedBestMove != null) && (selectedBestMove.efficiency >= 2)))
             {
                 continue;
@@ -296,13 +324,50 @@ class AutomationUnderground
             const chiselMove =
                 {
                     tool: UndergroundToolType.Chisel,
-                    efficiency: Math.max(itemCell.cell.layerDepth, 2),
+                    efficiency: Math.min(itemCell.cell.layerDepth, 2),
                     coord: itemCell.coord
                 };
             selectedBestMove = this.__internal__selectBestMove(selectedBestMove, chiselMove);
         }
 
         return selectedBestMove;
+    }
+
+    /**
+     * @brief Determines the best tool to reveal the cell at the given @p index
+     *
+     * @param {number} index: The index of the cell on the Underground grid
+     *
+     * @return The best possible move
+     */
+    static __internal__getHiddenItemBestMove(index)
+    {
+        let selectedBestMove = null;
+
+        // Only consider using the hammer if we're not on a border cell
+        if (this.__internal__canUseHammer)
+        {
+            selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHammerRevealEfficiency(index));
+        }
+
+        // Don't even consider Chisel if it can't be used or the best move efficiency exceeds 1 cell layers
+        if (!this.__internal__canUseChisel || ((selectedBestMove != null) && (selectedBestMove.efficiency >= 2)))
+        {
+            return selectedBestMove;
+        }
+
+        const cell = App.game.underground.mine.grid[index];
+
+        // The chisel efficiency is at most 2 cell layers
+        const chiselMove =
+            {
+                tool: UndergroundToolType.Chisel,
+                efficiency: Math.min(cell.layerDepth, 2),
+                revealCount: ((cell.layerDepth <= 2) && (cell.layerDepth != 0)) ? 1 : 0,
+                coord: App.game.underground.mine.getCoordinateForGridIndex(index)
+            };
+
+        return this.__internal__selectBestMove(selectedBestMove, chiselMove);
     }
 
     /**
@@ -377,13 +442,30 @@ class AutomationUnderground
             return currentBestMove;
         }
 
-        if ((currentBestMove == null)
-            || (candidate.efficiency > currentBestMove.efficiency))
+        if (currentBestMove == null)
         {
             return candidate;
         }
 
-        // Favour Hammer use of chisel in case the efficiency is the same
+        // In case we're looking for reveal efficiency, consider the revealCount first
+        if ((candidate.revealCount != undefined) && (candidate.revealCount > currentBestMove.revealCount))
+        {
+            return candidate;
+        }
+        else if ((candidate.revealCount != undefined) && (candidate.revealCount < currentBestMove.revealCount))
+        {
+            return currentBestMove;
+        }
+
+        // TODO (23/11/2024): Favor cells with less visible neighbor, the grid coverage would be much more efficient
+
+        // Then consider efficiency
+        if (candidate.efficiency > currentBestMove.efficiency)
+        {
+            return candidate;
+        }
+
+        // Favour Hammer use over chisel in case the efficiency is the same
         if ((candidate.efficiency == currentBestMove.efficiency)
             && (candidate.tool == UndergroundToolType.Hammer))
         {
@@ -457,5 +539,55 @@ class AutomationUnderground
                    efficiency,
                    coord: cell.coord
                };
+    }
+
+    /**
+     * @brief Computes the hammer use info if used to reveal around the given cell @p index
+     *
+     * @param index: The cell index to check
+     *
+     * @return The given cell hammer use info
+     */
+    static __internal__getHammerRevealEfficiency(index)
+    {
+        const coord = App.game.underground.mine.getCoordinateForGridIndex(index);
+
+        const isBorderCell = (coord.x == 0) || (coord.x == (App.game.underground.mine.width - 1))
+                          || (coord.y == 0) || (coord.y == (App.game.underground.mine.height - 1));
+
+        // Don't consider hammer use on border cells
+        if (isBorderCell)
+        {
+            return null;
+        }
+
+        // Initialize with the current cell value
+        const currentCell = App.game.underground.mine.grid[index];
+        let efficiency = (currentCell.layerDepth >= 1) ? 1 : 0;
+        let revealCount = (currentCell.layerDepth == 1) ? 1 : 0;
+
+        for (const offset of [ -(App.game.underground.mine.width - 1), -App.game.underground.mine.width, -(App.game.underground.mine.width + 1),
+                               -1, 1,
+                               (App.game.underground.mine.width - 1), App.game.underground.mine.width, (App.game.underground.mine.width + 1) ])
+        {
+            const cell = App.game.underground.mine.grid[index + offset];
+
+            if (cell.layerDepth >= 1)
+            {
+                efficiency++;
+            }
+
+            if (cell.layerDepth == 1)
+            {
+                revealCount++;
+            }
+        }
+
+        return {
+            tool: UndergroundToolType.Hammer,
+            efficiency,
+            revealCount,
+            coord
+        };
     }
 }
