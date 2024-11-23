@@ -101,6 +101,7 @@ class AutomationUnderground
         const autoMiningTooltip = "Automatically mine in the Underground"
                                 + Automation.Menu.TooltipSeparator
                                 + "Survey will be used as soon as available\n"
+                                + "If equipped, the battery discharge will be used as soon as charged\n"
                                 + "Bombs will be used as soon as available";
 
         const miningButton =
@@ -175,6 +176,7 @@ class AutomationUnderground
      *
      * The following strategy is used:
      *   - Use a survey if available
+     *   - Use the batterie discharge if available
      *   - Use a bomb if available
      *
      * @return True if an action occured, false otherwise
@@ -190,6 +192,14 @@ class AutomationUnderground
         {
             // Use the survey on the center-most cell
             App.game.underground.tools.useTool(UndergroundToolType.Survey, centerMostCellCoord.x, centerMostCellCoord.y);
+            actionOccured = true;
+        }
+
+        // Try to use the battery discharge
+        if (!actionOccured && App.game.oakItems.isActive(OakItemType.Cell_Battery)
+            && (App.game.underground.battery.charges == App.game.underground.battery.maxCharges))
+        {
+            App.game.underground.battery.discharge();
             actionOccured = true;
         }
 
