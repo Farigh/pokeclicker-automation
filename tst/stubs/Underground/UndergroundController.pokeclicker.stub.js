@@ -1,4 +1,4 @@
-// Stub of https://github.com/pokeclicker/pokeclicker/blob/d074daf605eb59bb7991fbf8c6e417de040d2d20/src/scripts/underground/Underground.ts#L5
+// Stub of https://github.com/pokeclicker/pokeclicker/blob/a832cfa12f1a86f288af4d99765e0de110365ea2/src/modules/underground/UndergroundController.ts#L31
 class UndergroundController
 {
     /***************************\
