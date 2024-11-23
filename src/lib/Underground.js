@@ -87,6 +87,8 @@ class AutomationUnderground
     static __internal__innerMiningLoop = null;
 
     static __internal__actionCount = 0;
+    static __internal__canUseHammer = false;
+    static __internal__canUseChisel = false;
 
     /**
      * @brief Builds the menu
@@ -159,7 +161,7 @@ class AutomationUnderground
                     if (this.__internal__actionCount > 0)
                     {
                         Automation.Notifications.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times!`,
-                                                            "Mining");
+                                                           "Mining");
                     }
                     clearInterval(this.__internal__innerMiningLoop);
                     this.__internal__innerMiningLoop = null;
@@ -175,6 +177,8 @@ class AutomationUnderground
      *   - Use the batterie discharge if available
      *   - Use a bomb if available, unless all items were already found
      *   - Use a bomb regardless, if its durability is maxed out
+     *   - Tries to use the best possible tool to:
+     *     - Complete a partially found item (@see __internal__tryUseBestToolOnPartiallyFoundItem)
      *
      * @return True if an action occured, false otherwise
      */
@@ -213,11 +217,245 @@ class AutomationUnderground
             actionOccured = true;
         }
 
+        this.__internal__canUseHammer = App.game.underground.tools.getTool(UndergroundToolType.Hammer).canUseTool();
+        this.__internal__canUseChisel = App.game.underground.tools.getTool(UndergroundToolType.Chisel).canUseTool();
+
+        if (!actionOccured && (this.__internal__canUseHammer || this.__internal__canUseChisel))
+        {
+            actionOccured = this.__internal__tryUseBestToolOnPartiallyFoundItem();
+        }
+
         if (actionOccured)
         {
             this.__internal__actionCount++;
         }
 
         return actionOccured;
+    }
+
+    /**
+     * @brief Tries to complete any already partially discovered item
+     *
+     * @return True if an action occured, false otherwise
+     */
+    static __internal__tryUseBestToolOnPartiallyFoundItem()
+    {
+        // No partially found item
+        if (App.game.underground.mine.itemsPartiallyFound == App.game.underground.mine.itemsFound)
+        {
+            return false;
+        }
+
+        let selectedBestMove = null;
+
+        for (const itemData of this.__internal__getPartiallyRevealedItems())
+        {
+            selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getPartiallyRevealedItemBestMove(itemData));
+        }
+
+        if (selectedBestMove == null)
+        {
+            return false;
+        }
+
+        App.game.underground.tools.useTool(selectedBestMove.tool, selectedBestMove.coord.x, selectedBestMove.coord.y);
+        return true;
+    }
+
+    /**
+     * @brief Determines the best tool to use to reveal a partially found item
+     *
+     * @param itemData: The partially found item data
+     *
+     * @return The best possible move
+     */
+    static __internal__getPartiallyRevealedItemBestMove(itemData)
+    {
+        let selectedBestMove = null;
+
+        for (const itemCell of itemData.cells)
+        {
+            // Only consider actions on hidden cells with visible neighbor
+            if (itemCell.isRevealed || !this.__internal__cellHasVisibleNeighbor(itemData, itemCell))
+            {
+                continue;
+            }
+
+            if (this.__internal__canUseHammer)
+            {
+                selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHammerUseEfficiency(itemData, itemCell));
+            }
+
+            // Don't even consider Chisel if it can be used and the best move efficiency is lower than 2 cell layers
+            if (!this.__internal__canUseChisel || ((selectedBestMove != null) && (selectedBestMove.efficiency >= 2)))
+            {
+                continue;
+            }
+
+            // The chisel efficiency is at most 2 cell layers
+            const chiselMove =
+                {
+                    tool: UndergroundToolType.Chisel,
+                    efficiency: Math.max(itemCell.cell.layerDepth, 2),
+                    coord: itemCell.coord
+                };
+            selectedBestMove = this.__internal__selectBestMove(selectedBestMove, chiselMove);
+        }
+
+        return selectedBestMove;
+    }
+
+    /**
+     * @brief Extracts the partially revealed items data
+     *
+     * @returns The list of partially revealed items
+     */
+    static __internal__getPartiallyRevealedItems()
+    {
+        let result = [];
+
+        for (const itemData of this.__internal__getAllItems().values())
+        {
+            // Only consider items that have at least one revealed cell, and is not already completed
+            if (!itemData.cells[0].cell.reward.rewarded
+                && itemData.cells.some(cell => cell.isRevealed))
+            {
+                result.push(itemData);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * @brief Extracts every items data
+     *
+     * @returns The map of item's [ Id, Cells ]
+     *          Where Cells is an object containing a cells list of { cell, coord, isRevealed }
+     */
+    static __internal__getAllItems()
+    {
+        let items = new Map();
+
+        for (const [ index, cell ] of App.game.underground.mine.grid.entries())
+        {
+            // Only consider cells containing an item
+            if (cell.reward == undefined)
+            {
+                continue;
+            }
+
+            if (!items.has(cell.reward.rewardID))
+            {
+                items.set(cell.reward.rewardID, { cells: [] });
+            }
+
+            const cellData = items.get(cell.reward.rewardID);
+            cellData.cells.push(
+                {
+                    cell,
+                    coord: App.game.underground.mine.getCoordinateForGridIndex(index),
+                    isRevealed: (cell.layerDepth === 0)
+                });
+        }
+
+        return items;
+    }
+
+    /**
+     * @brief Gets the best move amongst the provided options
+     *
+     * @param currentBestMove: The current best move
+     * @param candidate: The best move candidate
+     *
+     * @return The best option between the @p currentBestMove and the @p candidate
+     */
+    static __internal__selectBestMove(currentBestMove, candidate)
+    {
+        if (candidate == null)
+        {
+            return currentBestMove;
+        }
+
+        if ((currentBestMove == null)
+            || (candidate.efficiency > currentBestMove.efficiency))
+        {
+            return candidate;
+        }
+
+        // Favour Hammer use of chisel in case the efficiency is the same
+        if ((candidate.efficiency == currentBestMove.efficiency)
+            && (candidate.tool == UndergroundToolType.Hammer))
+        {
+            return candidate;
+        }
+
+        return currentBestMove;
+    }
+
+    /**
+     * @brief Checks if a cell has at least one visible neighbor
+     *
+     * @param itemData: The partially found item data
+     * @param cell: The cell to check
+     *
+     * @return True if the cell has at least one visible neighbor, false otherwise
+     */
+    static __internal__cellHasVisibleNeighbor(itemData, cell)
+    {
+        for (const cellCandidate of itemData.cells)
+        {
+            if (!cellCandidate.isRevealed)
+            {
+                continue;
+            }
+
+            const xDistance = Math.abs(cellCandidate.coord.x - cell.coord.x)
+            const yDistance = Math.abs(cellCandidate.coord.y - cell.coord.y)
+
+            if ((xDistance + yDistance) == 1)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @brief Computes the hammer use info if used on the given @p cell
+     *
+     * @param itemData: The partially found item data
+     * @param cell: The cell to check
+     *
+     * @return The given cell hammer use info
+     */
+    static __internal__getHammerUseEfficiency(itemData, cell)
+    {
+        let efficiency = 0;
+
+        // TODO (23/11/2024): Consider other items in some cases (both revealed ?)
+        for (const cellCandidate of itemData.cells)
+        {
+            if (cellCandidate.isRevealed)
+            {
+                continue;
+            }
+
+            const xDistance = Math.abs(cellCandidate.coord.x - cell.coord.x)
+            const yDistance = Math.abs(cellCandidate.coord.y - cell.coord.y)
+
+            // TODO (23/11/2024): Consider blocks at a range of 2 in some cases
+            if ((xDistance + yDistance) <= 1)
+            {
+                efficiency++;
+            }
+        }
+
+        return {
+                   tool: UndergroundToolType.Hammer,
+                   efficiency,
+                   coord: cell.coord
+               };
     }
 }
