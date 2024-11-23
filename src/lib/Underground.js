@@ -100,6 +100,7 @@ class AutomationUnderground
 
         const autoMiningTooltip = "Automatically mine in the Underground"
                                 + Automation.Menu.TooltipSeparator
+                                + "Survey will be used as soon as available\n"
                                 + "Bombs will be used as soon as available";
 
         const miningButton =
@@ -173,6 +174,7 @@ class AutomationUnderground
      * @brief The inner Mining loop - Automatically mines item in the underground.
      *
      * The following strategy is used:
+     *   - Use a survey if available
      *   - Use a bomb if available
      *
      * @return True if an action occured, false otherwise
@@ -181,11 +183,21 @@ class AutomationUnderground
     {
         let actionOccured = false;
 
+        const centerMostCellCoord = { x: App.game.underground.mine.width / 2, y: App.game.underground.mine.height / 2 };
+
+        // Try to use the Survey
+        if (App.game.underground.tools.getTool(UndergroundToolType.Survey).canUseTool())
+        {
+            // Use the survey on the center-most cell
+            App.game.underground.tools.useTool(UndergroundToolType.Survey, centerMostCellCoord.x, centerMostCellCoord.y);
+            actionOccured = true;
+        }
+
         // Try to use the Bomb
-        if (App.game.underground.tools.getTool(UndergroundToolType.Bomb).canUseTool())
+        if (!actionOccured && App.game.underground.tools.getTool(UndergroundToolType.Bomb).canUseTool())
         {
             // Use the bomb on the center-most cell
-            App.game.underground.tools.useTool(UndergroundToolType.Bomb, App.game.underground.mine.width / 2, App.game.underground.mine.height / 2);
+            App.game.underground.tools.useTool(UndergroundToolType.Bomb, centerMostCellCoord.x, centerMostCellCoord.y);
             actionOccured = true;
         }
 
