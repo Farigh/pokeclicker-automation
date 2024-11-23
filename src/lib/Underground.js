@@ -7,9 +7,7 @@
 class AutomationUnderground
 {
     static Settings = {
-                          FeatureEnabled: "Mining-Enabled",
-                          UseRestoreItems: "Mining-UseRestoreItems",
-                          RestrictRestoreItemsToMiningQuests: "Mining-RestrictRestoreItemsToMiningQuests"
+                          FeatureEnabled: "Mining-Enabled"
                       };
 
     /**
@@ -42,9 +40,6 @@ class AutomationUnderground
      */
     static toggleAutoMining(enable)
     {
-        // TODO This feature needs a full rework
-        return;
-
         if (!App.game.underground.canAccess())
         {
             return;
@@ -103,62 +98,13 @@ class AutomationUnderground
             this.__internal__setUndergroundUnlockWatcher();
         }
 
-        let autoMiningTooltip = "Automatically mine in the Underground"
-                            + Automation.Menu.TooltipSeparator
-                            + "Bombs will be used until all items have at least one visible tile\n"
-                            + "The hammer will then be used if more than 3 blocks\n"
-                            + "can be destroyed on an item within its range\n"
-                            + "The chisel will then be used to finish the remaining blocks\n";
+        const autoMiningTooltip = "Automatically mine in the Underground"
+                                + Automation.Menu.TooltipSeparator
+                                + "Bombs will be used as soon as available";
 
-        // Warn the user that this feature is not available for now
-        autoMiningTooltip = "⚠️ Since v0.10.23 this feature does not work anymore ⚠️"
-                          + Automation.Menu.TooltipSeparator
-                          + "A full rework was performed by the pokeclicker team.\n"
-                          + "This requires a full rework of the automation.";
-
-        let miningButton =
+        const miningButton =
             Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
-        // TODO Restore this once the feature is back
-        // miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
-
-        // this.__internal__buildAdvancedSettings(this.__internal__undergroundContainer);
-
-        // Disable the feature until a new one is implemented
-        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-        Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, true);
-        miningButton.parentElement.setAttribute("automation-tooltip-disable-reason", "\n");
-    }
-
-    /**
-     * @brief Adds the Underground advanced settings panel
-     *
-     * @param parent: The div container to insert the settings to
-     */
-    static __internal__buildAdvancedSettings(parent)
-    {
-        // Build advanced settings panel
-        let miningSettingPanel = Automation.Menu.addSettingPanel(parent);
-        miningSettingPanel.style.textAlign = "right";
-
-        let titleDiv = Automation.Menu.createTitleElement("Mining advanced settings");
-        titleDiv.style.marginBottom = "10px";
-        miningSettingPanel.appendChild(titleDiv);
-
-        /*********************\
-        |* Use restore items *|
-        \*********************/
-
-        let useRestoreLabel = 'Automatically use restore items';
-        let useRestoreTooltip = "Allows the mining feature use Restore items if the mining energy goes under 10";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(useRestoreLabel, this.Settings.UseRestoreItems, useRestoreTooltip, miningSettingPanel);
-
-        /*************************************************\
-        |* Restict restore items to active mining quests *|
-        \*************************************************/
-
-        let restrictRestoreLabel = 'Only use restore items when a mining quest is active';
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-            restrictRestoreLabel, this.Settings.RestrictRestoreItemsToMiningQuests, "", miningSettingPanel);
+        miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
     }
 
     /**
@@ -192,13 +138,9 @@ class AutomationUnderground
     }
 
     /**
-     * @brief The Mining loop
+     * @brief The main Mining loop
      *
-     * Automatically mines item in the underground.
-     * The following strategy is used:
-     *   - Use a bomb until at least one tile of each item is revealed
-     *   - Then, use the hammer on covered blocks, if at least three tiles can be removed that way
-     *   - Finally use the chisel to reveal the remaining tiles
+     * It will try to run the mining inner loop if it's not already active
      */
     static __internal__miningLoop()
     {
@@ -210,249 +152,48 @@ class AutomationUnderground
 
         this.__internal__actionCount = 0;
         this.__internal__innerMiningLoop = setInterval(function()
-        {
-            let nothingElseToDo = true;
-
-            if (this.__internal__autoMiningLoop !== null)
             {
-                // Restore energy if needed
-                this.__internal__restoreUndergroundEnergy();
-
-                let itemsState = this.__internal__getItemsState();
-
-                let areAllItemRevealed = true;
-                for (const item of itemsState.values())
+                // Stop the loop if the main feature loop was stopped, or no action was possible
+                if ((this.__internal__autoMiningLoop == null)
+                    || !this.__internal__tryUseOneMiningItem())
                 {
-                    areAllItemRevealed &= item.revealed;
-                }
-
-                if (!areAllItemRevealed)
-                {
-                    // Bombing is the best strategy until all items have at least one revealed spot
-                    if (this.__internal__isBombingPossible())
+                    // Only notify the user if at least one action occured
+                    if (this.__internal__actionCount > 0)
                     {
-                        // Mine using bombs until the board is completed or the energy is depleted
-                        Mine.bomb();
-                        this.__internal__actionCount++;
-                        nothingElseToDo = false;
+                        Automation.Notifications.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times!`,
+                                                            "Mining");
                     }
+                    clearInterval(this.__internal__innerMiningLoop);
+                    this.__internal__innerMiningLoop = null;
                 }
-                else
-                {
-                    nothingElseToDo = !this.__internal__tryToUseTheBestItem(itemsState);
-                }
-            }
-
-            if (nothingElseToDo)
-            {
-                if (this.__internal__actionCount > 0)
-                {
-                    Automation.Notifications.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times,`
-                                                     + ` energy left: ${Math.floor(App.game.underground.energy).toString()}!`,
-                                                       "Mining");
-                }
-                clearInterval(this.__internal__innerMiningLoop);
-                this.__internal__innerMiningLoop = null;
-                return;
-            }
-        }.bind(this), 300); // Runs every 0.3s
+            }.bind(this), 300); // Runs every 0.3s
     }
 
     /**
-     * @brief Tries to use available Restore pots if the player's energy goes under the cost of a bomb
-     */
-    static __internal__restoreUndergroundEnergy()
-    {
-        // Only use Restore items if the user allowed it, and it's under the provided threshold
-        if ((Automation.Utils.LocalStorage.getValue(this.Settings.UseRestoreItems) !== "true")
-            || (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY))
-        {
-            return;
-        }
-
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.RestrictRestoreItemsToMiningQuests) === "true")
-        {
-            let hasActiveMiningQuests = App.game.quests.currentQuests().some(
-                (quest) => (Automation.Utils.isInstanceOf(quest, "MineItemsQuest") || Automation.Utils.isInstanceOf(quest, "MineLayersQuest"))
-                        && !quest.isCompleted());
-            if (!hasActiveMiningQuests)
-            {
-                return;
-            }
-        }
-
-        // Try to use any type of Restore item
-        for (const itemValue of Object.keys(GameConstants.EnergyRestoreSize).filter(x => !isNaN(x)))
-        {
-            let restoreItemName = GameConstants.EnergyRestoreSize[itemValue];
-
-            // Restore at enough energy to use a bomb (which is the most expensive item)
-            while (Math.floor(App.game.underground.energy) < Underground.BOMB_ENERGY)
-            {
-                // Don't try to consume item that the player doesn't have in stock
-                if (player.itemList[restoreItemName]() <= 0)
-                {
-                    break;
-                }
-
-                ItemList[restoreItemName].use();
-            }
-
-            // Don't restore more than needed
-            if (Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
-            {
-                break;
-            }
-        }
-    }
-
-    /**
-     * @brief Determines which tools to use according to @see __internal__miningLoop strategy, and tries to use it
+     * @brief The inner Mining loop - Automatically mines item in the underground.
      *
-     * @param {Map} itemsState: The map of item states
+     * The following strategy is used:
+     *   - Use a bomb if available
      *
-     * @returns True if some action are still possible after the current move, false otherwise (if the player does not have enough energy)
+     * @return True if an action occured, false otherwise
      */
-    static __internal__tryToUseTheBestItem(itemsState)
+    static __internal__tryUseOneMiningItem()
     {
-        let nextTilesToMine = [];
+        let actionOccured = false;
 
-        for (const item of itemsState.values())
+        // Try to use the Bomb
+        if (App.game.underground.tools.getTool(UndergroundToolType.Bomb).canUseTool())
         {
-            if (!item.completed)
-            {
-                nextTilesToMine = nextTilesToMine.concat(item.tiles);
-            }
+            // Use the bomb on the center-most cell
+            App.game.underground.tools.useTool(UndergroundToolType.Bomb, App.game.underground.mine.width / 2, App.game.underground.mine.height / 2);
+            actionOccured = true;
         }
 
-        if (nextTilesToMine.length == 0)
-        {
-            return true;
-        }
-
-        let { useHammer, useToolX, useToolY } = this.__internal__considerHammerUse(nextTilesToMine);
-
-        let result = false;
-        if (useHammer)
-        {
-            result = (App.game.underground.energy >= Underground.HAMMER_ENERGY);
-            Mine.hammer(useToolX, useToolY);
-        }
-        else
-        {
-            // Only consider unrevealed tiles
-            nextTilesToMine = nextTilesToMine.filter((tile) => !tile.revealed);
-
-            result = (App.game.underground.energy >= Underground.CHISEL_ENERGY);
-            Mine.chisel(nextTilesToMine[0].x, nextTilesToMine[0].y);
-        }
-
-        if (result)
+        if (actionOccured)
         {
             this.__internal__actionCount++;
         }
 
-        return result;
-    }
-
-    /**
-     * @brief Determines if using the hammer is more efficient than using the chisel
-
-     *
-     * @param nextTilesToMine: The list of tiles left to mine
-     *
-     * @returns A struct { useHammer, useToolX, useToolY }, where:
-     *          @c useHammer is a boolean indicating if the use is relevant
-     *          @c useToolX and @c useToolY are the position where the use is relevant
-     */
-    static __internal__considerHammerUse(nextTilesToMine)
-    {
-        let bestReachableTilesAmount = 0;
-        let bestReachableTileX = 0;
-        let bestReachableTileY = 0;
-
-        for (const tile of nextTilesToMine)
-        {
-            // Compute the best tile for hammer
-            let reachableTilesAmount = 0;
-            for (const other of nextTilesToMine)
-            {
-                // Consider tiles in the range of the hammer only
-                if (!other.revealed
-                    && (other.x <= (tile.x + 1))
-                    && (other.x >= (tile.x - 1))
-                    && (other.y <= (tile.y + 1))
-                    && (other.y >= (tile.y - 1)))
-                {
-                    // If the tile is covered by an odd amount of layers, the hammer hit is equivalent to a chisel hit,
-                    // otherwise the hammer hit is half as efficient
-                    reachableTilesAmount += (other.layers % 2 == 1) ? 2 : 1;
-                }
-            }
-
-            if (reachableTilesAmount > bestReachableTilesAmount)
-            {
-                bestReachableTilesAmount = reachableTilesAmount;
-                bestReachableTileX = tile.x;
-                bestReachableTileY = tile.y;
-            }
-        }
-
-        // Only use the hammer if it is the most efficient move
-        // (i.e. a hammer hit would save us more energy than attempting to clear the tiles using purely chisel hits)
-
-        let hammerEfficiency = 2 * (Underground.HAMMER_ENERGY / Underground.CHISEL_ENERGY)
-        let useHammer = (bestReachableTilesAmount > hammerEfficiency)
-
-        let useToolX = useHammer ? bestReachableTileX : nextTilesToMine[0].x;
-        let useToolY = useHammer ? bestReachableTileY : nextTilesToMine[0].y;
-        return { useHammer, useToolX, useToolY };
-    }
-
-    /**
-     * @brief Processes the mine tiles and gathers the state of the hidden items
-     *
-     * For each item, the following information will be gathered:
-     *    - The id of the item
-     *    - If the item is completed (ie. all tiles are revealed)
-     *    - If the item is revealed (at least one tile is revealed)
-     *    - The status of each tile of the item:
-     *        - Its x and y coordinates
-     *        - Whether it's revealed
-     *        - How many layers it's covered with
-     *
-     * @returns The gathered information
-     */
-    static __internal__getItemsState()
-    {
-        let itemsState = new Map();
-
-        for (const row of Array(Mine.rewardGrid.length).keys())
-        {
-            for (const column of Array(Mine.rewardGrid[row].length).keys())
-            {
-                let content = Mine.rewardGrid[row][column];
-                if (content !== 0)
-                {
-                    if (!itemsState.has(content.value))
-                    {
-                        itemsState.set(content.value,
-                                       {
-                                           id: content.value,
-                                           completed: true,
-                                           revealed: false,
-                                           tiles: []
-                                       });
-                    }
-
-                    let itemData = itemsState.get(content.value);
-                    itemData.completed &= content.revealed;
-                    itemData.revealed |= content.revealed;
-                    itemData.tiles.push({ x: row, y: column, revealed: content.revealed, layers: Mine.grid[row][column]() });
-                }
-            }
-        }
-
-        return itemsState;
+        return actionOccured;
     }
 }
