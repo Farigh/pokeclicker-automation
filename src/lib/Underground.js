@@ -100,9 +100,10 @@ class AutomationUnderground
 
         const autoMiningTooltip = "Automatically mine in the Underground"
                                 + Automation.Menu.TooltipSeparator
-                                + "Survey will be used as soon as available\n"
+                                + "Survey will be used as soon as available, unless all items were already found\n"
                                 + "If equipped, the battery discharge will be used as soon as charged\n"
-                                + "Bombs will be used as soon as available";
+                                + "Bombs will be used as soon as available, unless all items were already found\n"
+                                + "If the bomb's durability is maxed-out, it will be used regardless";
 
         const miningButton =
             Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
@@ -124,19 +125,6 @@ class AutomationUnderground
                 this.toggleAutoMining();
             }
         }.bind(this), 10000); // Check every 10 seconds
-    }
-
-    /**
-     * @brief Ensures that using a bomb is possible
-     *
-     * It is possible is the player has enough energy and the current mining board is not completed already
-     *
-     * @returns True if a bombing action is possible, False otherwise
-     */
-    static __internal__isBombingPossible()
-    {
-        return ((Math.floor(App.game.underground.energy) >= Underground.BOMB_ENERGY)
-                && (Mine.itemsFound() < Mine.itemsBuried()));
     }
 
     /**
@@ -175,9 +163,10 @@ class AutomationUnderground
      * @brief The inner Mining loop - Automatically mines item in the underground.
      *
      * The following strategy is used:
-     *   - Use a survey if available
+     *   - Use a survey if available, unless all items were already found
      *   - Use the batterie discharge if available
-     *   - Use a bomb if available
+     *   - Use a bomb if available, unless all items were already found
+     *   - Use a bomb regardless, if its durability is maxed out
      *
      * @return True if an action occured, false otherwise
      */
@@ -186,9 +175,10 @@ class AutomationUnderground
         let actionOccured = false;
 
         const centerMostCellCoord = { x: App.game.underground.mine.width / 2, y: App.game.underground.mine.height / 2 };
+        const areAllItemFound = App.game.underground.mine.itemsPartiallyFound == App.game.underground.mine.itemsBuried;
 
-        // Try to use the Survey
-        if (App.game.underground.tools.getTool(UndergroundToolType.Survey).canUseTool())
+        // Try to use the Survey, unless all items were already found
+        if (!areAllItemFound && App.game.underground.tools.getTool(UndergroundToolType.Survey).canUseTool())
         {
             // Use the survey on the center-most cell
             App.game.underground.tools.useTool(UndergroundToolType.Survey, centerMostCellCoord.x, centerMostCellCoord.y);
@@ -203,8 +193,12 @@ class AutomationUnderground
             actionOccured = true;
         }
 
-        // Try to use the Bomb
-        if (!actionOccured && App.game.underground.tools.getTool(UndergroundToolType.Bomb).canUseTool())
+        // Try to use the Bomb, unless all items were already found
+        // If the bomb if fully charged, use it anyway
+        const bombTool = App.game.underground.tools.getTool(UndergroundToolType.Bomb);
+        if (!actionOccured
+            && (!areAllItemFound || (bombTool.durability == 1))
+            && bombTool.canUseTool())
         {
             // Use the bomb on the center-most cell
             App.game.underground.tools.useTool(UndergroundToolType.Bomb, centerMostCellCoord.x, centerMostCellCoord.y);
