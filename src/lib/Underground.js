@@ -304,7 +304,7 @@ class AutomationUnderground
         for (const itemCell of itemData.cells)
         {
             // Only consider actions on hidden cells with visible neighbor
-            if (itemCell.isRevealed || !this.__internal__cellHasVisibleNeighbor(itemData, itemCell))
+            if (itemCell.isRevealed || !this.__internal__cellHasVisibleNeighborWithTheSameItem(itemData, itemCell))
             {
                 continue;
             }
@@ -336,6 +336,8 @@ class AutomationUnderground
     /**
      * @brief Determines the best tool to reveal the cell at the given @p index
      *
+     * @todo (23/11/2024): Consider focusing on survey area
+     *
      * @param {number} index: The index of the cell on the Underground grid
      *
      * @return The best possible move
@@ -358,13 +360,20 @@ class AutomationUnderground
 
         const cell = App.game.underground.mine.grid[index];
 
+        // Don't consider Chisel if the cell is already visible
+        if (cell.layerDepth == 0)
+        {
+            return selectedBestMove;
+        }
+
         // The chisel efficiency is at most 2 cell layers
         const chiselMove =
             {
                 tool: UndergroundToolType.Chisel,
                 efficiency: Math.min(cell.layerDepth, 2),
                 revealCount: ((cell.layerDepth <= 2) && (cell.layerDepth != 0)) ? 1 : 0,
-                coord: App.game.underground.mine.getCoordinateForGridIndex(index)
+                coord: App.game.underground.mine.getCoordinateForGridIndex(index),
+                visibleNeighborCount: this.__internal__getCellVisibleNeighborCount(index)
             };
 
         return this.__internal__selectBestMove(selectedBestMove, chiselMove);
@@ -457,8 +466,6 @@ class AutomationUnderground
             return currentBestMove;
         }
 
-        // TODO (23/11/2024): Favor cells with less visible neighbor, the grid coverage would be much more efficient
-
         // Then consider efficiency
         if (candidate.efficiency > currentBestMove.efficiency)
         {
@@ -472,18 +479,25 @@ class AutomationUnderground
             return candidate;
         }
 
+        // Favor Chisel moves with less visible neighbor, the grid coverage would be much more efficient
+        if ((candidate.visibleNeighborCount != undefined) && (currentBestMove.visibleNeighborCount != undefined)
+            && (candidate.visibleNeighborCount < currentBestMove.visibleNeighborCount))
+        {
+            return candidate;
+        }
+
         return currentBestMove;
     }
 
     /**
-     * @brief Checks if a cell has at least one visible neighbor
+     * @brief Checks if a cell has at least one visible neighbor of its current item
      *
      * @param itemData: The partially found item data
      * @param cell: The cell to check
      *
      * @return True if the cell has at least one visible neighbor, false otherwise
      */
-    static __internal__cellHasVisibleNeighbor(itemData, cell)
+    static __internal__cellHasVisibleNeighborWithTheSameItem(itemData, cell)
     {
         for (const cellCandidate of itemData.cells)
         {
@@ -502,6 +516,51 @@ class AutomationUnderground
         }
 
         return false;
+    }
+
+    /**
+     * @brief Counts the visible neighbor of the cell at the given @p index
+     *
+     * @note Out of grid neighbor (for border cells) are considered visible
+     *
+     * @param index: The partially found item data
+     *
+     * @return The visible neighbor count
+     */
+    static __internal__getCellVisibleNeighborCount(index)
+    {
+        let visibleNeighborCount = 0;
+
+        for (const offset of [ -App.game.underground.mine.width, -1, 1, App.game.underground.mine.width ])
+        {
+            const neighborIndex = index + offset;
+
+            // Skip out of grid indexes
+            if ((neighborIndex < 0) || (neighborIndex >= App.game.underground.mine.grid.length))
+            {
+                continue;
+            }
+
+            if (App.game.underground.mine.grid[neighborIndex].layerDepth == 0)
+            {
+                visibleNeighborCount++;
+            }
+        }
+
+        const coord = App.game.underground.mine.getCoordinateForGridIndex(index);
+
+        // Consider out of grid indexes as visible neighbor
+        if ((coord.x == 0) || (coord.x == (App.game.underground.mine.width - 1)))
+        {
+            visibleNeighborCount++;
+        }
+
+        if ((coord.y == 0) || (coord.y == (App.game.underground.mine.height - 1)))
+        {
+            visibleNeighborCount++;
+        }
+
+        return visibleNeighborCount;
     }
 
     /**
