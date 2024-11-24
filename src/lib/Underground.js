@@ -481,9 +481,26 @@ class AutomationUnderground
             return candidate;
         }
 
+        // Stop here if one of the item is not focused on revealing new items
+        if ((candidate.visibleNeighborCount == undefined) || (currentBestMove.visibleNeighborCount == undefined))
+        {
+            return currentBestMove;
+        }
+
+        /***
+         * Specific checks when trying to reveal new items
+         **/
+
+        // Favor chisel use that would reveal the selected cell faster
+        const candidateUseNeededToReveal = this.__internal__getChiselUseNeededToRevealAtCoord(candidate.coord);
+        const currentBestMoveUseNeededToReveal = this.__internal__getChiselUseNeededToRevealAtCoord(currentBestMove.coord);
+        if ((candidateUseNeededToReveal < currentBestMoveUseNeededToReveal))
+        {
+            return candidate;
+        }
+
         // Favor Chisel moves with less visible neighbor, the grid coverage would be much more efficient
-        if ((candidate.visibleNeighborCount != undefined) && (currentBestMove.visibleNeighborCount != undefined)
-            && (candidate.visibleNeighborCount < currentBestMove.visibleNeighborCount))
+        if (candidate.visibleNeighborCount < currentBestMove.visibleNeighborCount)
         {
             return candidate;
         }
@@ -650,5 +667,19 @@ class AutomationUnderground
             revealCount,
             coord
         };
+    }
+
+    /**
+     * @brief Computes the chisel use needed to reveal the cell at the given @p coord
+     *
+     * @param coord: The coordinates of the cell on the Underground grid
+     *
+     * @returns The number of use needed
+     */
+    static __internal__getChiselUseNeededToRevealAtCoord(coord)
+    {
+        const index = App.game.underground.mine.getGridIndexForCoordinate(coord)
+        const cell = App.game.underground.mine.grid[index];
+        return Math.floor(cell.layerDepth / 2) + (cell.layerDepth % 2);
     }
 }
