@@ -168,14 +168,14 @@ class AutomationFocusQuests
             const disableReason = "The 'Focus on Quests' feature is enabled";
             Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
             Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, true, disableReason);
-            // TODO Fix this one up : Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
+            Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
 
             this.__internal__takeOverFarmIfNeeded();
 
             // Force enable other modes
             Automation.Click.toggleAutoClick(true);
             Automation.Hatchery.toggleAutoHatchery(true);
-            // TODO Fix this one up : Automation.Underground.toggleAutoMining(true);
+            Automation.Underground.toggleAutoMining(true);
 
             // Set auto-quest loop
             this.__internal__autoQuestLoop = setInterval(this.__internal__questLoop.bind(this), 1000); // Runs every second
@@ -228,7 +228,7 @@ class AutomationFocusQuests
         Automation.Click.toggleAutoClick();
         Automation.Hatchery.toggleAutoHatchery();
         Automation.Farm.toggleAutoFarming();
-        // TODO Fix this one up : Automation.Underground.toggleAutoMining();
+        Automation.Underground.toggleAutoMining();
 
         // Stop any gym auto-fight
         Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
@@ -241,7 +241,7 @@ class AutomationFocusQuests
         Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, false);
         Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
         Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
-        // TODO Fix this one up : Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
+        Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
         // Disable automation catch filter
         Automation.Utils.Pokeball.disableAutomationFilter();
