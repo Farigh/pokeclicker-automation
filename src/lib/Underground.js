@@ -147,7 +147,9 @@ class AutomationUnderground
     static __internal__miningLoop()
     {
         // Don't run an additionnal loop if another one is already in progress
-        if (this.__internal__innerMiningLoop !== null)
+        // Or the user launched a mine discovery
+        if ((this.__internal__innerMiningLoop !== null)
+            || (App.game.underground.mine.timeUntilDiscovery > 0))
         {
             return;
         }
