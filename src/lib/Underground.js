@@ -113,7 +113,8 @@ class AutomationUnderground
                                 + "Survey will be used as soon as available, unless all items were already found\n"
                                 + "If equipped, the battery discharge will be used as soon as charged\n"
                                 + "Bombs will be used as soon as available, unless all items were already found\n"
-                                + "If the bomb's durability is maxed-out, it will be used regardless\n"
+                                + "If the bomb's durability is maxed-out, it will be used regardless,\n"
+                                + "unless the tool reached infinite use\n"
                                 + "Then it tries to use the best possible tool to complete a partially found item\n"
                                 + "or find a hidden one";
 
@@ -180,7 +181,7 @@ class AutomationUnderground
      *   - Use a survey if available, unless all items were already found
      *   - Use the batterie discharge if available
      *   - Use a bomb if available, unless all items were already found
-     *   - Use a bomb regardless, if its durability is maxed out
+     *   - Use a bomb regardless, if its durability is maxed out, unless the tool reached infinite use
      *   - Tries to use the best possible tool to:
      *     - Complete a partially found item (@see __internal__tryUseBestToolOnPartiallyFoundItem)
      *     - Find a new item (@see __internal__tryUseBestToolToFindNewItem)
@@ -211,10 +212,10 @@ class AutomationUnderground
         }
 
         // Try to use the Bomb, unless all items were already found
-        // If the bomb if fully charged, use it anyway
+        // If the bomb if fully charged, use it anyway, unless the tool reached infinite use
         const bombTool = App.game.underground.tools.getTool(UndergroundToolType.Bomb);
         if (!actionOccured
-            && (!areAllItemFound || (bombTool.durability == 1))
+            && (!areAllItemFound || ((bombTool.restoreRate > 0) && (bombTool.durability == 1)))
             && bombTool.canUseTool())
         {
             // Use the bomb on the center-most cell
