@@ -586,9 +586,10 @@ class AutomationDungeon
                     {
                         this.__internal__moveToCell(this.__internal__floorEndPosition);
 
-                        // Equip the selected pokeball (if None is set, keep the user in-game setting)
+                        // Equip the selected pokeball (if None is set, or the automation forced a mode, keep the user in-game setting)
                         const ballToCatchBoss = this.__internal__dungeonBossCatchPokeballSelectElem.value;
-                        if (ballToCatchBoss != GameConstants.Pokeball.None)
+                        if ((ballToCatchBoss != GameConstants.Pokeball.None)
+                            && (this.AutomationRequestedMode == this.InternalModes.None))
                         {
                             Automation.Utils.Pokeball.catchEverythingWith(ballToCatchBoss);
                         }
