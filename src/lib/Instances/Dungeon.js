@@ -128,6 +128,8 @@ class AutomationDungeon
     static __internal__autoDungeonLoop = null;
     static __internal__pokedexSwitch = null;
     static __internal__dungeonFightButton = null;
+    static __internal__dungeonAdvancedSettingsContainerDivElem = null;
+    static __internal__dungeonAdvancedSettingsVisibilityButtonElem = null;
     static __internal__dungeonBossCatchPokeballSelectElem = null;
 
     static __internal__chestMinRarityDropdownList = null;
@@ -234,6 +236,12 @@ class AutomationDungeon
     {
         // Build advanced settings panel
         const dungeonSettingsPanel = Automation.Menu.addSettingPanel(parent, true);
+
+        // Store the container div (2 imbrication levels upper)
+        this.__internal__dungeonAdvancedSettingsContainerDivElem = dungeonSettingsPanel.parentElement.parentElement;
+
+        // Store the panel button (first child element of the parent div)
+        this.__internal__dungeonAdvancedSettingsVisibilityButtonElem = dungeonSettingsPanel.parentElement.children.item(0);
 
         const titleDiv = Automation.Menu.createTitleElement("Dungeon advanced settings");
         titleDiv.style.marginBottom = "10px";
@@ -961,6 +969,12 @@ class AutomationDungeon
             {
                 Automation.Menu.setButtonDisabledState(this.Settings.FeatureEnabled, false);
             }
+        }
+        // If the panel is hidden and the settings panel is opened, close the later to restore all the other settings visibility
+        else if (this.__internal__dungeonAdvancedSettingsContainerDivElem.hasAttribute("automation-visible"))
+        {
+            // Call the onclick method manually
+            this.__internal__dungeonAdvancedSettingsVisibilityButtonElem.onclick();
         }
     }
 
