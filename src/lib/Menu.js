@@ -1102,7 +1102,7 @@ class AutomationMenu
      */
     static __internal__populatePokeballOptions(selectedValue, listElem, addNoneOption)
     {
-        const options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ];
+        const options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball, GameConstants.Pokeball.Masterball, GameConstants.Pokeball.Fastball, GameConstants.Pokeball.Quickball, GameConstants.Pokeball.Timerball, GameConstants.Pokeball.Duskball, GameConstants.Pokeball.Luxuryball, GameConstants.Pokeball.Diveball, GameConstants.Pokeball.Lureball, GameConstants.Pokeball.Nestball, GameConstants.Pokeball.Repeatball, GameConstants.Pokeball.Beastball ];
 
         if (addNoneOption)
         {
