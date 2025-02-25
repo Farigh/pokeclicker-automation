@@ -410,7 +410,8 @@ class AutomationFocusQuests
         if (Automation.Utils.isInstanceOf(quest, "CapturePokemonsQuest")
             || Automation.Utils.isInstanceOf(quest, "GainTokensQuest"))
         {
-            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
+            const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
+            this.__internal__workOnUsePokeballQuest(selectedPokeball);
         }
         else if (Automation.Utils.isInstanceOf(quest, "CapturePokemonTypesQuest"))
         {
@@ -456,7 +457,8 @@ class AutomationFocusQuests
             if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")))
             {
                 // Buy some ball to be prepared
-                this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__pokeballToUseSelectElem.selectedValue, 10);
+                const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
+                this.__internal__tryBuyBallIfUnderThreshold(selectedPokeball, 10);
                 this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             }
             else if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "GainMoneyQuest")))
@@ -530,7 +532,8 @@ class AutomationFocusQuests
     static __internal__workOnCapturePokemonTypesQuest(quest)
     {
         // Add a pokeball to the Caught type and set the PokemonCatch setup
-        const hasBalls = this.__internal__trySelectBallToCatch(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
+        const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
+        const hasBalls = this.__internal__trySelectBallToCatch(selectedPokeball);
 
         if (hasBalls)
         {
@@ -587,17 +590,19 @@ class AutomationFocusQuests
      */
     static __internal__workOnDefeatDungeonQuest(dungeonName, catchShadows)
     {
+        const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
+
         // If we don't have enough tokens, go farm some
         if (TownList[dungeonName].dungeon.tokenCost > App.game.wallet.currencies[GameConstants.Currency.dungeonToken]())
         {
-            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
+            this.__internal__workOnUsePokeballQuest(selectedPokeball);
             return;
         }
 
         if (catchShadows)
         {
             this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
-            Automation.Utils.Pokeball.catchEverythingWith(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
+            Automation.Utils.Pokeball.catchEverythingWith(selectedPokeball);
             Automation.Utils.Pokeball.restrictCaptureToShadow(true);
             Automation.Utils.Pokeball.enableAutomationFilter();
         }
@@ -706,7 +711,8 @@ class AutomationFocusQuests
     {
         if (quest.item == OakItemType.Magic_Ball)
         {
-            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
+            const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
+            this.__internal__workOnUsePokeballQuest(selectedPokeball);
         }
         else
         {
@@ -868,7 +874,9 @@ class AutomationFocusQuests
         if (App.game.pokeballs.getBallQuantity(ballType) < amount)
         {
             let ballItem = ItemList[GameConstants.Pokeball[ballType]];
-            if (ballItem.totalPrice(amount) < App.game.wallet.currencies[ballItem.currency]())
+            // Only try to buy balls for money
+            if ((ballItem.currency == GameConstants.Currency.money)
+                && (ballItem.totalPrice(amount) < App.game.wallet.currencies[ballItem.currency]()))
             {
                 ballItem.buy(amount);
             }

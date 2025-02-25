@@ -186,7 +186,8 @@ class AutomationFocusPokerusCure
         Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Ensure that the player has some balls available
-        if (!Automation.Focus.__ensurePlayerHasEnoughBalls(Automation.Focus.__pokeballToUseSelectElem.selectedValue))
+        const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
+        if (!Automation.Focus.__ensurePlayerHasEnoughBalls(selectedPokeball))
         {
             Automation.Utils.Pokeball.disableAutomationFilter();
             return;
@@ -205,8 +206,7 @@ class AutomationFocusPokerusCure
                                                                                 : this.__internal__currentDungeonData;
 
         // Equip an "Already caught contagious" pokeball
-        const pokeballToUse = (currentLocationData.needsBeastBall) ? GameConstants.Pokeball.Beastball
-                                                                   : Automation.Focus.__pokeballToUseSelectElem.selectedValue;
+        const pokeballToUse = (currentLocationData.needsBeastBall) ? GameConstants.Pokeball.Beastball : selectedPokeball;
 
         Automation.Utils.Pokeball.onlyCatchContagiousWith(pokeballToUse);
 

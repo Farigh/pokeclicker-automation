@@ -84,8 +84,10 @@ class AutomationFocus
             return;
         }
 
+        const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.BallToUseToCatch));
+
         // Ensure that the player has some balls available
-        if (!this.__ensurePlayerHasEnoughBalls(this.__pokeballToUseSelectElem.selectedValue))
+        if (!this.__ensurePlayerHasEnoughBalls(selectedPokeball))
         {
             return;
         }
@@ -94,10 +96,10 @@ class AutomationFocus
         this.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
-        Automation.Utils.Pokeball.catchEverythingWith(this.__pokeballToUseSelectElem.selectedValue);
+        Automation.Utils.Pokeball.catchEverythingWith(selectedPokeball);
 
         // Move to the highest unlocked route
-        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__pokeballToUseSelectElem.selectedValue);
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(selectedPokeball);
     }
 
     /**
