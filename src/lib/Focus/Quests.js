@@ -410,7 +410,7 @@ class AutomationFocusQuests
         if (Automation.Utils.isInstanceOf(quest, "CapturePokemonsQuest")
             || Automation.Utils.isInstanceOf(quest, "GainTokensQuest"))
         {
-            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.value);
+            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
         }
         else if (Automation.Utils.isInstanceOf(quest, "CapturePokemonTypesQuest"))
         {
@@ -456,7 +456,7 @@ class AutomationFocusQuests
             if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")))
             {
                 // Buy some ball to be prepared
-                this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__pokeballToUseSelectElem.value, 10);
+                this.__internal__tryBuyBallIfUnderThreshold(Automation.Focus.__pokeballToUseSelectElem.selectedValue, 10);
                 this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
             }
             else if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "GainMoneyQuest")))
@@ -530,7 +530,7 @@ class AutomationFocusQuests
     static __internal__workOnCapturePokemonTypesQuest(quest)
     {
         // Add a pokeball to the Caught type and set the PokemonCatch setup
-        const hasBalls = this.__internal__trySelectBallToCatch(Automation.Focus.__pokeballToUseSelectElem.value);
+        const hasBalls = this.__internal__trySelectBallToCatch(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
 
         if (hasBalls)
         {
@@ -590,14 +590,14 @@ class AutomationFocusQuests
         // If we don't have enough tokens, go farm some
         if (TownList[dungeonName].dungeon.tokenCost > App.game.wallet.currencies[GameConstants.Currency.dungeonToken]())
         {
-            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.value);
+            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
             return;
         }
 
         if (catchShadows)
         {
             this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
-            Automation.Utils.Pokeball.catchEverythingWith(Automation.Focus.__pokeballToUseSelectElem.value);
+            Automation.Utils.Pokeball.catchEverythingWith(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
             Automation.Utils.Pokeball.restrictCaptureToShadow(true);
             Automation.Utils.Pokeball.enableAutomationFilter();
         }
@@ -706,7 +706,7 @@ class AutomationFocusQuests
     {
         if (quest.item == OakItemType.Magic_Ball)
         {
-            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.value);
+            this.__internal__workOnUsePokeballQuest(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
         }
         else
         {

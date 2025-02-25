@@ -143,7 +143,7 @@ class AutomationFocusShadowPurification
         Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Ensure that the player has some balls available
-        if (!Automation.Focus.__ensurePlayerHasEnoughBalls(Automation.Focus.__pokeballToUseSelectElem.value))
+        if (!Automation.Focus.__ensurePlayerHasEnoughBalls(Automation.Focus.__pokeballToUseSelectElem.selectedValue))
         {
             Automation.Utils.Pokeball.disableAutomationFilter();
             return;
@@ -158,7 +158,7 @@ class AutomationFocusShadowPurification
         }
 
         // Equip an "Already caught shadow" pokeball
-        Automation.Utils.Pokeball.catchEverythingWith(Automation.Focus.__pokeballToUseSelectElem.value);
+        Automation.Utils.Pokeball.catchEverythingWith(Automation.Focus.__pokeballToUseSelectElem.selectedValue);
         Automation.Utils.Pokeball.restrictCaptureToShadow(false);
 
         // Move to dungeon if needed

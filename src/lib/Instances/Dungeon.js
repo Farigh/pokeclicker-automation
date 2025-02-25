@@ -253,12 +253,12 @@ class AutomationDungeon
                                        + Automation.Menu.TooltipSeparator
                                        + "Selecting 'None' will leave the in-game value unchanged";
         this.__internal__dungeonBossCatchPokeballSelectElem =
-            Automation.Menu.addPokeballList("selectedDungeonBossCatchPokeball",
-                                            dungeonSettingsPanel,
-                                            this.Settings.BossCatchPokeballToUse,
-                                            "Pokéball to equip for the boss :",
+            Automation.Menu.addPokeballList(this.Settings.BossCatchPokeballToUse,
+                                            "Pokéball to equip for the boss",
                                             bossCatchPokeballTooltip,
                                             true);
+        dungeonSettingsPanel.appendChild(this.__internal__dungeonBossCatchPokeballSelectElem);
+        this.__internal__dungeonBossCatchPokeballSelectElem.style.marginBottom = "3px";
 
         // Add the chest min rarity setting
         this.__internal__buildChestMinRarityDropdownList(dungeonSettingsPanel);
@@ -595,7 +595,7 @@ class AutomationDungeon
                         this.__internal__moveToCell(this.__internal__floorEndPosition);
 
                         // Equip the selected pokeball (if None is set, or the automation forced a mode, keep the user in-game setting)
-                        const ballToCatchBoss = this.__internal__dungeonBossCatchPokeballSelectElem.value;
+                        const ballToCatchBoss = this.__internal__dungeonBossCatchPokeballSelectElem.selectedValue;
                         if ((ballToCatchBoss != GameConstants.Pokeball.None)
                             && (this.AutomationRequestedMode == this.InternalModes.None))
                         {
