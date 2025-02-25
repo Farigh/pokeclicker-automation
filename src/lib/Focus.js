@@ -13,9 +13,7 @@ class AutomationFocus
                           FeatureEnabled: "Focus-Enabled",
                           FocusedTopic: "Focus-SelectedTopic",
                           OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate",
-                          BallToUseToCatch: "Focus-BallToUseToCatch",
-                          DefaultCaughtBall: "Focus-DefaultCaughtBall",
-                          DefaultContagiousCaughtBall: "Focus-DefaultContagiousCaughtBall"
+                          BallToUseToCatch: "Focus-BallToUseToCatch"
                       };
 
     /**
@@ -87,7 +85,7 @@ class AutomationFocus
         }
 
         // Ensure that the player has some balls available
-        if (!this.__ensurePlayerHasEnoughBalls(this.__pokeballToUseSelectElem.value))
+        if (!this.__ensurePlayerHasEnoughBalls(this.__pokeballToUseSelectElem.selectedValue))
         {
             return;
         }
@@ -96,10 +94,10 @@ class AutomationFocus
         this.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
         // Equip an "Already caught" pokeball
-        Automation.Utils.Pokeball.catchEverythingWith(this.__pokeballToUseSelectElem.value);
+        Automation.Utils.Pokeball.catchEverythingWith(this.__pokeballToUseSelectElem.selectedValue);
 
         // Move to the highest unlocked route
-        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__pokeballToUseSelectElem.value);
+        Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(this.__pokeballToUseSelectElem.selectedValue);
     }
 
     /**
@@ -190,6 +188,14 @@ class AutomationFocus
         {
             const pokeballName = GameConstants.Pokeball[ballType];
             const pokeballItem = ItemList[pokeballName];
+
+            // Disable the feature if we are not able to buy more balls (for now, only money currency is supported)
+            if (pokeballItem.currency != GameConstants.Currency.money)
+            {
+                Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+                Automation.Notifications.sendWarningNotif("No more pokéball of the selected type are available", "Focus");
+                return false;
+            }
 
             // No more money, or too expensive, go farm some money
             if ((App.game.wallet.currencies[GameConstants.Currency.money]() < pokeballItem.totalPrice(10))
@@ -347,12 +353,13 @@ class AutomationFocus
         const pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
                                    + "already caught pokémon, when needed"
                                    + disclaimer;
-        this.__pokeballToUseSelectElem =
-            Automation.Menu.addPokeballList("focusPokeballToUseSelection",
-                                            generalTabContainer,
-                                            this.Settings.BallToUseToCatch,
-                                            "Pokeball to use for catching :",
-                                            pokeballToUseTooltip);
+
+        this.__internal__setBallToUseToCatchDefaultValue();
+
+        this.__pokeballToUseSelectElem = Automation.Menu.addPokeballList(this.Settings.BallToUseToCatch,
+                                                                         "Pokeball to use for catching",
+                                                                         pokeballToUseTooltip);
+        generalTabContainer.appendChild(this.__pokeballToUseSelectElem);
     }
 
     /**
@@ -655,5 +662,21 @@ class AutomationFocus
 
         Automation.Utils.Route.moveToTown(this.__internal__lastFocusData.bestGymTown);
         this.__enableAutoGymFight(this.__internal__lastFocusData.bestGym);
+    }
+
+    /**
+     * @brief Sets the default value of the BallToUseToCatch setting
+     */
+    static __internal__setBallToUseToCatchDefaultValue()
+    {
+        // Set the most effective available ball in priority
+        for (const ball of [ GameConstants.Pokeball.Ultraball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Pokeball ])
+        {
+            if (App.game.pokeballs.pokeballs[ball].unlocked())
+            {
+                Automation.Utils.LocalStorage.setDefaultValue(this.Settings.BallToUseToCatch, ball);
+                break;
+            }
+        }
     }
 }
