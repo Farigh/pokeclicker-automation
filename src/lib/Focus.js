@@ -189,6 +189,14 @@ class AutomationFocus
             const pokeballName = GameConstants.Pokeball[ballType];
             const pokeballItem = ItemList[pokeballName];
 
+            // Disable the feature if we are not able to buy more balls (for now, only money currency is supported)
+            if (pokeballItem.currency != GameConstants.Currency.money)
+            {
+                Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+                Automation.Notifications.sendWarningNotif("No more pokéball of the selected type are available", "Focus");
+                return false;
+            }
+
             // No more money, or too expensive, go farm some money
             if ((App.game.wallet.currencies[GameConstants.Currency.money]() < pokeballItem.totalPrice(10))
                 || (pokeballItem.totalPrice(1) !== pokeballItem.basePrice))
