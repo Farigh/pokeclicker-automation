@@ -13,9 +13,7 @@ class AutomationFocus
                           FeatureEnabled: "Focus-Enabled",
                           FocusedTopic: "Focus-SelectedTopic",
                           OakItemLoadoutUpdate: "Focus-OakItemLoadoutUpdate",
-                          BallToUseToCatch: "Focus-BallToUseToCatch",
-                          DefaultCaughtBall: "Focus-DefaultCaughtBall",
-                          DefaultContagiousCaughtBall: "Focus-DefaultContagiousCaughtBall"
+                          BallToUseToCatch: "Focus-BallToUseToCatch"
                       };
 
     /**
@@ -347,6 +345,9 @@ class AutomationFocus
         const pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n"
                                    + "already caught pokémon, when needed"
                                    + disclaimer;
+
+        this.__internal__setBallToUseToCatchDefaultValue();
+
         this.__pokeballToUseSelectElem =
             Automation.Menu.addPokeballList("focusPokeballToUseSelection",
                                             generalTabContainer,
@@ -655,5 +656,21 @@ class AutomationFocus
 
         Automation.Utils.Route.moveToTown(this.__internal__lastFocusData.bestGymTown);
         this.__enableAutoGymFight(this.__internal__lastFocusData.bestGym);
+    }
+
+    /**
+     * @brief Sets the default value of the BallToUseToCatch setting
+     */
+    static __internal__setBallToUseToCatchDefaultValue()
+    {
+        // Set the most effective available ball in priority
+        for (const ball of [ GameConstants.Pokeball.Ultraball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Pokeball ])
+        {
+            if (App.game.pokeballs.pokeballs[ball].unlocked())
+            {
+                Automation.Utils.LocalStorage.setDefaultValue(this.Settings.BallToUseToCatch, ball);
+                break;
+            }
+        }
     }
 }

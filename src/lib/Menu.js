@@ -894,7 +894,7 @@ class AutomationMenu
         // Don't consider the saved value if the user does not have access to the corresponding ball yet
         if ((savedValue != null)
             && (savedValue != GameConstants.Pokeball.None)
-            && !Automation.Utils.isBallPurchasable(savedValue))
+            && !App.game.pokeballs.pokeballs[savedValue].unlocked())
         {
             Automation.Utils.LocalStorage.unsetValue(setting);
             savedValue = null;
@@ -918,7 +918,7 @@ class AutomationMenu
                 for (var i = this.__internal__lockedBalls.length - 1; i >= 0; i--)
                 {
                     const ballValue = this.__internal__lockedBalls[i];
-                    if (Automation.Utils.isBallPurchasable(ballValue))
+                    if (App.game.pokeballs.pokeballs[ballValue].unlocked())
                     {
                         for (const elemData of this.__internal__pokeballListElems)
                         {
@@ -1092,7 +1092,7 @@ class AutomationMenu
     }
 
     /**
-     * @brief Populates the drop-down list with the pokeballs that can be bought at the Poké Mart
+     * @brief Populates the drop-down list with all the pokeballs type
      *
      * If any pokeball can't be bought yet, it will be hidden to the player.
      *
@@ -1102,7 +1102,7 @@ class AutomationMenu
      */
     static __internal__populatePokeballOptions(selectedValue, listElem, addNoneOption)
     {
-        const options = [ GameConstants.Pokeball.Pokeball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Ultraball ];
+        const options = App.game.pokeballs.pokeballs.map(p => p.type);
 
         if (addNoneOption)
         {
@@ -1118,7 +1118,7 @@ class AutomationMenu
             opt.textContent = GameConstants.Pokeball[ball];
 
             if ((ball != GameConstants.Pokeball.None)
-                && !Automation.Utils.isBallPurchasable(ball))
+                && !App.game.pokeballs.pokeballs[ball].unlocked())
             {
                 if (!this.__internal__lockedBalls.includes(ball))
                 {

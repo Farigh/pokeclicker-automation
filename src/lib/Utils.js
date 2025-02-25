@@ -47,20 +47,6 @@ class AutomationUtils
     }
 
     /**
-     * @brief Determines if the provided @p ball can be bought by the user
-     *
-     * @param ball: The ball to check
-     *
-     * @return True if the ball can be bought, false otherwise
-     */
-    static isBallPurchasable(ball)
-    {
-        return ((ball == GameConstants.Pokeball.Pokeball) && TownList["Viridian City"].isUnlocked())
-            || ((ball == GameConstants.Pokeball.Greatball) && TownList["Lavender Town"].isUnlocked())
-            || ((ball == GameConstants.Pokeball.Ultraball) && TownList["Fuchsia City"].isUnlocked());
-    }
-
-    /**
      * @brief Checks if two arrays are equals
      *
      * Arrays are equals if:
