@@ -865,7 +865,7 @@ class AutomationMenu
      * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
      * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
      *
-     * @returns The created drop-down list element and the list of hidden values
+     * @returns The created drop-down list element
      */
     static addPokeballList(setting, textLabel, tooltip, addNoneOption = false)
     {
