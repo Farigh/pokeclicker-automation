@@ -275,6 +275,12 @@ class AutomationFocusShadowPurification
         // Add shadow pokemons
         for (const enemy of enemyList)
         {
+            // Only consider trainers
+            if (!Automation.Utils.isInstanceOf(enemy, "DungeonTrainer"))
+            {
+                continue;
+            }
+
             // Don't consider locked enemies, if we're only considering available pokémons
             if (onlyConsiderAvailablePokemons)
             {
