@@ -231,7 +231,7 @@ class AutomationBattleCafe
 
         // Refresh the pokérus status
         const internalPokerusData = this.__internal__pokemonPokerusIndicators.get(pokemonName);
-        const pokerusStatus = Automation.Utils.getPokemonPokerusStatus(internalPokerusData.pokemonId);
+        const pokerusStatus = PartyController.getPokerusStatus(internalPokerusData.pokemonId);
 
         if (pokerusStatus != internalPokerusData.currentStatus)
         {

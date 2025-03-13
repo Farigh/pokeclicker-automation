@@ -106,25 +106,6 @@ class AutomationUtils
     }
 
     /**
-     * @brief Gets the pokémon pokérus status from its given @p pokemonId
-     *
-     * @param {number} pokemonId: The pokemon id to get the status of
-     *
-     * @returns The pokérus status
-     */
-    static getPokemonPokerusStatus(pokemonId)
-    {
-        const partyPokemon = App.game.party.getPokemon(pokemonId);
-
-        if (!partyPokemon || !partyPokemon.pokerus)
-        {
-            return GameConstants.Pokerus.Uninfected;
-        }
-
-        return partyPokemon.pokerus;
-    }
-
-    /**
      * @brief Checks if the given @p obj is an instance of @p instanceName as javascripts `instanceof` would,
      *        but without requiring the class to be accessible.
      *        This is useful if the class was created in a module and the object is not accessible from the document.
