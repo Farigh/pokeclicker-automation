@@ -527,24 +527,53 @@ class AutomationFocusPokerusCure
             // Add pokemon bosses
             for (const boss of dungeon.bossList)
             {
-                // Only consider pokémons
-                if (!Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon"))
+                // Consider pokémons
+                if (Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon"))
                 {
-                    continue;
-                }
+                    // Don't consider locked bosses, if we're only considering available pokémons
+                    if (onlyConsiderAvailablePokemons)
+                    {
+                        const isBossLocked = boss.options?.requirement
+                                        ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion)
+                                        : false;
+                        if (isBossLocked) continue;
+                    }
 
-                // Don't consider locked bosses, if we're only considering available pokémons
-                if (onlyConsiderAvailablePokemons)
-                {
-                    const isBossLocked = boss.options?.requirement
-                                       ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion)
-                                       : false;
-                    if (isBossLocked) continue;
+                    if (!pokemonList.includes(boss.name))
+                    {
+                        pokemonList.push(boss.name);
+                    }
                 }
-
-                if (!pokemonList.includes(boss.name))
+                // Or trainer bosses shadow pokemons
+                else if (Automation.Utils.isInstanceOf(boss, "DungeonTrainer"))
                 {
-                    pokemonList.push(boss.name);
+                    const shadowPokemons = boss.team.filter(p => p.shadow == 1);
+
+                    for (const pokemon of shadowPokemons)
+                    {
+                        if (!pokemonList.includes(pokemon.name))
+                        {
+                            pokemonList.push(pokemon.name);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add any trainer shadow pokemons
+        for (const trainer of dungeon.enemyList)
+        {
+            // Only consider trainers
+            if (!Automation.Utils.isInstanceOf(trainer, "DungeonTrainer"))
+            {
+                continue;
+            }
+
+            for (const pokemon of trainer.team.filter(p => p.shadow == 1))
+            {
+                if (!pokemonList.includes(pokemon.name))
+                {
+                    pokemonList.push(pokemon.name);
                 }
             }
         }

@@ -201,7 +201,8 @@ class AutomationUtilsRoute
         const needsNewRoad = (this.__internal__lastHighestRegion !== player.highestRegion())
                           || (this.__internal__lastBestRouteData.maxHealth > playerSingleAttackByRegion.get(this.__internal__lastBestRouteData.route.region))
                           || ((this.__internal__lastNextBestRouteData != null)
-                              && (this.__internal__lastNextBestRouteData.maxHealth < playerSingleAttackByRegion.get(this.__internal__lastNextBestRouteData.route.region)));
+                              && (this.__internal__lastNextBestRouteData.maxHealth < playerSingleAttackByRegion.get(this.__internal__lastNextBestRouteData.route.region)))
+                          || !this.canMoveToRoute(this.__internal__lastBestRouteData.route.number, this.__internal__lastBestRouteData.route.region, this.__internal__lastBestRouteData.route.route);
 
         if (needsNewRoad)
         {
@@ -240,9 +241,12 @@ class AutomationUtilsRoute
             // This can happen if the player is in a new region and the docks are not unlocked yet
             if (this.__internal__lastBestRouteData == null)
             {
-                // If no routes are below the user attack, just choose the 1st ones
-                this.__internal__lastBestRouteData = this.__internal__routeMaxHealthData[0];
-                this.__internal__lastNextBestRouteData = this.__internal__routeMaxHealthData[1];
+                // If no routes are below the user attack, just choose the 1st accessible ones
+                const accessibleRoutes = Automation.Utils.Route.__internal__routeMaxHealthData.filter(
+                    routeData => Automation.Utils.Route.canMoveToRoute(routeData.route.number, routeData.route.region, routeData.route))
+
+                this.__internal__lastBestRouteData = accessibleRoutes[0];
+                this.__internal__lastNextBestRouteData = accessibleRoutes[0];
             }
         }
 
