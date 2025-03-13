@@ -226,6 +226,9 @@ class AutomationBattleCafe
         if (caughtStatus != internalCaughtData.currentStatus)
         {
             internalCaughtData.container.innerHTML = Automation.Menu.getCaughtStatusImage(caughtStatus);
+            internalCaughtData.container.style.position = "relative";
+            internalCaughtData.container.style.bottom = "2px";
+            internalCaughtData.container.style.marginLeft = "3px";
             internalCaughtData.currentStatus = caughtStatus;
         }
 
