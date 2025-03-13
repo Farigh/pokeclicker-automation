@@ -226,12 +226,15 @@ class AutomationBattleCafe
         if (caughtStatus != internalCaughtData.currentStatus)
         {
             internalCaughtData.container.innerHTML = Automation.Menu.getCaughtStatusImage(caughtStatus);
+            internalCaughtData.container.style.position = "relative";
+            internalCaughtData.container.style.bottom = "2px";
+            internalCaughtData.container.style.marginLeft = "3px";
             internalCaughtData.currentStatus = caughtStatus;
         }
 
         // Refresh the pokérus status
         const internalPokerusData = this.__internal__pokemonPokerusIndicators.get(pokemonName);
-        const pokerusStatus = Automation.Utils.getPokemonPokerusStatus(internalPokerusData.pokemonId);
+        const pokerusStatus = PartyController.getPokerusStatus(internalPokerusData.pokemonId);
 
         if (pokerusStatus != internalPokerusData.currentStatus)
         {
