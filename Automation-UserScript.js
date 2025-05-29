@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Pokeclicker Automation
+// @name         [Sushi] Pokeclicker Automation
 // @namespace    https://github.com/JoanKUCUKOGLU/pokeclicker-automation/
 // @version      0.1
 // @description  Automation for pokeclicker.com
