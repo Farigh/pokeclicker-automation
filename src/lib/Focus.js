@@ -239,7 +239,7 @@ class AutomationFocus
         Automation.Menu.AutomationButtonsDiv.appendChild(focusContainer);
 
         // Add the title
-        const titleDiv = Automation.Menu.createTitleElement("Focus on");
+        const titleDiv = Automation.Menu.createTitleElement("Focus on sah");
         focusContainer.appendChild(titleDiv);
 
         // Button and list container

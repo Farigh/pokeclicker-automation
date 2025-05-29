@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Pokeclicker Automation
-// @namespace    https://github.com/Farigh/pokeclicker-automation/
+// @namespace    https://github.com/JoanKUCUKOGLU/pokeclicker-automation/
 // @version      0.1
 // @description  Automation for pokeclicker.com
-// @author       GARCIN David
+// @author       Joan KUCUKOGLU
 // @match        https://www.pokeclicker.com
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=pokeclicker.com
 // @grant        none
@@ -20,7 +20,7 @@ var disableFeaturesByDefault = false;
 // Set this to true if you want no setting to be enabled by default
 var disableSettingsByDefault = false;
 
-var pokeclickerAutomationReleaseUrl = "https://raw.githubusercontent.com/Farigh/pokeclicker-automation/" + releaseLabel + "/";
+var pokeclickerAutomationReleaseUrl = "https://raw.githubusercontent.com/JoanKUCUKOGLU/pokeclicker-automation/" + releaseLabel + "/";
 
 // Github only serves plain-text so we can't load it as a script object directly
 let xmlhttp = new XMLHttpRequest();
