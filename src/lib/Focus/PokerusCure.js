@@ -51,6 +51,17 @@ class AutomationFocusPokerusCure {
     // Disable Alternate forms skipping by default
     Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.SkipAlternateForms, false);
 
+    // Select routes as default priority
+    Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.CurePriority, "routes");
+
+    // Priority setting
+    const priorityTooltip = "Choose whether to prioritize Routes or Dungeons when curing Pokérus.";
+    const priorityChoices = {
+      routes: "Routes",
+      dungeons: "Dungeons",
+    };
+    Automation.Menu.addLabeledAdvancedSettingsSelect("Pokérus Cure Priority", this.__internal__advancedSettings.CurePriority, priorityChoices, priorityTooltip, parent);
+
     // Beastball usage setting
     const tooltip =
       "Allows the automation to use Beastball to catch UltraBeast pokémons." +
@@ -69,6 +80,7 @@ class AutomationFocusPokerusCure {
     \*********************************************************************/
 
   static __internal__advancedSettings = {
+    CurePriority: "Focus-PokerusCure-Priority",
     AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage",
     SkipAlternateForms: "Focus-PokerusCure-SkipAlternateForms",
   };
@@ -131,6 +143,8 @@ class AutomationFocusPokerusCure {
       return;
     }
 
+    const priority = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.CurePriority);
+
     // If the currently used route still has contagious pokémons, continue with it
     if (this.__internal__currentRouteData != null && this.__internal__doesRouteHaveAnyPokemonNeedingCure(this.__internal__currentRouteData.route, true)) {
       this.__internal__captureInfectedPokemons();
@@ -143,12 +157,23 @@ class AutomationFocusPokerusCure {
       return;
     }
 
-    // Try the next route
-    this.__internal__setNextPokerusRoute();
+    if (priority === "routes") {
+      // Try the next route
+      this.__internal__setNextPokerusRoute();
 
-    // Or the next dungeon
-    if (this.__internal__currentRouteData == null) {
+      // Or the next dungeon if no suitable route is found
+      if (this.__internal__currentRouteData == null) {
+        this.__internal__setNextPokerusDungeon();
+      }
+    } else {
+      // priority === "dungeons"
+      // Try the next dungeon
       this.__internal__setNextPokerusDungeon();
+
+      // Or the next route if no suitable dungeon is found
+      if (this.__internal__currentDungeonData == null) {
+        this.__internal__setNextPokerusRoute();
+      }
     }
 
     if (this.__internal__currentRouteData != null || this.__internal__currentDungeonData != null) {
