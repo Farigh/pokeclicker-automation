@@ -116,7 +116,7 @@ class AutomationSafari {
     Automation.Menu.addLabeledAdvancedSettingsToggleButton(itemsCollectionLabel, this.Settings.CollectItems, itemsCollectionTooltip, safariSettingPanel);
 
     // Skip resistant
-    const skipResistantLabel = "Skip Pokémon that are resistant to pokerus";
+    const skipResistantLabel = "Skip resistants";
     const skipResistantTooltip = "The automation will run from pokemons that are resistant to pokerus";
     Automation.Menu.addLabeledAdvancedSettingsToggleButton(skipResistantLabel, this.Settings.SkipResistant, skipResistantTooltip, safariSettingPanel);
   }
