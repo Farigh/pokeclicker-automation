@@ -564,7 +564,8 @@ class AutomationSafari {
         // so we delay for 2x SafariBattle.Speed.turnLength
         setTimeout(() => $("[id^=modalConfirm]").click(), SafariBattle.Speed.turnLength * 2);
       }
-      setTimeout(() => SafariBattle.run(), SafariBattle.Speed.turnLength);
+      const runDelay = this.__internal__fastAnimationsEnabled ? SafariBattle.Speed.turnLength / 2 : SafariBattle.Speed.turnLength;
+      setTimeout(() => SafariBattle.run(), runDelay);
     }
     // Try to catch the pokémon
     // Thow a rock at the pokémon to improve the catch rate, unless its angry or its catch factor is high enough
