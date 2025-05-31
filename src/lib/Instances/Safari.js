@@ -189,10 +189,9 @@ class AutomationSafari {
 
     // The repeat button
     const repeatButton = Automation.Menu.createButtonElement(`${this.Settings.InfinitRepeat}-${containerId}`);
-    repeatButton.textContent = "⮔";
+    repeatButton.textContent = "";
     repeatButton.style.fontSize = "2.4em";
-    // repeatButton.style.color = "#f5f5f5";
-    repeatButton.style.color = "#ff0000";
+    repeatButton.style.color = "#f5f5f5";
     repeatButton.style.bottom = "4px";
     repeatButtonContainer.classList.add("hasAutomationTooltip");
     repeatButtonContainer.setAttribute("automation-tooltip-text", repeatButtonTooltip);
