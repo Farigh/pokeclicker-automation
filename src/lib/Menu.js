@@ -1,1145 +1,1148 @@
 /**
  * @class The AutomationMenu regroups any utility methods used to create the GUI
  */
-class AutomationMenu
-{
-    static DisableFeaturesByDefault = false;
-    static TooltipSeparator = "\n─────────\n";
+class AutomationMenu {
+  static DisableFeaturesByDefault = false;
+  static TooltipSeparator = "\n─────────\n";
 
-    static AutomationButtonsDiv;
+  static AutomationButtonsDiv;
 
-    /**
-     * @brief Builds the menu container, inside of which any automation interface element should be placed.
-     *        It creates the `Automation` menu panel as well.
-     *
-     * Common menu management methods are available as well through this class, such as:
-     *   - New category (menu group) creation
-     *   - Button creation
-     *   - Tooltip creation
-     *   - Drop-down list creation
-     *   - ...
-     *
-     * @param initStep: The current automation init step
-     */
-    static initialize(initStep)
-    {
-        // Only consider the BuildMenu init step
-        if (initStep != Automation.InitSteps.BuildMenu) return;
+  /**
+   * @brief Builds the menu container, inside of which any automation interface element should be placed.
+   *        It creates the `Automation` menu panel as well.
+   *
+   * Common menu management methods are available as well through this class, such as:
+   *   - New category (menu group) creation
+   *   - Button creation
+   *   - Tooltip creation
+   *   - Drop-down list creation
+   *   - ...
+   *
+   * @param initStep: The current automation init step
+   */
+  static initialize(initStep) {
+    // Only consider the BuildMenu init step
+    if (initStep != Automation.InitSteps.BuildMenu) return;
 
-        this.__internal__injectAutomationCss();
+    this.__internal__injectAutomationCss();
 
-        this.__internal__automationContainer = document.createElement("div");
-        this.__internal__automationContainer.classList.add("automationMenuContainer");
-        this.__internal__automationContainer.id = "automationContainer";
-        document.body.appendChild(this.__internal__automationContainer);
+    this.__internal__automationContainer = document.createElement("div");
+    this.__internal__automationContainer.classList.add(
+      "automationMenuContainer"
+    );
+    this.__internal__automationContainer.id = "automationContainer";
+    document.body.appendChild(this.__internal__automationContainer);
+  }
+
+  /**
+   * @brief Adds the Automation panel
+   */
+  static addMainAutomationPanel(initStep) {
+    // Only consider the BuildMenu init step
+    if (initStep != Automation.InitSteps.BuildMenu) return;
+
+    let boltImage = '<img src="assets/images/badges/Bolt.svg" height="20px">';
+    let automationTitle = `${boltImage}Automation${boltImage}`;
+    this.AutomationButtonsDiv = this.addCategory(
+      "automationButtons",
+      automationTitle
+    );
+  }
+
+  /**
+   * @brief Adds a category (menu group) to the menu container
+   *
+   * Such div contains two other divs:
+   *   - The title div
+   *   - The content div (where any element can safely be added)
+   *
+   * @param {string} categoryId: The id that will be given to the resulting div
+   * @param {string} title: The title that will be used for the category (can contain HTML)
+   *
+   * @returns The content div element
+   */
+  static addCategory(categoryId, title, addToMainContainer = true) {
+    const newNode = document.createElement("div");
+    newNode.id = categoryId;
+    newNode.classList.add("automationCategoryContainer");
+
+    if (addToMainContainer) {
+      newNode.style.marginTop = "5px";
+      this.__internal__automationContainer.appendChild(newNode);
     }
 
-    /**
-     * @brief Adds the Automation panel
-     */
-    static addMainAutomationPanel(initStep)
-    {
-        // Only consider the BuildMenu init step
-        if (initStep != Automation.InitSteps.BuildMenu) return;
+    const contentDivId = categoryId + "Div";
 
-        let boltImage = '<img src="assets/images/badges/Bolt.svg" height="20px">';
-        let automationTitle = `${boltImage}Automation${boltImage}`;
-        this.AutomationButtonsDiv = this.addCategory("automationButtons", automationTitle);
-    }
+    const titleDiv = document.createElement("div");
+    titleDiv.innerHTML = title;
+    titleDiv.style.textAlign = "center";
+    newNode.appendChild(titleDiv);
 
-    /**
-     * @brief Adds a category (menu group) to the menu container
-     *
-     * Such div contains two other divs:
-     *   - The title div
-     *   - The content div (where any element can safely be added)
-     *
-     * @param {string} categoryId: The id that will be given to the resulting div
-     * @param {string} title: The title that will be used for the category (can contain HTML)
-     *
-     * @returns The content div element
-     */
-    static addCategory(categoryId, title, addToMainContainer = true)
-    {
-        const newNode = document.createElement("div");
-        newNode.id = categoryId;
-        newNode.classList.add("automationCategoryContainer");
+    const contentDiv = document.createElement("div");
+    contentDiv.id = contentDivId;
+    contentDiv.classList.add("automationCategory");
+    newNode.appendChild(contentDiv);
 
-        if (addToMainContainer)
-        {
-            newNode.style.marginTop = "5px";
-            this.__internal__automationContainer.appendChild(newNode);
-        }
+    // Add the onclick action
+    titleDiv.onclick = function () {
+      contentDiv.classList.toggle("hide");
+    }.bind(contentDivId);
 
-        const contentDivId = categoryId + "Div";
+    Automation.Menu.addSeparator(contentDiv);
 
-        const titleDiv = document.createElement("div");
-        titleDiv.innerHTML = title;
-        titleDiv.style.textAlign = "center";
-        newNode.appendChild(titleDiv);
+    return contentDiv;
+  }
 
-        const contentDiv = document.createElement("div");
-        contentDiv.id = contentDivId;
-        contentDiv.classList.add("automationCategory");
-        newNode.appendChild(contentDiv);
+  /**
+   * @brief Adds a floating category that is meant to be displayed with the given @p ingameModal
+   *
+   * Such div contains two other divs:
+   *   - The title div
+   *   - The content div (where any element can safely be added)
+   *
+   * @param {string} categoryId: The id that will be given to the resulting div
+   * @param {string} title: The title that will be used for the category (can contain HTML)
+   * @param {Element} ingameModal: The in-game modal to add the category to
+   *
+   * @returns The content div element
+   */
+  static addFloatingCategory(categoryId, title, ingameModal) {
+    const contentDiv = this.addCategory(categoryId, title, false);
+    const container = contentDiv.parentElement;
+    container.classList.add("automationFloatingCategory");
 
-        // Add the onclick action
-        titleDiv.onclick = function() { contentDiv.classList.toggle('hide'); }.bind(contentDivId);
+    // Add the category to the in-game modal element
+    // Doing so will automatically hide/show it at the same time as the targeted modal
+    ingameModal.appendChild(container);
 
-        Automation.Menu.addSeparator(contentDiv);
+    // Initialize the floating panel resize observer, if needed
+    if (this.__internal__floatingPanelResizeObserver == null) {
+      // Add a resize observer that updates the floating panel top property so it will always be positionned correctly
+      this.__internal__floatingPanelResizeObserver = new ResizeObserver(
+        function (entries) {
+          for (const entry of entries) {
+            const panelDiv = entry.target;
 
-        return contentDiv;
-    }
-
-    /**
-     * @brief Adds a floating category that is meant to be displayed with the given @p ingameModal
-     *
-     * Such div contains two other divs:
-     *   - The title div
-     *   - The content div (where any element can safely be added)
-     *
-     * @param {string} categoryId: The id that will be given to the resulting div
-     * @param {string} title: The title that will be used for the category (can contain HTML)
-     * @param {Element} ingameModal: The in-game modal to add the category to
-     *
-     * @returns The content div element
-     */
-    static addFloatingCategory(categoryId, title, ingameModal)
-    {
-        const contentDiv = this.addCategory(categoryId, title, false);
-        const container = contentDiv.parentElement;
-        container.classList.add("automationFloatingCategory");
-
-        // Add the category to the in-game modal element
-        // Doing so will automatically hide/show it at the same time as the targeted modal
-        ingameModal.appendChild(container);
-
-        // Initialize the floating panel resize observer, if needed
-        if (this.__internal__floatingPanelResizeObserver == null)
-        {
-            // Add a resize observer that updates the floating panel top property so it will always be positionned correctly
-            this.__internal__floatingPanelResizeObserver = new ResizeObserver(function(entries)
-                {
-                    for (const entry of entries)
-                    {
-                        const panelDiv = entry.target;
-
-                        // When the in-game modal is hidden, the div size will be 0
-                        if (panelDiv.offsetHeight == 0)
-                        {
-                            // Don't compute
-                            return;
-                        }
-
-                        // Position it at least 30px and at most 200px from the top, with at least a 30px bottom margin to match the in-game ones
-                        panelDiv.style.top = `max(30px, min(200px, 100vh - ${panelDiv.offsetHeight}px - 30px))`;
-                    }
-                });
-        }
-
-        // Add the new category to the observer
-        this.__internal__floatingPanelResizeObserver.observe(container);
-
-        return contentDiv;
-    }
-
-    /**
-     * @brief Adds a separator line to the given @p containingDiv
-     *
-     * @param {Element} containingDiv: The div element to append the separator to
-     */
-    static addSeparator(containingDiv = this.AutomationButtonsDiv)
-    {
-        const separatorDiv = document.createElement("div");
-        separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
-        separatorDiv.style.marginBottom = "5px";
-        separatorDiv.style.marginTop = "6px";
-        containingDiv.appendChild(separatorDiv);
-    }
-
-    /**
-     * @brief Adds an On/Off button element
-     *
-     * @param {string}  label: The text label to place before the button
-     * @param {string}  id: The button id (that will be used for the corresponding local storage item id as well)
-     * @param {string}  tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
-     * @param {Element} containingDiv: The div element to append the button to
-     * @param {boolean} forceDisabled: If set to true, the button will be turned off by default (ignoring the stored local storage value)
-     *
-     * @returns The button element
-     */
-    static addAutomationButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv, forceDisabled = false)
-    {
-        if (forceDisabled)
-        {
-            Automation.Utils.LocalStorage.setValue(id, false);
-        }
-        else
-        {
-            // Set the automation default behaviour, if not already set in local storage
-            Automation.Utils.LocalStorage.setDefaultValue(id, !this.DisableFeaturesByDefault);
-        }
-
-        let buttonMainContainer = document.createElement("span");
-        containingDiv.appendChild(buttonMainContainer);
-        let buttonContainer = document.createElement("div");
-        buttonContainer.style.paddingLeft = "10px";
-        buttonContainer.style.paddingRight = "10px";
-        buttonMainContainer.appendChild(buttonContainer);
-
-        let buttonLabel = document.createElement("span");
-
-        if (!label.endsWith(":"))
-        {
-            label += " :";
-        }
-
-        buttonLabel.innerHTML = label + " ";
-        buttonContainer.appendChild(buttonLabel);
-
-        let buttonElem = this.createButtonElement(id);
-        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
-        buttonElem.textContent = (isFeatureEnabled ? "On" : "Off");
-        buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
-        buttonElem.onclick = function() { Automation.Menu.toggleButtonState(id); };
-
-        if (tooltip != "")
-        {
-            buttonContainer.classList.add("hasAutomationTooltip");
-            buttonContainer.setAttribute("automation-tooltip-text", tooltip);
-        }
-
-        buttonContainer.appendChild(buttonElem);
-
-        return buttonElem;
-    }
-
-    /**
-     * @brief Creates a simple toggle element bound to the local storage associated to the @p id
-     *
-     * @param {string} id: The button's id (that will be used for the corresponding local storage item id as well)
-     *
-     * @returns The button element
-     */
-    static addLocalStorageBoundToggleButton(id)
-    {
-        let buttonElem = this.createToggleButtonElement(id);
-
-        // Set the current state
-        let isFeatureEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
-        buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
-
-        // Register the onclick event callback
-        buttonElem.onclick = function()
-            {
-                let wasChecked = buttonElem.getAttribute("checked") == "true";
-                buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
-                Automation.Utils.LocalStorage.setValue(id, !wasChecked);
-            };
-
-        return buttonElem;
-    }
-
-    /**
-     * @brief Adds a label-prefixed toggle button element bound to the @p id local storage key.
-     *        Such toggle button is designed for advanced settings panel
-     *        @see addSettingPanel
-     *
-     * @param {string}  label: The text label to place before the toggle button
-     * @param {string}  id: The button's id (that will be used for the corresponding local storage item id as well)
-     * @param {string}  tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
-     * @param {Element} containingDiv: The div element to append the button to
-     *
-     * @returns The button element
-     */
-    static addLabeledAdvancedSettingsToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv)
-    {
-        // Enable automation by default, if not already set in local storage, unless the user chose to disable settings by default
-        Automation.Utils.LocalStorage.setDefaultValue(id, !this.DisableSettingsByDefault);
-
-        let buttonMainContainer = document.createElement("span");
-        containingDiv.appendChild(buttonMainContainer);
-        let buttonContainer = document.createElement("div");
-        buttonContainer.style.paddingLeft = "10px";
-        buttonContainer.style.paddingRight = "10px";
-        buttonMainContainer.appendChild(buttonContainer);
-
-        let buttonLabel = document.createElement("span");
-
-        buttonLabel.innerHTML = label;
-        buttonLabel.style.paddingRight = "7px";
-        buttonContainer.appendChild(buttonLabel);
-
-        let buttonElem = this.addLocalStorageBoundToggleButton(id);
-
-        if (tooltip != "")
-        {
-            buttonContainer.classList.add("hasAutomationTooltip");
-            buttonContainer.classList.add("toggleAutomationTooltip");
-            buttonContainer.setAttribute("automation-tooltip-text", tooltip);
-        }
-
-        buttonContainer.appendChild(buttonElem);
-
-        return buttonElem;
-    }
-
-    /**
-     * @brief Toggles the button elem between on and off based on its current state
-     *        The local storage value will be updated accordingly
-     *
-     * @note If the button has been disabled, this function has no effect
-     *
-     * @param {string} id: The id of the button to toggle
-     */
-    static toggleButtonState(id)
-    {
-        const button = document.getElementById(id);
-        if (button.disabled)
-        {
-            return;
-        }
-
-        const newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
-        this.updateButtonVisualState(button, newStatus)
-
-        Automation.Utils.LocalStorage.setValue(button.id, newStatus);
-    }
-
-    /**
-     * @brief Updates the given @p button visual state based on the @p newStatus
-     *
-     * @param {Element} button: The button element
-     * @param {boolean} newStatus: The button new state
-     */
-    static updateButtonVisualState(button, newStatus)
-    {
-        if (newStatus)
-        {
-            // Only update the class if the button was not disabled
-            if (!button.classList.contains("btn-secondary"))
-            {
-                button.classList.remove("btn-danger");
-                button.classList.add("btn-success");
-            }
-            button.innerText = "On";
-        }
-        else
-        {
-            // Only update the class if the button was not disabled
-            if (!button.classList.contains("btn-secondary"))
-            {
-                button.classList.remove("btn-success");
-                button.classList.add("btn-danger");
-            }
-            button.innerText = "Off";
-        }
-    }
-
-    /**
-     * @brief Forces the button status to the given @p newState
-     *
-     * @param {string} id: The id of the button to froce the state of
-     * @param {boolean} newState: The state to force the button to (True for 'On', False for 'Off')
-     */
-    static forceAutomationState(id, newState)
-    {
-        const isEnabled = (Automation.Utils.LocalStorage.getValue(id) === "true");
-
-        if (isEnabled !== newState)
-        {
-            const button = document.getElementById(id);
-
-            // Re-enable the button so we can click on it, if needed
-            const disableState = button.disabled;
-            if (disableState)
-            {
-                button.disabled = false;
+            // When the in-game modal is hidden, the div size will be 0
+            if (panelDiv.offsetHeight == 0) {
+              // Don't compute
+              return;
             }
 
-            button.click();
-
-            button.disabled = disableState;
+            // Position it at least 30px and at most 200px from the top, with at least a 30px bottom margin to match the in-game ones
+            panelDiv.style.top = `max(30px, min(200px, 100vh - ${panelDiv.offsetHeight}px - 30px))`;
+          }
         }
+      );
     }
 
-    /**
-     * @brief Creates a drop-down list (select) element
-     *
-     * @param {string} id: The select id
-     *
-     * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createDropDownListElement(id)
-    {
-        const newSelect = document.createElement("select");
-        newSelect.className = "custom-select";
-        newSelect.name = id;
-        newSelect.id = id;
-        newSelect.style.width = "calc(100% - 10px)";
-        newSelect.style.borderRadius = "4px";
-        newSelect.style.marginTop = "3px";
-        newSelect.style.paddingTop = "0px";
-        newSelect.style.paddingBottom = "0px";
-        newSelect.style.height = "25px";
+    // Add the new category to the observer
+    this.__internal__floatingPanelResizeObserver.observe(container);
 
-        return newSelect;
+    return contentDiv;
+  }
+
+  /**
+   * @brief Adds a separator line to the given @p containingDiv
+   *
+   * @param {Element} containingDiv: The div element to append the separator to
+   */
+  static addSeparator(containingDiv = this.AutomationButtonsDiv) {
+    const separatorDiv = document.createElement("div");
+    separatorDiv.style.borderBottom = "solid #AAAAAA 1px";
+    separatorDiv.style.marginBottom = "5px";
+    separatorDiv.style.marginTop = "6px";
+    containingDiv.appendChild(separatorDiv);
+  }
+
+  /**
+   * @brief Adds an On/Off button element
+   *
+   * @param {string}  label: The text label to place before the button
+   * @param {string}  id: The button id (that will be used for the corresponding local storage item id as well)
+   * @param {string}  tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
+   * @param {Element} containingDiv: The div element to append the button to
+   * @param {boolean} forceDisabled: If set to true, the button will be turned off by default (ignoring the stored local storage value)
+   *
+   * @returns The button element
+   */
+  static addAutomationButton(
+    label,
+    id,
+    tooltip = "",
+    containingDiv = this.AutomationButtonsDiv,
+    forceDisabled = false
+  ) {
+    if (forceDisabled) {
+      Automation.Utils.LocalStorage.setValue(id, false);
+    } else {
+      // Set the automation default behaviour, if not already set in local storage
+      Automation.Utils.LocalStorage.setDefaultValue(
+        id,
+        !this.DisableFeaturesByDefault
+      );
     }
 
-    /**
-     * @brief Creates a dropdown list that accepts HTML as option's content
-     *
-     * @param {Array}  options: The options to register, the following data is expected { element, value, selected }
-     * @param {string} label: The text label to place before the list
-     * @param {string} tooltip: The tooltip text to display upon hovering the label (leave blank to disable)
-     *
-     * @returns The created element container (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createDropdownListWithHtmlOptions(options, label, tooltip = "")
-    {
-        // Add the main container
-        const container = document.createElement("div");
-        container.style.paddingLeft = "10px";
-        container.style.paddingRight = "10px";
+    let buttonMainContainer = document.createElement("span");
+    containingDiv.appendChild(buttonMainContainer);
+    let buttonContainer = document.createElement("div");
+    buttonContainer.style.paddingLeft = "10px";
+    buttonContainer.style.paddingRight = "10px";
+    buttonMainContainer.appendChild(buttonContainer);
 
-        // Add the list label
-        const labelElem = document.createElement("span");
-        labelElem.innerText = `${label} :`;
-        container.appendChild(labelElem);
+    let buttonLabel = document.createElement("span");
 
-        if (tooltip != "")
-        {
-            labelElem.classList.add("hasAutomationTooltip");
-            labelElem.setAttribute("automation-tooltip-text", tooltip);
+    if (!label.endsWith(":")) {
+      label += " :";
+    }
+
+    buttonLabel.innerHTML = label + " ";
+    buttonContainer.appendChild(buttonLabel);
+
+    let buttonElem = this.createButtonElement(id);
+    let isFeatureEnabled =
+      Automation.Utils.LocalStorage.getValue(id) === "true";
+    buttonElem.textContent = isFeatureEnabled ? "On" : "Off";
+    buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
+    buttonElem.onclick = function () {
+      Automation.Menu.toggleButtonState(id);
+    };
+
+    if (tooltip != "") {
+      buttonContainer.classList.add("hasAutomationTooltip");
+      buttonContainer.setAttribute("automation-tooltip-text", tooltip);
+    }
+
+    buttonContainer.appendChild(buttonElem);
+
+    return buttonElem;
+  }
+
+  /**
+   * @brief Creates a simple toggle element bound to the local storage associated to the @p id
+   *
+   * @param {string} id: The button's id (that will be used for the corresponding local storage item id as well)
+   *
+   * @returns The button element
+   */
+  static addLocalStorageBoundToggleButton(id) {
+    let buttonElem = this.createToggleButtonElement(id);
+
+    // Set the current state
+    let isFeatureEnabled =
+      Automation.Utils.LocalStorage.getValue(id) === "true";
+    buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
+
+    // Register the onclick event callback
+    buttonElem.onclick = function () {
+      let wasChecked = buttonElem.getAttribute("checked") == "true";
+      buttonElem.setAttribute("checked", wasChecked ? "false" : "true");
+      Automation.Utils.LocalStorage.setValue(id, !wasChecked);
+    };
+
+    return buttonElem;
+  }
+
+  /**
+   * @brief Adds a label-prefixed toggle button element bound to the @p id local storage key.
+   *        Such toggle button is designed for advanced settings panel
+   *        @see addSettingPanel
+   *
+   * @param {string}  label: The text label to place before the toggle button
+   * @param {string}  id: The button's id (that will be used for the corresponding local storage item id as well)
+   * @param {string}  tooltip: The tooltip text to display upon hovering the button or the label (leave blank to disable)
+   * @param {Element} containingDiv: The div element to append the button to
+   *
+   * @returns The button element
+   */
+  static addLabeledAdvancedSettingsToggleButton(
+    label,
+    id,
+    tooltip = "",
+    containingDiv = this.AutomationButtonsDiv
+  ) {
+    // Enable automation by default, if not already set in local storage, unless the user chose to disable settings by default
+    Automation.Utils.LocalStorage.setDefaultValue(
+      id,
+      !this.DisableSettingsByDefault
+    );
+
+    let buttonMainContainer = document.createElement("span");
+    containingDiv.appendChild(buttonMainContainer);
+    let buttonContainer = document.createElement("div");
+    buttonContainer.style.paddingLeft = "10px";
+    buttonContainer.style.paddingRight = "10px";
+    buttonMainContainer.appendChild(buttonContainer);
+
+    let buttonLabel = document.createElement("span");
+
+    buttonLabel.innerHTML = label;
+    buttonLabel.style.paddingRight = "7px";
+    buttonContainer.appendChild(buttonLabel);
+
+    let buttonElem = this.addLocalStorageBoundToggleButton(id);
+
+    if (tooltip != "") {
+      buttonContainer.classList.add("hasAutomationTooltip");
+      buttonContainer.classList.add("toggleAutomationTooltip");
+      buttonContainer.setAttribute("automation-tooltip-text", tooltip);
+    }
+
+    buttonContainer.appendChild(buttonElem);
+
+    return buttonElem;
+  }
+
+  /**
+   * @brief Toggles the button elem between on and off based on its current state
+   *        The local storage value will be updated accordingly
+   *
+   * @note If the button has been disabled, this function has no effect
+   *
+   * @param {string} id: The id of the button to toggle
+   */
+  static toggleButtonState(id) {
+    const button = document.getElementById(id);
+    if (button.disabled) {
+      return;
+    }
+
+    const newStatus = !(Automation.Utils.LocalStorage.getValue(id) == "true");
+    this.updateButtonVisualState(button, newStatus);
+
+    Automation.Utils.LocalStorage.setValue(button.id, newStatus);
+  }
+
+  /**
+   * @brief Updates the given @p button visual state based on the @p newStatus
+   *
+   * @param {Element} button: The button element
+   * @param {boolean} newStatus: The button new state
+   */
+  static updateButtonVisualState(button, newStatus) {
+    if (newStatus) {
+      // Only update the class if the button was not disabled
+      if (!button.classList.contains("btn-secondary")) {
+        button.classList.remove("btn-danger");
+        button.classList.add("btn-success");
+      }
+      button.innerText = "On";
+    } else {
+      // Only update the class if the button was not disabled
+      if (!button.classList.contains("btn-secondary")) {
+        button.classList.remove("btn-success");
+        button.classList.add("btn-danger");
+      }
+      button.innerText = "Off";
+    }
+  }
+
+  /**
+   * @brief Forces the button status to the given @p newState
+   *
+   * @param {string} id: The id of the button to froce the state of
+   * @param {boolean} newState: The state to force the button to (True for 'On', False for 'Off')
+   */
+  static forceAutomationState(id, newState) {
+    const isEnabled = Automation.Utils.LocalStorage.getValue(id) === "true";
+
+    if (isEnabled !== newState) {
+      const button = document.getElementById(id);
+
+      // Re-enable the button so we can click on it, if needed
+      const disableState = button.disabled;
+      if (disableState) {
+        button.disabled = false;
+      }
+
+      button.click();
+
+      button.disabled = disableState;
+    }
+  }
+
+  /**
+   * @brief Creates a drop-down list (select) element
+   *
+   * @param {string} id: The select id
+   *
+   * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createDropDownListElement(id) {
+    const newSelect = document.createElement("select");
+    newSelect.className = "custom-select";
+    newSelect.name = id;
+    newSelect.id = id;
+    newSelect.style.width = "calc(100% - 10px)";
+    newSelect.style.borderRadius = "4px";
+    newSelect.style.marginTop = "3px";
+    newSelect.style.paddingTop = "0px";
+    newSelect.style.paddingBottom = "0px";
+    newSelect.style.height = "25px";
+
+    return newSelect;
+  }
+
+  /**
+   * @brief Creates a dropdown list that accepts HTML as option's content
+   *
+   * @param {Array}  options: The options to register, the following data is expected { element, value, selected }
+   * @param {string} label: The text label to place before the list
+   * @param {string} tooltip: The tooltip text to display upon hovering the label (leave blank to disable)
+   *
+   * @returns The created element container (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createDropdownListWithHtmlOptions(options, label, tooltip = "") {
+    // Add the main container
+    const container = document.createElement("div");
+    container.style.paddingLeft = "10px";
+    container.style.paddingRight = "10px";
+
+    // Add the list label
+    const labelElem = document.createElement("span");
+    labelElem.innerText = `${label} :`;
+    container.appendChild(labelElem);
+
+    if (tooltip != "") {
+      labelElem.classList.add("hasAutomationTooltip");
+      labelElem.setAttribute("automation-tooltip-text", tooltip);
+    }
+
+    // Add the list container
+    const listContainer = document.createElement("div");
+    listContainer.classList.add("automationCustomDropdownContainer");
+    container.appendChild(listContainer);
+
+    // Add the list button
+    const listButton = document.createElement("button");
+    listButton.classList.add("automationCustomDropdown");
+    listButton.classList.add("custom-select"); // Reuse the pokeclicker class to match style
+    listContainer.appendChild(listButton);
+
+    // Set option callback
+    const setOptionCallback = function (optionElem) {
+      // Save the selected value on the container
+      container.selectedValue = optionElem.value;
+
+      // Update the displayed value
+      listButton.innerHTML = "";
+      listButton.appendChild(optionElem.cloneNode(true));
+
+      // If a callback is registered, call it
+      if (container.onValueChange) {
+        container.onValueChange();
+      }
+    };
+
+    // Add the list options
+    const listOptions = document.createElement("div");
+    listOptions.classList.add("automationCustomDropdownOptions");
+    listContainer.appendChild(listOptions);
+    for (const option of options) {
+      const optionContainer = document.createElement("div");
+      optionContainer.classList.add("automationCustomDropdownOption");
+      optionContainer.appendChild(option.element);
+
+      option.element.value = option.value;
+
+      optionContainer.onclick = function () {
+        listOptions.classList.remove("visible");
+        // On click, update the selected value display
+        setOptionCallback(option.element);
+      };
+
+      if (option.selected) {
+        listButton.innerHTML = "";
+        listButton.appendChild(option.element.cloneNode(true));
+        container.selectedValue = option.value;
+      }
+
+      listOptions.appendChild(optionContainer);
+    }
+
+    // Clicking the button should toggle the list visibility
+    listButton.onclick = function () {
+      listOptions.classList.toggle("visible");
+
+      // Put the currently selected berry on top of the scroll view
+      if (listOptions.classList.contains("visible")) {
+        let offset = 0;
+
+        for (const option of options) {
+          if (option.value == container.selectedValue) {
+            break;
+          }
+
+          if (!option.element.hidden) {
+            offset += option.element.offsetHeight;
+          }
         }
 
-        // Add the list container
-        const listContainer = document.createElement("div");
-        listContainer.classList.add("automationCustomDropdownContainer");
-        container.appendChild(listContainer);
+        listOptions.scrollTop = Math.min(offset, listOptions.scrollTopMax);
+      }
+    };
 
-        // Add the list button
-        const listButton = document.createElement("button");
-        listButton.classList.add("automationCustomDropdown");
-        listButton.classList.add("custom-select"); // Reuse the pokeclicker class to match style
-        listContainer.appendChild(listButton);
+    // Hide the list if the user clicks anywhere else
+    listButton.onfocusout = function () {
+      listOptions.classList.remove("visible");
+    };
 
-        // Set option callback
-        const setOptionCallback = function(optionElem)
-            {
-                // Save the selected value on the container
-                container.selectedValue = optionElem.value;
+    // Handle arrow key-press events
+    listButton.onkeydown = function (event) {
+      event = event || window.event;
 
-                // Update the displayed value
-                listButton.innerHTML = "";
-                listButton.appendChild(optionElem.cloneNode(true));
+      if (event.key == "ArrowUp" || event.key == "ArrowDown") {
+        const currentOption = options.find(
+          (opt) => opt.value == container.selectedValue
+        );
+        const newOptionContainer =
+          event.key == "ArrowDown"
+            ? currentOption.element.parentElement.nextSibling
+            : currentOption.element.parentElement.previousSibling;
 
-                // If a callback is registered, call it
-                if (container.onValueChange)
-                {
-                    container.onValueChange();
-                }
-            };
+        if (newOptionContainer) {
+          setOptionCallback(newOptionContainer.firstChild);
+          listOptions.classList.remove("visible");
+        }
 
-        // Add the list options
-        const listOptions = document.createElement("div");
-        listOptions.classList.add("automationCustomDropdownOptions");
-        listContainer.appendChild(listOptions);
-        for (const option of options)
-        {
-            const optionContainer = document.createElement("div");
-            optionContainer.classList.add("automationCustomDropdownOption");
-            optionContainer.appendChild(option.element);
+        event.preventDefault();
+      }
+    };
 
-            option.element.value = option.value;
+    return container;
+  }
 
-            optionContainer.onclick = function()
-            {
-                listOptions.classList.remove("visible");
-                // On click, update the selected value display
-                setOptionCallback(option.element);
-            };
+  /**
+   * @brief Creates a sort direction (input) element
+   *
+   * @param {string} id: The input id (that will be used for the corresponding local storage item id as well)
+   *
+   * @returns The created element (It's the caller's responsibility to add it to the DOM at some point) and it's input
+   */
+  static createSortDirectionButtonElement(id) {
+    const container = document.createElement("div");
+    container.classList.add("custom-input-order");
+    container.classList.add("bg-primary");
+    container.classList.add("automationDirectionSortButton");
+    container.name = container.id;
+    container.style.display = "inline-block";
 
-            if (option.selected)
-            {
-                listButton.innerHTML = "";
-                listButton.appendChild(option.element.cloneNode(true));
-                container.selectedValue = option.value;
+    const input = document.createElement("input");
+    input.id = `Automation-${id}`;
+    input.type = "checkbox";
+    input.checked = Automation.Utils.LocalStorage.getValue(id) === "true";
+    container.appendChild(input);
+
+    const label = document.createElement("label");
+    label.setAttribute("for", input.id);
+    container.appendChild(label);
+
+    input.onclick = function () {
+      Automation.Utils.LocalStorage.setValue(id, input.checked);
+    };
+
+    return { container, input };
+  }
+
+  /**
+   * @brief Creates a button element
+   *
+   * @param {string} id: The button id
+   *
+   * @returns The created button element (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createButtonElement(id) {
+    // Create as a span to avoid the glowing effect on click
+    const newButton = document.createElement("span");
+    newButton.id = id;
+    newButton.classList.add("btn");
+    newButton.style.width = "30px";
+    newButton.style.height = "20px";
+    newButton.style.padding = "0px";
+    newButton.style.borderRadius = "4px";
+    newButton.style.position = "relative";
+    newButton.style.bottom = "1px";
+    newButton.style.fontFamily =
+      'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
+    newButton.style.fontSize = ".875rem";
+    newButton.style.fontWeight = "400";
+    newButton.style.lineHeight = "20px";
+    newButton.style.verticalAlign = "middle";
+
+    return newButton;
+  }
+
+  /**
+   * @brief Creates a toggle button element
+   *
+   * @param {string} id: The button id
+   *
+   * @returns The created toggle button element (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createToggleButtonElement(id) {
+    const toggleButton = document.createElement("span");
+    toggleButton.id = id;
+    toggleButton.classList.add("automation-toggle-button");
+
+    return toggleButton;
+  }
+
+  /**
+   * @brief Creates an animated checkmark element, hidden
+   *        Call @see showCheckmark() to reveal it
+   *
+   * @returns The created animated checkmark element (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createAnimatedCheckMarkElement() {
+    const checkmarkContainer = document.createElement("div");
+    checkmarkContainer.classList.add("automation-checkmark-container");
+
+    const checkmarkElem = document.createElement("div");
+    checkmarkElem.classList.add("automation-checkmark");
+    checkmarkContainer.appendChild(checkmarkElem);
+
+    return checkmarkContainer;
+  }
+
+  /**
+   * @brief Creates a boxed category with the given @p title
+   *
+   * @returns The created div element
+   */
+  static createSettingCategory(title) {
+    const categoryContainer = document.createElement("div");
+    categoryContainer.classList.add("automation-setting-category");
+    categoryContainer.setAttribute("automation-setting-category-title", title);
+
+    return categoryContainer;
+  }
+
+  /**
+   * @brief Shows the animated checkmark
+   *
+   * @param {Element} checkmarkContainer: The element created using @see createAnimatedCheckMarkElement()
+   * @param {number} resetTimer: The timeout in milliseconds upon which the checkmark will be hidden again
+   *                             Don't use a value under 400ms, since it's the animation duration
+   */
+  static showCheckmark(checkmarkContainer, resetTimer = 2000) {
+    const checkmarkElem = checkmarkContainer.children[0];
+    checkmarkElem.classList.add("shown");
+
+    setTimeout(function () {
+      checkmarkElem.classList.remove("shown");
+    }, resetTimer);
+  }
+
+  /**
+   * @brief Creates a title element
+   *
+   * @param {string} titleText: The text to display
+   *
+   * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createTitleElement(titleText) {
+    const titleDiv = document.createElement("div");
+    titleDiv.style.textAlign = "center";
+    titleDiv.style.marginBottom = "3px";
+    const titleSpan = document.createElement("span");
+    titleSpan.textContent = titleText;
+    titleSpan.style.borderRadius = "4px";
+    titleSpan.style.borderWidth = "1px";
+    titleSpan.style.borderColor = "#aaaaaa";
+    titleSpan.style.borderStyle = "solid";
+    titleSpan.style.display = "block";
+    titleSpan.style.marginLeft = "10px";
+    titleSpan.style.marginRight = "10px";
+    titleSpan.style.paddingLeft = "10px";
+    titleSpan.style.paddingRight = "10px";
+    titleDiv.appendChild(titleSpan);
+
+    return titleDiv;
+  }
+
+  /**
+   * @brief Creates an editable text field element
+   *
+   * @param {number} charLimit: The max char number that the user can enter (set to -1 for no limit)
+   * @param {string} acceptedRegex: The axepted input regex (leave empty to accept any input)
+   *
+   * @returns The created element's container (It's the caller's responsibility to add it to the DOM at some point)
+   */
+  static createTextInputElement(charLimit = -1, acceptedRegex = "") {
+    // Add the input
+    const inputElem = document.createElement("div");
+    inputElem.contentEditable = true;
+    inputElem.spellcheck = false;
+    inputElem.classList.add("automation-setting-input");
+
+    // Filter input based on the given parameters
+    inputElem.onkeydown = function (event) {
+      const isValidKey =
+        acceptedRegex === "" || event.key.match(acceptedRegex) != null;
+
+      return (
+        event.key === "Backspace" ||
+        event.key === "Delete" ||
+        event.key === "ArrowLeft" ||
+        event.key === "ArrowRight" ||
+        (isValidKey && (charLimit == -1 || this.innerText.length < charLimit))
+      );
+    };
+
+    // Disable drag and drop
+    inputElem.ondrop = function (event) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "none";
+      return false;
+    };
+
+    return inputElem;
+  }
+
+  /**
+   * @brief Adds an hideable panel where additional settings can be added
+   *
+   * @param {Element} elemDiv: The html element to add a settings panel next to
+   * @param {boolean} openUpward: If set to true, the menu will open upward, otherwise downward
+   *
+   * @returns The newly created settings panel container
+   */
+  static addSettingPanel(elemDiv, openUpward = false) {
+    const placeholderDiv = document.createElement("div");
+    placeholderDiv.classList.add("automation-setting-placeholder");
+    if (openUpward) {
+      placeholderDiv.setAttribute("direction", "up");
+    }
+
+    const panelContainer = document.createElement("div");
+    panelContainer.classList.add("automation-setting-panel-container");
+    placeholderDiv.appendChild(panelContainer);
+
+    const innerDiv = document.createElement("div");
+    innerDiv.classList.add("automation-setting-menu-container");
+    panelContainer.appendChild(innerDiv);
+
+    const settingsContainerDiv = document.createElement("div");
+    settingsContainerDiv.style.whiteSpace = "nowrap";
+    innerDiv.appendChild(settingsContainerDiv);
+
+    const buttonContainerDiv = document.createElement("div");
+    buttonContainerDiv.classList.add("automation-arrow-container-div");
+    settingsContainerDiv.appendChild(buttonContainerDiv);
+
+    const buttonDiv = document.createElement("div");
+    buttonDiv.classList.add("automation-arrow-div");
+    buttonContainerDiv.appendChild(buttonDiv);
+
+    const arrowDiv = document.createElement("div");
+    arrowDiv.classList.add("automation-arrow");
+    buttonDiv.appendChild(arrowDiv);
+
+    // Add onclick action
+    buttonContainerDiv.onclick = function () {
+      const allSettingsPanels = document.getElementsByClassName(
+        "automation-setting-placeholder"
+      );
+
+      if (!innerDiv.hasAttribute("automation-visible")) {
+        innerDiv.setAttribute("automation-visible", "true");
+        arrowDiv.classList.add("right");
+
+        // Hide all other settings panels
+        for (const el of Array.from(allSettingsPanels)) {
+          el.setAttribute("automation-visible", "false");
+        }
+        placeholderDiv.removeAttribute("automation-visible");
+      } else {
+        innerDiv.removeAttribute("automation-visible");
+        arrowDiv.classList.remove("right");
+
+        // Show all settings panels
+        for (const el of Array.from(allSettingsPanels)) {
+          el.removeAttribute("automation-visible");
+        }
+      }
+    };
+
+    elemDiv.appendChild(placeholderDiv);
+
+    const settingsContentDiv = document.createElement("div");
+    settingsContentDiv.style.display = "inline-block";
+    settingsContentDiv.style.paddingTop = "5px";
+    settingsContentDiv.style.paddingBottom = "5px";
+    settingsContentDiv.style.paddingLeft = "15px";
+    settingsContentDiv.style.paddingRight = "10px";
+    settingsContainerDiv.appendChild(settingsContentDiv);
+
+    return settingsContentDiv;
+  }
+
+  /**
+   * @brief Adds a new tab with the given @p label
+   *
+   * @param {Element} parentElem: The parent element to add the tab to
+   * @param {string} label: The tab's label
+   * @param {string} tabGroupName: The tab's group (needs to be unique for each menu)
+   *
+   * @returns The tab content div, where the user can add the new sub-menu content
+   */
+  static addTabElement(parentElem, label, tabGroupName) {
+    let tabContainer = parentElem.getElementsByClassName(
+      "automationTabContainerDiv"
+    )[0];
+    const isFirstTab = !tabContainer;
+    let tabLabelContainer;
+    let tabContentContainer;
+
+    // Add the tab and content containers if not already added
+    if (isFirstTab) {
+      tabContainer = document.createElement("div");
+      tabContainer.classList.add("automationTabContainerDiv");
+      parentElem.appendChild(tabContainer);
+
+      tabLabelContainer = document.createElement("div");
+      tabLabelContainer.classList.add("automationTabLabelContainer");
+      tabLabelContainer.style.textAlign = "left";
+      tabContainer.appendChild(tabLabelContainer);
+      tabContentContainer = document.createElement("div");
+      tabContentContainer.classList.add("automationTabContentContainer");
+      tabContainer.appendChild(tabContentContainer);
+    } else {
+      tabLabelContainer = tabContainer.getElementsByClassName(
+        "automationTabLabelContainer"
+      )[0];
+      tabContentContainer = tabContainer.getElementsByClassName(
+        "automationTabContentContainer"
+      )[0];
+    }
+
+    const currentTabIndex =
+      tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
+    const currentTabId = `automation-tab-${tabGroupName.replaceAll(
+      " ",
+      "-"
+    )}-${currentTabIndex}`;
+
+    // Add the input (the magic lies here)
+    const labelInputElem = document.createElement("input");
+    labelInputElem.classList.add("automationTabLabelButton");
+    labelInputElem.type = "radio";
+    labelInputElem.name = tabGroupName;
+    labelInputElem.id = currentTabId;
+    labelInputElem.checked = isFirstTab;
+    tabContainer.insertBefore(labelInputElem, tabLabelContainer);
+
+    // Add the label
+    const labelElem = document.createElement("label");
+    labelElem.classList.add("automationTabLabel");
+    labelElem.textContent = label;
+    labelElem.id = `${currentTabId}-label`;
+    labelElem.setAttribute("for", currentTabId);
+    tabLabelContainer.appendChild(labelElem);
+
+    // Add the content
+    const contentContainer = document.createElement("div");
+    contentContainer.classList.add("automationTabContent");
+    tabContentContainer.appendChild(contentContainer);
+
+    return contentContainer;
+  }
+
+  /**
+   * @brief Adds a pokeball selection setting
+   *
+   * @param {string}  setting: The local storage setting id
+   * @param {string}  textLabel: The text to display before the list
+   * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
+   * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
+   *
+   * @returns The created drop-down list element
+   */
+  static addPokeballList(setting, textLabel, tooltip, addNoneOption = false) {
+    const selectOptions = this.__internal__populatePokeballOptions(
+      setting,
+      addNoneOption
+    );
+
+    const result = Automation.Menu.createDropdownListWithHtmlOptions(
+      selectOptions,
+      textLabel,
+      tooltip
+    );
+
+    // Update the local storage if the value is changed by the user
+    result.onValueChange = function () {
+      Automation.Utils.LocalStorage.setValue(setting, result.selectedValue);
+    }.bind(this);
+
+    // Set the width so both the name and the image fits in the list
+    result.getElementsByTagName("button")[0].style.width = "140px";
+
+    // Set a watcher in case some balls are not unlocked yet
+    if (selectOptions.some((opt) => opt.element.hidden)) {
+      const watcher = setInterval(
+        function () {
+          const hiddenOpt = selectOptions.filter((opt) => opt.element.hidden);
+
+          // Reverse iterate to avoid any problem that would be cause by element removal
+          for (const opt of hiddenOpt) {
+            const ballValue = opt.value;
+            if (App.game.pokeballs.pokeballs[ballValue].unlocked()) {
+              // Make the element visible
+              opt.element.hidden = false;
             }
+          }
 
-            listOptions.appendChild(optionContainer);
-        }
-
-        // Clicking the button should toggle the list visibility
-        listButton.onclick = function()
-            {
-                listOptions.classList.toggle('visible');
-
-                // Put the currently selected berry on top of the scroll view
-                if (listOptions.classList.contains('visible'))
-                {
-                    let offset = 0;
-
-                    for (const option of options)
-                    {
-                        if (option.value == container.selectedValue)
-                        {
-                            break;
-                        }
-
-                        if (!option.element.hidden)
-                        {
-                            offset += option.element.offsetHeight;
-                        }
-                    }
-
-                    listOptions.scrollTop = Math.min(offset, listOptions.scrollTopMax);
-                }
-            };
-
-        // Hide the list if the user clicks anywhere else
-        listButton.onfocusout = function() { listOptions.classList.remove('visible'); };
-
-        // Handle arrow key-press events
-        listButton.onkeydown = function(event)
-            {
-                event = event || window.event;
-
-                if ((event.key == "ArrowUp") || (event.key == "ArrowDown"))
-                {
-                    const currentOption = options.find((opt) => opt.value == container.selectedValue);
-                    const newOptionContainer = (event.key == "ArrowDown") ? currentOption.element.parentElement.nextSibling
-                                                                          : currentOption.element.parentElement.previousSibling;
-
-                    if (newOptionContainer)
-                    {
-                        setOptionCallback(newOptionContainer.firstChild);
-                        listOptions.classList.remove("visible");
-                    }
-
-                    event.preventDefault();
-                }
-            };
-
-        return container;
+          if (!hiddenOpt.some((opt) => opt.element.hidden)) {
+            // No more missing element, unregister the loop
+            clearInterval(watcher);
+          }
+        }.bind(this),
+        5000
+      ); // Refresh every 5s
     }
 
-    /**
-     * @brief Creates a sort direction (input) element
-     *
-     * @param {string} id: The input id (that will be used for the corresponding local storage item id as well)
-     *
-     * @returns The created element (It's the caller's responsibility to add it to the DOM at some point) and it's input
-     */
-    static createSortDirectionButtonElement(id)
-    {
-        const container = document.createElement("div");
-        container.classList.add("custom-input-order");
-        container.classList.add("bg-primary");
-        container.classList.add("automationDirectionSortButton");
-        container.name = container.id;
-        container.style.display = "inline-block";
+    return result;
+  }
 
-        const input = document.createElement("input");
-        input.id = `Automation-${id}`;
-        input.type = "checkbox";
-        input.checked = (Automation.Utils.LocalStorage.getValue(id) === "true");
-        container.appendChild(input);
+  /**
+   * @brief Sets the disable state of the given button
+   *
+   * A disabled button will be greyed-out and its clic action will be inhibited
+   * If the button is already in the @p newState, nothing will happen
+   *
+   * @param {string}  id: The button id
+   * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
+   * @param {string}  reason: The reason for disabling the button to display in the tooltip
+   *
+   * @todo Disable both button using the same attribute
+   */
+  static setButtonDisabledState(id, newState, reason = "") {
+    const button = document.getElementById(id);
+    if (button.classList.contains("automation-toggle-button")) {
+      this.__internal__disableToggleButton(button, newState, reason);
+    } else {
+      this.__internal__disableOnOffButton(button, newState, reason);
+    }
+  }
 
-        const label = document.createElement("label");
-        label.setAttribute("for", input.id);
-        container.appendChild(label);
+  /**
+   * @brief Gets the caught status image corresponding to the given @p caughtStatus
+   *
+   * @param caughtStatus: The pokeclicker's CaughtStatus
+   *
+   * @returns The corresponding image
+   */
+  static getCaughtStatusImage(caughtStatus) {
+    const extraStyle =
+      caughtStatus == CaughtStatus.NotCaught
+        ? " filter: invert(1) brightness(90%) !important;"
+        : "";
 
-        input.onclick = function() { Automation.Utils.LocalStorage.setValue(id, input.checked); };
+    return (
+      `<img class="pokeball-smallest" style="position: relative; top: 1px;${extraStyle}"` +
+      ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`
+    );
+  }
 
-        return { container, input };
+  /**
+   * @brief Gets the pokérus status image corresponding to the given @p pokerusStatus
+   *
+   * @note The Uninfected status has no image
+   *
+   * @param pokerusStatus: The pokeclicker's pokérus status
+   *
+   * @returns The corresponding image
+   */
+  static getPokerusStatusImage(pokerusStatus) {
+    if (pokerusStatus == GameConstants.Pokerus.Uninfected) {
+      return "";
     }
 
-    /**
-     * @brief Creates a button element
-     *
-     * @param {string} id: The button id
-     *
-     * @returns The created button element (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createButtonElement(id)
-    {
-        // Create as a span to avoid the glowing effect on click
-        const newButton = document.createElement("span");
-        newButton.id = id;
-        newButton.classList.add("btn");
-        newButton.style.width = "30px";
-        newButton.style.height = "20px";
-        newButton.style.padding = "0px";
-        newButton.style.borderRadius = "4px";
-        newButton.style.position = "relative";
-        newButton.style.bottom = "1px";
-        newButton.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
-        newButton.style.fontSize = ".875rem";
-        newButton.style.fontWeight = "400";
-        newButton.style.lineHeight = "20px";
-        newButton.style.verticalAlign = "middle";
+    return (
+      `<img style="position: relative; bottom: 1px; height: 12px;"` +
+      ` src="assets/images/breeding/pokerus/${GameConstants.Pokerus[pokerusStatus]}.png">`
+    );
+  }
 
-        return newButton;
-    }
-
-    /**
-     * @brief Creates a toggle button element
-     *
-     * @param {string} id: The button id
-     *
-     * @returns The created toggle button element (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createToggleButtonElement(id)
-    {
-        const toggleButton = document.createElement("span");
-        toggleButton.id = id;
-        toggleButton.classList.add("automation-toggle-button");
-
-        return toggleButton;
-    }
-
-    /**
-     * @brief Creates an animated checkmark element, hidden
-     *        Call @see showCheckmark() to reveal it
-     *
-     * @returns The created animated checkmark element (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createAnimatedCheckMarkElement()
-    {
-        const checkmarkContainer = document.createElement("div");
-        checkmarkContainer.classList.add("automation-checkmark-container");
-
-        const checkmarkElem = document.createElement("div");
-        checkmarkElem.classList.add("automation-checkmark");
-        checkmarkContainer.appendChild(checkmarkElem);
-
-        return checkmarkContainer;
-    }
-
-    /**
-     * @brief Creates a boxed category with the given @p title
-     *
-     * @returns The created div element
-     */
-    static createSettingCategory(title)
-    {
-        const categoryContainer = document.createElement("div");
-        categoryContainer.classList.add("automation-setting-category");
-        categoryContainer.setAttribute("automation-setting-category-title", title);
-
-        return categoryContainer;
-    }
-
-    /**
-     * @brief Shows the animated checkmark
-     *
-     * @param {Element} checkmarkContainer: The element created using @see createAnimatedCheckMarkElement()
-     * @param {number} resetTimer: The timeout in milliseconds upon which the checkmark will be hidden again
-     *                             Don't use a value under 400ms, since it's the animation duration
-     */
-    static showCheckmark(checkmarkContainer, resetTimer = 2000)
-    {
-        const checkmarkElem = checkmarkContainer.children[0];
-        checkmarkElem.classList.add("shown");
-
-        setTimeout(function() { checkmarkElem.classList.remove("shown"); }, resetTimer);
-    }
-
-    /**
-     * @brief Creates a title element
-     *
-     * @param {string} titleText: The text to display
-     *
-     * @returns The created element (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createTitleElement(titleText)
-    {
-        const titleDiv = document.createElement("div");
-        titleDiv.style.textAlign = "center";
-        titleDiv.style.marginBottom = "3px";
-        const titleSpan = document.createElement("span");
-        titleSpan.textContent = titleText;
-        titleSpan.style.borderRadius = "4px";
-        titleSpan.style.borderWidth = "1px";
-        titleSpan.style.borderColor = "#aaaaaa";
-        titleSpan.style.borderStyle = "solid";
-        titleSpan.style.display = "block";
-        titleSpan.style.marginLeft = "10px";
-        titleSpan.style.marginRight = "10px";
-        titleSpan.style.paddingLeft = "10px";
-        titleSpan.style.paddingRight = "10px";
-        titleDiv.appendChild(titleSpan);
-
-        return titleDiv;
-    }
-
-    /**
-     * @brief Creates an editable text field element
-     *
-     * @param {number} charLimit: The max char number that the user can enter (set to -1 for no limit)
-     * @param {string} acceptedRegex: The axepted input regex (leave empty to accept any input)
-     *
-     * @returns The created element's container (It's the caller's responsibility to add it to the DOM at some point)
-     */
-    static createTextInputElement(charLimit = -1, acceptedRegex = "")
-    {
-        // Add the input
-        const inputElem = document.createElement("div");
-        inputElem.contentEditable = true;
-        inputElem.spellcheck = false;
-        inputElem.classList.add("automation-setting-input");
-
-        // Filter input based on the given parameters
-        inputElem.onkeydown = function(event)
-        {
-            const isValidKey = (acceptedRegex === "") || (event.key.match(acceptedRegex) != null);
-
-            return (event.key === "Backspace")
-                || (event.key === "Delete")
-                || (event.key === "ArrowLeft")
-                || (event.key === "ArrowRight")
-                || (isValidKey && ((charLimit == -1) || (this.innerText.length < charLimit)));
-        };
-
-        // Disable drag and drop
-        inputElem.ondrop = function(event) { event.preventDefault(); event.dataTransfer.dropEffect = 'none'; return false; };
-
-        return inputElem;
-    }
-
-    /**
-     * @brief Adds an hideable panel where additional settings can be added
-     *
-     * @param {Element} elemDiv: The html element to add a settings panel next to
-     * @param {boolean} openUpward: If set to true, the menu will open upward, otherwise downward
-     *
-     * @returns The newly created settings panel container
-     */
-    static addSettingPanel(elemDiv, openUpward = false)
-    {
-        const placeholderDiv = document.createElement("div");
-        placeholderDiv.classList.add("automation-setting-placeholder");
-        if (openUpward)
-        {
-            placeholderDiv.setAttribute("direction", "up");
-        }
-
-        const panelContainer = document.createElement("div");
-        panelContainer.classList.add("automation-setting-panel-container");
-        placeholderDiv.appendChild(panelContainer);
-
-        const innerDiv = document.createElement("div");
-        innerDiv.classList.add("automation-setting-menu-container");
-        panelContainer.appendChild(innerDiv);
-
-        const settingsContainerDiv = document.createElement("div");
-        settingsContainerDiv.style.whiteSpace = "nowrap";
-        innerDiv.appendChild(settingsContainerDiv);
-
-        const buttonContainerDiv = document.createElement("div");
-        buttonContainerDiv.classList.add("automation-arrow-container-div");
-        settingsContainerDiv.appendChild(buttonContainerDiv)
-
-        const buttonDiv = document.createElement("div");
-        buttonDiv.classList.add("automation-arrow-div");
-        buttonContainerDiv.appendChild(buttonDiv)
-
-        const arrowDiv = document.createElement("div");
-        arrowDiv.classList.add("automation-arrow");
-        buttonDiv.appendChild(arrowDiv);
-
-        // Add onclick action
-        buttonContainerDiv.onclick = function()
-            {
-                const allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
-
-                if (!innerDiv.hasAttribute("automation-visible"))
-                {
-                    innerDiv.setAttribute("automation-visible", "true");
-                    arrowDiv.classList.add("right");
-
-                    // Hide all other settings panels
-                    for (const el of Array.from(allSettingsPanels))
-                    {
-                        el.setAttribute("automation-visible", "false");
-                    }
-                    placeholderDiv.removeAttribute("automation-visible");
-                }
-                else
-                {
-                    innerDiv.removeAttribute("automation-visible");
-                    arrowDiv.classList.remove("right");
-
-                    // Show all settings panels
-                    for (const el of Array.from(allSettingsPanels))
-                    {
-                        el.removeAttribute("automation-visible");
-                    }
-                }
-            };
-
-        elemDiv.appendChild(placeholderDiv);
-
-        const settingsContentDiv = document.createElement("div");
-        settingsContentDiv.style.display = "inline-block";
-        settingsContentDiv.style.paddingTop = "5px";
-        settingsContentDiv.style.paddingBottom = "5px";
-        settingsContentDiv.style.paddingLeft = "15px";
-        settingsContentDiv.style.paddingRight = "10px";
-        settingsContainerDiv.appendChild(settingsContentDiv);
-
-        return settingsContentDiv;
-    }
-
-    /**
-     * @brief Adds a new tab with the given @p label
-     *
-     * @param {Element} parentElem: The parent element to add the tab to
-     * @param {string} label: The tab's label
-     * @param {string} tabGroupName: The tab's group (needs to be unique for each menu)
-     *
-     * @returns The tab content div, where the user can add the new sub-menu content
-     */
-    static addTabElement(parentElem, label, tabGroupName)
-    {
-        let tabContainer = parentElem.getElementsByClassName("automationTabContainerDiv")[0];
-        const isFirstTab = !tabContainer;
-        let tabLabelContainer;
-        let tabContentContainer;
-
-        // Add the tab and content containers if not already added
-        if (isFirstTab)
-        {
-            tabContainer = document.createElement("div");
-            tabContainer.classList.add("automationTabContainerDiv");
-            parentElem.appendChild(tabContainer);
-
-            tabLabelContainer = document.createElement("div");
-            tabLabelContainer.classList.add("automationTabLabelContainer");
-            tabLabelContainer.style.textAlign = "left";
-            tabContainer.appendChild(tabLabelContainer);
-            tabContentContainer = document.createElement("div");
-            tabContentContainer.classList.add("automationTabContentContainer");
-            tabContainer.appendChild(tabContentContainer);
-        }
-        else
-        {
-            tabLabelContainer = tabContainer.getElementsByClassName("automationTabLabelContainer")[0];
-            tabContentContainer = tabContainer.getElementsByClassName("automationTabContentContainer")[0];
-        }
-
-        const currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
-        const currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
-
-        // Add the input (the magic lies here)
-        const labelInputElem = document.createElement("input");
-        labelInputElem.classList.add("automationTabLabelButton");
-        labelInputElem.type = "radio";
-        labelInputElem.name = tabGroupName;
-        labelInputElem.id = currentTabId;
-        labelInputElem.checked = isFirstTab;
-        tabContainer.insertBefore(labelInputElem, tabLabelContainer);
-
-        // Add the label
-        const labelElem = document.createElement("label");
-        labelElem.classList.add("automationTabLabel");
-        labelElem.textContent = label;
-        labelElem.id = `${currentTabId}-label`;
-        labelElem.setAttribute("for", currentTabId);
-        tabLabelContainer.appendChild(labelElem);
-
-        // Add the content
-        const contentContainer = document.createElement("div");
-        contentContainer.classList.add("automationTabContent");
-        tabContentContainer.appendChild(contentContainer);
-
-        return contentContainer;
-    }
-
-    /**
-     * @brief Adds a pokeball selection setting
-     *
-     * @param {string}  setting: The local storage setting id
-     * @param {string}  textLabel: The text to display before the list
-     * @param {string}  tooltip: The tooltip text to display upon hovering the list or the label
-     * @param {boolean} addNoneOption: If set to true the None pokeball option will be added at the beginning of the list
-     *
-     * @returns The created drop-down list element
-     */
-    static addPokeballList(setting, textLabel, tooltip, addNoneOption = false)
-    {
-        const selectOptions = this.__internal__populatePokeballOptions(setting, addNoneOption);
-
-        const result = Automation.Menu.createDropdownListWithHtmlOptions(selectOptions, textLabel, tooltip);
-
-        // Update the local storage if the value is changed by the user
-        result.onValueChange = function() { Automation.Utils.LocalStorage.setValue(setting, result.selectedValue); }.bind(this);
-
-        // Set the width so both the name and the image fits in the list
-        result.getElementsByTagName('button')[0].style.width = "140px";
-
-        // Set a watcher in case some balls are not unlocked yet
-        if (selectOptions.some(opt => opt.element.hidden))
-        {
-            const watcher = setInterval(function()
-            {
-                const hiddenOpt = selectOptions.filter(opt => opt.element.hidden);
-
-                // Reverse iterate to avoid any problem that would be cause by element removal
-                for (const opt of hiddenOpt)
-                {
-                    const ballValue = opt.value;
-                    if (App.game.pokeballs.pokeballs[ballValue].unlocked())
-                    {
-                        // Make the element visible
-                        opt.element.hidden = false;
-                    }
-                }
-
-                if (!hiddenOpt.some(opt => opt.element.hidden))
-                {
-                    // No more missing element, unregister the loop
-                    clearInterval(watcher);
-                }
-            }.bind(this), 5000); // Refresh every 5s
-        }
-
-        return result;
-    }
-
-    /**
-     * @brief Sets the disable state of the given button
-     *
-     * A disabled button will be greyed-out and its clic action will be inhibited
-     * If the button is already in the @p newState, nothing will happen
-     *
-     * @param {string}  id: The button id
-     * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param {string}  reason: The reason for disabling the button to display in the tooltip
-     *
-     * @todo Disable both button using the same attribute
-     */
-    static setButtonDisabledState(id, newState, reason = "")
-    {
-        const button = document.getElementById(id);
-        if (button.classList.contains("automation-toggle-button"))
-        {
-            this.__internal__disableToggleButton(button, newState, reason);
-        }
-        else
-        {
-            this.__internal__disableOnOffButton(button, newState, reason);
-        }
-    }
-
-    /**
-     * @brief Gets the caught status image corresponding to the given @p caughtStatus
-     *
-     * @param caughtStatus: The pokeclicker's CaughtStatus
-     *
-     * @returns The corresponding image
-     */
-    static getCaughtStatusImage(caughtStatus)
-    {
-        const extraStyle = (caughtStatus == CaughtStatus.NotCaught) ? " filter: invert(1) brightness(90%) !important;" : "";
-
-        return `<img class="pokeball-smallest" style="position: relative; top: 1px;${extraStyle}"`
-             + ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`;
-    }
-
-    /**
-     * @brief Gets the pokérus status image corresponding to the given @p pokerusStatus
-     *
-     * @note The Uninfected status has no image
-     *
-     * @param pokerusStatus: The pokeclicker's pokérus status
-     *
-     * @returns The corresponding image
-     */
-    static getPokerusStatusImage(pokerusStatus)
-    {
-        if (pokerusStatus == GameConstants.Pokerus.Uninfected)
-        {
-            return "";
-        }
-
-        return `<img style="position: relative; bottom: 1px; height: 12px;"`
-             + ` src="assets/images/breeding/pokerus/${GameConstants.Pokerus[pokerusStatus]}.png">`;
-    }
-
-    /*********************************************************************\
+  /*********************************************************************\
     |***    Internal members, should never be used by other classes    ***|
     \*********************************************************************/
 
-    static __internal__automationContainer = null;
-    static __internal__floatingPanelResizeObserver = null;
-    static __internal__lockedBalls = [];
-    static __internal__pokeballListElems = [];
+  static __internal__automationContainer = null;
+  static __internal__floatingPanelResizeObserver = null;
+  static __internal__lockedBalls = [];
+  static __internal__pokeballListElems = [];
 
-    static __internal__caughtStatusImageSwitch = {
-                                                     [CaughtStatus.NotCaught]: "None",
-                                                     [CaughtStatus.Caught]: "Pokeball",
-                                                     [CaughtStatus.CaughtShiny]: "Pokeball-shiny"
-                                                 };
+  static __internal__caughtStatusImageSwitch = {
+    [CaughtStatus.NotCaught]: "None",
+    [CaughtStatus.Caught]: "Pokeball",
+    [CaughtStatus.CaughtShiny]: "Pokeball-shiny",
+  };
 
-    /**
-     * @brief Disables the given toggle @p button and updates its theme accordingly
-     *
-     * @param {Element} button: The toggle button to disable
-     * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param {string}  reason: The reason for disabling the button to display in the tooltip
-     */
-    static __internal__disableToggleButton(button, newState, reason)
-    {
-        const wasDisabled = button.getAttribute("disabled") == "true";
+  /**
+   * @brief Disables the given toggle @p button and updates its theme accordingly
+   *
+   * @param {Element} button: The toggle button to disable
+   * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
+   * @param {string}  reason: The reason for disabling the button to display in the tooltip
+   */
+  static __internal__disableToggleButton(button, newState, reason) {
+    const wasDisabled = button.getAttribute("disabled") == "true";
 
-        if (wasDisabled === newState)
-        {
-            // Nothing to do
-            return;
-        }
-
-        button.setAttribute("disabled", newState ? "true" : "false");
-
-        if (newState && (reason !== ""))
-        {
-            button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
-        }
-        else
-        {
-            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
-        }
+    if (wasDisabled === newState) {
+      // Nothing to do
+      return;
     }
 
-    /**
-     * @brief Disables the given On/Off @p button and updates its theme accordingly
-     *
-     * @param {Element} button: The On/Off button to disable
-     * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
-     * @param {string}  reason: The reason for disabling the button to display in the tooltip
-     */
-    static __internal__disableOnOffButton(button, newState, reason)
-    {
-        if (button.disabled === newState)
-        {
-            // Nothing to do
-            return;
-        }
+    button.setAttribute("disabled", newState ? "true" : "false");
 
-        button.disabled = newState;
-        if (newState)
-        {
-            button.classList.remove((Automation.Utils.LocalStorage.getValue(button.id) === "true") ? "btn-success" : "btn-danger");
-            button.classList.add("btn-secondary");
+    if (newState && reason !== "") {
+      button.parentElement.setAttribute(
+        "automation-tooltip-disable-reason",
+        "\n" + reason + this.TooltipSeparator
+      );
+    } else {
+      button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+    }
+  }
 
-            if (reason !== "")
-            {
-                button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
-            }
-            else
-            {
-                button.parentElement.removeAttribute("automation-tooltip-disable-reason");
-            }
-        }
-        else
-        {
-            button.classList.add((Automation.Utils.LocalStorage.getValue(button.id) === "true") ? "btn-success" : "btn-danger");
-            button.classList.remove("btn-secondary");
-            button.parentElement.removeAttribute("automation-tooltip-disable-reason");
-        }
+  /**
+   * @brief Disables the given On/Off @p button and updates its theme accordingly
+   *
+   * @param {Element} button: The On/Off button to disable
+   * @param {boolean} newState: If set to True the button is disable, otherwise it's re-enabled
+   * @param {string}  reason: The reason for disabling the button to display in the tooltip
+   */
+  static __internal__disableOnOffButton(button, newState, reason) {
+    if (button.disabled === newState) {
+      // Nothing to do
+      return;
     }
 
-    /**
-     * @brief Populates the drop-down list with all the pokeballs type
-     *
-     * If any pokeball is not unlocked yet, it will be hidden to the player.
-     *
-     * @param {string}  setting: The saved value
-     * @param {boolean} addNoneOption: If set to true, the none option will be added at the beginning of the list
-     */
-    static __internal__populatePokeballOptions(setting, addNoneOption)
-    {
-        let savedValue = Automation.Utils.LocalStorage.getValue(setting);
+    button.disabled = newState;
+    if (newState) {
+      button.classList.remove(
+        Automation.Utils.LocalStorage.getValue(button.id) === "true"
+          ? "btn-success"
+          : "btn-danger"
+      );
+      button.classList.add("btn-secondary");
 
-        // Don't consider the saved value if the user does not have access to the corresponding ball yet
-        if ((savedValue != null)
-            && (savedValue != GameConstants.Pokeball.None)
-            && !App.game.pokeballs.pokeballs[savedValue].unlocked())
-        {
-            Automation.Utils.LocalStorage.unsetValue(setting);
-            savedValue = null;
-        }
+      if (reason !== "") {
+        button.parentElement.setAttribute(
+          "automation-tooltip-disable-reason",
+          "\n" + reason + this.TooltipSeparator
+        );
+      } else {
+        button.parentElement.removeAttribute(
+          "automation-tooltip-disable-reason"
+        );
+      }
+    } else {
+      button.classList.add(
+        Automation.Utils.LocalStorage.getValue(button.id) === "true"
+          ? "btn-success"
+          : "btn-danger"
+      );
+      button.classList.remove("btn-secondary");
+      button.parentElement.removeAttribute("automation-tooltip-disable-reason");
+    }
+  }
 
-        // Default to None if the value was not set and the option is available
-        if (addNoneOption && (savedValue === null))
-        {
-            Automation.Utils.LocalStorage.setDefaultValue(setting, GameConstants.Pokeball.None);
-            savedValue = GameConstants.Pokeball.None;
-        }
+  /**
+   * @brief Populates the drop-down list with all the pokeballs type
+   *
+   * If any pokeball is not unlocked yet, it will be hidden to the player.
+   *
+   * @param {string}  setting: The saved value
+   * @param {boolean} addNoneOption: If set to true, the none option will be added at the beginning of the list
+   */
+  static __internal__populatePokeballOptions(setting, addNoneOption) {
+    let savedValue = Automation.Utils.LocalStorage.getValue(setting);
 
-        const options = App.game.pokeballs.pokeballs.map(p => p.type);
-
-        if (addNoneOption)
-        {
-            options.unshift(GameConstants.Pokeball.None);
-        }
-
-        const selectOptions = [];
-
-        // Add each options
-        for (const ballOpt of options)
-        {
-            const ballName = GameConstants.Pokeball[ballOpt];
-
-            const element = document.createElement("div");
-            element.style.paddingTop = "1px";
-
-            // Add the ball image
-            const image = document.createElement("img");
-            image.src = `assets/images/pokeball/${ballName}.svg`;
-            image.style.height = "22px";
-            image.style.marginRight = "8px";
-            image.style.marginLeft = "7px";
-            image.style.position = "relative";
-            image.style.bottom = "1px";
-            element.appendChild(image);
-
-            // Hide any berry that is not yet unlocked
-            if ((ballOpt != GameConstants.Pokeball.None)
-                && !App.game.pokeballs.pokeballs[ballOpt].unlocked())
-            {
-                if (!this.__internal__lockedBalls.includes(ballOpt))
-                {
-                    this.__internal__lockedBalls.push(ballOpt);
-                }
-                element.hidden = true;
-            }
-
-            // Add the ball name
-            element.appendChild(document.createTextNode(ballName));
-
-            selectOptions.push({ value: ballOpt, element, selected: (!element.hidden && (savedValue == ballOpt)) });
-        }
-
-        return selectOptions;
+    // Don't consider the saved value if the user does not have access to the corresponding ball yet
+    if (
+      savedValue != null &&
+      savedValue != GameConstants.Pokeball.None &&
+      !App.game.pokeballs.pokeballs[savedValue].unlocked()
+    ) {
+      Automation.Utils.LocalStorage.unsetValue(setting);
+      savedValue = null;
     }
 
-    /**
-     * @brief Injects the automation menu css to the document heading
-     */
-    static __internal__injectAutomationCss()
-    {
-        /*
-         * The 'Disabled for the following reason' colored title was geneted using https://yoksel.github.io/url-encoder/
-         * With the following SVG code:
-         *    <svg xmlns='http://www.w3.org/2000/svg' width='207' height='20'>
-         *        <text x='0' y='17' style='fill: #f24444; font-weight: 600; font-size:.900rem;'>Disabled for the following reason:</text>
-         *    </svg>
-         */
+    // Default to None if the value was not set and the option is available
+    if (addNoneOption && savedValue === null) {
+      Automation.Utils.LocalStorage.setDefaultValue(
+        setting,
+        GameConstants.Pokeball.None
+      );
+      savedValue = GameConstants.Pokeball.None;
+    }
 
-        const style = document.createElement('style');
-        style.textContent = `
+    const options = App.game.pokeballs.pokeballs.map((p) => p.type);
+
+    if (addNoneOption) {
+      options.unshift(GameConstants.Pokeball.None);
+    }
+
+    const selectOptions = [];
+
+    // Add each options
+    for (const ballOpt of options) {
+      const ballName = GameConstants.Pokeball[ballOpt];
+
+      const element = document.createElement("div");
+      element.style.paddingTop = "1px";
+
+      // Add the ball image
+      const image = document.createElement("img");
+      image.src = `assets/images/pokeball/${ballName}.svg`;
+      image.style.height = "22px";
+      image.style.marginRight = "8px";
+      image.style.marginLeft = "7px";
+      image.style.position = "relative";
+      image.style.bottom = "1px";
+      element.appendChild(image);
+
+      // Hide any berry that is not yet unlocked
+      if (
+        ballOpt != GameConstants.Pokeball.None &&
+        !App.game.pokeballs.pokeballs[ballOpt].unlocked()
+      ) {
+        if (!this.__internal__lockedBalls.includes(ballOpt)) {
+          this.__internal__lockedBalls.push(ballOpt);
+        }
+        element.hidden = true;
+      }
+
+      // Add the ball name
+      element.appendChild(document.createTextNode(ballName));
+
+      selectOptions.push({
+        value: ballOpt,
+        element,
+        selected: !element.hidden && savedValue == ballOpt,
+      });
+    }
+
+    return selectOptions;
+  }
+
+  /**
+   * @brief Injects the automation menu css to the document heading
+   */
+  static __internal__injectAutomationCss() {
+    /*
+     * The 'Disabled for the following reason' colored title was geneted using https://yoksel.github.io/url-encoder/
+     * With the following SVG code:
+     *    <svg xmlns='http://www.w3.org/2000/svg' width='207' height='20'>
+     *        <text x='0' y='17' style='fill: #f24444; font-weight: 600; font-size:.900rem;'>Disabled for the following reason:</text>
+     *    </svg>
+     */
+
+    const style = document.createElement("style");
+    style.textContent = `
 
             .automationWarningIcon
             {
@@ -1824,6 +1827,6 @@ class AutomationMenu
                 border-radius: 5px;
                 padding: 4px;
             }`;
-        document.head.append(style);
-    }
+    document.head.append(style);
+  }
 }
