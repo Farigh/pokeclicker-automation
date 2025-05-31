@@ -20,6 +20,7 @@ class AutomationSafari {
       // Set the advanced settings default values
       Automation.Utils.LocalStorage.setDefaultValue(this.Settings.CollectItems, true);
       Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FocusOnBaitAchievements, false);
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipResistant, false);
 
       // Set to solo run by default
       Automation.Utils.LocalStorage.setDefaultValue(this.Settings.InfinitRepeat, false);
@@ -113,6 +114,11 @@ class AutomationSafari {
     const itemsCollectionLabel = "Collect items";
     const itemsCollectionTooltip = "The automation will move to the closest item\n" + "as soon as one appears";
     Automation.Menu.addLabeledAdvancedSettingsToggleButton(itemsCollectionLabel, this.Settings.CollectItems, itemsCollectionTooltip, safariSettingPanel);
+
+    // Skip resistant
+    const skipResistantLabel = "Skip Pokémon that are resistant to pokerus";
+    const skipResistantTooltip = "The automation will run from pokemons that are resistant to pokerus";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(skipResistantLabel, this.Settings.SkipResistant, skipResistantTooltip, safariSettingPanel);
   }
 
   /**
@@ -521,6 +527,18 @@ class AutomationSafari {
     if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnBaitAchievements) === "true" && this.__internal__baitAchievements.filter((a) => !a.isCompleted()).length != 0) {
       SafariBattle.throwBait();
     }
+    // If the user asked to skip pokemon resistant to pokerus, run
+    else if (Automation.Utils.LocalStorage.getValue(this.Settings.SkipResistant) === "true" && PartyController.getPokerusStatus(SafariBattle.enemy.id) >= GameConstants.Pokerus.Resistant) {
+      // if the encounter is a shiny, need to confirm the run button after we call run
+      if (SafariBattle.enemy.shiny) {
+        console.log("Shiny encountered! Setting timeout for " + SafariBattle.Speed.turnLength * 2);
+        // the run() function delays for SafariBattle.Speed.turnLength,
+        // so we delay for 2x SafariBattle.Speed.turnLength
+        setTimeout(() => $("[id^=modalConfirm]").click(), SafariBattle.Speed.turnLength * 2);
+      }
+      setTimeout(() => SafariBattle.run(), SafariBattle.Speed.turnLength);
+    }
+    // Try to catch the pokémon
     // Thow a rock at the pokémon to improve the catch rate, unless its angry or its catch factor is high enough
     else if (SafariBattle.enemy.angry == 0 && SafariBattle.enemy.catchFactor < 90) {
       SafariBattle.throwRock();
