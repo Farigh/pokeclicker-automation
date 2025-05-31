@@ -49,19 +49,11 @@ class AutomationFocusAchievements {
    */
   static __buildAdvancedSettings(parent) {
     // Disable the magikarp jump last by default
-    Automation.Utils.LocalStorage.setDefaultValue(
-      this.__internal__advancedSettings.DoMagikarpJumpLast,
-      false
-    );
+    Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.DoMagikarpJumpLast, false);
 
     // OakItem loadout setting
     const tooltip = "Will perform the Magikarp Jump achievements last.";
-    const button = Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Complete Magikarp Jump achievements last",
-      this.__internal__advancedSettings.DoMagikarpJumpLast,
-      tooltip,
-      parent
-    );
+    const button = Automation.Menu.addLabeledAdvancedSettingsToggleButton("Complete Magikarp Jump achievements last", this.__internal__advancedSettings.DoMagikarpJumpLast, tooltip, parent);
 
     button.addEventListener(
       "click",
@@ -101,8 +93,7 @@ class AutomationFocusAchievements {
     const descriptionContainer = document.createElement("div");
     descriptionContainer.style.marginTop = "10px";
     const descriptionElem = document.createElement("span");
-    descriptionElem.textContent =
-      "Choose which achievement should be performed, or skipped ℹ️";
+    descriptionElem.textContent = "Choose which achievement should be performed, or skipped ℹ️";
     descriptionElem.classList.add("hasAutomationTooltip");
     descriptionElem.classList.add("rightMostAutomationTooltip");
     descriptionElem.classList.add("shortTransitionAutomationTooltip");
@@ -129,27 +120,19 @@ class AutomationFocusAchievements {
       labelCellElem.style.width = "100%"; // Make the cell take the maximum place, for menu consistency
       labelCellElem.style.paddingLeft = "5px";
       labelCellElem.style.paddingRight = "7px";
-      labelCellElem.innerHTML =
-        this.__internal__getAchievementLabel(achievementData);
+      labelCellElem.innerHTML = this.__internal__getAchievementLabel(achievementData);
       rowElem.appendChild(labelCellElem);
 
       const toggleCellElem = document.createElement("td");
       toggleCellElem.style.paddingRight = "5px"; // Align toggle with ones outside the sub-content div
       rowElem.appendChild(toggleCellElem);
 
-      const storageKey = this.__internal__advancedSettings.AchievementEnabled(
-        achievementData.type,
-        achievementData.amount
-      );
+      const storageKey = this.__internal__advancedSettings.AchievementEnabled(achievementData.type, achievementData.amount);
 
       // Enable the achievement by default, unless the user chose to disable settings by default
-      Automation.Utils.LocalStorage.setDefaultValue(
-        storageKey,
-        !Automation.Menu.DisableSettingsByDefault
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(storageKey, !Automation.Menu.DisableSettingsByDefault);
 
-      achievementData.toggleButton =
-        Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+      achievementData.toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
       toggleCellElem.appendChild(achievementData.toggleButton);
 
       // Compute previous and next button data
@@ -157,10 +140,7 @@ class AutomationFocusAchievements {
       if (previousData != null && previousData.type != achievementData.type) {
         previousData = null;
       }
-      let nextData =
-        index + 1 < achievementDataList.length
-          ? achievementDataList[index + 1]
-          : null;
+      let nextData = index + 1 < achievementDataList.length ? achievementDataList[index + 1] : null;
       if (nextData != null && nextData.type != achievementData.type) {
         nextData = null;
       }
@@ -175,32 +155,18 @@ class AutomationFocusAchievements {
             this.__internal__currentAchievement = null;
           }
 
-          const isFeatureEnabled =
-            Automation.Utils.LocalStorage.getValue(storageKey) === "true";
+          const isFeatureEnabled = Automation.Utils.LocalStorage.getValue(storageKey) === "true";
 
           if (isFeatureEnabled && previousData != null) {
             // We need to turn on the previous one as well, if not already enabled
-            const previousStorageKey =
-              this.__internal__advancedSettings.AchievementEnabled(
-                previousData.type,
-                previousData.amount
-              );
-            if (
-              Automation.Utils.LocalStorage.getValue(previousStorageKey) !==
-              "true"
-            ) {
+            const previousStorageKey = this.__internal__advancedSettings.AchievementEnabled(previousData.type, previousData.amount);
+            if (Automation.Utils.LocalStorage.getValue(previousStorageKey) !== "true") {
               previousData.toggleButton.click();
             }
           } else if (!isFeatureEnabled && nextData != null) {
             // We need to turn off the next one as well, if not already enabled
-            const nextStorageKey =
-              this.__internal__advancedSettings.AchievementEnabled(
-                nextData.type,
-                nextData.amount
-              );
-            if (
-              Automation.Utils.LocalStorage.getValue(nextStorageKey) === "true"
-            ) {
+            const nextStorageKey = this.__internal__advancedSettings.AchievementEnabled(nextData.type, nextData.amount);
+            if (Automation.Utils.LocalStorage.getValue(nextStorageKey) === "true") {
               nextData.toggleButton.click();
             }
           }
@@ -215,10 +181,7 @@ class AutomationFocusAchievements {
    */
   static __internal__start() {
     // Set achievement loop
-    this.__internal__achievementLoop = setInterval(
-      this.__internal__focusOnAchievements.bind(this),
-      1000
-    ); // Runs every second
+    this.__internal__achievementLoop = setInterval(this.__internal__focusOnAchievements.bind(this), 1000); // Runs every second
     this.__internal__focusOnAchievements();
   }
 
@@ -234,10 +197,7 @@ class AutomationFocusAchievements {
 
     Automation.Dungeon.stopAfterThisRun();
 
-    Automation.Menu.forceAutomationState(
-      Automation.Gym.Settings.FeatureEnabled,
-      false
-    );
+    Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
 
     // Disable automation catch filter
     Automation.Utils.Pokeball.disableAutomationFilter();
@@ -254,11 +214,7 @@ class AutomationFocusAchievements {
       // If the quest is not a ClearDungeonRequirement, or if it's completed, no instance should be in progress
       if (
         this.__internal__currentAchievement === null ||
-        (Automation.Utils.isInstanceOf(
-          this.__internal__currentAchievement.property,
-          "ClearDungeonRequirement"
-        ) &&
-          this.__internal__currentAchievement.isCompleted())
+        (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearDungeonRequirement") && this.__internal__currentAchievement.isCompleted())
       ) {
         Automation.Focus.__ensureNoInstanceIsInProgress();
       }
@@ -278,32 +234,20 @@ class AutomationFocusAchievements {
    * @brief Updates the focused achievement if there is none, or the current one is completed
    */
   static __internal__updateTheAchievementIfNeeded() {
-    if (
-      this.__internal__currentAchievement === null ||
-      this.__internal__currentAchievement.isCompleted()
-    ) {
-      this.__internal__currentAchievement =
-        this.__internal__getNextAchievement();
+    if (this.__internal__currentAchievement === null || this.__internal__currentAchievement.isCompleted()) {
+      this.__internal__currentAchievement = this.__internal__getNextAchievement();
 
       if (this.__internal__currentAchievement === null) {
         // No more achievements, stop the feature
-        Automation.Menu.forceAutomationState(
-          Automation.Focus.Settings.FeatureEnabled,
-          false
-        );
-        Automation.Notifications.sendWarningNotif(
-          "No more achievement to automate.\nTurning the feature off",
-          "Focus"
-        );
+        Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
+        Automation.Notifications.sendWarningNotif("No more achievement to automate.\nTurning the feature off", "Focus");
 
         return;
       }
 
       // Track the achievement only if the tracker was unlocked
       if (App.game.achievementTracker.canAccess()) {
-        App.game.achievementTracker.trackAchievement(
-          this.__internal__currentAchievement
-        );
+        App.game.achievementTracker.trackAchievement(this.__internal__currentAchievement);
       }
     }
   }
@@ -315,28 +259,13 @@ class AutomationFocusAchievements {
     // Disable automation catch filter
     Automation.Utils.Pokeball.disableAutomationFilter();
 
-    if (
-      Automation.Utils.isInstanceOf(
-        this.__internal__currentAchievement.property,
-        "RouteKillRequirement"
-      )
-    ) {
+    if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "RouteKillRequirement")) {
       Automation.Dungeon.stopAfterThisRun();
       this.__internal__workOnRouteKillRequirement();
-    } else if (
-      Automation.Utils.isInstanceOf(
-        this.__internal__currentAchievement.property,
-        "ClearGymRequirement"
-      )
-    ) {
+    } else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearGymRequirement")) {
       Automation.Dungeon.stopAfterThisRun();
       this.__internal__workOnClearGymRequirement();
-    } else if (
-      Automation.Utils.isInstanceOf(
-        this.__internal__currentAchievement.property,
-        "ClearDungeonRequirement"
-      )
-    ) {
+    } else if (Automation.Utils.isInstanceOf(this.__internal__currentAchievement.property, "ClearDungeonRequirement")) {
       this.__internal__workOnClearDungeonRequirement();
     }
   }
@@ -351,10 +280,7 @@ class AutomationFocusAchievements {
     Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
     // Move to the selected route
-    Automation.Utils.Route.moveToRoute(
-      this.__internal__currentAchievement.property.route,
-      this.__internal__currentAchievement.property.region
-    );
+    Automation.Utils.Route.moveToRoute(this.__internal__currentAchievement.property.route, this.__internal__currentAchievement.property.region);
   }
 
   /**
@@ -365,10 +291,7 @@ class AutomationFocusAchievements {
    * @todo Merge with Automation.Quest.__workOnDefeatGymQuest()
    */
   static __internal__workOnClearGymRequirement() {
-    let gymName =
-      GameConstants.RegionGyms.flat()[
-        this.__internal__currentAchievement.property.gymIndex
-      ];
+    let gymName = GameConstants.RegionGyms.flat()[this.__internal__currentAchievement.property.gymIndex];
     let townToGoTo = gymName;
 
     // If a ligue champion is the target, the gymTown points to the champion instead of the town
@@ -379,15 +302,8 @@ class AutomationFocusAchievements {
     // Move to the associated gym if needed
     if (!Automation.Utils.Route.isPlayerInTown(townToGoTo)) {
       Automation.Utils.Route.moveToTown(townToGoTo);
-    } else if (
-      Automation.Utils.LocalStorage.getValue(
-        Automation.Gym.Settings.FeatureEnabled
-      ) === "false"
-    ) {
-      Automation.Menu.forceAutomationState(
-        Automation.Gym.Settings.FeatureEnabled,
-        true
-      );
+    } else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false") {
+      Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
     } else {
       // Select the right gym to fight
       if (Automation.Gym.GymSelectElem.value != gymName) {
@@ -408,15 +324,9 @@ class AutomationFocusAchievements {
    * @todo Merge with Automation.Quest.__workOnDefeatDungeonQuest()
    */
   static __internal__workOnClearDungeonRequirement() {
-    let targetedDungeonName =
-      GameConstants.RegionDungeons.flat()[
-        this.__internal__currentAchievement.property.dungeonIndex
-      ];
+    let targetedDungeonName = GameConstants.RegionDungeons.flat()[this.__internal__currentAchievement.property.dungeonIndex];
     // If we don't have enough tokens, go farm some
-    if (
-      TownList[targetedDungeonName].dungeon.tokenCost >
-      App.game.wallet.currencies[GameConstants.Currency.dungeonToken]()
-    ) {
+    if (TownList[targetedDungeonName].dungeon.tokenCost > App.game.wallet.currencies[GameConstants.Currency.dungeonToken]()) {
       Automation.Focus.__goToBestRouteForDungeonToken();
       return;
     }
@@ -430,14 +340,10 @@ class AutomationFocusAchievements {
     }
 
     // Enable auto dungeon fight
-    Automation.Menu.forceAutomationState(
-      Automation.Dungeon.Settings.FeatureEnabled,
-      true
-    );
+    Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
     // Bypass user settings like the stop on pokedex one
-    Automation.Dungeon.AutomationRequestedMode =
-      Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+    Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
   }
 
   /**
@@ -449,159 +355,85 @@ class AutomationFocusAchievements {
     let result = null;
 
     let hasCompletedAchievements = false;
-    const availableAchievements =
-      this.__internal__filteredAchievementList.filter((achievement) => {
-        // Only handle achievements that are not already completed
-        if (achievement.isCompleted()) {
-          hasCompletedAchievements = true;
-          return false;
-        }
-
-        // Only handle achievable achievements
-        if (
-          !achievement.achievable() ||
-          achievement.property.region > player.highestRegion()
-        ) {
-          return false;
-        }
-
-        // User might have disable this type of achievements
-        const achievementStorageKey =
-          this.__internal__advancedSettings.AchievementEnabled(
-            achievement.property.constructor.name,
-            achievement.property.requiredValue
-          );
-        if (
-          Automation.Utils.LocalStorage.getValue(achievementStorageKey) !==
-          "true"
-        ) {
-          return false;
-        }
-
-        // Consider RouteKill achievements, if the player can move to the target route
-        if (
-          Automation.Utils.isInstanceOf(
-            achievement.property,
-            "RouteKillRequirement"
-          )
-        ) {
-          return Automation.Utils.Route.canMoveToRoute(
-            achievement.property.route,
-            achievement.property.region
-          );
-        }
-
-        // Consider ClearGym achievements, if the player can move to the target town
-        if (
-          Automation.Utils.isInstanceOf(
-            achievement.property,
-            "ClearGymRequirement"
-          )
-        ) {
-          const gymName =
-            GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
-
-          // If a ligue champion is the target, the gymTown points to the champion instead of the town
-          let townName = gymName;
-          let town = TownList[gymName];
-          if (!town) {
-            townName = GymList[townName].parent.name;
-            town = TownList[townName];
-          }
-
-          return (
-            Automation.Utils.Route.canMoveToRegion(town.region) &&
-            MapHelper.accessToTown(townName) &&
-            GymList[gymName].isUnlocked()
-          );
-        }
-
-        // Consider ClearDungeon achievements, if the player can move to the target dungeon
-        if (
-          Automation.Utils.isInstanceOf(
-            achievement.property,
-            "ClearDungeonRequirement"
-          )
-        ) {
-          const dungeonName =
-            GameConstants.RegionDungeons.flat()[
-              achievement.property.dungeonIndex
-            ];
-          const town = TownList[dungeonName];
-          return (
-            Automation.Utils.Route.canMoveToRegion(town.region) &&
-            MapHelper.accessToTown(dungeonName) &&
-            App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket)
-          );
-        }
-
+    const availableAchievements = this.__internal__filteredAchievementList.filter((achievement) => {
+      // Only handle achievements that are not already completed
+      if (achievement.isCompleted()) {
+        hasCompletedAchievements = true;
         return false;
-      });
+      }
+
+      // Only handle achievable achievements
+      if (!achievement.achievable() || achievement.property.region > player.highestRegion()) {
+        return false;
+      }
+
+      // User might have disable this type of achievements
+      const achievementStorageKey = this.__internal__advancedSettings.AchievementEnabled(achievement.property.constructor.name, achievement.property.requiredValue);
+      if (Automation.Utils.LocalStorage.getValue(achievementStorageKey) !== "true") {
+        return false;
+      }
+
+      // Consider RouteKill achievements, if the player can move to the target route
+      if (Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement")) {
+        return Automation.Utils.Route.canMoveToRoute(achievement.property.route, achievement.property.region);
+      }
+
+      // Consider ClearGym achievements, if the player can move to the target town
+      if (Automation.Utils.isInstanceOf(achievement.property, "ClearGymRequirement")) {
+        const gymName = GameConstants.RegionGyms.flat()[achievement.property.gymIndex];
+
+        // If a ligue champion is the target, the gymTown points to the champion instead of the town
+        let townName = gymName;
+        let town = TownList[gymName];
+        if (!town) {
+          townName = GymList[townName].parent.name;
+          town = TownList[townName];
+        }
+
+        return Automation.Utils.Route.canMoveToRegion(town.region) && MapHelper.accessToTown(townName) && GymList[gymName].isUnlocked();
+      }
+
+      // Consider ClearDungeon achievements, if the player can move to the target dungeon
+      if (Automation.Utils.isInstanceOf(achievement.property, "ClearDungeonRequirement")) {
+        const dungeonName = GameConstants.RegionDungeons.flat()[achievement.property.dungeonIndex];
+        const town = TownList[dungeonName];
+        return Automation.Utils.Route.canMoveToRegion(town.region) && MapHelper.accessToTown(dungeonName) && App.game.keyItems.hasKeyItem(KeyItemType.Dungeon_ticket);
+      }
+
+      return false;
+    });
 
     // Filter the list if any completed achievement were found
     if (hasCompletedAchievements) {
-      this.__internal__filteredAchievementList =
-        this.__internal__filteredAchievementList.filter(
-          (achievement) => !achievement.isCompleted()
-        );
+      this.__internal__filteredAchievementList = this.__internal__filteredAchievementList.filter((achievement) => !achievement.isCompleted());
     }
 
     if (availableAchievements.length > 0) {
       result = availableAchievements.sort((a, b) => {
         // Favor lower region quests
-        const aRegion = this.__internal__getRegionFromCategoryName(
-          a.category.name
-        );
-        const bRegion = this.__internal__getRegionFromCategoryName(
-          b.category.name
-        );
+        const aRegion = this.__internal__getRegionFromCategoryName(a.category.name);
+        const bRegion = this.__internal__getRegionFromCategoryName(b.category.name);
         if (aRegion < bRegion) return -1;
         if (aRegion > bRegion) return 1;
 
         // Then route kill
-        const isAInstanceOfRouteKillRequirement = Automation.Utils.isInstanceOf(
-          a.property,
-          "RouteKillRequirement"
-        );
-        const isBInstanceOfRouteKillRequirement = Automation.Utils.isInstanceOf(
-          b.property,
-          "RouteKillRequirement"
-        );
-        if (
-          isAInstanceOfRouteKillRequirement &&
-          isBInstanceOfRouteKillRequirement
-        )
-          return 0;
+        const isAInstanceOfRouteKillRequirement = Automation.Utils.isInstanceOf(a.property, "RouteKillRequirement");
+        const isBInstanceOfRouteKillRequirement = Automation.Utils.isInstanceOf(b.property, "RouteKillRequirement");
+        if (isAInstanceOfRouteKillRequirement && isBInstanceOfRouteKillRequirement) return 0;
         if (isAInstanceOfRouteKillRequirement) return -1;
         if (isBInstanceOfRouteKillRequirement) return 1;
 
         // Then Gym clear
-        const isAInstanceOfClearGymRequirement = Automation.Utils.isInstanceOf(
-          a.property,
-          "ClearGymRequirement"
-        );
-        const isBInstanceOfClearGymRequirement = Automation.Utils.isInstanceOf(
-          b.property,
-          "ClearGymRequirement"
-        );
-        if (
-          isAInstanceOfClearGymRequirement &&
-          isBInstanceOfClearGymRequirement
-        )
-          return 0;
+        const isAInstanceOfClearGymRequirement = Automation.Utils.isInstanceOf(a.property, "ClearGymRequirement");
+        const isBInstanceOfClearGymRequirement = Automation.Utils.isInstanceOf(b.property, "ClearGymRequirement");
+        if (isAInstanceOfClearGymRequirement && isBInstanceOfClearGymRequirement) return 0;
         if (isAInstanceOfClearGymRequirement) return -1;
         if (isBInstanceOfClearGymRequirement) return 1;
 
         // Finally Dungeon clear
-        const isAInstanceOfClearDungeonRequirement =
-          Automation.Utils.isInstanceOf(a.property, "ClearDungeonRequirement");
-        const isBInstanceOfClearDungeonRequirement =
-          Automation.Utils.isInstanceOf(b.property, "ClearDungeonRequirement");
-        if (
-          isAInstanceOfClearDungeonRequirement &&
-          isBInstanceOfClearDungeonRequirement
-        )
-          return 0;
+        const isAInstanceOfClearDungeonRequirement = Automation.Utils.isInstanceOf(a.property, "ClearDungeonRequirement");
+        const isBInstanceOfClearDungeonRequirement = Automation.Utils.isInstanceOf(b.property, "ClearDungeonRequirement");
+        if (isAInstanceOfClearDungeonRequirement && isBInstanceOfClearDungeonRequirement) return 0;
         if (isAInstanceOfClearDungeonRequirement) return -1;
         if (isBInstanceOfClearDungeonRequirement) return 1;
       }, this)[0];
@@ -630,11 +462,7 @@ class AutomationFocusAchievements {
 
     // Handle Magikarp Jump Island content at the same time as Galar content, unless the user chose to do it last
     if (categoryName == "magikarpJump") {
-      if (
-        Automation.Utils.LocalStorage.getValue(
-          this.__internal__advancedSettings.DoMagikarpJumpLast
-        ) === "true"
-      ) {
+      if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.DoMagikarpJumpLast) === "true") {
         return GameConstants.Region.final;
       }
 
@@ -652,22 +480,12 @@ class AutomationFocusAchievements {
    */
   static __internal__getAchievementsData() {
     // Initialize the achievement list
-    this.__internal__filteredAchievementList =
-      AchievementHandler.achievementList.filter(
-        (achievement) =>
-          Automation.Utils.isInstanceOf(
-            achievement.property,
-            "RouteKillRequirement"
-          ) ||
-          Automation.Utils.isInstanceOf(
-            achievement.property,
-            "ClearGymRequirement"
-          ) ||
-          Automation.Utils.isInstanceOf(
-            achievement.property,
-            "ClearDungeonRequirement"
-          )
-      );
+    this.__internal__filteredAchievementList = AchievementHandler.achievementList.filter(
+      (achievement) =>
+        Automation.Utils.isInstanceOf(achievement.property, "RouteKillRequirement") ||
+        Automation.Utils.isInstanceOf(achievement.property, "ClearGymRequirement") ||
+        Automation.Utils.isInstanceOf(achievement.property, "ClearDungeonRequirement")
+    );
 
     // Use a set to guarantee unicity
     let uniqueTypes = new Set();
@@ -705,8 +523,6 @@ class AutomationFocusAchievements {
         : /*achievementData.type == "ClearDungeonRequirement"*/ `Clear <Dungeon> ${achievementData.amount} times`;
 
     // Escape HTML special char
-    return label
-      .replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>")
-      .replace(/.$/, "");
+    return label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
   }
 }

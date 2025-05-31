@@ -40,10 +40,7 @@ class AutomationUtilsBattle {
       caughtPokemon = caughtPokemon.filter((p) => Math.floor(p.id) == 129);
     }
 
-    const partyClickBonus = caughtPokemon.reduce(
-      (total, p) => total + p.clickAttackBonus(),
-      1
-    );
+    const partyClickBonus = caughtPokemon.reduce((total, p) => total + p.clickAttackBonus(), 1);
     const clickAttack = Math.pow(partyClickBonus, 1.4);
 
     const bonus = App.game.party.multiplier.getBonus("clickAttack", false);
@@ -68,10 +65,7 @@ class AutomationUtilsBattle {
     let attack = 0;
     for (const pokemon of App.game.party.caughtPokemon) {
       // Magikarp Jump only considers magikarps
-      if (
-        region == this.SpecialRegion.MagikarpJump &&
-        Math.floor(pokemon.id) != 129
-      ) {
+      if (region == this.SpecialRegion.MagikarpJump && Math.floor(pokemon.id) != 129) {
         continue;
       }
 
@@ -83,10 +77,7 @@ class AutomationUtilsBattle {
       let pokemonAttack = storedData.attackPerType[type];
 
       // Apply the regional debuff
-      if (
-        App.game.challenges.list.regionalAttackDebuff.active() &&
-        region != storedData.nativeRegion
-      ) {
+      if (App.game.challenges.list.regionalAttackDebuff.active() && region != storedData.nativeRegion) {
         pokemonAttack *= App.game.party.getRegionAttackMultiplier();
       }
 
@@ -128,32 +119,20 @@ class AutomationUtilsBattle {
    *
    * @returns The number of game ticks needed to defeat the pokemon
    */
-  static getGameTickCountNeededToDefeatPokemon(
-    pokemonHp,
-    playerClickAttack,
-    totalAtkPerSecond
-  ) {
+  static getGameTickCountNeededToDefeatPokemon(pokemonHp, playerClickAttack, totalAtkPerSecond) {
     let nbGameTickToDefeat = 1;
     let nbTicksPerSeconds = 20; // Based on https://github.com/pokeclicker/pokeclicker/blob/b5807ae2b8b14431e267d90563ae8944272e1679/src/scripts/Battle.ts#L55-L57
 
     if (pokemonHp > playerClickAttack) {
-      nbGameTickToDefeat =
-        playerClickAttack > 0
-          ? Math.ceil(pokemonHp / playerClickAttack)
-          : Number.MAX_SAFE_INTEGER;
+      nbGameTickToDefeat = playerClickAttack > 0 ? Math.ceil(pokemonHp / playerClickAttack) : Number.MAX_SAFE_INTEGER;
 
       if (nbGameTickToDefeat > nbTicksPerSeconds) {
         // Compute the number of game tick considering click and pokemon attack
         let nbSecondsToDefeat = Math.floor(pokemonHp / totalAtkPerSecond);
         let lifeLeftAfterPokemonAttack = pokemonHp % totalAtkPerSecond;
-        let nbClickForLifeLeft =
-          playerClickAttack > 0
-            ? Math.ceil(lifeLeftAfterPokemonAttack / playerClickAttack)
-            : Number.MAX_SAFE_INTEGER;
+        let nbClickForLifeLeft = playerClickAttack > 0 ? Math.ceil(lifeLeftAfterPokemonAttack / playerClickAttack) : Number.MAX_SAFE_INTEGER;
 
-        nbGameTickToDefeat =
-          nbSecondsToDefeat * nbTicksPerSeconds +
-          Math.min(nbClickForLifeLeft, nbTicksPerSeconds);
+        nbGameTickToDefeat = nbSecondsToDefeat * nbTicksPerSeconds + Math.min(nbClickForLifeLeft, nbTicksPerSeconds);
       }
     }
 
@@ -169,19 +148,14 @@ class AutomationUtilsBattle {
    */
   static getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack) {
     // Populate the list with pokeclicker regular regions
-    let regionList = Array.from(
-      Array(GameConstants.MAX_AVAILABLE_REGION + 1).keys()
-    );
+    let regionList = Array.from(Array(GameConstants.MAX_AVAILABLE_REGION + 1).keys());
 
     // Add the MagikarpJump special region
     regionList.push(this.SpecialRegion.MagikarpJump);
 
     let worstAtks = new Map();
     for (const regionId of regionList) {
-      worstAtks.set(
-        regionId,
-        20 * playerClickAttack + this.getPlayerWorstPokemonAttack(regionId)
-      );
+      worstAtks.set(regionId, 20 * playerClickAttack + this.getPlayerWorstPokemonAttack(regionId));
     }
 
     return worstAtks;
@@ -197,17 +171,10 @@ class AutomationUtilsBattle {
   static getPlayerWorstPokemonAttack(region) {
     let worstAtk = Number.MAX_SAFE_INTEGER;
 
-    const weatherType =
-      region == this.SpecialRegion.MagikarpJump
-        ? Weather.regionalWeather[GameConstants.Region.alola]()
-        : Weather.regionalWeather[region]();
+    const weatherType = region == this.SpecialRegion.MagikarpJump ? Weather.regionalWeather[GameConstants.Region.alola]() : Weather.regionalWeather[region]();
 
     for (const type of Array(Gems.nTypes).keys()) {
-      let pokemonAttack = this.calculatePokemonAttack(
-        type,
-        region,
-        weatherType
-      );
+      let pokemonAttack = this.calculatePokemonAttack(type, region, weatherType);
       if (pokemonAttack < worstAtk) {
         worstAtk = pokemonAttack;
       }
@@ -231,10 +198,7 @@ class AutomationUtilsBattle {
     this.__internal__lastHighestRegion = player.highestRegion();
 
     for (const pokemon of App.game.party.caughtPokemon) {
-      this.__internal__PokemonAttackMap.set(
-        pokemon.id,
-        this.__internal__getPokemonAttackInfo(pokemon)
-      );
+      this.__internal__PokemonAttackMap.set(pokemon.id, this.__internal__getPokemonAttackInfo(pokemon));
     }
 
     this.__internal__lastPokemonAttackMapUpdate = Date.now();
@@ -252,20 +216,11 @@ class AutomationUtilsBattle {
 
     for (const pokemon of App.game.party.caughtPokemon) {
       if (!this.__internal__PokemonAttackMap.has(pokemon.id)) {
-        this.__internal__PokemonAttackMap.set(
-          pokemon.id,
-          this.__internal__getPokemonAttackInfo(pokemon)
-        );
+        this.__internal__PokemonAttackMap.set(pokemon.id, this.__internal__getPokemonAttackInfo(pokemon));
       } else {
         let data = this.__internal__PokemonAttackMap.get(pokemon.id);
-        if (
-          data.lastEffortPoints != pokemon.effortPoints ||
-          data.lastAttackBonusAmount != pokemon.attackBonusAmount
-        ) {
-          this.__internal__PokemonAttackMap.set(
-            pokemon.id,
-            this.__internal__getPokemonAttackInfo(pokemon)
-          );
+        if (data.lastEffortPoints != pokemon.effortPoints || data.lastAttackBonusAmount != pokemon.attackBonusAmount) {
+          this.__internal__PokemonAttackMap.set(pokemon.id, this.__internal__getPokemonAttackInfo(pokemon));
         }
       }
     }
@@ -293,18 +248,7 @@ class AutomationUtilsBattle {
     let attackPerType = [];
 
     for (const type of Array(Gems.nTypes).keys()) {
-      let pokemonAttack = App.game.party.calculateOnePokemonAttack(
-        pokemon,
-        type,
-        PokemonType.None,
-        region,
-        ignoreAttackDebuff,
-        includeBreeding,
-        useBaseAttack,
-        weather,
-        ignoreLevel,
-        includeFlute
-      );
+      let pokemonAttack = App.game.party.calculateOnePokemonAttack(pokemon, type, PokemonType.None, region, ignoreAttackDebuff, includeBreeding, useBaseAttack, weather, ignoreLevel, includeFlute);
 
       attackPerType.push(pokemonAttack);
     }

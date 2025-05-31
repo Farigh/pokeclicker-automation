@@ -32,53 +32,32 @@ class AutomationUtilsGym {
     let bestGymRate = 0;
 
     const playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
-    const magikarpPlayerClickAttack =
-      Automation.Utils.Battle.calculateClickAttack(true);
-    const totalAtkPerSecondByRegion =
-      Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(
-        playerClickAttack
-      );
+    const magikarpPlayerClickAttack = Automation.Utils.Battle.calculateClickAttack(true);
+    const totalAtkPerSecondByRegion = Automation.Utils.Battle.getPlayerWorstAttackPerSecondForAllRegions(playerClickAttack);
 
     for (const gymData of this.__internal__gymGemTypeMap.get(pokemonType)) {
       const gym = GymList[gymData.gymName];
 
       // Skip any gym that we can't access
-      if (
-        !gym.isUnlocked() ||
-        !Automation.Utils.Route.canMoveToRegion(gymData.region)
-      ) {
+      if (!gym.isUnlocked() || !Automation.Utils.Route.canMoveToRegion(gymData.region)) {
         continue;
       }
 
       // Some gyms are trials linked to a dungeon, don't consider those
-      if (
-        Automation.Utils.isInstanceOf(TownList[gymData.gymTown], "DungeonTown")
-      ) {
+      if (Automation.Utils.isInstanceOf(TownList[gymData.gymTown], "DungeonTown")) {
         continue;
       }
 
-      const isMagikarpJump = Automation.Utils.Route.isInMagikarpJumpIsland(
-        gymData.region,
-        gymData.subRegion
-      );
-      const gymRegion = isMagikarpJump
-        ? Automation.Utils.Battle.SpecialRegion.MagikarpJump
-        : gymData.region;
+      const isMagikarpJump = Automation.Utils.Route.isInMagikarpJumpIsland(gymData.region, gymData.subRegion);
+      const gymRegion = isMagikarpJump ? Automation.Utils.Battle.SpecialRegion.MagikarpJump : gymData.region;
 
-      const currentGymClickAttack = isMagikarpJump
-        ? magikarpPlayerClickAttack
-        : playerClickAttack;
+      const currentGymClickAttack = isMagikarpJump ? magikarpPlayerClickAttack : playerClickAttack;
 
       let currentGymGemPerClear = 0;
       let currentGymTickToClear = 0;
       const gymPokemons = gym.getPokemonList();
       for (const pokemon of gymPokemons) {
-        const currentPokemonTickToDefeat =
-          Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
-            pokemon.maxHealth,
-            currentGymClickAttack,
-            totalAtkPerSecondByRegion.get(gymRegion)
-          );
+        const currentPokemonTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, currentGymClickAttack, totalAtkPerSecondByRegion.get(gymRegion));
         currentGymTickToClear += currentPokemonTickToDefeat;
 
         const pokemonData = pokemonMap[pokemon.name];
@@ -87,22 +66,17 @@ class AutomationUtilsGym {
         }
       }
 
-      const currentGymGemPerTick =
-        currentGymGemPerClear / currentGymTickToClear;
+      const currentGymGemPerTick = currentGymGemPerClear / currentGymTickToClear;
 
       // Compare with a 1/1000 precision
-      if (
-        Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000)
-      ) {
+      if (Math.ceil(currentGymGemPerTick * 1000) >= Math.ceil(bestGymRate * 1000)) {
         bestGymName = gymData.gymName;
         bestGymTown = gymData.gymTown;
         bestGymRate = currentGymGemPerTick;
       }
     }
 
-    return bestGymName !== null
-      ? { Name: bestGymName, Town: bestGymTown, Rate: bestGymRate }
-      : null;
+    return bestGymName !== null ? { Name: bestGymName, Town: bestGymTown, Rate: bestGymRate } : null;
   }
 
   /**
@@ -119,8 +93,7 @@ class AutomationUtilsGym {
     let bestGymRatio = 0;
 
     const playerClickAttack = Automation.Utils.Battle.calculateClickAttack();
-    const magikarpPlayerClickAttack =
-      Automation.Utils.Battle.calculateClickAttack(true);
+    const magikarpPlayerClickAttack = Automation.Utils.Battle.calculateClickAttack(true);
 
     for (const key of Object.keys(GymList)) {
       const gym = GymList[key];
@@ -153,28 +126,13 @@ class AutomationUtilsGym {
         gym.setPokemon(player.regionStarters[townRegion]());
       }
 
-      const currentGymClickAttack =
-        Automation.Utils.Route.isInMagikarpJumpIsland(
-          townRegion,
-          TownList[gymTown].subRegion
-        )
-          ? magikarpPlayerClickAttack
-          : playerClickAttack;
+      const currentGymClickAttack = Automation.Utils.Route.isInMagikarpJumpIsland(townRegion, TownList[gymTown].subRegion) ? magikarpPlayerClickAttack : playerClickAttack;
 
       const weatherType = Weather.regionalWeather[townRegion]();
 
       const ticksToWin = gym.getPokemonList().reduce((count, pokemon) => {
-        const partyAttack = Automation.Utils.Battle.calculatePokemonAttack(
-          pokemonMap[pokemon.name].type[0],
-          townRegion,
-          weatherType
-        );
-        const nbGameTickToDefeat =
-          Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(
-            pokemon.maxHealth,
-            currentGymClickAttack,
-            partyAttack
-          );
+        const partyAttack = Automation.Utils.Battle.calculatePokemonAttack(pokemonMap[pokemon.name].type[0], townRegion, weatherType);
+        const nbGameTickToDefeat = Automation.Utils.Battle.getGameTickCountNeededToDefeatPokemon(pokemon.maxHealth, currentGymClickAttack, partyAttack);
 
         return count + nbGameTickToDefeat;
       }, 0);
@@ -217,10 +175,7 @@ class AutomationUtilsGym {
         for (const type of pokemonData.type) {
           let gemTypeData = this.__internal__gymGemTypeMap.get(type);
 
-          if (
-            gemTypeData.length == 0 ||
-            gemTypeData.at(-1).gymName != gymName
-          ) {
+          if (gemTypeData.length == 0 || gemTypeData.at(-1).gymName != gymName) {
             let gymTown = gym.town;
             // If a ligue champion is the target, the gymTown points to the champion instead of the town
             if (!TownList[gymTown]) {

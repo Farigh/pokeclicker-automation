@@ -24,10 +24,7 @@ class AutomationFocus {
     // Only consider the BuildMenu init step
     if (initStep == Automation.InitSteps.BuildMenu) {
       // Disable 'Focus on' by default
-      Automation.Utils.LocalStorage.setDefaultValue(
-        this.Settings.FeatureEnabled,
-        false
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, false);
 
       this.__internal__buildFunctionalitiesList();
       this.__internal__buildMenu();
@@ -52,11 +49,7 @@ class AutomationFocus {
    */
   static __ensureNoInstanceIsInProgress() {
     // Ask the dungeon auto-fight to stop, if the feature is enabled
-    if (
-      Automation.Utils.LocalStorage.getValue(
-        Automation.Dungeon.Settings.FeatureEnabled
-      ) === "true"
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(Automation.Dungeon.Settings.FeatureEnabled) === "true") {
       Automation.Dungeon.stopAfterThisRun();
       return false;
     }
@@ -64,10 +57,7 @@ class AutomationFocus {
     // Disable 'Focus on' if an instance is in progress, and exit
     if (Automation.Utils.isInInstanceState()) {
       Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-      Automation.Notifications.sendWarningNotif(
-        "Can't run while in an instance\nTurning the feature off",
-        "Focus"
-      );
+      Automation.Notifications.sendWarningNotif("Can't run while in an instance\nTurning the feature off", "Focus");
       return false;
     }
 
@@ -84,9 +74,7 @@ class AutomationFocus {
       return;
     }
 
-    const selectedPokeball = parseInt(
-      Automation.Utils.LocalStorage.getValue(this.Settings.BallToUseToCatch)
-    );
+    const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.BallToUseToCatch));
 
     // Ensure that the player has some balls available
     if (!this.__ensurePlayerHasEnoughBalls(selectedPokeball)) {
@@ -100,9 +88,7 @@ class AutomationFocus {
     Automation.Utils.Pokeball.catchEverythingWith(selectedPokeball);
 
     // Move to the highest unlocked route
-    Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(
-      selectedPokeball
-    );
+    Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(selectedPokeball);
   }
 
   /**
@@ -113,11 +99,7 @@ class AutomationFocus {
   static __enableAutoGymFight(gymName) {
     const menuWatcher = setInterval(
       function () {
-        if (
-          Automation.Utils.LocalStorage.getValue(
-            this.Settings.FeatureEnabled
-          ) === "false"
-        ) {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "false") {
           clearInterval(menuWatcher);
           return;
         }
@@ -125,10 +107,7 @@ class AutomationFocus {
         for (const option of Automation.Gym.GymSelectElem.options) {
           if (option.value === gymName) {
             option.selected = true;
-            Automation.Menu.forceAutomationState(
-              Automation.Gym.Settings.FeatureEnabled,
-              true
-            );
+            Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
             clearInterval(menuWatcher);
             break;
           }
@@ -150,14 +129,10 @@ class AutomationFocus {
     }
 
     const bestGym = Automation.Utils.Gym.findBestGymForFarmingType(gemType);
-    const bestRoute =
-      Automation.Utils.Route.findBestRouteForFarmingType(gemType);
+    const bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(gemType);
 
     // Compare with a 1/1000 precision
-    if (
-      bestGym !== null &&
-      Math.ceil(bestGym.Rate * 1000) >= Math.ceil(bestRoute.Rate * 1000)
-    ) {
+    if (bestGym !== null && Math.ceil(bestGym.Rate * 1000) >= Math.ceil(bestRoute.Rate * 1000)) {
       Automation.Utils.Route.moveToTown(bestGym.Town);
       this.__enableAutoGymFight(bestGym.Name);
     } else {
@@ -175,11 +150,7 @@ class AutomationFocus {
    * @param {Array} loadoutCandidates: The wanted loadout composition
    */
   static __equipLoadout(loadoutCandidates) {
-    if (
-      Automation.Utils.LocalStorage.getValue(
-        this.Settings.OakItemLoadoutUpdate
-      ) === "true"
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true") {
       Automation.Utils.OakItem.equipLoadout(loadoutCandidates);
     }
   }
@@ -200,23 +171,13 @@ class AutomationFocus {
 
       // Disable the feature if we are not able to buy more balls (for now, only money currency is supported)
       if (pokeballItem.currency != GameConstants.Currency.money) {
-        Automation.Menu.forceAutomationState(
-          this.Settings.FeatureEnabled,
-          false
-        );
-        Automation.Notifications.sendWarningNotif(
-          "No more pokéball of the selected type are available",
-          "Focus"
-        );
+        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+        Automation.Notifications.sendWarningNotif("No more pokéball of the selected type are available", "Focus");
         return false;
       }
 
       // No more money, or too expensive, go farm some money
-      if (
-        App.game.wallet.currencies[GameConstants.Currency.money]() <
-          pokeballItem.totalPrice(10) ||
-        pokeballItem.totalPrice(1) !== pokeballItem.basePrice
-      ) {
+      if (App.game.wallet.currencies[GameConstants.Currency.money]() < pokeballItem.totalPrice(10) || pokeballItem.totalPrice(1) !== pokeballItem.basePrice) {
         this.__internal__goToBestGymForMoney();
         return false;
       }
@@ -262,8 +223,7 @@ class AutomationFocus {
     focusContainer.appendChild(buttonContainer);
 
     // Add the drop-down list
-    this.__internal__focusSelectElem =
-      Automation.Menu.createDropDownListElement("focusSelection");
+    this.__internal__focusSelectElem = Automation.Menu.createDropDownListElement("focusSelection");
     this.__internal__focusSelectElem.style.width = "calc(100% - 55px)";
     this.__internal__focusSelectElem.style.paddingLeft = "3px";
     buttonContainer.appendChild(this.__internal__focusSelectElem);
@@ -275,12 +235,8 @@ class AutomationFocus {
     };
 
     // Add the 'Focus on' button
-    const focusButton = Automation.Menu.createButtonElement(
-      this.Settings.FeatureEnabled
-    );
-    const isFeatureEnabled =
-      Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-      "true";
+    const focusButton = Automation.Menu.createButtonElement(this.Settings.FeatureEnabled);
+    const isFeatureEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
     focusButton.textContent = isFeatureEnabled ? "On" : "Off";
     focusButton.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
     focusButton.onclick = function () {
@@ -292,11 +248,7 @@ class AutomationFocus {
     buttonContainer.appendChild(focusButton);
 
     // Toggle the 'Focus on' loop on click
-    focusButton.addEventListener(
-      "click",
-      this.__internal__toggleFocus.bind(this),
-      false
-    );
+    focusButton.addEventListener("click", this.__internal__toggleFocus.bind(this), false);
 
     // Build advanced settings
     this.__internal__buildAdvancedSettings(focusContainer);
@@ -317,18 +269,12 @@ class AutomationFocus {
     const focusSettingPanel = Automation.Menu.addSettingPanel(parent);
     focusSettingPanel.style.textAlign = "right";
 
-    const titleDiv = Automation.Menu.createTitleElement(
-      "'Focus on' advanced settings"
-    );
+    const titleDiv = Automation.Menu.createTitleElement("'Focus on' advanced settings");
     titleDiv.style.marginBottom = "10px";
     focusSettingPanel.appendChild(titleDiv);
 
     const focusSettingsTabsGroup = "automationFocusSettings";
-    const generalTabContainer = Automation.Menu.addTabElement(
-      focusSettingPanel,
-      "General",
-      focusSettingsTabsGroup
-    );
+    const generalTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "General", focusSettingsTabsGroup);
 
     /**********************\
         |*   Balls settings   *|
@@ -345,44 +291,27 @@ class AutomationFocus {
 
     // OakItem loadout setting
     const disableOakItemTooltip = "Modifies the oak item loadout automatically";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Optimize oak item loadout",
-      this.Settings.OakItemLoadoutUpdate,
-      disableOakItemTooltip,
-      generalTabContainer
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Optimize oak item loadout", this.Settings.OakItemLoadoutUpdate, disableOakItemTooltip, generalTabContainer);
 
     /*********************\
         |*  Quests settings  *|
         \*********************/
 
-    const questTabContainer = Automation.Menu.addTabElement(
-      focusSettingPanel,
-      "Quests",
-      focusSettingsTabsGroup
-    );
+    const questTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Quests", focusSettingsTabsGroup);
     this.Quests.__buildAdvancedSettings(questTabContainer);
 
     /***************************\
         |*  Achievements settings  *|
         \***************************/
 
-    const achievementsTabContainer = Automation.Menu.addTabElement(
-      focusSettingPanel,
-      "Achievements",
-      focusSettingsTabsGroup
-    );
+    const achievementsTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Achievements", focusSettingsTabsGroup);
     this.Achievements.__buildAdvancedSettings(achievementsTabContainer);
 
     /***************************\
         |*  Pokérus Cure settings  *|
         \***************************/
 
-    const pokerusCureTabContainer = Automation.Menu.addTabElement(
-      focusSettingPanel,
-      "Pokérus Cure",
-      focusSettingsTabsGroup
-    );
+    const pokerusCureTabContainer = Automation.Menu.addTabElement(focusSettingPanel, "Pokérus Cure", focusSettingsTabsGroup);
     this.PokerusCure.__buildAdvancedSettings(pokerusCureTabContainer);
   }
 
@@ -392,23 +321,14 @@ class AutomationFocus {
    * @param {Element} generalTabContainer: The tab container
    */
   static __internal__buildBallSelectionAdvancedSettings(generalTabContainer) {
-    const disclaimer =
-      Automation.Menu.TooltipSeparator +
-      "⚠️ Equipping higher pokéballs can be cost-heavy during early game";
+    const disclaimer = Automation.Menu.TooltipSeparator + "⚠️ Equipping higher pokéballs can be cost-heavy during early game";
 
     // Pokeball to use for catching
-    const pokeballToUseTooltip =
-      "Defines which pokeball will be equipped to catch\n" +
-      "already caught pokémon, when needed" +
-      disclaimer;
+    const pokeballToUseTooltip = "Defines which pokeball will be equipped to catch\n" + "already caught pokémon, when needed" + disclaimer;
 
     this.__internal__setBallToUseToCatchDefaultValue();
 
-    this.__pokeballToUseSelectElem = Automation.Menu.addPokeballList(
-      this.Settings.BallToUseToCatch,
-      "Pokeball to use for catching",
-      pokeballToUseTooltip
-    );
+    this.__pokeballToUseSelectElem = Automation.Menu.addPokeballList(this.Settings.BallToUseToCatch, "Pokeball to use for catching", pokeballToUseTooltip);
     generalTabContainer.appendChild(this.__pokeballToUseSelectElem);
   }
 
@@ -424,29 +344,18 @@ class AutomationFocus {
   static __internal__toggleFocus(enable) {
     // If we got the click event, use the button status
     if (enable !== true && enable !== false) {
-      enable =
-        Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-        "true";
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
     }
 
     if (enable) {
       // Only set a loop if there is none active
       if (this.__internal__focusLoop === null) {
         // Save the active focus
-        this.__internal__activeFocus = this.__internal__functionalities.filter(
-          (functionality) =>
-            functionality.id === this.__internal__focusSelectElem.value
-        )[0];
+        this.__internal__activeFocus = this.__internal__functionalities.filter((functionality) => functionality.id === this.__internal__focusSelectElem.value)[0];
 
         // Set focus loop if needed
-        if (
-          this.__internal__activeFocus.refreshRateAsMs !==
-          this.__noFunctionalityRefresh
-        ) {
-          this.__internal__focusLoop = setInterval(
-            this.__internal__activeFocus.run,
-            this.__internal__activeFocus.refreshRateAsMs
-          );
+        if (this.__internal__activeFocus.refreshRateAsMs !== this.__noFunctionalityRefresh) {
+          this.__internal__focusLoop = setInterval(this.__internal__activeFocus.run, this.__internal__activeFocus.refreshRateAsMs);
         }
 
         // First loop run (to avoid waiting too long before the first iteration, in case of long refresh rate)
@@ -476,11 +385,7 @@ class AutomationFocus {
     this.__internal__functionalities.push({
       id: "XP",
       name: "Experience",
-      tooltip:
-        "Automatically moves to the best route for EXP" +
-        Automation.Menu.TooltipSeparator +
-        "Such route is the highest unlocked one\n" +
-        "with HP lower than Click Attack",
+      tooltip: "Automatically moves to the best route for EXP" + Automation.Menu.TooltipSeparator + "Such route is the highest unlocked one\n" + "with HP lower than Click Attack",
       run: function () {
         this.__internal__goToBestRouteForExp();
       }.bind(this),
@@ -499,10 +404,7 @@ class AutomationFocus {
         this.__internal__goToBestGymForMoney();
       }.bind(this),
       stop: function () {
-        Automation.Menu.forceAutomationState(
-          Automation.Gym.Settings.FeatureEnabled,
-          false
-        );
+        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
       },
       refreshRateAsMs: 10000, // Refresh every 10s
     });
@@ -521,25 +423,16 @@ class AutomationFocus {
         this.__goToBestRouteForDungeonToken();
       }.bind(this),
       stop: function () {
-        Automation.Menu.forceAutomationState(
-          Automation.Gym.Settings.FeatureEnabled,
-          false
-        );
+        Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         Automation.Utils.Pokeball.disableAutomationFilter();
       }.bind(this),
       refreshRateAsMs: 3000, // Refresh every 3s
     });
 
     this.Quests.__registerFunctionalities(this.__internal__functionalities);
-    this.Achievements.__registerFunctionalities(
-      this.__internal__functionalities
-    );
-    this.PokerusCure.__registerFunctionalities(
-      this.__internal__functionalities
-    );
-    this.ShadowPurification.__registerFunctionalities(
-      this.__internal__functionalities
-    );
+    this.Achievements.__registerFunctionalities(this.__internal__functionalities);
+    this.PokerusCure.__registerFunctionalities(this.__internal__functionalities);
+    this.ShadowPurification.__registerFunctionalities(this.__internal__functionalities);
 
     this.__internal__addGemsFocusFunctionalities();
   }
@@ -571,10 +464,7 @@ class AutomationFocus {
     const isUnlockedCallback = function () {
       return App.game.gems.canAccess();
     };
-    this.__internal__addFunctionalitySeparator(
-      "==== Gems ====",
-      isUnlockedCallback
-    );
+    this.__internal__addFunctionalitySeparator("==== Gems ====", isUnlockedCallback);
 
     // Sort the types alphabetically
     const gemListCopy = [...Array(Gems.nTypes).keys()];
@@ -599,10 +489,7 @@ class AutomationFocus {
           this.__goToBestGymOrRouteForGem(gemType);
         }.bind(this),
         stop: function () {
-          Automation.Menu.forceAutomationState(
-            Automation.Gym.Settings.FeatureEnabled,
-            false
-          );
+          Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
         },
         isUnlocked: isUnlockedCallback,
         refreshRateAsMs: 10000, // Refresh every 10s
@@ -616,16 +503,11 @@ class AutomationFocus {
    * If any functionality is locked, the corresponding focus topic will be hidden to the player.
    */
   static __internal__populateFocusOptions() {
-    const lastAutomationFocusedTopic = Automation.Utils.LocalStorage.getValue(
-      this.Settings.FocusedTopic
-    );
+    const lastAutomationFocusedTopic = Automation.Utils.LocalStorage.getValue(this.Settings.FocusedTopic);
     for (const functionality of this.__internal__functionalities) {
       const opt = document.createElement("option");
 
-      if (
-        functionality.isUnlocked !== undefined &&
-        !functionality.isUnlocked()
-      ) {
+      if (functionality.isUnlocked !== undefined && !functionality.isUnlocked()) {
         this.__internal__lockedFunctionalities.push({ functionality, opt });
         opt.hidden = true;
       }
@@ -655,14 +537,8 @@ class AutomationFocus {
     const watcher = setInterval(
       function () {
         // Reverse iterate to avoid any problem that would be cause by element removal
-        for (
-          var i = this.__internal__lockedFunctionalities.length - 1;
-          i >= 0;
-          i--
-        ) {
-          if (
-            this.__internal__lockedFunctionalities[i].functionality.isUnlocked()
-          ) {
+        for (var i = this.__internal__lockedFunctionalities.length - 1; i >= 0; i--) {
+          if (this.__internal__lockedFunctionalities[i].functionality.isUnlocked()) {
             // Make the element visible
             this.__internal__lockedFunctionalities[i].opt.hidden = false;
 
@@ -695,20 +571,11 @@ class AutomationFocus {
     }
 
     // Update the tooltip
-    const activeFocus = this.__internal__functionalities.filter(
-      (functionality) =>
-        functionality.id === this.__internal__focusSelectElem.value
-    )[0];
-    this.__internal__focusSelectElem.parentElement.setAttribute(
-      "automation-tooltip-text",
-      activeFocus.tooltip
-    );
+    const activeFocus = this.__internal__functionalities.filter((functionality) => functionality.id === this.__internal__focusSelectElem.value)[0];
+    this.__internal__focusSelectElem.parentElement.setAttribute("automation-tooltip-text", activeFocus.tooltip);
 
     // Save the last selected topic
-    Automation.Utils.LocalStorage.setValue(
-      this.Settings.FocusedTopic,
-      this.__internal__focusSelectElem.value
-    );
+    Automation.Utils.LocalStorage.setValue(this.Settings.FocusedTopic, this.__internal__focusSelectElem.value);
   }
 
   /**
@@ -741,8 +608,7 @@ class AutomationFocus {
 
     // Only compute the gym the first time, since there is almost no chance that it will change while the feature is active
     if (this.__internal__lastFocusData === null) {
-      this.__internal__lastFocusData =
-        Automation.Utils.Gym.findBestGymForMoney();
+      this.__internal__lastFocusData = Automation.Utils.Gym.findBestGymForMoney();
     }
 
     // Equip the 'money' Oak loadout
@@ -754,9 +620,7 @@ class AutomationFocus {
       return;
     }
 
-    Automation.Utils.Route.moveToTown(
-      this.__internal__lastFocusData.bestGymTown
-    );
+    Automation.Utils.Route.moveToTown(this.__internal__lastFocusData.bestGymTown);
     this.__enableAutoGymFight(this.__internal__lastFocusData.bestGym);
   }
 
@@ -765,16 +629,9 @@ class AutomationFocus {
    */
   static __internal__setBallToUseToCatchDefaultValue() {
     // Set the most effective available ball in priority
-    for (const ball of [
-      GameConstants.Pokeball.Ultraball,
-      GameConstants.Pokeball.Greatball,
-      GameConstants.Pokeball.Pokeball,
-    ]) {
+    for (const ball of [GameConstants.Pokeball.Ultraball, GameConstants.Pokeball.Greatball, GameConstants.Pokeball.Pokeball]) {
       if (App.game.pokeballs.pokeballs[ball].unlocked()) {
-        Automation.Utils.LocalStorage.setDefaultValue(
-          this.Settings.BallToUseToCatch,
-          ball
-        );
+        Automation.Utils.LocalStorage.setDefaultValue(this.Settings.BallToUseToCatch, ball);
         break;
       }
     }

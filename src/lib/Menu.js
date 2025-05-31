@@ -27,9 +27,7 @@ class AutomationMenu {
     this.__internal__injectAutomationCss();
 
     this.__internal__automationContainer = document.createElement("div");
-    this.__internal__automationContainer.classList.add(
-      "automationMenuContainer"
-    );
+    this.__internal__automationContainer.classList.add("automationMenuContainer");
     this.__internal__automationContainer.id = "automationContainer";
     document.body.appendChild(this.__internal__automationContainer);
   }
@@ -43,10 +41,7 @@ class AutomationMenu {
 
     let boltImage = '<img src="assets/images/badges/Bolt.svg" height="20px">';
     let automationTitle = `${boltImage}Automation${boltImage}`;
-    this.AutomationButtonsDiv = this.addCategory(
-      "automationButtons",
-      automationTitle
-    );
+    this.AutomationButtonsDiv = this.addCategory("automationButtons", automationTitle);
   }
 
   /**
@@ -118,22 +113,20 @@ class AutomationMenu {
     // Initialize the floating panel resize observer, if needed
     if (this.__internal__floatingPanelResizeObserver == null) {
       // Add a resize observer that updates the floating panel top property so it will always be positionned correctly
-      this.__internal__floatingPanelResizeObserver = new ResizeObserver(
-        function (entries) {
-          for (const entry of entries) {
-            const panelDiv = entry.target;
+      this.__internal__floatingPanelResizeObserver = new ResizeObserver(function (entries) {
+        for (const entry of entries) {
+          const panelDiv = entry.target;
 
-            // When the in-game modal is hidden, the div size will be 0
-            if (panelDiv.offsetHeight == 0) {
-              // Don't compute
-              return;
-            }
-
-            // Position it at least 30px and at most 200px from the top, with at least a 30px bottom margin to match the in-game ones
-            panelDiv.style.top = `max(30px, min(200px, 100vh - ${panelDiv.offsetHeight}px - 30px))`;
+          // When the in-game modal is hidden, the div size will be 0
+          if (panelDiv.offsetHeight == 0) {
+            // Don't compute
+            return;
           }
+
+          // Position it at least 30px and at most 200px from the top, with at least a 30px bottom margin to match the in-game ones
+          panelDiv.style.top = `max(30px, min(200px, 100vh - ${panelDiv.offsetHeight}px - 30px))`;
         }
-      );
+      });
     }
 
     // Add the new category to the observer
@@ -166,21 +159,12 @@ class AutomationMenu {
    *
    * @returns The button element
    */
-  static addAutomationButton(
-    label,
-    id,
-    tooltip = "",
-    containingDiv = this.AutomationButtonsDiv,
-    forceDisabled = false
-  ) {
+  static addAutomationButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv, forceDisabled = false) {
     if (forceDisabled) {
       Automation.Utils.LocalStorage.setValue(id, false);
     } else {
       // Set the automation default behaviour, if not already set in local storage
-      Automation.Utils.LocalStorage.setDefaultValue(
-        id,
-        !this.DisableFeaturesByDefault
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(id, !this.DisableFeaturesByDefault);
     }
 
     let buttonMainContainer = document.createElement("span");
@@ -200,8 +184,7 @@ class AutomationMenu {
     buttonContainer.appendChild(buttonLabel);
 
     let buttonElem = this.createButtonElement(id);
-    let isFeatureEnabled =
-      Automation.Utils.LocalStorage.getValue(id) === "true";
+    let isFeatureEnabled = Automation.Utils.LocalStorage.getValue(id) === "true";
     buttonElem.textContent = isFeatureEnabled ? "On" : "Off";
     buttonElem.classList.add(isFeatureEnabled ? "btn-success" : "btn-danger");
     buttonElem.onclick = function () {
@@ -229,8 +212,7 @@ class AutomationMenu {
     let buttonElem = this.createToggleButtonElement(id);
 
     // Set the current state
-    let isFeatureEnabled =
-      Automation.Utils.LocalStorage.getValue(id) === "true";
+    let isFeatureEnabled = Automation.Utils.LocalStorage.getValue(id) === "true";
     buttonElem.setAttribute("checked", isFeatureEnabled ? "true" : "false");
 
     // Register the onclick event callback
@@ -255,17 +237,9 @@ class AutomationMenu {
    *
    * @returns The button element
    */
-  static addLabeledAdvancedSettingsToggleButton(
-    label,
-    id,
-    tooltip = "",
-    containingDiv = this.AutomationButtonsDiv
-  ) {
+  static addLabeledAdvancedSettingsToggleButton(label, id, tooltip = "", containingDiv = this.AutomationButtonsDiv) {
     // Enable automation by default, if not already set in local storage, unless the user chose to disable settings by default
-    Automation.Utils.LocalStorage.setDefaultValue(
-      id,
-      !this.DisableSettingsByDefault
-    );
+    Automation.Utils.LocalStorage.setDefaultValue(id, !this.DisableSettingsByDefault);
 
     let buttonMainContainer = document.createElement("span");
     containingDiv.appendChild(buttonMainContainer);
@@ -492,13 +466,8 @@ class AutomationMenu {
       event = event || window.event;
 
       if (event.key == "ArrowUp" || event.key == "ArrowDown") {
-        const currentOption = options.find(
-          (opt) => opt.value == container.selectedValue
-        );
-        const newOptionContainer =
-          event.key == "ArrowDown"
-            ? currentOption.element.parentElement.nextSibling
-            : currentOption.element.parentElement.previousSibling;
+        const currentOption = options.find((opt) => opt.value == container.selectedValue);
+        const newOptionContainer = event.key == "ArrowDown" ? currentOption.element.parentElement.nextSibling : currentOption.element.parentElement.previousSibling;
 
         if (newOptionContainer) {
           setOptionCallback(newOptionContainer.firstChild);
@@ -562,8 +531,7 @@ class AutomationMenu {
     newButton.style.borderRadius = "4px";
     newButton.style.position = "relative";
     newButton.style.bottom = "1px";
-    newButton.style.fontFamily =
-      'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
+    newButton.style.fontFamily = 'Roboto,-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Arial,sans-serif';
     newButton.style.fontSize = ".875rem";
     newButton.style.fontWeight = "400";
     newButton.style.lineHeight = "20px";
@@ -677,16 +645,9 @@ class AutomationMenu {
 
     // Filter input based on the given parameters
     inputElem.onkeydown = function (event) {
-      const isValidKey =
-        acceptedRegex === "" || event.key.match(acceptedRegex) != null;
+      const isValidKey = acceptedRegex === "" || event.key.match(acceptedRegex) != null;
 
-      return (
-        event.key === "Backspace" ||
-        event.key === "Delete" ||
-        event.key === "ArrowLeft" ||
-        event.key === "ArrowRight" ||
-        (isValidKey && (charLimit == -1 || this.innerText.length < charLimit))
-      );
+      return event.key === "Backspace" || event.key === "Delete" || event.key === "ArrowLeft" || event.key === "ArrowRight" || (isValidKey && (charLimit == -1 || this.innerText.length < charLimit));
     };
 
     // Disable drag and drop
@@ -740,9 +701,7 @@ class AutomationMenu {
 
     // Add onclick action
     buttonContainerDiv.onclick = function () {
-      const allSettingsPanels = document.getElementsByClassName(
-        "automation-setting-placeholder"
-      );
+      const allSettingsPanels = document.getElementsByClassName("automation-setting-placeholder");
 
       if (!innerDiv.hasAttribute("automation-visible")) {
         innerDiv.setAttribute("automation-visible", "true");
@@ -787,9 +746,7 @@ class AutomationMenu {
    * @returns The tab content div, where the user can add the new sub-menu content
    */
   static addTabElement(parentElem, label, tabGroupName) {
-    let tabContainer = parentElem.getElementsByClassName(
-      "automationTabContainerDiv"
-    )[0];
+    let tabContainer = parentElem.getElementsByClassName("automationTabContainerDiv")[0];
     const isFirstTab = !tabContainer;
     let tabLabelContainer;
     let tabContentContainer;
@@ -808,20 +765,12 @@ class AutomationMenu {
       tabContentContainer.classList.add("automationTabContentContainer");
       tabContainer.appendChild(tabContentContainer);
     } else {
-      tabLabelContainer = tabContainer.getElementsByClassName(
-        "automationTabLabelContainer"
-      )[0];
-      tabContentContainer = tabContainer.getElementsByClassName(
-        "automationTabContentContainer"
-      )[0];
+      tabLabelContainer = tabContainer.getElementsByClassName("automationTabLabelContainer")[0];
+      tabContentContainer = tabContainer.getElementsByClassName("automationTabContentContainer")[0];
     }
 
-    const currentTabIndex =
-      tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
-    const currentTabId = `automation-tab-${tabGroupName.replaceAll(
-      " ",
-      "-"
-    )}-${currentTabIndex}`;
+    const currentTabIndex = tabLabelContainer.getElementsByClassName("automationTabLabel").length + 1;
+    const currentTabId = `automation-tab-${tabGroupName.replaceAll(" ", "-")}-${currentTabIndex}`;
 
     // Add the input (the magic lies here)
     const labelInputElem = document.createElement("input");
@@ -859,16 +808,9 @@ class AutomationMenu {
    * @returns The created drop-down list element
    */
   static addPokeballList(setting, textLabel, tooltip, addNoneOption = false) {
-    const selectOptions = this.__internal__populatePokeballOptions(
-      setting,
-      addNoneOption
-    );
+    const selectOptions = this.__internal__populatePokeballOptions(setting, addNoneOption);
 
-    const result = Automation.Menu.createDropdownListWithHtmlOptions(
-      selectOptions,
-      textLabel,
-      tooltip
-    );
+    const result = Automation.Menu.createDropdownListWithHtmlOptions(selectOptions, textLabel, tooltip);
 
     // Update the local storage if the value is changed by the user
     result.onValueChange = function () {
@@ -934,15 +876,9 @@ class AutomationMenu {
    * @returns The corresponding image
    */
   static getCaughtStatusImage(caughtStatus) {
-    const extraStyle =
-      caughtStatus == CaughtStatus.NotCaught
-        ? " filter: invert(1) brightness(90%) !important;"
-        : "";
+    const extraStyle = caughtStatus == CaughtStatus.NotCaught ? " filter: invert(1) brightness(90%) !important;" : "";
 
-    return (
-      `<img class="pokeball-smallest" style="position: relative; top: 1px;${extraStyle}"` +
-      ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`
-    );
+    return `<img class="pokeball-smallest" style="position: relative; top: 1px;${extraStyle}"` + ` src="assets/images/pokeball/${this.__internal__caughtStatusImageSwitch[caughtStatus]}.svg">`;
   }
 
   /**
@@ -959,10 +895,7 @@ class AutomationMenu {
       return "";
     }
 
-    return (
-      `<img style="position: relative; bottom: 1px; height: 12px;"` +
-      ` src="assets/images/breeding/pokerus/${GameConstants.Pokerus[pokerusStatus]}.png">`
-    );
+    return `<img style="position: relative; bottom: 1px; height: 12px;"` + ` src="assets/images/breeding/pokerus/${GameConstants.Pokerus[pokerusStatus]}.png">`;
   }
 
   /*********************************************************************\
@@ -998,10 +931,7 @@ class AutomationMenu {
     button.setAttribute("disabled", newState ? "true" : "false");
 
     if (newState && reason !== "") {
-      button.parentElement.setAttribute(
-        "automation-tooltip-disable-reason",
-        "\n" + reason + this.TooltipSeparator
-      );
+      button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
     } else {
       button.parentElement.removeAttribute("automation-tooltip-disable-reason");
     }
@@ -1022,29 +952,16 @@ class AutomationMenu {
 
     button.disabled = newState;
     if (newState) {
-      button.classList.remove(
-        Automation.Utils.LocalStorage.getValue(button.id) === "true"
-          ? "btn-success"
-          : "btn-danger"
-      );
+      button.classList.remove(Automation.Utils.LocalStorage.getValue(button.id) === "true" ? "btn-success" : "btn-danger");
       button.classList.add("btn-secondary");
 
       if (reason !== "") {
-        button.parentElement.setAttribute(
-          "automation-tooltip-disable-reason",
-          "\n" + reason + this.TooltipSeparator
-        );
+        button.parentElement.setAttribute("automation-tooltip-disable-reason", "\n" + reason + this.TooltipSeparator);
       } else {
-        button.parentElement.removeAttribute(
-          "automation-tooltip-disable-reason"
-        );
+        button.parentElement.removeAttribute("automation-tooltip-disable-reason");
       }
     } else {
-      button.classList.add(
-        Automation.Utils.LocalStorage.getValue(button.id) === "true"
-          ? "btn-success"
-          : "btn-danger"
-      );
+      button.classList.add(Automation.Utils.LocalStorage.getValue(button.id) === "true" ? "btn-success" : "btn-danger");
       button.classList.remove("btn-secondary");
       button.parentElement.removeAttribute("automation-tooltip-disable-reason");
     }
@@ -1062,21 +979,14 @@ class AutomationMenu {
     let savedValue = Automation.Utils.LocalStorage.getValue(setting);
 
     // Don't consider the saved value if the user does not have access to the corresponding ball yet
-    if (
-      savedValue != null &&
-      savedValue != GameConstants.Pokeball.None &&
-      !App.game.pokeballs.pokeballs[savedValue].unlocked()
-    ) {
+    if (savedValue != null && savedValue != GameConstants.Pokeball.None && !App.game.pokeballs.pokeballs[savedValue].unlocked()) {
       Automation.Utils.LocalStorage.unsetValue(setting);
       savedValue = null;
     }
 
     // Default to None if the value was not set and the option is available
     if (addNoneOption && savedValue === null) {
-      Automation.Utils.LocalStorage.setDefaultValue(
-        setting,
-        GameConstants.Pokeball.None
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(setting, GameConstants.Pokeball.None);
       savedValue = GameConstants.Pokeball.None;
     }
 
@@ -1106,10 +1016,7 @@ class AutomationMenu {
       element.appendChild(image);
 
       // Hide any berry that is not yet unlocked
-      if (
-        ballOpt != GameConstants.Pokeball.None &&
-        !App.game.pokeballs.pokeballs[ballOpt].unlocked()
-      ) {
+      if (ballOpt != GameConstants.Pokeball.None && !App.game.pokeballs.pokeballs[ballOpt].unlocked()) {
         if (!this.__internal__lockedBalls.includes(ballOpt)) {
           this.__internal__lockedBalls.push(ballOpt);
         }

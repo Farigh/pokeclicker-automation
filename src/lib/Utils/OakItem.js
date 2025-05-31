@@ -11,32 +11,17 @@ class AutomationUtilsOakItem {
     /**
      * @brief The most efficient setup to make money
      */
-    static Money = [
-      OakItemType.Amulet_Coin,
-      OakItemType.Rocky_Helmet,
-      OakItemType.Exp_Share,
-      OakItemType.Magma_Stone,
-    ];
+    static Money = [OakItemType.Amulet_Coin, OakItemType.Rocky_Helmet, OakItemType.Exp_Share, OakItemType.Magma_Stone];
 
     /**
      * @brief The most efficient setup to catch pokemons
      */
-    static PokemonCatch = [
-      OakItemType.Magic_Ball,
-      OakItemType.Shiny_Charm,
-      OakItemType.Rocky_Helmet,
-      OakItemType.Exp_Share,
-    ];
+    static PokemonCatch = [OakItemType.Magic_Ball, OakItemType.Shiny_Charm, OakItemType.Rocky_Helmet, OakItemType.Exp_Share];
 
     /**
      * @brief The most efficient setup to increase the pokemon power
      */
-    static PokemonExp = [
-      OakItemType.Rocky_Helmet,
-      OakItemType.Exp_Share,
-      OakItemType.Magma_Stone,
-      OakItemType.Amulet_Coin,
-    ];
+    static PokemonExp = [OakItemType.Rocky_Helmet, OakItemType.Exp_Share, OakItemType.Magma_Stone, OakItemType.Amulet_Coin];
   };
 
   /**

@@ -16,39 +16,22 @@ class AutomationBattleFrontier {
         '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position:relative; bottom: 3px; transform: scaleX(-1);">' +
         "&nbsp;Battle Frontier&nbsp;" +
         '<img src="assets/images/npcs/Crush Kin.png" height="20px" style="position:relative; bottom: 3px;">';
-      const panelContainer = Automation.Menu.addCategory(
-        "battleFrontierFightButtons",
-        title
-      );
+      const panelContainer = Automation.Menu.addCategory("battleFrontierFightButtons", title);
 
       this.__internal__autoBattleFrontierPanel = panelContainer.parentElement;
       this.__internal__autoBattleFrontierPanel.hidden = true;
 
       // Add an on/off button
-      const autoRunTooltip =
-        "Automatically starts the Battle Frontier every time it finishes.\n";
+      const autoRunTooltip = "Automatically starts the Battle Frontier every time it finishes.\n";
       ("If a checkpoint was set, it will start at the last checkpoint.");
-      const autoRunButton = Automation.Menu.addAutomationButton(
-        "Auto start",
-        this.Settings.FeatureEnabled,
-        autoRunTooltip,
-        panelContainer,
-        true
-      );
-      autoRunButton.addEventListener(
-        "click",
-        this.__internal__toggleBattleFrontierFight.bind(this),
-        false
-      );
+      const autoRunButton = Automation.Menu.addAutomationButton("Auto start", this.Settings.FeatureEnabled, autoRunTooltip, panelContainer, true);
+      autoRunButton.addEventListener("click", this.__internal__toggleBattleFrontierFight.bind(this), false);
 
       // Disable the feature by default
       Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
     } else {
       // Set the div visibility and content watcher
-      setInterval(
-        this.__internal__updateDivVisibilityAndContent.bind(this),
-        200
-      ); // Refresh every 0.2s
+      setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
     }
   }
 
@@ -90,19 +73,14 @@ class AutomationBattleFrontier {
   static __internal__toggleBattleFrontierFight(enable) {
     // If we got the click event, use the button status
     if (enable !== true && enable !== false) {
-      enable =
-        Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-        "true";
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
     }
 
     if (enable) {
       // Only set a loop if there is none active
       if (this.__internal__autoBattleFrontierLoop === null) {
         // Set auto-battleFrontier loop
-        this.__internal__autoBattleFrontierLoop = setInterval(
-          this.__internal__battleFrontierFightLoop.bind(this),
-          10 * 1000
-        ); // Runs every 10 seconds
+        this.__internal__autoBattleFrontierLoop = setInterval(this.__internal__battleFrontierFightLoop.bind(this), 10 * 1000); // Runs every 10 seconds
 
         // Run the loop once immediately
         this.__internal__battleFrontierFightLoop(true);
@@ -124,16 +102,8 @@ class AutomationBattleFrontier {
   static __internal__battleFrontierFightLoop(firstRun = false) {
     // Kill the loop if the menu is not visible anymore
     // or if the user quit manually
-    if (
-      this.__internal__autoBattleFrontierPanel.hidden ||
-      (!BattleFrontierRunner.started() &&
-        BattleFrontierRunner.checkpoint() > 1 &&
-        !firstRun)
-    ) {
-      Automation.Notifications.sendWarningNotif(
-        "User action detected, turning off the automation",
-        "Battle Frontier"
-      );
+    if (this.__internal__autoBattleFrontierPanel.hidden || (!BattleFrontierRunner.started() && BattleFrontierRunner.checkpoint() > 1 && !firstRun)) {
+      Automation.Notifications.sendWarningNotif("User action detected, turning off the automation", "Battle Frontier");
       Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
       return;
     }
@@ -154,8 +124,7 @@ class AutomationBattleFrontier {
    */
   static __internal__updateDivVisibilityAndContent() {
     // Check if we are in the Battle Frontier, hide it and disable the feature if it's not the case
-    this.__internal__autoBattleFrontierPanel.hidden =
-      App.game.gameState !== GameConstants.GameState.battleFrontier;
+    this.__internal__autoBattleFrontierPanel.hidden = App.game.gameState !== GameConstants.GameState.battleFrontier;
     if (this.__internal__autoBattleFrontierPanel.hidden) {
       Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
     }

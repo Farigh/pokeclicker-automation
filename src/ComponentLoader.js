@@ -20,11 +20,7 @@ class AutomationComponentLoader {
    *
    * @warning This function should never change its prototype, otherwise it would break the API
    */
-  static loadFromUrl(
-    baseUrl,
-    disableFeaturesByDefault = false,
-    disableSettingsByDefault = false
-  ) {
+  static loadFromUrl(baseUrl, disableFeaturesByDefault = false, disableSettingsByDefault = false) {
     this.__baseUrl = baseUrl;
 
     // From the least dependant, to the most dependent
@@ -61,10 +57,7 @@ class AutomationComponentLoader {
     this.__loadingOrder += 1;
     this.__addScript("src/Automation.js");
 
-    this.__setupAutomationRunner(
-      disableFeaturesByDefault,
-      disableSettingsByDefault
-    );
+    this.__setupAutomationRunner(disableFeaturesByDefault, disableSettingsByDefault);
   }
 
   /**
@@ -128,22 +121,13 @@ class AutomationComponentLoader {
    * @param {boolean} disableFeaturesByDefault: True if every features needs to be disabled by default, False otherwise
    * @param {boolean} disableSettingsByDefault: True if every settings needs to be disabled by default, False otherwise
    */
-  static __setupAutomationRunner(
-    disableFeaturesByDefault,
-    disableSettingsByDefault
-  ) {
+  static __setupAutomationRunner(disableFeaturesByDefault, disableSettingsByDefault) {
     let currentLoadingOrder = -1;
 
     let watcher = setInterval(
       function () {
-        let isLoadingCompleted = Object.keys(this.__loadingProgressTable).every(
-          (key) => this.__loadingProgressTable[key]
-        );
-        let isGameStarted =
-          App &&
-          App.game &&
-          App.game.worker &&
-          App.game.worker instanceof Worker;
+        let isLoadingCompleted = Object.keys(this.__loadingProgressTable).every((key) => this.__loadingProgressTable[key]);
+        let isGameStarted = App && App.game && App.game.worker && App.game.worker instanceof Worker;
 
         if (!isLoadingCompleted || !isGameStarted) {
           return;

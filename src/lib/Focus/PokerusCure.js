@@ -46,16 +46,10 @@ class AutomationFocusPokerusCure {
    */
   static __buildAdvancedSettings(parent) {
     // Disable Beastball usage by default
-    Automation.Utils.LocalStorage.setDefaultValue(
-      this.__internal__advancedSettings.AllowBeastBallUsage,
-      false
-    );
+    Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.AllowBeastBallUsage, false);
 
     // Disable Alternate forms skipping by default
-    Automation.Utils.LocalStorage.setDefaultValue(
-      this.__internal__advancedSettings.SkipAlternateForms,
-      false
-    );
+    Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.SkipAlternateForms, false);
 
     // Beastball usage setting
     const tooltip =
@@ -63,22 +57,11 @@ class AutomationFocusPokerusCure {
       Automation.Menu.TooltipSeparator +
       "If this option is disabled, or you don't have Beastballs,\n" +
       "UltraBeast pokémons will be ignored.";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Use Beastballs to catch UltraBeast pokémons",
-      this.__internal__advancedSettings.AllowBeastBallUsage,
-      tooltip,
-      parent
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Use Beastballs to catch UltraBeast pokémons", this.__internal__advancedSettings.AllowBeastBallUsage, tooltip, parent);
 
     // Alternate forms skipping setting
-    const alternateTooltip =
-      "If enabled, only pokémon's base form will be considered";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Skip Alternate form pokémons",
-      this.__internal__advancedSettings.SkipAlternateForms,
-      alternateTooltip,
-      parent
-    );
+    const alternateTooltip = "If enabled, only pokémon's base form will be considered";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Skip Alternate form pokémons", this.__internal__advancedSettings.SkipAlternateForms, alternateTooltip, parent);
   }
 
   /*********************************************************************\
@@ -103,20 +86,13 @@ class AutomationFocusPokerusCure {
   static __internal__start() {
     // Disable other modes button
     const disableReason = "The 'Focus on Pokérus cure' feature is enabled";
-    Automation.Menu.setButtonDisabledState(
-      Automation.Click.Settings.FeatureEnabled,
-      true,
-      disableReason
-    );
+    Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
 
     // Force enable other modes
     Automation.Click.toggleAutoClick(true);
 
     // Set pokérus cure loop
-    this.__internal__pokerusCureLoop = setInterval(
-      this.__internal__focusOnPokerusCure.bind(this),
-      10000
-    ); // Runs every 10 seconds
+    this.__internal__pokerusCureLoop = setInterval(this.__internal__focusOnPokerusCure.bind(this), 10000); // Runs every 10 seconds
     this.__internal__focusOnPokerusCure();
   }
 
@@ -138,10 +114,7 @@ class AutomationFocusPokerusCure {
     Automation.Click.toggleAutoClick();
 
     // Re-enable other modes button
-    Automation.Menu.setButtonDisabledState(
-      Automation.Click.Settings.FeatureEnabled,
-      false
-    );
+    Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
   }
 
   /**
@@ -152,38 +125,20 @@ class AutomationFocusPokerusCure {
   static __internal__focusOnPokerusCure() {
     // Already fighting, nothing to do for now
     if (Automation.Utils.isInInstanceState()) {
-      if (
-        this.__internal__currentDungeonData == null ||
-        !this.__internal__doesDungeonHaveAnyPokemonNeedingCure(
-          this.__internal__currentDungeonData.dungeon,
-          true
-        )
-      ) {
+      if (this.__internal__currentDungeonData == null || !this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon, true)) {
         Automation.Focus.__ensureNoInstanceIsInProgress();
       }
       return;
     }
 
     // If the currently used route still has contagious pokémons, continue with it
-    if (
-      this.__internal__currentRouteData != null &&
-      this.__internal__doesRouteHaveAnyPokemonNeedingCure(
-        this.__internal__currentRouteData.route,
-        true
-      )
-    ) {
+    if (this.__internal__currentRouteData != null && this.__internal__doesRouteHaveAnyPokemonNeedingCure(this.__internal__currentRouteData.route, true)) {
       this.__internal__captureInfectedPokemons();
       return;
     }
 
     // If the currently used dungeon still has contagious pokémons, continue with it
-    if (
-      this.__internal__currentDungeonData != null &&
-      this.__internal__doesDungeonHaveAnyPokemonNeedingCure(
-        this.__internal__currentDungeonData.dungeon,
-        true
-      )
-    ) {
+    if (this.__internal__currentDungeonData != null && this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon, true)) {
       this.__internal__captureInfectedPokemons();
       return;
     }
@@ -196,21 +151,12 @@ class AutomationFocusPokerusCure {
       this.__internal__setNextPokerusDungeon();
     }
 
-    if (
-      this.__internal__currentRouteData != null ||
-      this.__internal__currentDungeonData != null
-    ) {
+    if (this.__internal__currentRouteData != null || this.__internal__currentDungeonData != null) {
       this.__internal__captureInfectedPokemons();
     } else {
       // No more location available, stop the focus
-      Automation.Menu.forceAutomationState(
-        Automation.Focus.Settings.FeatureEnabled,
-        false
-      );
-      Automation.Notifications.sendWarningNotif(
-        "No more route, nor dungeon, available to cure pokémon from pokérus.\nTurning the feature off",
-        "Focus"
-      );
+      Automation.Menu.forceAutomationState(Automation.Focus.Settings.FeatureEnabled, false);
+      Automation.Notifications.sendWarningNotif("No more route, nor dungeon, available to cure pokémon from pokérus.\nTurning the feature off", "Focus");
     }
   }
 
@@ -219,60 +165,36 @@ class AutomationFocusPokerusCure {
    */
   static __internal__captureInfectedPokemons() {
     // Equip the Oak item catch loadout
-    Automation.Focus.__equipLoadout(
-      Automation.Utils.OakItem.Setup.PokemonCatch
-    );
+    Automation.Focus.__equipLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
 
     // Ensure that the player has some balls available
-    const selectedPokeball = parseInt(
-      Automation.Utils.LocalStorage.getValue(
-        Automation.Focus.Settings.BallToUseToCatch
-      )
-    );
+    const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
     if (!Automation.Focus.__ensurePlayerHasEnoughBalls(selectedPokeball)) {
       Automation.Utils.Pokeball.disableAutomationFilter();
       return;
     }
 
     // Go farm some dungeon token if needed
-    if (
-      this.__internal__currentDungeonData != null &&
-      App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() <
-        this.__internal__currentDungeonData.dungeon.tokenCost
-    ) {
+    if (this.__internal__currentDungeonData != null && App.game.wallet.currencies[GameConstants.Currency.dungeonToken]() < this.__internal__currentDungeonData.dungeon.tokenCost) {
       Automation.Utils.Pokeball.disableAutomationFilter();
       Automation.Focus.__goToBestRouteForDungeonToken();
       return;
     }
 
-    const currentLocationData =
-      this.__internal__currentRouteData != null
-        ? this.__internal__currentRouteData
-        : this.__internal__currentDungeonData;
+    const currentLocationData = this.__internal__currentRouteData != null ? this.__internal__currentRouteData : this.__internal__currentDungeonData;
 
     // Equip an "Already caught contagious" pokeball
-    const pokeballToUse = currentLocationData.needsBeastBall
-      ? GameConstants.Pokeball.Beastball
-      : selectedPokeball;
+    const pokeballToUse = currentLocationData.needsBeastBall ? GameConstants.Pokeball.Beastball : selectedPokeball;
 
     Automation.Utils.Pokeball.onlyCatchContagiousWith(pokeballToUse);
 
     if (this.__internal__currentRouteData) {
       // Move to the selected route
-      Automation.Utils.Route.moveToRoute(
-        this.__internal__currentRouteData.route.number,
-        this.__internal__currentRouteData.route.region
-      );
+      Automation.Utils.Route.moveToRoute(this.__internal__currentRouteData.route.number, this.__internal__currentRouteData.route.region);
     } else {
       // Move to dungeon if needed
-      if (
-        !Automation.Utils.Route.isPlayerInTown(
-          this.__internal__currentDungeonData.dungeon.name
-        )
-      ) {
-        Automation.Utils.Route.moveToTown(
-          this.__internal__currentDungeonData.dungeon.name
-        );
+      if (!Automation.Utils.Route.isPlayerInTown(this.__internal__currentDungeonData.dungeon.name)) {
+        Automation.Utils.Route.moveToTown(this.__internal__currentDungeonData.dungeon.name);
 
         // Let a second for the menu to show up
         setTimeout(this.__internal__captureInfectedPokemons.bind(this), 1000);
@@ -280,25 +202,15 @@ class AutomationFocusPokerusCure {
       }
 
       // Enable auto dungeon fight
-      Automation.Menu.forceAutomationState(
-        Automation.Dungeon.Settings.FeatureEnabled,
-        true
-      );
+      Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
       // Only force pokemon fights if one of those needs curing
-      if (
-        this.__internal__doesAnyPokemonNeedCuring(
-          this.__internal__currentDungeonData.nonBossPokemons,
-          true
-        )
-      ) {
+      if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.nonBossPokemons, true)) {
         // Bypass user settings, especially the 'Skip fights' one
-        Automation.Dungeon.AutomationRequestedMode =
-          Automation.Dungeon.InternalModes.ForcePokemonFight;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
       } else {
         // Go straight to the boss if every other pokemons have been cured
-        Automation.Dungeon.AutomationRequestedMode =
-          Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
       }
     }
   }
@@ -308,15 +220,8 @@ class AutomationFocusPokerusCure {
    */
   static __internal__setNextPokerusRoute() {
     // Remove the current route from the list if completed
-    if (
-      this.__internal__currentRouteData != null &&
-      !this.__internal__doesRouteHaveAnyPokemonNeedingCure(
-        this.__internal__currentRouteData.route
-      )
-    ) {
-      const index = this.__internal__pokerusRouteData.indexOf(
-        this.__internal__currentRouteData
-      );
+    if (this.__internal__currentRouteData != null && !this.__internal__doesRouteHaveAnyPokemonNeedingCure(this.__internal__currentRouteData.route)) {
+      const index = this.__internal__pokerusRouteData.indexOf(this.__internal__currentRouteData);
       this.__internal__pokerusRouteData.splice(index, 1);
     }
 
@@ -325,20 +230,13 @@ class AutomationFocusPokerusCure {
       (data) =>
         this.__internal__doesRouteHaveAnyPokemonNeedingCure(data.route, true) &&
         // Don't consider route that the player can't access yet
-        Automation.Utils.Route.canMoveToRoute(
-          data.route.number,
-          data.route.region,
-          data.route
-        ),
+        Automation.Utils.Route.canMoveToRoute(data.route.number, data.route.region, data.route),
       this
     );
 
     // Determine if the beast ball is the only catching option
     if (this.__internal__currentRouteData) {
-      this.__internal__currentRouteData.needsBeastBall =
-        this.__internal__doesRouteNeedBeastBalls(
-          this.__internal__currentRouteData.route
-        );
+      this.__internal__currentRouteData.needsBeastBall = this.__internal__doesRouteNeedBeastBalls(this.__internal__currentRouteData.route);
     }
   }
 
@@ -347,45 +245,26 @@ class AutomationFocusPokerusCure {
    */
   static __internal__setNextPokerusDungeon() {
     // Remove the current dungeon from the list if completed
-    if (
-      this.__internal__currentDungeonData != null &&
-      !this.__internal__doesDungeonHaveAnyPokemonNeedingCure(
-        this.__internal__currentDungeonData.dungeon
-      )
-    ) {
-      const index = this.__internal__pokerusDungeonData.indexOf(
-        this.__internal__currentDungeonData
-      );
+    if (this.__internal__currentDungeonData != null && !this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon)) {
+      const index = this.__internal__pokerusDungeonData.indexOf(this.__internal__currentDungeonData);
       this.__internal__pokerusDungeonData.splice(index, 1);
     }
 
     // Set the next best dungeon
-    this.__internal__currentDungeonData =
-      this.__internal__pokerusDungeonData.find(
-        (data) =>
-          this.__internal__doesDungeonHaveAnyPokemonNeedingCure(
-            data.dungeon,
-            true
-          ) &&
-          // Don't consider dungeon that the player can't access yet
-          Automation.Utils.Route.canMoveToTown(TownList[data.dungeon.name]),
-        this
-      );
+    this.__internal__currentDungeonData = this.__internal__pokerusDungeonData.find(
+      (data) =>
+        this.__internal__doesDungeonHaveAnyPokemonNeedingCure(data.dungeon, true) &&
+        // Don't consider dungeon that the player can't access yet
+        Automation.Utils.Route.canMoveToTown(TownList[data.dungeon.name]),
+      this
+    );
 
     if (this.__internal__currentDungeonData) {
       // Save current instance non-boss pokémons for dungeon strategy optimisation
-      this.__internal__currentDungeonData.nonBossPokemons =
-        this.__internal__getEveryPokemonForDungeon(
-          this.__internal__currentDungeonData.dungeon,
-          false,
-          true
-        );
+      this.__internal__currentDungeonData.nonBossPokemons = this.__internal__getEveryPokemonForDungeon(this.__internal__currentDungeonData.dungeon, false, true);
 
       // Determine if the beast ball is the only catching option
-      this.__internal__currentDungeonData.needsBeastBall =
-        this.__internal__doesDungeonNeedBeastBalls(
-          this.__internal__currentDungeonData.dungeon
-        );
+      this.__internal__currentDungeonData.needsBeastBall = this.__internal__doesDungeonNeedBeastBalls(this.__internal__currentDungeonData.dungeon);
     }
   }
 
@@ -395,24 +274,15 @@ class AutomationFocusPokerusCure {
   static __internal__buildPokerusRouteList() {
     for (const route of Routes.regionRoutes) {
       // Don't add routes that are not yet available to the player, nor ones that are already cured
-      if (
-        route.region <= GameConstants.MAX_AVAILABLE_REGION &&
-        this.__internal__doesRouteHaveAnyPokemonNeedingCure(route)
-      ) {
+      if (route.region <= GameConstants.MAX_AVAILABLE_REGION && this.__internal__doesRouteHaveAnyPokemonNeedingCure(route)) {
         this.__internal__pokerusRouteData.push({ route });
       }
     }
 
     // Put Magikarp jump last
     this.__internal__pokerusRouteData.sort((routeA, routeB) => {
-      const isAmagikarp = Automation.Utils.Route.isInMagikarpJumpIsland(
-        routeA.route.region,
-        routeA.route.subRegion
-      );
-      const isBmagikarp = Automation.Utils.Route.isInMagikarpJumpIsland(
-        routeB.route.region,
-        routeB.route.subRegion
-      );
+      const isAmagikarp = Automation.Utils.Route.isInMagikarpJumpIsland(routeA.route.region, routeA.route.subRegion);
+      const isBmagikarp = Automation.Utils.Route.isInMagikarpJumpIsland(routeB.route.region, routeB.route.subRegion);
 
       if (isAmagikarp && !isBmagikarp) return 1;
       if (isBmagikarp && !isAmagikarp) return -1;
@@ -449,19 +319,10 @@ class AutomationFocusPokerusCure {
    *
    * @returns True if every pokémons are cured, false otherwise
    */
-  static __internal__doesRouteHaveAnyPokemonNeedingCure(
-    route,
-    onlyConsiderAvailableContagiousPokemons = false
-  ) {
-    const pokemonList = this.__internal__getEveryPokemonForRoute(
-      route,
-      onlyConsiderAvailableContagiousPokemons
-    );
+  static __internal__doesRouteHaveAnyPokemonNeedingCure(route, onlyConsiderAvailableContagiousPokemons = false) {
+    const pokemonList = this.__internal__getEveryPokemonForRoute(route, onlyConsiderAvailableContagiousPokemons);
 
-    return this.__internal__doesAnyPokemonNeedCuring(
-      pokemonList,
-      onlyConsiderAvailableContagiousPokemons
-    );
+    return this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons);
   }
 
   /**
@@ -472,19 +333,10 @@ class AutomationFocusPokerusCure {
    *
    * @returns True if every pokémons are cured, false otherwise
    */
-  static __internal__doesDungeonHaveAnyPokemonNeedingCure(
-    dungeon,
-    onlyConsiderAvailableContagiousPokemons = false
-  ) {
-    const pokemonList = this.__internal__getEveryPokemonForDungeon(
-      dungeon,
-      onlyConsiderAvailableContagiousPokemons
-    );
+  static __internal__doesDungeonHaveAnyPokemonNeedingCure(dungeon, onlyConsiderAvailableContagiousPokemons = false) {
+    const pokemonList = this.__internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailableContagiousPokemons);
 
-    return this.__internal__doesAnyPokemonNeedCuring(
-      pokemonList,
-      onlyConsiderAvailableContagiousPokemons
-    );
+    return this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons);
   }
 
   /**
@@ -495,37 +347,22 @@ class AutomationFocusPokerusCure {
    *
    * @returns True if every pokémons are cured, false otherwise
    */
-  static __internal__doesAnyPokemonNeedCuring(
-    pokemonList,
-    onlyConsiderAvailableContagiousPokemons
-  ) {
+  static __internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons) {
     // Skip UltraBeast pokémons if the player disabled the feature or there is no Beastball left
     const skipUltraBeasts =
-      Automation.Utils.LocalStorage.getValue(
-        this.__internal__advancedSettings.AllowBeastBallUsage
-      ) == "false" ||
-      App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Beastball) ===
-        0;
+      Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.AllowBeastBallUsage) == "false" || App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Beastball) === 0;
 
     return pokemonList.some((pokemonName) => {
       const pokemon = App.game.party.getPokemonByName(pokemonName);
 
-      if (
-        onlyConsiderAvailableContagiousPokemons &&
-        skipUltraBeasts &&
-        GameConstants.UltraBeastType[pokemonName] != undefined
-      ) {
+      if (onlyConsiderAvailableContagiousPokemons && skipUltraBeasts && GameConstants.UltraBeastType[pokemonName] != undefined) {
         return false;
       }
 
       // A pokémon is a candidate to catch if
       //  - It's not already cured
       //  - It's contagious or we are listing every uncured pokemon
-      return (
-        pokemon?.pokerus != GameConstants.Pokerus.Resistant &&
-        (!onlyConsiderAvailableContagiousPokemons ||
-          pokemon?.pokerus == GameConstants.Pokerus.Contagious)
-      );
+      return pokemon?.pokerus != GameConstants.Pokerus.Resistant && (!onlyConsiderAvailableContagiousPokemons || pokemon?.pokerus == GameConstants.Pokerus.Contagious);
     });
   }
 
@@ -538,15 +375,10 @@ class AutomationFocusPokerusCure {
    * @returns True if the route only contains contagious UltraBeasts, false otherwise.
    */
   static __internal__doesRouteNeedBeastBalls(route) {
-    return this.__internal__getEveryPokemonForRoute(route, true).every(
-      (pokemonName) => {
-        const pokemon = App.game.party.getPokemonByName(pokemonName);
-        return (
-          pokemon?.pokerus != GameConstants.Pokerus.Contagious ||
-          GameConstants.UltraBeastType[pokemonName] != undefined
-        );
-      }
-    );
+    return this.__internal__getEveryPokemonForRoute(route, true).every((pokemonName) => {
+      const pokemon = App.game.party.getPokemonByName(pokemonName);
+      return pokemon?.pokerus != GameConstants.Pokerus.Contagious || GameConstants.UltraBeastType[pokemonName] != undefined;
+    });
   }
 
   /**
@@ -558,16 +390,10 @@ class AutomationFocusPokerusCure {
    * @returns True if the dungeon only contains contagious UltraBeasts, false otherwise.
    */
   static __internal__doesDungeonNeedBeastBalls(dungeon) {
-    const pokemonList = this.__internal__getEveryPokemonForDungeon(
-      dungeon,
-      true
-    );
+    const pokemonList = this.__internal__getEveryPokemonForDungeon(dungeon, true);
     return pokemonList.every((pokemonName) => {
       const pokemon = App.game.party.getPokemonByName(pokemonName);
-      return (
-        pokemon?.pokerus != GameConstants.Pokerus.Contagious ||
-        GameConstants.UltraBeastType[pokemonName] != undefined
-      );
+      return pokemon?.pokerus != GameConstants.Pokerus.Contagious || GameConstants.UltraBeastType[pokemonName] != undefined;
     });
   }
 
@@ -582,16 +408,10 @@ class AutomationFocusPokerusCure {
    *
    * @returns The list of pokémon
    */
-  static __internal__getEveryPokemonForRoute(
-    route,
-    onlyConsiderAvailablePokemons
-  ) {
+  static __internal__getEveryPokemonForRoute(route, onlyConsiderAvailablePokemons) {
     // Inspired from https://github.com/pokeclicker/pokeclicker/blob/f7d8db69c219a1a1e47be919f4b9b1f0de8cde9e/src/scripts/wildBattle/RouteHelper.ts#L15-L39
 
-    const possiblePokemons = Routes.getRoute(
-      route.region,
-      route.number
-    )?.pokemon;
+    const possiblePokemons = Routes.getRoute(route.region, route.number)?.pokemon;
     if (!possiblePokemons) {
       return ["Rattata"];
     }
@@ -600,11 +420,7 @@ class AutomationFocusPokerusCure {
     let pokemonList = possiblePokemons.land;
 
     // Water Pokémon
-    if (
-      !onlyConsiderAvailablePokemons ||
-      pokemonList.length == 0 ||
-      App.game.keyItems.hasKeyItem(KeyItemType.Super_rod)
-    ) {
+    if (!onlyConsiderAvailablePokemons || pokemonList.length == 0 || App.game.keyItems.hasKeyItem(KeyItemType.Super_rod)) {
       pokemonList = pokemonList.concat(possiblePokemons.water);
     }
 
@@ -615,30 +431,18 @@ class AutomationFocusPokerusCure {
     let specialPokemonList = possiblePokemons.special;
 
     if (onlyConsiderAvailablePokemons) {
-      specialPokemonList = specialPokemonList.filter(
-        (p) => this.__internal__isRequirementCompleted(p.req, route.region),
-        this
-      );
+      specialPokemonList = specialPokemonList.filter((p) => this.__internal__isRequirementCompleted(p.req, route.region), this);
     }
 
-    pokemonList = pokemonList.concat(
-      ...specialPokemonList.map((p) => p.pokemon)
-    );
+    pokemonList = pokemonList.concat(...specialPokemonList.map((p) => p.pokemon));
 
     // Filter duplicate entries
     pokemonList.filter((item, index) => pokemonList.indexOf(item) === index);
 
     // Filter alternate forms, if asked for
-    if (
-      onlyConsiderAvailablePokemons &&
-      Automation.Utils.LocalStorage.getValue(
-        this.__internal__advancedSettings.SkipAlternateForms
-      ) == "true"
-    ) {
+    if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true") {
       // Alternate forms have a floating point id
-      pokemonList = pokemonList.filter((pokemonName) =>
-        Number.isInteger(pokemonMap[pokemonName].id)
-      );
+      pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
     }
 
     return pokemonList;
@@ -653,11 +457,7 @@ class AutomationFocusPokerusCure {
    *
    * @returns The list of pokémon
    */
-  static __internal__getEveryPokemonForDungeon(
-    dungeon,
-    onlyConsiderAvailablePokemons,
-    skipBosses = false
-  ) {
+  static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons, skipBosses = false) {
     let pokemonList = dungeon.pokemonList;
 
     if (!skipBosses) {
@@ -669,12 +469,7 @@ class AutomationFocusPokerusCure {
         if (Automation.Utils.isInstanceOf(boss, "DungeonBossPokemon")) {
           // Don't consider locked bosses, if we're only considering available pokémons
           if (onlyConsiderAvailablePokemons) {
-            const isBossLocked = boss.options?.requirement
-              ? !this.__internal__isRequirementCompleted(
-                  boss.options?.requirement,
-                  dungeonRegion
-                )
-              : false;
+            const isBossLocked = boss.options?.requirement ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion) : false;
             if (isBossLocked) continue;
           }
 
@@ -710,16 +505,9 @@ class AutomationFocusPokerusCure {
     }
 
     // Filter alternate forms, if asked for
-    if (
-      onlyConsiderAvailablePokemons &&
-      Automation.Utils.LocalStorage.getValue(
-        this.__internal__advancedSettings.SkipAlternateForms
-      ) == "true"
-    ) {
+    if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true") {
       // Alternate forms have a floating point id
-      pokemonList = pokemonList.filter((pokemonName) =>
-        Number.isInteger(pokemonMap[pokemonName].id)
-      );
+      pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
     }
 
     return pokemonList;
@@ -734,12 +522,7 @@ class AutomationFocusPokerusCure {
    * @returns true if the requirement is completed, false otherwise
    */
   static __internal__isRequirementCompleted(requirement, region) {
-    const requirements = Automation.Utils.isInstanceOf(
-      requirement,
-      "MultiRequirement"
-    )
-      ? requirement.requirements
-      : [requirement];
+    const requirements = Automation.Utils.isInstanceOf(requirement, "MultiRequirement") ? requirement.requirements : [requirement];
 
     for (const req of requirements) {
       if (Automation.Utils.isInstanceOf(req, "WeatherRequirement")) {

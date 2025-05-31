@@ -47,10 +47,7 @@ class Automation {
           clearInterval(timer);
 
           // Log automation start
-          console.log(
-            `[${GameConstants.formatDate(new Date())}] %cStarting automation..`,
-            "color:#8e44ad;font-weight:900;"
-          );
+          console.log(`[${GameConstants.formatDate(new Date())}] %cStarting automation..`, "color:#8e44ad;font-weight:900;");
 
           for (let initKey in this.InitSteps) {
             let initStep = this.InitSteps[initKey];
@@ -85,10 +82,7 @@ class Automation {
           }
 
           // Log automation startup completion
-          console.log(
-            `[${GameConstants.formatDate(new Date())}] %cAutomation started`,
-            "color:#2ecc71;font-weight:900;"
-          );
+          console.log(`[${GameConstants.formatDate(new Date())}] %cAutomation started`, "color:#2ecc71;font-weight:900;");
         }
       }.bind(this),
       200

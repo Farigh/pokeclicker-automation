@@ -70,38 +70,24 @@ class AutomationFocusQuests {
    * @brief Initializes the internal quest data
    */
   static __internal__initializeQuestData() {
-    this.__internal__questLabels["DefeatPokemonsQuest"] =
-      "Defeat <n> Pokémon on <Route>.";
-    this.__internal__questLabels["CapturePokemonsQuest"] =
-      "Capture or hatch <n> Pokémon.";
-    this.__internal__questLabels["CapturePokemonTypesQuest"] =
-      "Capture or hatch <n> <Type> Pokémon.";
-    this.__internal__questLabels["ClearBattleFrontierQuest"] =
-      "Clear <n> Stages in the Battle Frontier.";
-    this.__internal__questLabels["GainFarmPointsQuest"] =
-      "Gain <n> Farm Points.";
+    this.__internal__questLabels["DefeatPokemonsQuest"] = "Defeat <n> Pokémon on <Route>.";
+    this.__internal__questLabels["CapturePokemonsQuest"] = "Capture or hatch <n> Pokémon.";
+    this.__internal__questLabels["CapturePokemonTypesQuest"] = "Capture or hatch <n> <Type> Pokémon.";
+    this.__internal__questLabels["ClearBattleFrontierQuest"] = "Clear <n> Stages in the Battle Frontier.";
+    this.__internal__questLabels["GainFarmPointsQuest"] = "Gain <n> Farm Points.";
     this.__internal__questLabels["GainMoneyQuest"] = "Gain <n> Pokédollars.";
-    this.__internal__questLabels["GainTokensQuest"] =
-      "Gain <n> Dungeon Tokens.";
+    this.__internal__questLabels["GainTokensQuest"] = "Gain <n> Dungeon Tokens.";
     this.__internal__questLabels["GainGemsQuest"] = "Gain <n> <Type> gems.";
     this.__internal__questLabels["HatchEggsQuest"] = "Hatch <n> Eggs.";
-    this.__internal__questLabels["MineLayersQuest"] =
-      "Mine <n> layer in the Underground.";
-    this.__internal__questLabels["MineItemsQuest"] =
-      "Mine <n> item in the Underground.";
-    this.__internal__questLabels["CatchShiniesQuest"] =
-      "Catch 1 shiny Pokémon.";
-    this.__internal__questLabels["CatchShadowsQuest"] =
-      "Catch <n> Shadow Pokémon.";
-    this.__internal__questLabels["DefeatGymQuest"] =
-      "Defeat <Gym leader> <n> times.";
-    this.__internal__questLabels["DefeatDungeonQuest"] =
-      "Defeat the <Dungeon name> dungeon in <Region> <n> times.";
+    this.__internal__questLabels["MineLayersQuest"] = "Mine <n> layer in the Underground.";
+    this.__internal__questLabels["MineItemsQuest"] = "Mine <n> item in the Underground.";
+    this.__internal__questLabels["CatchShiniesQuest"] = "Catch 1 shiny Pokémon.";
+    this.__internal__questLabels["CatchShadowsQuest"] = "Catch <n> Shadow Pokémon.";
+    this.__internal__questLabels["DefeatGymQuest"] = "Defeat <Gym leader> <n> times.";
+    this.__internal__questLabels["DefeatDungeonQuest"] = "Defeat the <Dungeon name> dungeon in <Region> <n> times.";
     this.__internal__questLabels["UsePokeballQuest"] = "Use <n> <Balls type>.";
-    this.__internal__questLabels["UseOakItemQuest"] =
-      "Equip the <Oak item> and <Action>.";
-    this.__internal__questLabels["HarvestBerriesQuest"] =
-      "Harvest <n> <Berry type> Berries at the farm.";
+    this.__internal__questLabels["UseOakItemQuest"] = "Equip the <Oak item> and <Action>.";
+    this.__internal__questLabels["HarvestBerriesQuest"] = "Harvest <n> <Berry type> Berries at the farm.";
 
     // Generate default descriptions for any unknown quest
     for (const quest in QuestHelper.quests) {
@@ -122,8 +108,7 @@ class AutomationFocusQuests {
   static __internal__buildAdvancedSettings(parent) {
     const tooltip = "Skipping quests can be cost-heavy";
     const descriptionElem = document.createElement("span");
-    descriptionElem.textContent =
-      "Choose which quest should be performed, or skipped ⚠️";
+    descriptionElem.textContent = "Choose which quest should be performed, or skipped ⚠️";
     descriptionElem.classList.add("hasAutomationTooltip");
     descriptionElem.classList.add("rightMostAutomationTooltip");
     descriptionElem.classList.add("shortTransitionAutomationTooltip");
@@ -148,9 +133,7 @@ class AutomationFocusQuests {
       labelCellElem.style.paddingLeft = "5px";
       labelCellElem.style.paddingRight = "7px";
       let label = this.__internal__questLabels[quest];
-      label = label
-        .replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>")
-        .replace(/.$/, "");
+      label = label.replaceAll(/<([^>]+)>/g, "<i>&lt;$1&gt;</i>").replace(/.$/, "");
       labelCellElem.innerHTML = label;
       rowElem.appendChild(labelCellElem);
 
@@ -160,22 +143,14 @@ class AutomationFocusQuests {
 
       const storageKey = this.__internal__advancedSettings.QuestEnabled(quest);
       // Enable the quest by default, unless the user chose to disable settings by default
-      Automation.Utils.LocalStorage.setDefaultValue(
-        storageKey,
-        !Automation.Menu.DisableSettingsByDefault
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(storageKey, !Automation.Menu.DisableSettingsByDefault);
 
-      const toggleButton =
-        Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
+      const toggleButton = Automation.Menu.addLocalStorageBoundToggleButton(storageKey);
       toggleCellElem.appendChild(toggleButton);
 
       if (quest == "GainFarmPointsQuest" || quest == "HarvestBerriesQuest") {
         // Every time the status of the farming quests changes, we need to refresh the farming takeover
-        toggleButton.addEventListener(
-          "click",
-          this.__internal__takeOverFarmIfNeeded.bind(this),
-          false
-        );
+        toggleButton.addEventListener("click", this.__internal__takeOverFarmIfNeeded.bind(this), false);
       }
     }
   }
@@ -188,21 +163,9 @@ class AutomationFocusQuests {
     if (this.__internal__autoQuestLoop === null) {
       // Disable other modes button
       const disableReason = "The 'Focus on Quests' feature is enabled";
-      Automation.Menu.setButtonDisabledState(
-        Automation.Click.Settings.FeatureEnabled,
-        true,
-        disableReason
-      );
-      Automation.Menu.setButtonDisabledState(
-        Automation.Hatchery.Settings.FeatureEnabled,
-        true,
-        disableReason
-      );
-      Automation.Menu.setButtonDisabledState(
-        Automation.Underground.Settings.FeatureEnabled,
-        true,
-        disableReason
-      );
+      Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, true, disableReason);
+      Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, true, disableReason);
+      Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, true, disableReason);
 
       this.__internal__takeOverFarmIfNeeded();
 
@@ -212,10 +175,7 @@ class AutomationFocusQuests {
       Automation.Underground.toggleAutoMining(true);
 
       // Set auto-quest loop
-      this.__internal__autoQuestLoop = setInterval(
-        this.__internal__questLoop.bind(this),
-        1000
-      ); // Runs every second
+      this.__internal__autoQuestLoop = setInterval(this.__internal__questLoop.bind(this), 1000); // Runs every second
       this.__internal__questLoop();
     }
   }
@@ -225,25 +185,12 @@ class AutomationFocusQuests {
    */
   static __internal__takeOverFarmIfNeeded() {
     if (
-      Automation.Utils.LocalStorage.getValue(
-        this.__internal__advancedSettings.QuestEnabled("GainFarmPointsQuest")
-      ) == "true" ||
-      Automation.Utils.LocalStorage.getValue(
-        this.__internal__advancedSettings.QuestEnabled("HarvestBerriesQuest")
-      ) == "true"
+      Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled("GainFarmPointsQuest")) == "true" ||
+      Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled("HarvestBerriesQuest")) == "true"
     ) {
-      const disableReason =
-        "The 'Focus on Quests' feature is enabled,\nand farming quests are enabled";
-      Automation.Menu.setButtonDisabledState(
-        Automation.Farm.Settings.FeatureEnabled,
-        true,
-        disableReason
-      );
-      Automation.Menu.setButtonDisabledState(
-        Automation.Farm.Settings.FocusOnUnlocks,
-        true,
-        disableReason
-      );
+      const disableReason = "The 'Focus on Quests' feature is enabled,\nand farming quests are enabled";
+      Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, true, disableReason);
+      Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, true, disableReason);
 
       // Select cheri berry to avoid long riping time
       Automation.Farm.ForcePlantBerriesAsked = BerryType.Cheri;
@@ -254,14 +201,8 @@ class AutomationFocusQuests {
       Automation.Farm.toggleAutoFarming();
 
       Automation.Farm.ForcePlantBerriesAsked = null;
-      Automation.Menu.setButtonDisabledState(
-        Automation.Farm.Settings.FeatureEnabled,
-        false
-      );
-      Automation.Menu.setButtonDisabledState(
-        Automation.Farm.Settings.FocusOnUnlocks,
-        false
-      );
+      Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
+      Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
     }
   }
 
@@ -284,35 +225,17 @@ class AutomationFocusQuests {
     Automation.Underground.toggleAutoMining();
 
     // Stop any gym auto-fight
-    Automation.Menu.forceAutomationState(
-      Automation.Gym.Settings.FeatureEnabled,
-      false
-    );
+    Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, false);
 
     // Stop any Battle Frontier fight
     Automation.BattleFrontier.ForceStop();
 
     // Re-enable other modes button
-    Automation.Menu.setButtonDisabledState(
-      Automation.Click.Settings.FeatureEnabled,
-      false
-    );
-    Automation.Menu.setButtonDisabledState(
-      Automation.Hatchery.Settings.FeatureEnabled,
-      false
-    );
-    Automation.Menu.setButtonDisabledState(
-      Automation.Farm.Settings.FeatureEnabled,
-      false
-    );
-    Automation.Menu.setButtonDisabledState(
-      Automation.Farm.Settings.FocusOnUnlocks,
-      false
-    );
-    Automation.Menu.setButtonDisabledState(
-      Automation.Underground.Settings.FeatureEnabled,
-      false
-    );
+    Automation.Menu.setButtonDisabledState(Automation.Click.Settings.FeatureEnabled, false);
+    Automation.Menu.setButtonDisabledState(Automation.Hatchery.Settings.FeatureEnabled, false);
+    Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FeatureEnabled, false);
+    Automation.Menu.setButtonDisabledState(Automation.Farm.Settings.FocusOnUnlocks, false);
+    Automation.Menu.setButtonDisabledState(Automation.Underground.Settings.FeatureEnabled, false);
 
     // Disable automation catch filter
     Automation.Utils.Pokeball.disableAutomationFilter();
@@ -371,13 +294,7 @@ class AutomationFocusQuests {
     //   - Are not already in progress
     //   - Are not disabled by the user
     let availableQuests = App.game.quests.questList().filter((quest) => {
-      return (
-        !quest.isCompleted() &&
-        !quest.inProgress() &&
-        Automation.Utils.LocalStorage.getValue(
-          this.__internal__advancedSettings.QuestEnabled(quest.constructor.name)
-        ) == "true"
-      );
+      return !quest.isCompleted() && !quest.inProgress() && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled(quest.constructor.name)) == "true";
     }, this);
 
     // Sort quest to group the same type together
@@ -410,19 +327,12 @@ class AutomationFocusQuests {
       return;
     }
 
-    let pokedollarsImage =
-      '<img src="assets/images/currency/money.svg" height="25px">';
-    let refreshCost = App.game.quests.freeRefresh()
-      ? "free"
-      : `${App.game.quests.getRefreshCost().amount} ${pokedollarsImage}`;
+    let pokedollarsImage = '<img src="assets/images/currency/money.svg" height="25px">';
+    let refreshCost = App.game.quests.freeRefresh() ? "free" : `${App.game.quests.getRefreshCost().amount} ${pokedollarsImage}`;
 
     App.game.quests.refreshQuests();
 
-    Automation.Notifications.sendNotif(
-      `Skipped disabled quests for ${refreshCost}`,
-      "Focus",
-      "Quests"
-    );
+    Automation.Notifications.sendNotif(`Skipped disabled quests for ${refreshCost}`, "Focus", "Quests");
   }
 
   /**
@@ -432,10 +342,7 @@ class AutomationFocusQuests {
    */
   static __internal__workOnQuest(currentQuests) {
     // Already fighting, nothing to do for now
-    if (
-      App.game.gameState != GameConstants.GameState.battleFrontier &&
-      Automation.Utils.isInInstanceState()
-    ) {
+    if (App.game.gameState != GameConstants.GameState.battleFrontier && Automation.Utils.isInInstanceState()) {
       Automation.Dungeon.stopAfterThisRun();
       return;
     }
@@ -467,29 +374,17 @@ class AutomationFocusQuests {
     }
 
     // Defeat gym quest
-    if (
-      Automation.Utils.isInstanceOf(quest, "CapturePokemonsQuest") ||
-      Automation.Utils.isInstanceOf(quest, "GainTokensQuest")
-    ) {
-      const selectedPokeball = parseInt(
-        Automation.Utils.LocalStorage.getValue(
-          Automation.Focus.Settings.BallToUseToCatch
-        )
-      );
+    if (Automation.Utils.isInstanceOf(quest, "CapturePokemonsQuest") || Automation.Utils.isInstanceOf(quest, "GainTokensQuest")) {
+      const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
       this.__internal__workOnUsePokeballQuest(selectedPokeball);
-    } else if (
-      Automation.Utils.isInstanceOf(quest, "CapturePokemonTypesQuest")
-    ) {
+    } else if (Automation.Utils.isInstanceOf(quest, "CapturePokemonTypesQuest")) {
       this.__internal__workOnCapturePokemonTypesQuest(quest);
     } else if (Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest")) {
       // Use the 1st available dungeon with shadow pokémons for now
       const dungeonName = "Phenac City Battles";
       this.__internal__workOnDefeatDungeonQuest(dungeonName, true);
     } else if (Automation.Utils.isInstanceOf(quest, "DefeatDungeonQuest")) {
-      const catchShadows =
-        currentQuests.some((quest) =>
-          Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest")
-        ) && Automation.Dungeon.hasShadowPokemons(quest.dungeon);
+      const catchShadows = currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShadowsQuest")) && Automation.Dungeon.hasShadowPokemons(quest.dungeon);
       this.__internal__workOnDefeatDungeonQuest(quest.dungeon, catchShadows);
     } else if (Automation.Utils.isInstanceOf(quest, "DefeatGymQuest")) {
       this.__internal__workOnDefeatGymQuest(quest);
@@ -506,32 +401,16 @@ class AutomationFocusQuests {
       // Disable automation catch filter
       Automation.Utils.Pokeball.disableAutomationFilter();
 
-      if (
-        currentQuests.some((quest) =>
-          Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")
-        )
-      ) {
+      if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest"))) {
         // Buy some ball to be prepared
-        const selectedPokeball = parseInt(
-          Automation.Utils.LocalStorage.getValue(
-            Automation.Focus.Settings.BallToUseToCatch
-          )
-        );
+        const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
         this.__internal__tryBuyBallIfUnderThreshold(selectedPokeball, 10);
-        this.__internal__equipOptimizedLoadout(
-          Automation.Utils.OakItem.Setup.PokemonCatch
-        );
-      } else if (
-        currentQuests.some((quest) =>
-          Automation.Utils.isInstanceOf(quest, "GainMoneyQuest")
-        )
-      ) {
+        this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+      } else if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "GainMoneyQuest"))) {
         this.__internal__farmSomeMoney();
         return;
       } else {
-        this.__internal__equipOptimizedLoadout(
-          Automation.Utils.OakItem.Setup.PokemonExp
-        );
+        this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
       }
 
       Automation.Utils.Route.moveToBestRouteForExp();
@@ -542,9 +421,7 @@ class AutomationFocusQuests {
    * @brief Equips the Money loadout and move to the best place to farm money
    */
   static __internal__farmSomeMoney() {
-    this.__internal__equipOptimizedLoadout(
-      Automation.Utils.OakItem.Setup.Money
-    );
+    this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.Money);
 
     const bestGym = Automation.Utils.Gym.findBestGymForMoney();
     if (bestGym.bestGymTown !== null) {
@@ -571,10 +448,7 @@ class AutomationFocusQuests {
       if (Automation.Utils.isInstanceOf(quest, "HarvestBerriesQuest")) {
         Automation.Farm.ForcePlantBerriesAsked = quest.berryType;
         isFarmingSpecificBerry = true;
-      } else if (
-        Automation.Utils.isInstanceOf(quest, "GainFarmPointsQuest") &&
-        !isFarmingSpecificBerry
-      ) {
+      } else if (Automation.Utils.isInstanceOf(quest, "GainFarmPointsQuest") && !isFarmingSpecificBerry) {
         const bestBerry = this.__internal__getMostSuitableBerryForQuest(quest);
         Automation.Farm.ForcePlantBerriesAsked = bestBerry;
       }
@@ -591,22 +465,14 @@ class AutomationFocusQuests {
    */
   static __internal__workOnCapturePokemonTypesQuest(quest) {
     // Add a pokeball to the Caught type and set the PokemonCatch setup
-    const selectedPokeball = parseInt(
-      Automation.Utils.LocalStorage.getValue(
-        Automation.Focus.Settings.BallToUseToCatch
-      )
-    );
+    const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
     const hasBalls = this.__internal__trySelectBallToCatch(selectedPokeball);
 
     if (hasBalls) {
       Automation.Utils.Pokeball.restrictCaptureToPokemonType(quest.type);
 
-      this.__internal__equipOptimizedLoadout(
-        Automation.Utils.OakItem.Setup.PokemonCatch
-      );
-      const bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(
-        quest.type
-      );
+      this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
+      const bestRoute = Automation.Utils.Route.findBestRouteForFarmingType(quest.type);
       Automation.Utils.Route.moveToRoute(bestRoute.Route, bestRoute.Region);
     }
   }
@@ -635,10 +501,7 @@ class AutomationFocusQuests {
     }
 
     // Start the automation
-    Automation.Menu.forceAutomationState(
-      Automation.BattleFrontier.Settings.FeatureEnabled,
-      true
-    );
+    Automation.Menu.forceAutomationState(Automation.BattleFrontier.Settings.FeatureEnabled, true);
   }
 
   /**
@@ -654,25 +517,16 @@ class AutomationFocusQuests {
    * @param {boolean} catchShadows: Set to true if the shadow pokémon catch filter needs to be set, false otherwise
    */
   static __internal__workOnDefeatDungeonQuest(dungeonName, catchShadows) {
-    const selectedPokeball = parseInt(
-      Automation.Utils.LocalStorage.getValue(
-        Automation.Focus.Settings.BallToUseToCatch
-      )
-    );
+    const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
 
     // If we don't have enough tokens, go farm some
-    if (
-      TownList[dungeonName].dungeon.tokenCost >
-      App.game.wallet.currencies[GameConstants.Currency.dungeonToken]()
-    ) {
+    if (TownList[dungeonName].dungeon.tokenCost > App.game.wallet.currencies[GameConstants.Currency.dungeonToken]()) {
       this.__internal__workOnUsePokeballQuest(selectedPokeball);
       return;
     }
 
     if (catchShadows) {
-      this.__internal__equipOptimizedLoadout(
-        Automation.Utils.OakItem.Setup.PokemonCatch
-      );
+      this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
       Automation.Utils.Pokeball.catchEverythingWith(selectedPokeball);
       Automation.Utils.Pokeball.restrictCaptureToShadow(true);
       Automation.Utils.Pokeball.enableAutomationFilter();
@@ -690,15 +544,10 @@ class AutomationFocusQuests {
     }
 
     // Enable auto dungeon fight
-    Automation.Menu.forceAutomationState(
-      Automation.Dungeon.Settings.FeatureEnabled,
-      true
-    );
+    Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
     // Bypass user settings like the stop on pokedex one
-    Automation.Dungeon.AutomationRequestedMode = catchShadows
-      ? Automation.Dungeon.InternalModes.ForcePokemonFight
-      : Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+    Automation.Dungeon.AutomationRequestedMode = catchShadows ? Automation.Dungeon.InternalModes.ForcePokemonFight : Automation.Dungeon.InternalModes.ForceDungeonCompletion;
   }
 
   /**
@@ -727,15 +576,8 @@ class AutomationFocusQuests {
       Automation.Gym.GymSelectElem.value = quest.gymTown;
     }
     // Enable gym auto-fight feature if not already done
-    else if (
-      Automation.Utils.LocalStorage.getValue(
-        Automation.Gym.Settings.FeatureEnabled
-      ) === "false"
-    ) {
-      Automation.Menu.forceAutomationState(
-        Automation.Gym.Settings.FeatureEnabled,
-        true
-      );
+    else if (Automation.Utils.LocalStorage.getValue(Automation.Gym.Settings.FeatureEnabled) === "false") {
+      Automation.Menu.forceAutomationState(Automation.Gym.Settings.FeatureEnabled, true);
     }
   }
 
@@ -750,9 +592,7 @@ class AutomationFocusQuests {
     // Use the user's default setting, if no other quest requires pokéball
     Automation.Utils.Pokeball.disableAutomationFilter();
 
-    this.__internal__equipOptimizedLoadout(
-      Automation.Utils.OakItem.Setup.PokemonExp
-    );
+    this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
     Automation.Utils.Route.moveToRoute(quest.route, quest.region);
   }
@@ -768,9 +608,7 @@ class AutomationFocusQuests {
     // Use the user's default setting, if no other quest requires pokéball
     Automation.Utils.Pokeball.disableAutomationFilter();
 
-    this.__internal__equipOptimizedLoadout(
-      Automation.Utils.OakItem.Setup.PokemonExp
-    );
+    this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
     Automation.Focus.__goToBestGymOrRouteForGem(quest.type);
   }
@@ -785,16 +623,10 @@ class AutomationFocusQuests {
    */
   static __internal__workOnUseOakItemQuest(quest) {
     if (quest.item == OakItemType.Magic_Ball) {
-      const selectedPokeball = parseInt(
-        Automation.Utils.LocalStorage.getValue(
-          Automation.Focus.Settings.BallToUseToCatch
-        )
-      );
+      const selectedPokeball = parseInt(Automation.Utils.LocalStorage.getValue(Automation.Focus.Settings.BallToUseToCatch));
       this.__internal__workOnUsePokeballQuest(selectedPokeball);
     } else {
-      this.__internal__equipOptimizedLoadout(
-        Automation.Utils.OakItem.Setup.PokemonExp
-      );
+      this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonExp);
 
       // Use the user's default setting, if no other quest requires pokéball
       Automation.Utils.Pokeball.disableAutomationFilter();
@@ -813,15 +645,10 @@ class AutomationFocusQuests {
    * @param enforceType: If set to true, the @p ballType must be used, otherwise lower balls grade are just as fine
    */
   static __internal__workOnUsePokeballQuest(ballType, enforceType = false) {
-    const hasBalls = this.__internal__trySelectBallToCatch(
-      ballType,
-      enforceType
-    );
+    const hasBalls = this.__internal__trySelectBallToCatch(ballType, enforceType);
 
     if (hasBalls) {
-      this.__internal__equipOptimizedLoadout(
-        Automation.Utils.OakItem.Setup.PokemonCatch
-      );
+      this.__internal__equipOptimizedLoadout(Automation.Utils.OakItem.Setup.PokemonCatch);
       // Go to the highest route, for higher quest point income
       Automation.Utils.Route.moveToHighestDungeonTokenIncomeRoute(ballType);
     }
@@ -842,9 +669,7 @@ class AutomationFocusQuests {
   static __internal__trySelectBallToCatch(ballTypeToUse, enforceType = false) {
     if (!enforceType) {
       // Choose the most optimal pokeball, based on the other quests
-      const quest = this.__internal__getFilteredCurrentQuests().find((quest) =>
-        Automation.Utils.isInstanceOf(quest, "UsePokeballQuest")
-      );
+      const quest = this.__internal__getFilteredCurrentQuests().find((quest) => Automation.Utils.isInstanceOf(quest, "UsePokeballQuest"));
       if (quest) {
         ballTypeToUse = quest.pokeball;
         enforceType = true;
@@ -901,14 +726,9 @@ class AutomationFocusQuests {
     let bestTime = Number.MAX_SAFE_INTEGER;
     let bestBerry = 0;
 
-    let availableSlotCount = App.game.farming.plotList.filter(
-      (plot) => plot.isUnlocked
-    ).length;
+    let availableSlotCount = App.game.farming.plotList.filter((plot) => plot.isUnlocked).length;
 
-    for (const [
-      index,
-      isUnlocked,
-    ] of App.game.farming.unlockedBerries.entries()) {
+    for (const [index, isUnlocked] of App.game.farming.unlockedBerries.entries()) {
       // Don't consider locked berries
       if (!isUnlocked()) {
         continue;
@@ -921,9 +741,7 @@ class AutomationFocusQuests {
         continue;
       }
 
-      let berryTime =
-        berryData.growthTime[PlotStage.Bloom] *
-        Math.ceil(quest.amount / availableSlotCount / berryData.farmValue);
+      let berryTime = berryData.growthTime[PlotStage.Bloom] * Math.ceil(quest.amount / availableSlotCount / berryData.farmValue);
 
       // The time can't go below the berry growth time
       let time = Math.max(berryData.growthTime[PlotStage.Bloom], berryTime);
@@ -947,11 +765,7 @@ class AutomationFocusQuests {
     if (App.game.pokeballs.getBallQuantity(ballType) < amount) {
       let ballItem = ItemList[GameConstants.Pokeball[ballType]];
       // Only try to buy balls for money
-      if (
-        ballItem.currency == GameConstants.Currency.money &&
-        ballItem.totalPrice(amount) <
-          App.game.wallet.currencies[ballItem.currency]()
-      ) {
+      if (ballItem.currency == GameConstants.Currency.money && ballItem.totalPrice(amount) < App.game.wallet.currencies[ballItem.currency]()) {
         ballItem.buy(amount);
       }
     }
@@ -1040,18 +854,12 @@ class AutomationFocusQuests {
     const currentQuests = this.__internal__getFilteredCurrentQuests();
 
     // Always equip UseOakItemQuest items 1st
-    const useOakItemQuests = currentQuests.filter((quest) =>
-      Automation.Utils.isInstanceOf(quest, "UseOakItemQuest")
-    );
+    const useOakItemQuests = currentQuests.filter((quest) => Automation.Utils.isInstanceOf(quest, "UseOakItemQuest"));
     if (useOakItemQuests.length == 1) {
       optimumItems.push(useOakItemQuests[0].item);
     }
 
-    if (
-      currentQuests.some((quest) =>
-        Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest")
-      )
-    ) {
+    if (currentQuests.some((quest) => Automation.Utils.isInstanceOf(quest, "CatchShiniesQuest"))) {
       optimumItems.push(OakItemType.Shiny_Charm);
     }
 
@@ -1074,16 +882,6 @@ class AutomationFocusQuests {
    * @returns The current quests list, without the user disabled ones
    */
   static __internal__getFilteredCurrentQuests() {
-    return App.game.quests
-      .currentQuests()
-      .filter(
-        (quest) =>
-          Automation.Utils.LocalStorage.getValue(
-            this.__internal__advancedSettings.QuestEnabled(
-              quest.constructor.name
-            )
-          ) == "true",
-        this
-      );
+    return App.game.quests.currentQuests().filter((quest) => Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.QuestEnabled(quest.constructor.name)) == "true", this);
   }
 }

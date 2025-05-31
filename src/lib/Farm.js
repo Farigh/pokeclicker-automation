@@ -25,22 +25,10 @@ class AutomationFarm {
    */
   static initialize(initStep) {
     if (initStep == Automation.InitSteps.BuildMenu) {
-      Automation.Utils.LocalStorage.setDefaultValue(
-        this.Settings.AutoCatchWanderers,
-        true
-      );
-      Automation.Utils.LocalStorage.setDefaultValue(
-        this.Settings.HarvestLate,
-        false
-      );
-      Automation.Utils.LocalStorage.setDefaultValue(
-        this.Settings.UseRichMulch,
-        false
-      );
-      Automation.Utils.LocalStorage.setDefaultValue(
-        this.Settings.SelectedBerryToPlant,
-        BerryType.Cheri
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AutoCatchWanderers, true);
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.HarvestLate, false);
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.UseRichMulch, false);
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SelectedBerryToPlant, BerryType.Cheri);
 
       this.__internal__buildMenu();
     } else if (initStep == Automation.InitSteps.Finalize) {
@@ -68,9 +56,7 @@ class AutomationFarm {
 
     // If we got the click event, use the button status
     if (enable !== true && enable !== false) {
-      enable =
-        Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-        "true";
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
 
       if (enable) {
         // Display the floating panel
@@ -85,10 +71,7 @@ class AutomationFarm {
       // Only set a loop if there is none active
       if (this.__internal__farmingLoop === null) {
         // Set auto-farm loop (run it once right away)
-        this.__internal__farmingLoop = setInterval(
-          this.__internal__farmLoop.bind(this),
-          10000
-        ); // Runs every 10 seconds
+        this.__internal__farmingLoop = setInterval(this.__internal__farmLoop.bind(this), 10000); // Runs every 10 seconds
         this.__internal__farmLoop();
       }
     } else {
@@ -150,9 +133,7 @@ class AutomationFarm {
   static __internal__buildMenu() {
     // Add the related buttons to the automation menu
     this.__internal__farmingContainer = document.createElement("div");
-    Automation.Menu.AutomationButtonsDiv.appendChild(
-      this.__internal__farmingContainer
-    );
+    Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__farmingContainer);
 
     Automation.Menu.addSeparator(this.__internal__farmingContainer);
 
@@ -163,79 +144,37 @@ class AutomationFarm {
     }
 
     const autoFarmTooltip =
-      "Automatically harvest and plant crops" +
-      Automation.Menu.TooltipSeparator +
-      "Crops are harvested as soon as they ripe\n" +
-      "New crops are planted using the selected one in the farm menu";
-    const autoFarmingButton = Automation.Menu.addAutomationButton(
-      "Farming",
-      this.Settings.FeatureEnabled,
-      autoFarmTooltip,
-      this.__internal__farmingContainer
-    );
-    autoFarmingButton.addEventListener(
-      "click",
-      this.toggleAutoFarming.bind(this),
-      false
-    );
+      "Automatically harvest and plant crops" + Automation.Menu.TooltipSeparator + "Crops are harvested as soon as they ripe\n" + "New crops are planted using the selected one in the farm menu";
+    const autoFarmingButton = Automation.Menu.addAutomationButton("Farming", this.Settings.FeatureEnabled, autoFarmTooltip, this.__internal__farmingContainer);
+    autoFarmingButton.addEventListener("click", this.toggleAutoFarming.bind(this), false);
 
     // Build advanced settings panel
-    const farmingSettingPanel = Automation.Menu.addSettingPanel(
-      autoFarmingButton.parentElement.parentElement
-    );
+    const farmingSettingPanel = Automation.Menu.addSettingPanel(autoFarmingButton.parentElement.parentElement);
 
-    const titleDiv = Automation.Menu.createTitleElement(
-      "Farming advanced settings"
-    );
+    const titleDiv = Automation.Menu.createTitleElement("Farming advanced settings");
     titleDiv.style.marginBottom = "10px";
     farmingSettingPanel.appendChild(titleDiv);
 
     // Automatically catch wanderers button
     const catchWanderersLabel = "Catch wandering pokémons";
-    const catchWanderersTooltip =
-      "When a wandering pokémon appears it tries to catch it.\n";
+    const catchWanderersTooltip = "When a wandering pokémon appears it tries to catch it.\n";
     ("The in-game pokéball filters are used to determine the ball to use.\n");
     ("If no filter matches, the pokémon will flee.");
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      catchWanderersLabel,
-      this.Settings.AutoCatchWanderers,
-      catchWanderersTooltip,
-      farmingSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(catchWanderersLabel, this.Settings.AutoCatchWanderers, catchWanderersTooltip, farmingSettingPanel);
 
     // Focus on unlock button
     const unlockLabel = "Focus on unlocking plots and new berries";
-    const unlockTooltip =
-      "Takes the necessary actions to unlock new slots and berries";
-    const unlockButton = Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      unlockLabel,
-      this.Settings.FocusOnUnlocks,
-      unlockTooltip,
-      farmingSettingPanel
-    );
+    const unlockTooltip = "Takes the necessary actions to unlock new slots and berries";
+    const unlockButton = Automation.Menu.addLabeledAdvancedSettingsToggleButton(unlockLabel, this.Settings.FocusOnUnlocks, unlockTooltip, farmingSettingPanel);
 
     // Disable oak items button
     const disableOakItemTooltip =
-      "Modifies the oak item loadout when required for a mutation to occur" +
-      Automation.Menu.TooltipSeparator +
-      "⚠️ Disabling this functionality will prevent some berries from being unlocked";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Update oak item loadout when needed",
-      this.Settings.OakItemLoadoutUpdate,
-      disableOakItemTooltip,
-      farmingSettingPanel
-    );
+      "Modifies the oak item loadout when required for a mutation to occur" + Automation.Menu.TooltipSeparator + "⚠️ Disabling this functionality will prevent some berries from being unlocked";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Update oak item loadout when needed", this.Settings.OakItemLoadoutUpdate, disableOakItemTooltip, farmingSettingPanel);
 
     // Gather as late as possible button
-    const gatherAsLateAsPossibleTooltip =
-      "Enabling this setting will harvest the berries right before they die.\n" +
-      "This is useful when you want the aura instead of the berry itself.";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Harvest berries as late as possible",
-      this.Settings.HarvestLate,
-      gatherAsLateAsPossibleTooltip,
-      farmingSettingPanel
-    );
+    const gatherAsLateAsPossibleTooltip = "Enabling this setting will harvest the berries right before they die.\n" + "This is useful when you want the aura instead of the berry itself.";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Harvest berries as late as possible", this.Settings.HarvestLate, gatherAsLateAsPossibleTooltip, farmingSettingPanel);
 
     // Use rich mulch before harvesting button
     const richMulchBeforeHarvestTooltip =
@@ -243,46 +182,21 @@ class AutomationFarm {
       Automation.Menu.TooltipSeparator +
       "Mulch will not be applied if their is no available stock.\n" +
       "Nor will it be if the plot already has some mulch applied.";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      "Apply rich mulch before harvesting",
-      this.Settings.UseRichMulch,
-      richMulchBeforeHarvestTooltip,
-      farmingSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Apply rich mulch before harvesting", this.Settings.UseRichMulch, richMulchBeforeHarvestTooltip, farmingSettingPanel);
 
     // Disable the harvest late feature if the Focus on unlocks is enabled
-    const disableReason =
-      "This settings is not considered when the\n" +
-      `'${unlockLabel}' setting is enabled`;
-    if (
-      Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) ===
-      "true"
-    ) {
-      Automation.Menu.setButtonDisabledState(
-        this.Settings.HarvestLate,
-        true,
-        disableReason
-      );
+    const disableReason = "This settings is not considered when the\n" + `'${unlockLabel}' setting is enabled`;
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true") {
+      Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, true, disableReason);
     }
     unlockButton.addEventListener(
       "click",
       function () {
         // Disable the HarvestLate feature when unlocks focus is enabled
-        const disableState =
-          Automation.Utils.LocalStorage.getValue(
-            this.Settings.FocusOnUnlocks
-          ) === "true";
-        Automation.Menu.setButtonDisabledState(
-          this.Settings.HarvestLate,
-          disableState,
-          disableReason
-        );
+        const disableState = Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true";
+        Automation.Menu.setButtonDisabledState(this.Settings.HarvestLate, disableState, disableReason);
 
-        if (
-          Automation.Utils.LocalStorage.getValue(
-            this.Settings.FeatureEnabled
-          ) === "true"
-        ) {
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true") {
           // Update the floating panel content
           this.__internal__updateFloatingPanel();
 
@@ -307,17 +221,12 @@ class AutomationFarm {
   static __internal__buildBerryDropdownList(parent) {
     const selectOptions = [];
 
-    let savedSelectedBerry = parseInt(
-      Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant)
-    );
+    let savedSelectedBerry = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant));
 
     // It should never happen, but we never know
     if (!App.game.farming.unlockedBerries[savedSelectedBerry]()) {
       // If a locked berry was saved, fallback to the Cheri one
-      Automation.Utils.LocalStorage.setValue(
-        this.Settings.SelectedBerryToPlant,
-        BerryType.Cheri
-      );
+      Automation.Utils.LocalStorage.setValue(this.Settings.SelectedBerryToPlant, BerryType.Cheri);
       savedSelectedBerry = BerryType.Cheri;
     }
 
@@ -359,24 +268,12 @@ class AutomationFarm {
       });
     }
 
-    const tooltip =
-      "Choose which berry the automation should farm.\n" +
-      "This setting is ignored if the berry/plot unlock is enabled.";
-    this.__internal__berriesDropdownList =
-      Automation.Menu.createDropdownListWithHtmlOptions(
-        selectOptions,
-        "Berry to farm",
-        tooltip
-      );
-    this.__internal__berriesDropdownList.getElementsByTagName(
-      "button"
-    )[0].style.width = "118px";
+    const tooltip = "Choose which berry the automation should farm.\n" + "This setting is ignored if the berry/plot unlock is enabled.";
+    this.__internal__berriesDropdownList = Automation.Menu.createDropdownListWithHtmlOptions(selectOptions, "Berry to farm", tooltip);
+    this.__internal__berriesDropdownList.getElementsByTagName("button")[0].style.width = "118px";
 
     this.__internal__berriesDropdownList.onValueChange = function () {
-      Automation.Utils.LocalStorage.setValue(
-        this.Settings.SelectedBerryToPlant,
-        this.__internal__berriesDropdownList.selectedValue
-      );
+      Automation.Utils.LocalStorage.setValue(this.Settings.SelectedBerryToPlant, this.__internal__berriesDropdownList.selectedValue);
     }.bind(this);
 
     parent.appendChild(this.__internal__berriesDropdownList);
@@ -415,21 +312,14 @@ class AutomationFarm {
     this.__internal__farmInGameModal = document.getElementById("farmModal");
 
     const farmTitle = "🌾Farming 🌾";
-    const categoryContainer = Automation.Menu.addFloatingCategory(
-      "automationFarmingModal",
-      farmTitle,
-      this.__internal__farmInGameModal
-    );
+    const categoryContainer = Automation.Menu.addFloatingCategory("automationFarmingModal", farmTitle, this.__internal__farmInGameModal);
     this.__internal__contentFloatingContainer = categoryContainer.parentElement;
     this.__internal__contentFloatingContainer.hidden = true;
 
-    this.__internal__contentFloatingContentContainer =
-      document.createElement("div");
+    this.__internal__contentFloatingContentContainer = document.createElement("div");
     this.__internal__contentFloatingContentContainer.style.textAlign = "center";
     this.__internal__contentFloatingContentContainer.style.padding = "4px";
-    categoryContainer.appendChild(
-      this.__internal__contentFloatingContentContainer
-    );
+    categoryContainer.appendChild(this.__internal__contentFloatingContentContainer);
   }
 
   /**
@@ -461,11 +351,7 @@ class AutomationFarm {
     this.__internal__tryToUnlockNewSpots();
 
     // Try to unlock berries, if enabled
-    if (
-      Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) ===
-        "true" &&
-      this.ForcePlantBerriesAsked == null
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true" && this.ForcePlantBerriesAsked == null) {
       this.__internal__chooseUnlockStrategy();
 
       if (this.__internal__currentStrategy) {
@@ -486,13 +372,7 @@ class AutomationFarm {
     this.__internal__updateFloatingPanel();
 
     // Otherwise, fallback to planting berries
-    const berryToPlant =
-      this.ForcePlantBerriesAsked ??
-      parseInt(
-        Automation.Utils.LocalStorage.getValue(
-          this.Settings.SelectedBerryToPlant
-        )
-      );
+    const berryToPlant = this.ForcePlantBerriesAsked ?? parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant));
     this.__internal__plantAllBerries(berryToPlant);
 
     if (this.__internal__currentStrategy !== null) {
@@ -506,10 +386,7 @@ class AutomationFarm {
    */
   static __internal__updateFloatingPanel() {
     // Never update if the feature is not enabled
-    if (
-      Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) !==
-      "true"
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) !== "true") {
       return;
     }
 
@@ -523,9 +400,7 @@ class AutomationFarm {
     }
 
     // Only update the floating content panel if needed
-    const selectedBerryType = parseInt(
-      Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant)
-    );
+    const selectedBerryType = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.SelectedBerryToPlant));
     if (this.__internal__lastFarmingBerryType != selectedBerryType) {
       const textPrefix = document.createTextNode("Currently planting ");
 
@@ -538,9 +413,7 @@ class AutomationFarm {
 
       this.__internal__contentFloatingContentContainer.innerHTML = "";
       this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
-      this.__internal__contentFloatingContentContainer.appendChild(
-        document.createElement("br")
-      );
+      this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
       this.__internal__contentFloatingContentContainer.appendChild(berryImage);
       this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
 
@@ -552,34 +425,21 @@ class AutomationFarm {
    * @brief Equips the needed Oak item, if the player did not disable the feature
    */
   static __internal__equipOakItemIfNeeded() {
-    if (
-      this.__internal__currentStrategy.oakItemToEquip === null ||
-      Automation.Utils.LocalStorage.getValue(
-        this.Settings.OakItemLoadoutUpdate
-      ) !== "true"
-    ) {
+    if (this.__internal__currentStrategy.oakItemToEquip === null || Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true") {
       return;
     }
 
     // Equip the right oak item if not already equipped
-    const currentLoadout = App.game.oakItems.itemList.filter(
-      (item) => item.isActive
-    );
+    const currentLoadout = App.game.oakItems.itemList.filter((item) => item.isActive);
 
-    if (
-      !currentLoadout.some(
-        (item) => item.name == this.__internal__currentStrategy.oakItemToEquip
-      )
-    ) {
+    if (!currentLoadout.some((item) => item.name == this.__internal__currentStrategy.oakItemToEquip)) {
       // Remove the last item of the current loadout if needed
       if (currentLoadout.length === App.game.oakItems.maxActiveCount()) {
         App.game.oakItems.deactivate(currentLoadout.reverse()[0].name);
       }
 
       // Equip the needed item
-      App.game.oakItems.activate(
-        this.__internal__currentStrategy.oakItemToEquip
-      );
+      App.game.oakItems.activate(this.__internal__currentStrategy.oakItemToEquip);
     }
   }
 
@@ -587,16 +447,11 @@ class AutomationFarm {
    * @brief Removes the unwanted Oak item, if the player did not disable the feature
    */
   static __internal__removeOakItemIfNeeded() {
-    if (
-      Automation.Utils.LocalStorage.getValue(
-        this.Settings.OakItemLoadoutUpdate
-      ) !== "true"
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true") {
       return;
     }
 
-    Automation.Utils.OakItem.ForbiddenItems =
-      this.__internal__currentStrategy.forbiddenOakItems;
+    Automation.Utils.OakItem.ForbiddenItems = this.__internal__currentStrategy.forbiddenOakItems;
 
     for (const item of this.__internal__currentStrategy.forbiddenOakItems) {
       App.game.oakItems.deactivate(item);
@@ -618,11 +473,7 @@ class AutomationFarm {
    * @brief Catches any wandering pokémon present on any farm plot
    */
   static __internal__catchWanderingPokemons() {
-    if (
-      Automation.Utils.LocalStorage.getValue(
-        this.Settings.AutoCatchWanderers
-      ) !== "true"
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoCatchWanderers) !== "true") {
       // The player disabled the feature, nothing to do
       return;
     }
@@ -648,16 +499,9 @@ class AutomationFarm {
     this.__internal__freeSlotCount = 0;
     this.__internal__plantedBerryCount = 0;
 
-    const focusOnUnlocksEnabled =
-      Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) ===
-      "true";
-    const harvestLateEnabled =
-      !focusOnUnlocksEnabled &&
-      Automation.Utils.LocalStorage.getValue(this.Settings.HarvestLate) ===
-        "true";
-    const richMulchEnabled =
-      Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) ===
-      "true";
+    const focusOnUnlocksEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.FocusOnUnlocks) === "true";
+    const harvestLateEnabled = !focusOnUnlocksEnabled && Automation.Utils.LocalStorage.getValue(this.Settings.HarvestLate) === "true";
+    const richMulchEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true";
     const overallGrowthMultiplier = App.game.farming.getGrowthMultiplier();
 
     // Mutations can only occur while the berry is fully ripe, so we need to collect them the later possible
@@ -679,33 +523,19 @@ class AutomationFarm {
         continue;
       }
 
-      const isCurrentBerryTheTarget =
-        this.__internal__currentStrategy?.berryToUnlock == plot.berry;
+      const isCurrentBerryTheTarget = this.__internal__currentStrategy?.berryToUnlock == plot.berry;
 
       // Always harvest if it was asked, or the current plot berry is the target one
       if (this.ForcePlantBerriesAsked == null && !isCurrentBerryTheTarget) {
         // Never harvest if the strategy requires the berries to die
-        if (
-          this.__internal__currentStrategy?.harvestStrategy ===
-          this.__internal__harvestTimingType.LetTheBerryDie
-        ) {
+        if (this.__internal__currentStrategy?.harvestStrategy === this.__internal__harvestTimingType.LetTheBerryDie) {
           continue;
         }
 
         // Don't harvest if we need to wait until the last moment
-        if (
-          this.__internal__currentStrategy?.harvestStrategy ===
-            this.__internal__harvestTimingType.RightBeforeWithering ||
-          harvestLateEnabled
-        ) {
+        if (this.__internal__currentStrategy?.harvestStrategy === this.__internal__harvestTimingType.RightBeforeWithering || harvestLateEnabled) {
           // And we are NOT close to death (less than 15s)
-          if (
-            this.__internal__getTimeUntilStage(
-              plot,
-              PlotStage.Berry,
-              overallGrowthMultiplier
-            ) > 15
-          ) {
+          if (this.__internal__getTimeUntilStage(plot, PlotStage.Berry, overallGrowthMultiplier) > 15) {
             continue;
           }
         }
@@ -724,12 +554,7 @@ class AutomationFarm {
    * @param {number} index: The plot index to harvest
    * @param {boolean} applyRichMulch: If set to true, rich mulch will be applied
    */
-  static __internal__mulchAndHarvest(
-    index,
-    applyRichMulch = Automation.Utils.LocalStorage.getValue(
-      this.Settings.UseRichMulch
-    ) === "true"
-  ) {
+  static __internal__mulchAndHarvest(index, applyRichMulch = Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true") {
     const plot = App.game.farming.plotList[index];
 
     // Don't harvest if the plot contains a wandering pokémon being captured
@@ -754,14 +579,9 @@ class AutomationFarm {
    *
    * @returns The time until the plot gets past the specified stage, as second
    */
-  static __internal__getTimeUntilStage(
-    plot,
-    stage,
-    overallGrowthMultiplier = App.game.farming.getGrowthMultiplier()
-  ) {
+  static __internal__getTimeUntilStage(plot, stage, overallGrowthMultiplier = App.game.farming.getGrowthMultiplier()) {
     const baseTimeLeft = plot.berryData.growthTime[stage] - plot.age;
-    const growthMultiplier =
-      plot.getGrowthMultiplier() * overallGrowthMultiplier;
+    const growthMultiplier = plot.getGrowthMultiplier() * overallGrowthMultiplier;
     const timeLeft = baseTimeLeft / growthMultiplier;
     return timeLeft;
   }
@@ -778,19 +598,11 @@ class AutomationFarm {
       if (selectedBerryCount > 0) {
         App.game.farming.plantAll(berryToPlant);
 
-        this.__internal__plantedBerryCount = Math.min(
-          this.__internal__freeSlotCount,
-          selectedBerryCount
-        );
+        this.__internal__plantedBerryCount = Math.min(this.__internal__freeSlotCount, selectedBerryCount);
 
         const berryName = BerryType[berryToPlant];
-        const berryImage =
-          '<img src="assets/images/items/berry/' +
-          berryName +
-          '.png" height="28px">';
-        this.__internal__sendNotif(
-          "Planted some " + berryName + " " + berryImage
-        );
+        const berryImage = '<img src="assets/images/items/berry/' + berryName + '.png" height="28px">';
+        this.__internal__sendNotif("Planted some " + berryName + " " + berryImage);
       }
     }
   }
@@ -802,9 +614,7 @@ class AutomationFarm {
    *
    * @returns The built config { <berryType>: [ indexes... ] }
    */
-  static __internal__plantABerryForMutationRequiringOver600PointsConfig(
-    berryType
-  ) {
+  static __internal__plantABerryForMutationRequiringOver600PointsConfig(berryType) {
     // This represents the following strategy
     //  |o|o|o|o|o|
     //  |o| |o| |o|
@@ -812,9 +622,7 @@ class AutomationFarm {
     //  |o|o|o|o|o|
     //  |o|o|o|o|o|
     const config = {};
-    config[berryType] = App.game.farming.plotList
-      .map((_, index) => index)
-      .filter((index) => ![6, 8, 11, 12, 13].includes(index));
+    config[berryType] = App.game.farming.plotList.map((_, index) => index).filter((index) => ![6, 8, 11, 12, 13].includes(index));
     return config;
   }
 
@@ -833,9 +641,7 @@ class AutomationFarm {
     //  |o|o|o|o|o|
     //  |o|o|o|o|o|
     const config = {};
-    config[berryType] = App.game.farming.plotList
-      .map((_, index) => index)
-      .filter((index) => ![12, 13].includes(index));
+    config[berryType] = App.game.farming.plotList.map((_, index) => index).filter((index) => ![12, 13].includes(index));
     return config;
   }
 
@@ -850,13 +656,7 @@ class AutomationFarm {
    *
    * @returns The built config { <berryType>: [ indexes... ], ... }
    */
-  static __internal__plantTwoBerriesForMutationConfig(
-    berry1Type,
-    berry2Type,
-    everyPlotUnlocked = true,
-    thirteenthPlotUnlocked = true,
-    tenthPlotUnlocked = true
-  ) {
+  static __internal__plantTwoBerriesForMutationConfig(berry1Type, berry2Type, everyPlotUnlocked = true, thirteenthPlotUnlocked = true, tenthPlotUnlocked = true) {
     const config = {};
     if (everyPlotUnlocked) {
       // This represents the following strategy
@@ -910,11 +710,7 @@ class AutomationFarm {
    *
    * @returns The built config { <berryType>: [ indexes... ], ... }
    */
-  static __internal__plantThreeBerriesForMutationConfig(
-    berry1Type,
-    berry2Type,
-    berry3Type
-  ) {
+  static __internal__plantThreeBerriesForMutationConfig(berry1Type, berry2Type, berry3Type) {
     // This represents the following strategy
     //  | |1| | |1|
     //  |2|3| |2|3|
@@ -939,12 +735,7 @@ class AutomationFarm {
    *
    * @returns The built config { <berryType>: [ indexes... ], ... }
    */
-  static __internal__plantFourBerriesForMutationConfig(
-    berry1Type,
-    berry2Type,
-    berry3Type,
-    berry4Type
-  ) {
+  static __internal__plantFourBerriesForMutationConfig(berry1Type, berry2Type, berry3Type, berry4Type) {
     // This represents the following strategy
     //  |1| |2| |1|
     //  |3| |4| |3|
@@ -968,10 +759,7 @@ class AutomationFarm {
    *
    * @returns The built config { <berryType>: [ indexes... ], ... }
    */
-  static __internal__plantTwoBerriesForSurroundingMutationConfig(
-    triggerBerryType,
-    mutatedBerryType
-  ) {
+  static __internal__plantTwoBerriesForSurroundingMutationConfig(triggerBerryType, mutatedBerryType) {
     // This represents the following strategy (triggerBerryType = x, mutatedBerryType = o)
     //  |o|o|o|o|o|
     //  |o|x|o|o|x|
@@ -980,9 +768,7 @@ class AutomationFarm {
     //  |o|x|o|o|x|
     const config = {};
     config[triggerBerryType] = [6, 9, 21, 24];
-    config[mutatedBerryType] = App.game.farming.plotList
-      .map((_, index) => index)
-      .filter((x) => !config[triggerBerryType].includes(x));
+    config[mutatedBerryType] = App.game.farming.plotList.map((_, index) => index).filter((x) => !config[triggerBerryType].includes(x));
 
     return config;
   }
@@ -1002,11 +788,7 @@ class AutomationFarm {
    *
    * @returns True if a berry was planted, false otherwise
    */
-  static __internal__tryPlantBerryAtIndex(
-    index,
-    berryType,
-    removeAnyUnwantedBerry = true
-  ) {
+  static __internal__tryPlantBerryAtIndex(index, berryType, removeAnyUnwantedBerry = true) {
     const plot = App.game.farming.plotList[index];
 
     if (!plot.isUnlocked) {
@@ -1014,10 +796,7 @@ class AutomationFarm {
     }
 
     // Remove any mutation that might have occured, as soon as possible
-    if (
-      removeAnyUnwantedBerry &&
-      !this.__internal__removeAnyUnwantedBerry(index, berryType)
-    ) {
+    if (removeAnyUnwantedBerry && !this.__internal__removeAnyUnwantedBerry(index, berryType)) {
       return false;
     }
 
@@ -1120,84 +899,37 @@ class AutomationFarm {
         \*********************************/
 
     // #9 Unlock at least one Persim berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Persim,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Oran,
-        BerryType.Pecha,
-        false,
-        false,
-        false
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Persim, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Oran, BerryType.Pecha, false, false, false));
 
     // Unlock the slot requiring Persim
     this.__internal__addUnlockSlotStrategy(2, BerryType.Persim);
 
     // #10 Unlock at least one Razz berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Razz,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Leppa,
-        BerryType.Cheri,
-        false,
-        false
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Razz, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Leppa, BerryType.Cheri, false, false));
 
     // Unlock the slot requiring Razz
     this.__internal__addUnlockSlotStrategy(14, BerryType.Razz);
 
     // #11 Unlock at least one Bluk berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Bluk,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Leppa,
-        BerryType.Chesto,
-        false,
-        false
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Bluk, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Leppa, BerryType.Chesto, false, false));
 
     // Unlock the slot requiring Bluk
     this.__internal__addUnlockSlotStrategy(22, BerryType.Bluk);
 
     // #12 Unlock at least one Nanab berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Nanab,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Aspear,
-        BerryType.Pecha,
-        false,
-        false
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Nanab, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Aspear, BerryType.Pecha, false, false));
 
     // Unlock the slot requiring Nanab
     this.__internal__addUnlockSlotStrategy(10, BerryType.Nanab);
 
     // #13 Unlock at least one Wepear berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Wepear,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Oran,
-        BerryType.Rawst,
-        false
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Wepear, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Oran, BerryType.Rawst, false));
 
     // Unlock the slot requiring Wepear
     this.__internal__addUnlockSlotStrategy(3, BerryType.Wepear);
 
     // #14 Unlock at least one Pinap berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Pinap,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Sitrus,
-        BerryType.Aspear,
-        false
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Pinap, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Sitrus, BerryType.Aspear, false));
 
     // Unlock the slot requiring Pinap
     this.__internal__addUnlockSlotStrategy(19, BerryType.Pinap);
@@ -1321,42 +1053,16 @@ class AutomationFarm {
     /////
 
     // #26 Unlock at least one Tamato berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Tamato,
-      this.__internal__plantTwoBerriesForSurroundingMutationConfig(
-        BerryType.Pomeg,
-        BerryType.Razz
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Tamato, this.__internal__plantTwoBerriesForSurroundingMutationConfig(BerryType.Pomeg, BerryType.Razz));
 
     // #27 Unlock at least one Cornn berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Cornn,
-      this.__internal__plantThreeBerriesForMutationConfig(
-        BerryType.Leppa,
-        BerryType.Bluk,
-        BerryType.Wiki
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Cornn, this.__internal__plantThreeBerriesForMutationConfig(BerryType.Leppa, BerryType.Bluk, BerryType.Wiki));
 
     // #28 Unlock at least one Magost berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Magost,
-      this.__internal__plantThreeBerriesForMutationConfig(
-        BerryType.Pecha,
-        BerryType.Nanab,
-        BerryType.Mago
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Magost, this.__internal__plantThreeBerriesForMutationConfig(BerryType.Pecha, BerryType.Nanab, BerryType.Mago));
 
     // #29 Unlock at least one Rabuta berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Rabuta,
-      this.__internal__plantTwoBerriesForSurroundingMutationConfig(
-        BerryType.Aguav,
-        BerryType.Aspear
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Rabuta, this.__internal__plantTwoBerriesForSurroundingMutationConfig(BerryType.Aguav, BerryType.Aspear));
 
     // #30 Unlock at least one Nomel berry through mutation
     const nomelConfig = {};
@@ -1364,13 +1070,7 @@ class AutomationFarm {
     this.__internal__addUnlockMutationStrategy(BerryType.Nomel, nomelConfig);
 
     // Make sure to have at least 25 of each berry type before proceeding
-    this.__internal__addBerryRequirementBeforeFurtherUnlockStrategy(25, [
-      BerryType.Tamato,
-      BerryType.Cornn,
-      BerryType.Magost,
-      BerryType.Rabuta,
-      BerryType.Nomel,
-    ]);
+    this.__internal__addBerryRequirementBeforeFurtherUnlockStrategy(25, [BerryType.Tamato, BerryType.Cornn, BerryType.Magost, BerryType.Rabuta, BerryType.Nomel]);
 
     // #31 Unlock at least one Spelon berry through mutation
     const allSlotIndexes = App.game.farming.plotList.map((_, index) => index);
@@ -1381,13 +1081,7 @@ class AutomationFarm {
     // #32 Unlock at least one Pamtre berry through mutation
     const pamtreConfig = {};
     pamtreConfig[BerryType.Cornn] = allSlotIndexes;
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Pamtre,
-      pamtreConfig,
-      1,
-      null,
-      [OakItemType.Cell_Battery]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Pamtre, pamtreConfig, 1, null, [OakItemType.Cell_Battery]);
 
     // #33 Unlock at least one Watmel berry through mutation
     const watmelConfig = {};
@@ -1413,13 +1107,7 @@ class AutomationFarm {
     pinkanConfig[BerryType.Qualot] = [10, 14];
     pinkanConfig[BerryType.Magost] = [11, 13];
     pinkanConfig[BerryType.Watmel] = [12];
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Pinkan,
-      pinkanConfig,
-      1,
-      null,
-      [OakItemType.Sprinklotad]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Pinkan, pinkanConfig, 1, null, [OakItemType.Sprinklotad]);
 
     // Make the pinkan berry optional, since it's not required by any other berry strategy
     const pinkanStrategy = this.__internal__unlockStrategySelection.at(-1);
@@ -1453,58 +1141,21 @@ class AutomationFarm {
         \*********************************/
 
     // #37 Unlock at least one Occa berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Occa,
-      this.__internal__plantFourBerriesForMutationConfig(
-        BerryType.Tamato,
-        BerryType.Figy,
-        BerryType.Spelon,
-        BerryType.Razz
-      ),
-      1,
-      null,
-      [OakItemType.Magma_Stone]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Occa, this.__internal__plantFourBerriesForMutationConfig(BerryType.Tamato, BerryType.Figy, BerryType.Spelon, BerryType.Razz), 1, null, [
+      OakItemType.Magma_Stone,
+    ]);
 
     // #45 Unlock at least one Coba berry through mutation (even though it's a berry further in the list, it's needed for the next berry's unlock)
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Coba,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Wiki,
-        BerryType.Aguav
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Coba, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Wiki, BerryType.Aguav));
 
     // #38 Unlock at least one Passho berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Passho,
-      this.__internal__plantFourBerriesForMutationConfig(
-        BerryType.Oran,
-        BerryType.Kelpsy,
-        BerryType.Chesto,
-        BerryType.Coba
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Passho, this.__internal__plantFourBerriesForMutationConfig(BerryType.Oran, BerryType.Kelpsy, BerryType.Chesto, BerryType.Coba));
 
     // #39 Unlock at least one Wacan berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Wacan,
-      this.__internal__plantFourBerriesForMutationConfig(
-        BerryType.Iapapa,
-        BerryType.Pinap,
-        BerryType.Qualot,
-        BerryType.Grepa
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Wacan, this.__internal__plantFourBerriesForMutationConfig(BerryType.Iapapa, BerryType.Pinap, BerryType.Qualot, BerryType.Grepa));
 
     // #40 Unlock at least one Rindo berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Rindo,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Figy,
-        BerryType.Aguav
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Rindo, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Figy, BerryType.Aguav));
 
     // #41 Unlock at least one Yache berry through mutation
     const yacheConfig = {};
@@ -1512,35 +1163,22 @@ class AutomationFarm {
     this.__internal__addUnlockMutationStrategy(BerryType.Yache, yacheConfig);
 
     // #46 Unlock at least one Payapa berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Payapa,
-      this.__internal__plantFourBerriesForMutationConfig(
-        BerryType.Wiki,
-        BerryType.Cornn,
-        BerryType.Bluk,
-        BerryType.Pamtre
-      ),
-      1,
-      null,
-      [OakItemType.Rocky_Helmet, OakItemType.Cell_Battery]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Payapa, this.__internal__plantFourBerriesForMutationConfig(BerryType.Wiki, BerryType.Cornn, BerryType.Bluk, BerryType.Pamtre), 1, null, [
+      OakItemType.Rocky_Helmet,
+      OakItemType.Cell_Battery,
+    ]);
 
     // #47 Unlock at least one Tanga berry through mutation
     const tangaConfig = {};
-    tangaConfig[BerryType.Rindo] = App.game.farming.plotList
-      .map((_, index) => index)
-      .filter((index) => ![6, 8, 16, 18].includes(index));
+    tangaConfig[BerryType.Rindo] = App.game.farming.plotList.map((_, index) => index).filter((index) => ![6, 8, 16, 18].includes(index));
     this.__internal__addUnlockMutationStrategy(BerryType.Tanga, tangaConfig);
 
     // #49 Unlock at least four Kasib berries through mutation
     const kasibConfig = {};
-    kasibConfig[BerryType.Cheri] = App.game.farming.plotList.map(
-      (_, index) => index
-    );
+    kasibConfig[BerryType.Cheri] = App.game.farming.plotList.map((_, index) => index);
     this.__internal__addUnlockMutationStrategy(BerryType.Kasib, kasibConfig, 4);
     const kasibBerryStrategy = this.__internal__unlockStrategySelection.at(-1);
-    kasibBerryStrategy.harvestStrategy =
-      this.__internal__harvestTimingType.LetTheBerryDie;
+    kasibBerryStrategy.harvestStrategy = this.__internal__harvestTimingType.LetTheBerryDie;
     kasibBerryStrategy.action = function () {
       for (const index of App.game.farming.plotList.keys()) {
         this.__internal__tryPlantBerryAtIndex(index, BerryType.Cheri);
@@ -1551,39 +1189,15 @@ class AutomationFarm {
     }.bind(this);
 
     // #50 Unlock at least one Haban berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Haban,
-      this.__internal__plantFourBerriesForMutationConfig(
-        BerryType.Occa,
-        BerryType.Passho,
-        BerryType.Wacan,
-        BerryType.Rindo
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Haban, this.__internal__plantFourBerriesForMutationConfig(BerryType.Occa, BerryType.Passho, BerryType.Wacan, BerryType.Rindo));
 
     // #51 Unlock at least one Colbur berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Colbur,
-      this.__internal__plantThreeBerriesForMutationConfig(
-        BerryType.Rabuta,
-        BerryType.Kasib,
-        BerryType.Payapa
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Colbur, this.__internal__plantThreeBerriesForMutationConfig(BerryType.Rabuta, BerryType.Kasib, BerryType.Payapa));
 
     // #54 Unlock at least one Roseli berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Roseli,
-      this.__internal__plantFourBerriesForMutationConfig(
-        BerryType.Mago,
-        BerryType.Magost,
-        BerryType.Nanab,
-        BerryType.Watmel
-      ),
-      1,
-      null,
-      [OakItemType.Sprinklotad]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Roseli, this.__internal__plantFourBerriesForMutationConfig(BerryType.Mago, BerryType.Magost, BerryType.Nanab, BerryType.Watmel), 1, null, [
+      OakItemType.Sprinklotad,
+    ]);
 
     /////
     // Perform mutations requiring Oak items last to avoid any problem du to the player not having unlocked those
@@ -1592,56 +1206,28 @@ class AutomationFarm {
     const allSlotIndexes = App.game.farming.plotList.map((_, index) => index);
     const shucaConfig = {};
     shucaConfig[BerryType.Watmel] = allSlotIndexes;
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Shuca,
-      shucaConfig,
-      1,
-      OakItemType.Sprinklotad
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Shuca, shucaConfig, 1, OakItemType.Sprinklotad);
 
     // #48 Unlock at least one Charti berry through mutation (moved this far to avoid any problem, since it uses Oak items)
     const chartiConfig = {};
     chartiConfig[BerryType.Cornn] = allSlotIndexes;
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Charti,
-      chartiConfig,
-      1,
-      OakItemType.Cell_Battery
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Charti, chartiConfig, 1, OakItemType.Cell_Battery);
 
     // #52 Unlock at least 20 Babiri berries through mutation
     const babiriConfig = {};
     babiriConfig[BerryType.Shuca] = [0, 1, 2, 3, 4, 7, 17, 20, 21, 22, 23, 24];
     babiriConfig[BerryType.Charti] = [5, 9, 10, 11, 12, 13, 14, 15, 19];
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Babiri,
-      babiriConfig,
-      20
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Babiri, babiriConfig, 20);
 
     // #55 Unlock at least one Snover berry through mutation
     const snoverConfig = {};
-    snoverConfig[BerryType.Babiri] = App.game.farming.plotList
-      .map((_, index) => index)
-      .filter((index) => ![18, 19, 22, 23, 24].includes(index));
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Snover,
-      snoverConfig,
-      1,
-      null,
-      [],
-      "Snover"
-    );
+    snoverConfig[BerryType.Babiri] = App.game.farming.plotList.map((_, index) => index).filter((index) => ![18, 19, 22, 23, 24].includes(index));
+    this.__internal__addUnlockMutationStrategy(BerryType.Snover, snoverConfig, 1, null, [], "Snover");
 
     // #42 Unlock at least one Chople berry through mutation (moved this far to avoid any problem, since it uses Oak items)
     const chopleConfig = {};
     chopleConfig[BerryType.Spelon] = allSlotIndexes;
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Chople,
-      chopleConfig,
-      1,
-      OakItemType.Magma_Stone
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Chople, chopleConfig, 1, OakItemType.Magma_Stone);
 
     // The next mutation need to grow berries while others are ripe, so we need to start on a empty farm
     this.__internal__unlockStrategySelection.push({
@@ -1659,9 +1245,7 @@ class AutomationFarm {
       requiredPokemon: null,
       requiresDiscord: false,
       setFoatingPanelContent: function () {
-        const textPrefix = document.createTextNode(
-          "Currently waiting to harvest any remaining berries, before unlocking the "
-        );
+        const textPrefix = document.createTextNode("Currently waiting to harvest any remaining berries, before unlocking the ");
 
         const berryImage = document.createElement("img");
         const berryName = BerryType[BerryType.Chilan];
@@ -1671,18 +1255,10 @@ class AutomationFarm {
         const textSuffix = document.createTextNode(`${berryName} berry`);
 
         this.__internal__contentFloatingContentContainer.innerHTML = "";
-        this.__internal__contentFloatingContentContainer.appendChild(
-          textPrefix
-        );
-        this.__internal__contentFloatingContentContainer.appendChild(
-          document.createElement("br")
-        );
-        this.__internal__contentFloatingContentContainer.appendChild(
-          berryImage
-        );
-        this.__internal__contentFloatingContentContainer.appendChild(
-          textSuffix
-        );
+        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
       }.bind(this),
       action: function () {},
     });
@@ -1690,31 +1266,20 @@ class AutomationFarm {
     // #53 Unlock at least one Chilan berry through mutation
     // TODO (06/03/2023): Find a way to detail this strategy in the floating panel
     const chilanConfig = {};
-    chilanConfig[BerryType.Chople] = App.game.farming.plotList.map(
-      (_, index) => index
-    );
+    chilanConfig[BerryType.Chople] = App.game.farming.plotList.map((_, index) => index);
     this.__internal__addUnlockMutationStrategy(BerryType.Chilan, chilanConfig);
     const chilanBerryStrategy = this.__internal__unlockStrategySelection.at(-1);
     chilanBerryStrategy.action = function () {
       // Nothing planted, plant the first batch
       if (App.game.farming.plotList[6].isEmpty()) {
         for (const index of [6, 8, 16, 18]) {
-          Automation.Farm.__internal__tryPlantBerryAtIndex(
-            index,
-            BerryType.Chople
-          );
+          Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chople);
         }
       }
       // First batch ripped, plant the rest
-      else if (
-        App.game.farming.plotList[6].age >
-        App.game.farming.plotList[6].berryData.growthTime[PlotStage.Bloom]
-      ) {
+      else if (App.game.farming.plotList[6].age > App.game.farming.plotList[6].berryData.growthTime[PlotStage.Bloom]) {
         for (const index of App.game.farming.plotList.keys()) {
-          Automation.Farm.__internal__tryPlantBerryAtIndex(
-            index,
-            BerryType.Chople
-          );
+          Automation.Farm.__internal__tryPlantBerryAtIndex(index, BerryType.Chople);
         }
       }
 
@@ -1725,12 +1290,7 @@ class AutomationFarm {
     // #43 Unlock at least one Kebia berry through mutation
     const kebiaConfig = {};
     kebiaConfig[BerryType.Pamtre] = allSlotIndexes;
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Kebia,
-      kebiaConfig,
-      1,
-      OakItemType.Rocky_Helmet
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Kebia, kebiaConfig, 1, OakItemType.Rocky_Helmet);
   }
 
   /**
@@ -1742,94 +1302,35 @@ class AutomationFarm {
         \*********************************/
 
     // #56 Unlock at least one Micle berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Micle,
-      this.__internal__plantABerryForMutationRequiringOver600PointsConfig(
-        BerryType.Pamtre
-      ),
-      1,
-      null,
-      [OakItemType.Rocky_Helmet]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Micle, this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Pamtre), 1, null, [OakItemType.Rocky_Helmet]);
 
     // #57 Unlock at least one Custap berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Custap,
-      this.__internal__plantABerryForMutationRequiringOver600PointsConfig(
-        BerryType.Watmel
-      ),
-      1,
-      null,
-      [OakItemType.Sprinklotad]
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Custap, this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Watmel), 1, null, [OakItemType.Sprinklotad]);
 
     // #58 Unlock at least one Jaboca berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Jaboca,
-      this.__internal__plantABerryForMutationRequiringOver600PointsConfig(
-        BerryType.Durin
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Jaboca, this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Durin));
 
     // #59 Unlock at least one Rowap berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Rowap,
-      this.__internal__plantABerryForMutationRequiringOver600PointsConfig(
-        BerryType.Belue
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Rowap, this.__internal__plantABerryForMutationRequiringOver600PointsConfig(BerryType.Belue));
 
     //////
     // The following mutations require the player to have caught legendary pokemons
 
     // #62 Unlock at least four Liechi berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Liechi,
-      this.__internal__plantABerryForMutationRequiring23BerriesConfig(
-        BerryType.Passho
-      ),
-      1,
-      null,
-      [],
-      "Kyogre"
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Liechi, this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Passho), 1, null, [], "Kyogre");
 
     this.__internal__increaseHarvestRateStrategy(BerryType.Liechi, 4);
 
     // #63 Unlock at least four Ganlon berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Ganlon,
-      this.__internal__plantABerryForMutationRequiring23BerriesConfig(
-        BerryType.Shuca
-      ),
-      1,
-      null,
-      [],
-      "Groudon"
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Ganlon, this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Shuca), 1, null, [], "Groudon");
 
     this.__internal__increaseHarvestRateStrategy(BerryType.Ganlon, 4);
 
     // #60 Unlock at least one Kee berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Kee,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Liechi,
-        BerryType.Ganlon
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Kee, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Liechi, BerryType.Ganlon));
 
     // #64 Unlock at least four Salac berries through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Salac,
-      this.__internal__plantABerryForMutationRequiring23BerriesConfig(
-        BerryType.Coba
-      ),
-      1,
-      null,
-      [],
-      "Rayquaza"
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Salac, this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Coba), 1, null, [], "Rayquaza");
 
     this.__internal__increaseHarvestRateStrategy(BerryType.Salac, 4);
 
@@ -1853,52 +1354,22 @@ class AutomationFarm {
     petayaConfig[BerryType.Passho] = [22];
     petayaConfig[BerryType.Roseli] = [23];
     petayaConfig[BerryType.Chilan] = [24];
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Petaya,
-      petayaConfig,
-      1
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Petaya, petayaConfig, 1);
 
     this.__internal__increaseHarvestRateStrategy(BerryType.Petaya, 4);
 
     // #61 Unlock at least one Maranga berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Maranga,
-      this.__internal__plantTwoBerriesForMutationConfig(
-        BerryType.Salac,
-        BerryType.Petaya
-      )
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Maranga, this.__internal__plantTwoBerriesForMutationConfig(BerryType.Salac, BerryType.Petaya));
 
     // #66 Unlock at least one Apicot berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Apicot,
-      this.__internal__plantABerryForMutationRequiring23BerriesConfig(
-        BerryType.Chilan
-      ),
-      1,
-      null,
-      [],
-      "Palkia"
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Apicot, this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Chilan), 1, null, [], "Palkia");
 
     // #67 Unlock at least one Lansat berry through mutation
-    this.__internal__addUnlockMutationStrategy(
-      BerryType.Lansat,
-      this.__internal__plantABerryForMutationRequiring23BerriesConfig(
-        BerryType.Roseli
-      ),
-      1,
-      null,
-      [],
-      "Dialga"
-    );
+    this.__internal__addUnlockMutationStrategy(BerryType.Lansat, this.__internal__plantABerryForMutationRequiring23BerriesConfig(BerryType.Roseli), 1, null, [], "Dialga");
 
     // #68 Unlock at least one Starf berry through mutation
     const starfConfig = {};
-    starfConfig[BerryType.Roseli] = App.game.farming.plotList
-      .map((_, index) => index)
-      .filter((index) => ![11, 12, 13].includes(index));
+    starfConfig[BerryType.Roseli] = App.game.farming.plotList.map((_, index) => index).filter((index) => ![11, 12, 13].includes(index));
     this.__internal__addUnlockMutationStrategy(BerryType.Starf, starfConfig);
   }
 
@@ -1979,19 +1450,14 @@ class AutomationFarm {
           slotPosition = `${slotIndex + 1}th`;
         }
 
-        const textElem = document.createTextNode(
-          `Currently trying to unlock the ${slotPosition} slot`
-        );
+        const textElem = document.createTextNode(`Currently trying to unlock the ${slotPosition} slot`);
         this.__internal__contentFloatingContentContainer.innerHTML = "";
         this.__internal__contentFloatingContentContainer.appendChild(textElem);
       }.bind(this),
       // If not unlocked, then farm some needed berries
       action: function () {
         let berryToPlant = berryType;
-        if (
-          App.game.farming.plotBerryCost(slotIndex).amount <=
-          App.game.farming.berryList[berryType]()
-        ) {
+        if (App.game.farming.plotBerryCost(slotIndex).amount <= App.game.farming.berryList[berryType]()) {
           // Not enough farm point, lets plant some Cheri berries to get some fast
           berryToPlant = BerryType.Cheri;
         }
@@ -2010,21 +1476,11 @@ class AutomationFarm {
    * @param oakItemsToRemove: The Oak items list that might ruin the mutation and needs to be forbidden (Default: None)
    * @param requiredPokemonName: The name of the Pokemon needed for the mutation to occur (Default: None)
    */
-  static __internal__addUnlockMutationStrategy(
-    berryType,
-    berriesIndexes,
-    minimumRequiredBerry = 1,
-    oakItemNeeded = null,
-    oakItemsToRemove = [],
-    requiredPokemonName = null
-  ) {
+  static __internal__addUnlockMutationStrategy(berryType, berriesIndexes, minimumRequiredBerry = 1, oakItemNeeded = null, oakItemsToRemove = [], requiredPokemonName = null) {
     const step = {
       // Check if the berry is unlocked and the player has enough of them in stock or planted
       isNeeded: function () {
-        return this.__internal__doesPlayerNeedMoreBerry(
-          berryType,
-          minimumRequiredBerry
-        );
+        return this.__internal__doesPlayerNeedMoreBerry(berryType, minimumRequiredBerry);
       }.bind(this),
       berryToUnlock: berryType,
       harvestStrategy: this.__internal__harvestTimingType.RightBeforeWithering,
@@ -2058,9 +1514,7 @@ class AutomationFarm {
           berrySpelling = "berries";
         }
 
-        textPrefix = document.createTextNode(
-          `Currently trying to gather at least ${countStr} `
-        );
+        textPrefix = document.createTextNode(`Currently trying to gather at least ${countStr} `);
       }
 
       const berryImage = document.createElement("img");
@@ -2068,9 +1522,7 @@ class AutomationFarm {
       berryImage.src = `assets/images/items/berry/${berryName}.png`;
       berryImage.style.height = "20px";
 
-      const textSuffix = document.createTextNode(
-        `${berryName} ${berrySpelling}`
-      );
+      const textSuffix = document.createTextNode(`${berryName} ${berrySpelling}`);
 
       // Add the strategy plantation pattern details
       const strategyContainer = document.createElement("div");
@@ -2092,28 +1544,20 @@ class AutomationFarm {
       strategyContainer.appendChild(rightArrow);
 
       // Add the table
-      const plantationPatternTable =
-        this.__internal__createPlantationPatternTable(berriesIndexes);
+      const plantationPatternTable = this.__internal__createPlantationPatternTable(berriesIndexes);
       plantationPatternTable.style.margin = "auto";
       plantationPatternTable.style.marginTop = "3px";
       strategyContainer.appendChild(plantationPatternTable);
 
       this.__internal__contentFloatingContentContainer.innerHTML = "";
       this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
-      this.__internal__contentFloatingContentContainer.appendChild(
-        document.createElement("br")
-      );
+      this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
       this.__internal__contentFloatingContentContainer.appendChild(berryImage);
       this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
-      this.__internal__contentFloatingContentContainer.appendChild(
-        strategyContainer
-      );
+      this.__internal__contentFloatingContentContainer.appendChild(strategyContainer);
 
       // Explain the strategy in this case
-      if (
-        step.harvestStrategy ==
-        this.__internal__harvestTimingType.LetTheBerryDie
-      ) {
+      if (step.harvestStrategy == this.__internal__harvestTimingType.LetTheBerryDie) {
         const strategyDetail = document.createElement("div");
         strategyDetail.style.marginTop = "8px";
         strategyDetail.style.fontStyle = "italic";
@@ -2121,15 +1565,9 @@ class AutomationFarm {
         strategyDetail.style.lineHeight = "14px";
         strategyDetail.style.padding = "0px 5px";
 
-        strategyDetail.appendChild(
-          document.createTextNode(
-            "* The berries will be left to die to allow the mutation to happen"
-          )
-        );
+        strategyDetail.appendChild(document.createTextNode("* The berries will be left to die to allow the mutation to happen"));
 
-        this.__internal__contentFloatingContentContainer.appendChild(
-          strategyDetail
-        );
+        this.__internal__contentFloatingContentContainer.appendChild(strategyDetail);
       }
     }.bind(this);
 
@@ -2144,17 +1582,11 @@ class AutomationFarm {
    * @param berryType: The type of berry to unlock
    * @param minimumRequiredBerry: The minimum of berries to hold required
    */
-  static __internal__increaseHarvestRateStrategy(
-    berryType,
-    minimumRequiredBerry
-  ) {
+  static __internal__increaseHarvestRateStrategy(berryType, minimumRequiredBerry) {
     const strategy = {
       // Check if the berry is unlocked and the player has enough of them in stock or planted
       isNeeded: function () {
-        return this.__internal__doesPlayerNeedMoreBerry(
-          berryType,
-          minimumRequiredBerry
-        );
+        return this.__internal__doesPlayerNeedMoreBerry(berryType, minimumRequiredBerry);
       }.bind(this),
       berryToUnlock: berryType,
       harvestStrategy: this.__internal__harvestTimingType.RightBeforeWithering, // Harvest will be handled manually
@@ -2172,38 +1604,24 @@ class AutomationFarm {
           berrySpelling = "berries";
         }
 
-        const textPrefix = document.createTextNode(
-          `Currently trying to gather at least ${countStr} `
-        );
+        const textPrefix = document.createTextNode(`Currently trying to gather at least ${countStr} `);
 
         const berryImage = document.createElement("img");
         const berryName = BerryType[berryType];
         berryImage.src = `assets/images/items/berry/${berryName}.png`;
         berryImage.style.height = "20px";
 
-        const textSuffix = document.createTextNode(
-          `${berryName} ${berrySpelling}`
-        );
+        const textSuffix = document.createTextNode(`${berryName} ${berrySpelling}`);
 
         this.__internal__contentFloatingContentContainer.innerHTML = "";
-        this.__internal__contentFloatingContentContainer.appendChild(
-          textPrefix
-        );
-        this.__internal__contentFloatingContentContainer.appendChild(
-          document.createElement("br")
-        );
-        this.__internal__contentFloatingContentContainer.appendChild(
-          berryImage
-        );
-        this.__internal__contentFloatingContentContainer.appendChild(
-          textSuffix
-        );
+        this.__internal__contentFloatingContentContainer.appendChild(textPrefix);
+        this.__internal__contentFloatingContentContainer.appendChild(document.createElement("br"));
+        this.__internal__contentFloatingContentContainer.appendChild(berryImage);
+        this.__internal__contentFloatingContentContainer.appendChild(textSuffix);
       }.bind(this),
       // If not, then farm some needed berries
       action: function () {
-        const richMulchEnabled =
-          Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) ===
-          "true";
+        const richMulchEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.UseRichMulch) === "true";
 
         let berryLocations = [];
         for (const [index, plot] of App.game.farming.plotList.entries()) {
@@ -2228,9 +1646,7 @@ class AutomationFarm {
         // If no berries were found, plant some
         if (berryLocations.length == 0) {
           berryLocations = [6, 8, 16, 18];
-          passhoLocations = App.game.farming.plotList
-            .map((_, index) => index)
-            .filter((index) => !berryLocations.includes(index));
+          passhoLocations = App.game.farming.plotList.map((_, index) => index).filter((index) => !berryLocations.includes(index));
         } else {
           for (const index of berryLocations) {
             const isLeftMost = index % 5 == 0;
@@ -2252,12 +1668,7 @@ class AutomationFarm {
           }
 
           // Remove any duplicates, or out of bound values
-          passhoLocations = passhoLocations.filter(
-            (value, index) =>
-              passhoLocations.indexOf(value) === index &&
-              value >= 0 &&
-              value < 25
-          );
+          passhoLocations = passhoLocations.filter((value, index) => passhoLocations.indexOf(value) === index && value >= 0 && value < 25);
         }
 
         // Configure the slots
@@ -2281,10 +1692,7 @@ class AutomationFarm {
    * @param {number} berriesMinAmount: The minimum amount that is required for each berry
    * @param {Array} berriesToGather: The types of berry the player must have
    */
-  static __internal__addBerryRequirementBeforeFurtherUnlockStrategy(
-    berriesMinAmount,
-    berriesToGather
-  ) {
+  static __internal__addBerryRequirementBeforeFurtherUnlockStrategy(berriesMinAmount, berriesToGather) {
     const strategy = {
       harvestStrategy: this.__internal__harvestTimingType.AsSoonAsPossible,
       oakItemToEquip: null,
@@ -2296,15 +1704,10 @@ class AutomationFarm {
     // Check if all berries are in sufficient amount
     strategy.isNeeded = function () {
       return !berriesToGather.every((berryType) => {
-        const alreadyPlantedCount =
-          Automation.Farm.__internal__getPlantedBerriesCount(berryType);
-        const berryHarvestAmount =
-          App.game.farming.berryData[berryType].harvestAmount;
+        const alreadyPlantedCount = Automation.Farm.__internal__getPlantedBerriesCount(berryType);
+        const berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
 
-        return (
-          App.game.farming.berryList[berryType]() >=
-          berriesMinAmount - alreadyPlantedCount * berryHarvestAmount
-        );
+        return App.game.farming.berryList[berryType]() >= berriesMinAmount - alreadyPlantedCount * berryHarvestAmount;
       });
     };
 
@@ -2316,24 +1719,14 @@ class AutomationFarm {
           continue;
         }
 
-        let neededAmount =
-          berriesMinAmount - App.game.farming.berryList[berryType]();
-        const berryHarvestAmount =
-          App.game.farming.berryData[berryType].harvestAmount;
+        let neededAmount = berriesMinAmount - App.game.farming.berryList[berryType]();
+        const berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
 
-        const alreadyPlantedCount =
-          this.__internal__getPlantedBerriesCount(berryType);
+        const alreadyPlantedCount = this.__internal__getPlantedBerriesCount(berryType);
         neededAmount -= alreadyPlantedCount * berryHarvestAmount;
 
-        while (
-          neededAmount > 0 &&
-          plotIndex <= 24 &&
-          App.game.farming.hasBerry(berryType)
-        ) {
-          if (
-            App.game.farming.plotList[plotIndex].isUnlocked &&
-            App.game.farming.plotList[plotIndex].isEmpty()
-          ) {
+        while (neededAmount > 0 && plotIndex <= 24 && App.game.farming.hasBerry(berryType)) {
+          if (App.game.farming.plotList[plotIndex].isUnlocked && App.game.farming.plotList[plotIndex].isEmpty()) {
             App.game.farming.plant(plotIndex, berryType);
 
             // Subtract the harvest amount (-1 for the planted berry)
@@ -2356,10 +1749,7 @@ class AutomationFarm {
 
     // Build the list of berries under the minimum threshold
     strategy.setFoatingPanelContent = function () {
-      const berriesNeeded = berriesToGather.filter(
-        (berryType) =>
-          App.game.farming.berryList[berryType]() < berriesMinAmount
-      );
+      const berriesNeeded = berriesToGather.filter((berryType) => App.game.farming.berryList[berryType]() < berriesMinAmount);
 
       if (this.__internal__floatingPanelStateData == berriesNeeded) {
         // No changes, no update needed
@@ -2368,9 +1758,7 @@ class AutomationFarm {
 
       this.__internal__floatingPanelStateData = berriesNeeded;
 
-      const textPrefix = document.createTextNode(
-        `Currently trying to gather at least ${berriesMinAmount} of the following berries:`
-      );
+      const textPrefix = document.createTextNode(`Currently trying to gather at least ${berriesMinAmount} of the following berries:`);
 
       const berryList = document.createElement("div");
       berryList.style.margin = "auto";
@@ -2416,12 +1804,7 @@ class AutomationFarm {
   static __internal__trySetNextUnlockStrategy() {
     for (const strategy of this.__internal__unlockStrategySelection) {
       // Don't consider strategies if the berry cannot be unlocked and it was flagged as optionnal
-      if (
-        strategy.isOptional === true &&
-        !App.game.farming.mutations.find(
-          (mutation) => mutation.mutatedBerry == strategy.berryToUnlock
-        ).unlocked
-      ) {
+      if (strategy.isOptional === true && !App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == strategy.berryToUnlock).unlocked) {
         continue;
       }
 
@@ -2450,10 +1833,7 @@ class AutomationFarm {
     // If no strategy was found, turn off the feature and disable the button
     if (this.__internal__currentStrategy === null) {
       this.__internal__disableAutoUnlock("No more automated unlock possible");
-      Automation.Notifications.sendWarningNotif(
-        "No more automated unlock possible.\nDisabling the 'Auto unlock' feature",
-        "Farming"
-      );
+      Automation.Notifications.sendWarningNotif("No more automated unlock possible.\nDisabling the 'Auto unlock' feature", "Farming");
       return;
     }
 
@@ -2465,39 +1845,21 @@ class AutomationFarm {
     if (
       this.__internal__currentStrategy !== null &&
       this.__internal__currentStrategy.berryToUnlock &&
-      !App.game.farming.mutations.find(
-        (mutation) =>
-          mutation.mutatedBerry ==
-          this.__internal__currentStrategy.berryToUnlock
-      ).unlocked
+      !App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == this.__internal__currentStrategy.berryToUnlock).unlocked
     ) {
       // Save this before turning the feature off, since it will reset the internal member
-      const berryName =
-        BerryType[this.__internal__currentStrategy.berryToUnlock];
+      const berryName = BerryType[this.__internal__currentStrategy.berryToUnlock];
 
       Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
-      Automation.Notifications.sendWarningNotif(
-        "Farming unlock disabled, you do not meet the requirements" +
-          ` to unlock the ${berryName} berry`,
-        "Farming"
-      );
+      Automation.Notifications.sendWarningNotif("Farming unlock disabled, you do not meet the requirements" + ` to unlock the ${berryName} berry`, "Farming");
 
-      this.__internal__disableAutoUnlock(
-        `You do not meet the requirements to unlock the ${berryName} berry`
-      );
+      this.__internal__disableAutoUnlock(`You do not meet the requirements to unlock the ${berryName} berry`);
 
       // Set a watcher to re-enable the feature once the berry requirements are fulfilled
       const watcher = setInterval(
         function () {
-          if (
-            App.game.farming.mutations.find(
-              (mutation) => mutation.mutatedBerry == BerryType[berryName]
-            ).unlocked
-          ) {
-            Automation.Menu.setButtonDisabledState(
-              this.Settings.FocusOnUnlocks,
-              false
-            );
+          if (App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType[berryName]).unlocked) {
+            Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
             clearInterval(watcher);
           }
         }.bind(this),
@@ -2510,45 +1872,22 @@ class AutomationFarm {
    * @brief If the new strategy requires an Oak item that the player does not have, turn off the feature and disable the button
    */
   static __internal__checkOakItemRequirement() {
-    if (
-      this.__internal__currentStrategy == null ||
-      this.__internal__currentStrategy.oakItemToEquip === null
-    ) {
+    if (this.__internal__currentStrategy == null || this.__internal__currentStrategy.oakItemToEquip === null) {
       return;
     }
 
-    const oakItem =
-      App.game.oakItems.itemList[
-        this.__internal__currentStrategy.oakItemToEquip
-      ];
+    const oakItem = App.game.oakItems.itemList[this.__internal__currentStrategy.oakItemToEquip];
 
-    if (
-      Automation.Utils.LocalStorage.getValue(
-        this.Settings.OakItemLoadoutUpdate
-      ) !== "true" &&
-      !oakItem.isActive
-    ) {
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) !== "true" && !oakItem.isActive) {
       this.__internal__disableAutoUnlock(
-        "The next unlock requires the '" +
-          oakItem.displayName +
-          "' Oak item\n" +
-          "and loadout auto-update was disabled.\n" +
-          "You can either equip it manually or turn auto-equip back on."
+        "The next unlock requires the '" + oakItem.displayName + "' Oak item\n" + "and loadout auto-update was disabled.\n" + "You can either equip it manually or turn auto-equip back on."
       );
 
       // Set a watcher to re-enable the feature once the item is equipped or the option was re-enabled
       const watcher = setInterval(
         function () {
-          if (
-            Automation.Utils.LocalStorage.getValue(
-              this.Settings.OakItemLoadoutUpdate
-            ) === "true" ||
-            oakItem.isActive
-          ) {
-            Automation.Menu.setButtonDisabledState(
-              this.Settings.FocusOnUnlocks,
-              false
-            );
+          if (Automation.Utils.LocalStorage.getValue(this.Settings.OakItemLoadoutUpdate) === "true" || oakItem.isActive) {
+            Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
             clearInterval(watcher);
           }
         }.bind(this),
@@ -2562,20 +1901,13 @@ class AutomationFarm {
       return;
     }
 
-    this.__internal__disableAutoUnlock(
-      "The '" +
-        oakItem.displayName +
-        "' Oak item is required for the next unlock"
-    );
+    this.__internal__disableAutoUnlock("The '" + oakItem.displayName + "' Oak item is required for the next unlock");
 
     // Set a watcher to re-enable the feature once the item is unlocked
     const watcher = setInterval(
       function () {
         if (oakItem.isUnlocked()) {
-          Automation.Menu.setButtonDisabledState(
-            this.Settings.FocusOnUnlocks,
-            false
-          );
+          Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
           clearInterval(watcher);
         }
       }.bind(this),
@@ -2587,37 +1919,23 @@ class AutomationFarm {
    * @brief If the new strategy requires a pokemon that the player does not have, turn off the feature and disable the button
    */
   static __internal__checkPokemonRequirement() {
-    if (
-      this.__internal__currentStrategy == null ||
-      this.__internal__currentStrategy.requiredPokemon === null
-    ) {
+    if (this.__internal__currentStrategy == null || this.__internal__currentStrategy.requiredPokemon === null) {
       return;
     }
 
     // Check if the needed pokemon was caught
-    const neededPokemonId = PokemonHelper.getPokemonByName(
-      this.__internal__currentStrategy.requiredPokemon
-    ).id;
+    const neededPokemonId = PokemonHelper.getPokemonByName(this.__internal__currentStrategy.requiredPokemon).id;
     if (App.game.statistics.pokemonCaptured[neededPokemonId]() !== 0) {
       return;
     }
 
-    this.__internal__disableAutoUnlock(
-      "You need to catch " +
-        this.__internal__currentStrategy.requiredPokemon +
-        " (#" +
-        neededPokemonId.toString() +
-        ") for the next unlock"
-    );
+    this.__internal__disableAutoUnlock("You need to catch " + this.__internal__currentStrategy.requiredPokemon + " (#" + neededPokemonId.toString() + ") for the next unlock");
 
     // Set a watcher to re-enable the feature once the pokemon has been caught
     const watcher = setInterval(
       function () {
         if (App.game.statistics.pokemonCaptured[neededPokemonId]() !== 0) {
-          Automation.Menu.setButtonDisabledState(
-            this.Settings.FocusOnUnlocks,
-            false
-          );
+          Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
           clearInterval(watcher);
         }
       }.bind(this),
@@ -2629,31 +1947,21 @@ class AutomationFarm {
    * @brief If the new strategy requires a linked discord account and it's not the case, turn off the feature and disable the button
    */
   static __internal__checkDiscordLinkRequirement() {
-    if (
-      this.__internal__currentStrategy == null ||
-      !this.__internal__currentStrategy.requiresDiscord
-    ) {
+    if (this.__internal__currentStrategy == null || !this.__internal__currentStrategy.requiresDiscord) {
       return;
     }
 
     // Check if the discord is linked and all hints are gathered
     if (App.game.discord.ID() !== null) {
-      const enigmaMutation = App.game.farming.mutations.find(
-        (mutation) => mutation.mutatedBerry == BerryType.Enigma
-      );
+      const enigmaMutation = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Enigma);
 
       if (enigmaMutation.hintsSeen.every((seen) => seen())) {
         return;
       }
 
-      this.__internal__disableAutoUnlock(
-        "You need to collect the four hints from the Kanto Berry Master\n" +
-          "for the next unlock. He's located in Cerulean City."
-      );
+      this.__internal__disableAutoUnlock("You need to collect the four hints from the Kanto Berry Master\n" + "for the next unlock. He's located in Cerulean City.");
     } else {
-      this.__internal__disableAutoUnlock(
-        "A linked discord account is needed for the next unlock."
-      );
+      this.__internal__disableAutoUnlock("A linked discord account is needed for the next unlock.");
     }
 
     // Set a watcher to re-enable the feature once the pokemon has been caught
@@ -2663,15 +1971,10 @@ class AutomationFarm {
           return;
         }
 
-        const enigmaMutation = App.game.farming.mutations.find(
-          (mutation) => mutation.mutatedBerry == BerryType.Enigma
-        );
+        const enigmaMutation = App.game.farming.mutations.find((mutation) => mutation.mutatedBerry == BerryType.Enigma);
 
         if (enigmaMutation.hintsSeen.every((seen) => seen())) {
-          Automation.Menu.setButtonDisabledState(
-            this.Settings.FocusOnUnlocks,
-            false
-          );
+          Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, false);
           clearInterval(watcher);
         }
       }.bind(this),
@@ -2687,11 +1990,7 @@ class AutomationFarm {
    * @returns The number of planted berries of the given type
    */
   static __internal__getPlantedBerriesCount(berryType) {
-    return App.game.farming.plotList.reduce(
-      (count, plot) =>
-        count + (plot.berryData && plot.berry == berryType ? 1 : 0),
-      0
-    );
+    return App.game.farming.plotList.reduce((count, plot) => count + (plot.berryData && plot.berry == berryType ? 1 : 0), 0);
   }
 
   /**
@@ -2701,11 +2000,7 @@ class AutomationFarm {
    */
   static __internal__disableAutoUnlock(reason) {
     Automation.Menu.forceAutomationState(this.Settings.FocusOnUnlocks, false);
-    Automation.Menu.setButtonDisabledState(
-      this.Settings.FocusOnUnlocks,
-      true,
-      reason
-    );
+    Automation.Menu.setButtonDisabledState(this.Settings.FocusOnUnlocks, true, reason);
     Automation.Utils.OakItem.ForbiddenItems = [];
     this.__internal__currentStrategy = null;
   }
@@ -2717,13 +2012,7 @@ class AutomationFarm {
    */
   static __internal__sendNotif(details) {
     if (this.__internal__plantedBerryCount > 0) {
-      Automation.Notifications.sendNotif(
-        "Harvested " +
-          this.__internal__harvestCount.toString() +
-          " berries<br>" +
-          details,
-        "Farming"
-      );
+      Automation.Notifications.sendNotif("Harvested " + this.__internal__harvestCount.toString() + " berries<br>" + details, "Farming");
     }
   }
 
@@ -2771,9 +2060,7 @@ class AutomationFarm {
     const berriesOrder = this.__internal__getBerryPlantingOrder(berriesIndexes);
 
     // Compute config representation
-    const config = new Array(App.game.farming.plotList.length).fill(
-      BerryType.None
-    );
+    const config = new Array(App.game.farming.plotList.length).fill(BerryType.None);
     for (const berryType of berriesOrder) {
       for (const index of berriesIndexes[berryType]) {
         config[index] = berryType;
@@ -2789,8 +2076,7 @@ class AutomationFarm {
 
       // Compute Bloom target time
       const firstBerryType = berriesOrder[0];
-      const firstBerryBloomDuration =
-        App.game.farming.berryData[firstBerryType].growthTime[PlotStage.Bloom];
+      const firstBerryBloomDuration = App.game.farming.berryData[firstBerryType].growthTime[PlotStage.Bloom];
       let bloomTarget = firstBerryBloomDuration;
       for (const index of berriesIndexes[firstBerryType]) {
         const plot = App.game.farming.plotList[index];
@@ -2815,23 +2101,14 @@ class AutomationFarm {
         // Any berry that is not part of the strategy should be removed before proceeding
         if (plot.berry !== expectedBerryType) {
           if (expectedBerryType === BerryType.None) {
-            const berryBloomDuration =
-              App.game.farming.berryData[plot.berry].growthTime[
-                PlotStage.Bloom
-              ] - plot.age;
+            const berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
             if (berryBloomDuration <= bloomTarget) {
               // Berries that would bloom before any of the strategy's berries are not a problem
               continue;
             }
           } else {
-            const berryBloomDuration =
-              App.game.farming.berryData[plot.berry].growthTime[
-                PlotStage.Bloom
-              ] - plot.age;
-            const expectedBerryTime =
-              App.game.farming.berryData[expectedBerryType].growthTime[
-                PlotStage.Bloom
-              ];
+            const berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
+            const expectedBerryTime = App.game.farming.berryData[expectedBerryType].growthTime[PlotStage.Bloom];
             if (berryBloomDuration <= bloomTarget - expectedBerryTime) {
               // Berries that would bloom before the plot is required by the strategy are not a problem
               continue;
@@ -2845,8 +2122,7 @@ class AutomationFarm {
       if (!waitBeforeStartingStrategy) {
         // Plant berries, if the conditions are met
         for (const berryType of berriesOrder) {
-          const currentBerryBloomDuration =
-            App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+          const currentBerryBloomDuration = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
 
           // Wait to sync riping
           if (currentBerryBloomDuration < bloomTarget) {
@@ -2873,9 +2149,7 @@ class AutomationFarm {
    */
   static __internal__createPlantationPatternTable(berriesIndexes) {
     // Build the plantation content representation
-    const plantationBerries = new Array(App.game.farming.plotList.length).fill(
-      BerryType.None
-    );
+    const plantationBerries = new Array(App.game.farming.plotList.length).fill(BerryType.None);
 
     for (const berryType in berriesIndexes) {
       for (const index of berriesIndexes[berryType]) {
@@ -2887,16 +2161,11 @@ class AutomationFarm {
     const berriesOrder = this.__internal__getBerryPlantingOrder(berriesIndexes);
     const berriesDelay = new Map();
 
-    const maxRipeTime =
-      App.game.farming.berryData[berriesOrder[0]].growthTime[PlotStage.Bloom];
+    const maxRipeTime = App.game.farming.berryData[berriesOrder[0]].growthTime[PlotStage.Bloom];
 
     for (const berryType of berriesOrder) {
-      const currentRipeTime =
-        App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
-      berriesDelay.set(
-        berryType,
-        GameConstants.formatTime(maxRipeTime - currentRipeTime)
-      );
+      const currentRipeTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+      berriesDelay.set(berryType, GameConstants.formatTime(maxRipeTime - currentRipeTime));
     }
     const longestBerryRipeTime = berriesDelay.get(parseInt(berriesOrder[0]));
 
@@ -2944,10 +2213,7 @@ class AutomationFarm {
       if (berryType != berriesOrder[0]) {
         const delay = berriesDelay.get(parseInt(berryType));
         if (delay != longestBerryRipeTime) {
-          tooltip +=
-            `\n\nIt will be planted\n` +
-            `${delay} after the\n` +
-            `${BerryType[berriesOrder[0]]} berry`;
+          tooltip += `\n\nIt will be planted\n` + `${delay} after the\n` + `${BerryType[berriesOrder[0]]} berry`;
         }
       }
       currentCell.classList.add("hasAutomationTooltip");
@@ -2969,11 +2235,7 @@ class AutomationFarm {
   static __internal__getBerryPlantingOrder(berriesIndexes) {
     return [...Object.keys(berriesIndexes)]
       .map((x) => parseInt(x))
-      .sort(
-        (a, b) =>
-          App.game.farming.berryData[b].growthTime[PlotStage.Bloom] -
-          App.game.farming.berryData[a].growthTime[PlotStage.Bloom]
-      );
+      .sort((a, b) => App.game.farming.berryData[b].growthTime[PlotStage.Bloom] - App.game.farming.berryData[a].growthTime[PlotStage.Bloom]);
   }
 
   /**
@@ -2989,9 +2251,7 @@ class AutomationFarm {
       return true;
     }
 
-    const totalCount =
-      App.game.farming.berryList[berryType]() +
-      this.__internal__getPlantedBerriesCount(berryType);
+    const totalCount = App.game.farming.berryList[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
     return totalCount < targetCount;
   }
 }

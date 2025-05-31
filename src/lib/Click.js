@@ -15,10 +15,7 @@ class AutomationClick {
    */
   static isFeatureActive() {
     // No-click challenge disables clicks
-    return (
-      !App.game.challenges.list.disableClickAttack.active() &&
-      this.__internal__autoClickLoop != null
-    );
+    return !App.game.challenges.list.disableClickAttack.active() && this.__internal__autoClickLoop != null;
   }
 
   /**
@@ -29,10 +26,7 @@ class AutomationClick {
   static initialize(initStep) {
     if (initStep == Automation.InitSteps.BuildMenu) {
       // Default to the app hard-cap for click attacks
-      Automation.Utils.LocalStorage.setDefaultValue(
-        this.Settings.ClickInterval,
-        50
-      );
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.ClickInterval, 50);
 
       this.__internal__buildMenu();
     } else if (initStep == Automation.InitSteps.Finalize) {
@@ -58,9 +52,7 @@ class AutomationClick {
 
     // If we got the click event, use the button status
     if (enable !== true && enable !== false) {
-      enable =
-        Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-        "true";
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
     }
 
     if (enable) {
@@ -91,27 +83,13 @@ class AutomationClick {
     this.__internal__container = document.createElement("div");
 
     // Add auto click button
-    const autoClickTooltip =
-      "Attack clicks are performed every 50ms" +
-      Automation.Menu.TooltipSeparator +
-      "Applies to battle, gym and dungeon";
-    const autoClickButton = Automation.Menu.addAutomationButton(
-      "Auto attack",
-      this.Settings.FeatureEnabled,
-      autoClickTooltip,
-      this.__internal__container
-    );
-    autoClickButton.addEventListener(
-      "click",
-      this.toggleAutoClick.bind(this),
-      false
-    );
+    const autoClickTooltip = "Attack clicks are performed every 50ms" + Automation.Menu.TooltipSeparator + "Applies to battle, gym and dungeon";
+    const autoClickButton = Automation.Menu.addAutomationButton("Auto attack", this.Settings.FeatureEnabled, autoClickTooltip, this.__internal__container);
+    autoClickButton.addEventListener("click", this.toggleAutoClick.bind(this), false);
 
     Automation.Menu.addSeparator(this.__internal__container);
 
-    Automation.Menu.AutomationButtonsDiv.appendChild(
-      this.__internal__container
-    );
+    Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__container);
 
     // Hide the menu if the no-click challenge is enabled
     if (App.game.challenges.list.disableClickAttack.active()) {
@@ -119,11 +97,7 @@ class AutomationClick {
     }
 
     // Add a watcher, in case the player changes the challenge configuration at some point
-    if (
-      this.__internal__container.hidden ||
-      player.regionStarters[GameConstants.Region.kanto]() ===
-        GameConstants.Starter.None
-    ) {
+    if (this.__internal__container.hidden || player.regionStarters[GameConstants.Region.kanto]() === GameConstants.Starter.None) {
       const watcher = setInterval(
         function () {
           if (App.game.challenges.list.disableClickAttack.active()) {
@@ -133,10 +107,7 @@ class AutomationClick {
 
           this.__internal__container.hidden = false;
 
-          if (
-            player.regionStarters[GameConstants.Region.kanto]() !==
-            GameConstants.Starter.None
-          ) {
+          if (player.regionStarters[GameConstants.Region.kanto]() !== GameConstants.Starter.None) {
             clearInterval(watcher);
           }
         }.bind(this),
@@ -145,13 +116,9 @@ class AutomationClick {
     }
 
     // Build advanced settings panel
-    const clickSettingPanel = Automation.Menu.addSettingPanel(
-      autoClickButton.parentElement.parentElement
-    );
+    const clickSettingPanel = Automation.Menu.addSettingPanel(autoClickButton.parentElement.parentElement);
 
-    const titleDiv = Automation.Menu.createTitleElement(
-      "Auto attack advanced settings"
-    );
+    const titleDiv = Automation.Menu.createTitleElement("Auto attack advanced settings");
     titleDiv.style.marginBottom = "10px";
     clickSettingPanel.appendChild(titleDiv);
 
@@ -162,32 +129,18 @@ class AutomationClick {
     clickIntervalContainer.style.marginLeft = "10px";
     clickIntervalContainer.style.textAlign = "left";
     clickSettingPanel.appendChild(clickIntervalContainer);
-    clickIntervalContainer.appendChild(
-      document.createTextNode("Click interval :")
-    );
+    clickIntervalContainer.appendChild(document.createTextNode("Click interval :"));
 
     // Add tooltip
-    const clickIntervalTooltip =
-      "Set the interval between each click in milliseconds.\n";
+    const clickIntervalTooltip = "Set the interval between each click in milliseconds.\n";
     ("Note that the game has a minimum hard-cap of 50ms");
     clickIntervalContainer.classList.add("hasAutomationTooltip");
-    clickIntervalContainer.classList.add(
-      "clickAttackIntervalAutomationTooltip"
-    );
-    clickIntervalContainer.setAttribute(
-      "automation-tooltip-text",
-      clickIntervalTooltip
-    );
+    clickIntervalContainer.classList.add("clickAttackIntervalAutomationTooltip");
+    clickIntervalContainer.setAttribute("automation-tooltip-text", clickIntervalTooltip);
 
     // Add the input element
-    const clickIntervalInput = Automation.Menu.createTextInputElement(
-      6,
-      "[0-9]"
-    );
-    clickIntervalInput.innerHTML = Automation.Utils.tryParseInt(
-      Automation.Utils.LocalStorage.getValue(this.Settings.ClickInterval),
-      50
-    );
+    const clickIntervalInput = Automation.Menu.createTextInputElement(6, "[0-9]");
+    clickIntervalInput.innerHTML = Automation.Utils.tryParseInt(Automation.Utils.LocalStorage.getValue(this.Settings.ClickInterval), 50);
     clickIntervalInput.style.margin = "0px 4px";
     clickIntervalInput.style.textAlign = "left";
     clickIntervalContainer.appendChild(clickIntervalInput);
@@ -202,10 +155,7 @@ class AutomationClick {
     clickIntervalContainer.appendChild(checkmark);
 
     clickIntervalInput.oninput = function () {
-      this.__internal__clickIntervalOnInputCallback(
-        clickIntervalInput,
-        checkmark
-      );
+      this.__internal__clickIntervalOnInputCallback(clickIntervalInput, checkmark);
     }.bind(this);
   }
 
@@ -254,20 +204,14 @@ class AutomationClick {
    * If the loop exists, it will clear it and launch a new one, otherwise it will one launch the loop
    */
   static __internal__resetClickLoop() {
-    const clickInterval = Automation.Utils.tryParseInt(
-      Automation.Utils.LocalStorage.getValue(this.Settings.ClickInterval),
-      50
-    );
+    const clickInterval = Automation.Utils.tryParseInt(Automation.Utils.LocalStorage.getValue(this.Settings.ClickInterval), 50);
 
     if (this.__internal__autoClickLoop != null) {
       clearInterval(this.__internal__autoClickLoop);
     }
 
     // Set auto-click loop
-    this.__internal__autoClickLoop = setInterval(
-      this.__internal__autoClick.bind(this),
-      clickInterval
-    );
+    this.__internal__autoClickLoop = setInterval(this.__internal__autoClick.bind(this), clickInterval);
   }
 
   /**
@@ -294,10 +238,7 @@ class AutomationClick {
 
             if (inputElem === document.activeElement) {
               const set = window.getSelection();
-              range.setStart(
-                inputElem.childNodes[0],
-                inputElem.innerText.length
-              );
+              range.setStart(inputElem.childNodes[0], inputElem.innerText.length);
               range.collapse(true);
               set.removeAllRanges();
               set.addRange(range);
@@ -338,10 +279,7 @@ class AutomationClick {
         Automation.Menu.showCheckmark(checkmarkElem, 2000);
 
         // Save the click interval value
-        Automation.Utils.LocalStorage.setValue(
-          this.Settings.ClickInterval,
-          Automation.Utils.tryParseInt(inputElem.innerText, 50)
-        );
+        Automation.Utils.LocalStorage.setValue(this.Settings.ClickInterval, Automation.Utils.tryParseInt(inputElem.innerText, 50));
 
         // Reset the feature loop
         this.__internal__resetClickLoop();

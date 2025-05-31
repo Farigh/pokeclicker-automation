@@ -40,17 +40,14 @@ class AutomationUnderground {
 
     // If we got the click event, use the button status
     if (enable !== true && enable !== false) {
-      enable =
-        Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-        "true";
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
     }
 
     if (enable) {
       // Warn the user if no autorestart mine have been set
       if (!Settings.getSetting("autoRestartUndergroundMine").value) {
         Automation.Notifications.sendWarningNotif(
-          "Please consider enabling the ingame 'mine auto restart feature'\n" +
-            "If you don't, the automation will be stuck after clearing the current layout",
+          "Please consider enabling the ingame 'mine auto restart feature'\n" + "If you don't, the automation will be stuck after clearing the current layout",
           "Mining"
         );
       }
@@ -58,10 +55,7 @@ class AutomationUnderground {
       // Only set a loop if there is none active
       if (this.__internal__autoMiningLoop === null) {
         // Set auto-mine loop
-        this.__internal__autoMiningLoop = setInterval(
-          this.__internal__miningLoop.bind(this),
-          10000
-        ); // Runs every 10 seconds
+        this.__internal__autoMiningLoop = setInterval(this.__internal__miningLoop.bind(this), 10000); // Runs every 10 seconds
         this.__internal__miningLoop();
       }
     } else {
@@ -90,9 +84,7 @@ class AutomationUnderground {
   static __internal__buildMenu() {
     // Add the related button to the automation menu
     this.__internal__undergroundContainer = document.createElement("div");
-    Automation.Menu.AutomationButtonsDiv.appendChild(
-      this.__internal__undergroundContainer
-    );
+    Automation.Menu.AutomationButtonsDiv.appendChild(this.__internal__undergroundContainer);
 
     Automation.Menu.addSeparator(this.__internal__undergroundContainer);
 
@@ -113,17 +105,8 @@ class AutomationUnderground {
       "Then it tries to use the best possible tool to complete a partially found item\n" +
       "or find a hidden one";
 
-    const miningButton = Automation.Menu.addAutomationButton(
-      "Mining",
-      this.Settings.FeatureEnabled,
-      autoMiningTooltip,
-      this.__internal__undergroundContainer
-    );
-    miningButton.addEventListener(
-      "click",
-      this.toggleAutoMining.bind(this),
-      false
-    );
+    const miningButton = Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
+    miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
   }
 
   /**
@@ -151,10 +134,7 @@ class AutomationUnderground {
   static __internal__miningLoop() {
     // Don't run an additionnal loop if another one is already in progress
     // Or the user launched a mine discovery
-    if (
-      this.__internal__innerMiningLoop !== null ||
-      App.game.underground.mine.timeUntilDiscovery > 0
-    ) {
+    if (this.__internal__innerMiningLoop !== null || App.game.underground.mine.timeUntilDiscovery > 0) {
       return;
     }
 
@@ -162,16 +142,10 @@ class AutomationUnderground {
     this.__internal__innerMiningLoop = setInterval(
       function () {
         // Stop the loop if the main feature loop was stopped, or no action was possible
-        if (
-          this.__internal__autoMiningLoop == null ||
-          !this.__internal__tryUseOneMiningItem()
-        ) {
+        if (this.__internal__autoMiningLoop == null || !this.__internal__tryUseOneMiningItem()) {
           // Only notify the user if at least one action occured
           if (this.__internal__actionCount > 0) {
-            Automation.Notifications.sendNotif(
-              `Performed mining actions ${this.__internal__actionCount.toString()} times!`,
-              "Mining"
-            );
+            Automation.Notifications.sendNotif(`Performed mining actions ${this.__internal__actionCount.toString()} times!`, "Mining");
           }
           clearInterval(this.__internal__innerMiningLoop);
           this.__internal__innerMiningLoop = null;
@@ -202,72 +176,36 @@ class AutomationUnderground {
       x: App.game.underground.mine.width / 2,
       y: App.game.underground.mine.height / 2,
     };
-    const areAllItemFound =
-      App.game.underground.mine.itemsPartiallyFound ==
-      App.game.underground.mine.itemsBuried;
+    const areAllItemFound = App.game.underground.mine.itemsPartiallyFound == App.game.underground.mine.itemsBuried;
 
     // Try to use the Survey, unless all items were already found
-    if (
-      !areAllItemFound &&
-      App.game.underground.tools
-        .getTool(UndergroundToolType.Survey)
-        .canUseTool()
-    ) {
+    if (!areAllItemFound && App.game.underground.tools.getTool(UndergroundToolType.Survey).canUseTool()) {
       // Use the survey on the center-most cell
-      App.game.underground.tools.useTool(
-        UndergroundToolType.Survey,
-        centerMostCellCoord.x,
-        centerMostCellCoord.y
-      );
+      App.game.underground.tools.useTool(UndergroundToolType.Survey, centerMostCellCoord.x, centerMostCellCoord.y);
       actionOccured = true;
     }
 
     // Try to use the battery discharge
-    if (
-      !actionOccured &&
-      App.game.oakItems.isActive(OakItemType.Cell_Battery) &&
-      App.game.underground.battery.charges ==
-        App.game.underground.battery.maxCharges
-    ) {
+    if (!actionOccured && App.game.oakItems.isActive(OakItemType.Cell_Battery) && App.game.underground.battery.charges == App.game.underground.battery.maxCharges) {
       App.game.underground.battery.discharge();
       actionOccured = true;
     }
 
     // Try to use the Bomb, unless all items were already found
     // If the bomb if fully charged, use it anyway, unless the tool reached infinite use
-    const bombTool = App.game.underground.tools.getTool(
-      UndergroundToolType.Bomb
-    );
-    if (
-      !actionOccured &&
-      (!areAllItemFound ||
-        (bombTool.restoreRate > 0 && bombTool.durability == 1)) &&
-      bombTool.canUseTool()
-    ) {
+    const bombTool = App.game.underground.tools.getTool(UndergroundToolType.Bomb);
+    if (!actionOccured && (!areAllItemFound || (bombTool.restoreRate > 0 && bombTool.durability == 1)) && bombTool.canUseTool()) {
       // Use the bomb on the center-most cell
-      App.game.underground.tools.useTool(
-        UndergroundToolType.Bomb,
-        centerMostCellCoord.x,
-        centerMostCellCoord.y
-      );
+      App.game.underground.tools.useTool(UndergroundToolType.Bomb, centerMostCellCoord.x, centerMostCellCoord.y);
       actionOccured = true;
     }
 
-    this.__internal__canUseHammer = App.game.underground.tools
-      .getTool(UndergroundToolType.Hammer)
-      .canUseTool();
-    this.__internal__canUseChisel = App.game.underground.tools
-      .getTool(UndergroundToolType.Chisel)
-      .canUseTool();
+    this.__internal__canUseHammer = App.game.underground.tools.getTool(UndergroundToolType.Hammer).canUseTool();
+    this.__internal__canUseChisel = App.game.underground.tools.getTool(UndergroundToolType.Chisel).canUseTool();
 
-    if (
-      !actionOccured &&
-      (this.__internal__canUseHammer || this.__internal__canUseChisel)
-    ) {
+    if (!actionOccured && (this.__internal__canUseHammer || this.__internal__canUseChisel)) {
       // Try to complete partially found item, then try to find hidden ones
-      actionOccured =
-        this.__internal__tryUseBestToolOnPartiallyFoundItem() ||
-        this.__internal__tryUseBestToolToFindNewItem();
+      actionOccured = this.__internal__tryUseBestToolOnPartiallyFoundItem() || this.__internal__tryUseBestToolToFindNewItem();
     }
 
     if (actionOccured) {
@@ -284,31 +222,21 @@ class AutomationUnderground {
    */
   static __internal__tryUseBestToolOnPartiallyFoundItem() {
     // No partially found item
-    if (
-      App.game.underground.mine.itemsPartiallyFound ==
-      App.game.underground.mine.itemsFound
-    ) {
+    if (App.game.underground.mine.itemsPartiallyFound == App.game.underground.mine.itemsFound) {
       return false;
     }
 
     let selectedBestMove = null;
 
     for (const itemData of this.__internal__getPartiallyRevealedItems()) {
-      selectedBestMove = this.__internal__selectBestMove(
-        selectedBestMove,
-        this.__internal__getPartiallyRevealedItemBestMove(itemData)
-      );
+      selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getPartiallyRevealedItemBestMove(itemData));
     }
 
     if (selectedBestMove == null) {
       return false;
     }
 
-    App.game.underground.tools.useTool(
-      selectedBestMove.tool,
-      selectedBestMove.coord.x,
-      selectedBestMove.coord.y
-    );
+    App.game.underground.tools.useTool(selectedBestMove.tool, selectedBestMove.coord.x, selectedBestMove.coord.y);
     return true;
   }
 
@@ -321,21 +249,14 @@ class AutomationUnderground {
     let selectedBestMove = null;
 
     for (const index of App.game.underground.mine.grid.keys()) {
-      selectedBestMove = this.__internal__selectBestMove(
-        selectedBestMove,
-        this.__internal__getHiddenItemBestMove(index)
-      );
+      selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHiddenItemBestMove(index));
     }
 
     if (selectedBestMove == null) {
       return false;
     }
 
-    App.game.underground.tools.useTool(
-      selectedBestMove.tool,
-      selectedBestMove.coord.x,
-      selectedBestMove.coord.y
-    );
+    App.game.underground.tools.useTool(selectedBestMove.tool, selectedBestMove.coord.x, selectedBestMove.coord.y);
     return true;
   }
 
@@ -351,28 +272,16 @@ class AutomationUnderground {
 
     for (const itemCell of itemData.cells) {
       // Only consider actions on hidden cells with visible neighbor
-      if (
-        itemCell.isRevealed ||
-        !this.__internal__cellHasVisibleNeighborWithTheSameItem(
-          itemData,
-          itemCell
-        )
-      ) {
+      if (itemCell.isRevealed || !this.__internal__cellHasVisibleNeighborWithTheSameItem(itemData, itemCell)) {
         continue;
       }
 
       if (this.__internal__canUseHammer) {
-        selectedBestMove = this.__internal__selectBestMove(
-          selectedBestMove,
-          this.__internal__getHammerUseEfficiency(itemData, itemCell)
-        );
+        selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHammerUseEfficiency(itemData, itemCell));
       }
 
       // Don't even consider Chisel if it can't be used or the best move efficiency exceeds 1 cell layers
-      if (
-        !this.__internal__canUseChisel ||
-        (selectedBestMove != null && selectedBestMove.efficiency >= 2)
-      ) {
+      if (!this.__internal__canUseChisel || (selectedBestMove != null && selectedBestMove.efficiency >= 2)) {
         continue;
       }
 
@@ -382,10 +291,7 @@ class AutomationUnderground {
         efficiency: Math.min(itemCell.cell.layerDepth, 2),
         coord: itemCell.coord,
       };
-      selectedBestMove = this.__internal__selectBestMove(
-        selectedBestMove,
-        chiselMove
-      );
+      selectedBestMove = this.__internal__selectBestMove(selectedBestMove, chiselMove);
     }
 
     return selectedBestMove;
@@ -405,17 +311,11 @@ class AutomationUnderground {
 
     // Only consider using the hammer if we're not on a border cell
     if (this.__internal__canUseHammer) {
-      selectedBestMove = this.__internal__selectBestMove(
-        selectedBestMove,
-        this.__internal__getHammerRevealEfficiency(index)
-      );
+      selectedBestMove = this.__internal__selectBestMove(selectedBestMove, this.__internal__getHammerRevealEfficiency(index));
     }
 
     // Don't even consider Chisel if it can't be used or the best move efficiency exceeds 1 cell layers
-    if (
-      !this.__internal__canUseChisel ||
-      (selectedBestMove != null && selectedBestMove.efficiency >= 2)
-    ) {
+    if (!this.__internal__canUseChisel || (selectedBestMove != null && selectedBestMove.efficiency >= 2)) {
       return selectedBestMove;
     }
 
@@ -448,10 +348,7 @@ class AutomationUnderground {
 
     for (const itemData of this.__internal__getAllItems().values()) {
       // Only consider items that have at least one revealed cell, and is not already completed
-      if (
-        !itemData.cells[0].cell.reward.rewarded &&
-        itemData.cells.some((cell) => cell.isRevealed)
-      ) {
+      if (!itemData.cells[0].cell.reward.rewarded && itemData.cells.some((cell) => cell.isRevealed)) {
         result.push(itemData);
       }
     }
@@ -507,15 +404,9 @@ class AutomationUnderground {
     }
 
     // In case we're looking for reveal efficiency, consider the revealCount first
-    if (
-      candidate.revealCount != undefined &&
-      candidate.revealCount > currentBestMove.revealCount
-    ) {
+    if (candidate.revealCount != undefined && candidate.revealCount > currentBestMove.revealCount) {
       return candidate;
-    } else if (
-      candidate.revealCount != undefined &&
-      candidate.revealCount < currentBestMove.revealCount
-    ) {
+    } else if (candidate.revealCount != undefined && candidate.revealCount < currentBestMove.revealCount) {
       return currentBestMove;
     }
 
@@ -525,18 +416,12 @@ class AutomationUnderground {
     }
 
     // Favour Hammer use over chisel in case the efficiency is the same
-    if (
-      candidate.efficiency == currentBestMove.efficiency &&
-      candidate.tool == UndergroundToolType.Hammer
-    ) {
+    if (candidate.efficiency == currentBestMove.efficiency && candidate.tool == UndergroundToolType.Hammer) {
       return candidate;
     }
 
     // Stop here if one of the item is not focused on revealing new items
-    if (
-      candidate.visibleNeighborCount == undefined ||
-      currentBestMove.visibleNeighborCount == undefined
-    ) {
+    if (candidate.visibleNeighborCount == undefined || currentBestMove.visibleNeighborCount == undefined) {
       return currentBestMove;
     }
 
@@ -545,10 +430,8 @@ class AutomationUnderground {
      **/
 
     // Favor chisel use that would reveal the selected cell faster
-    const candidateUseNeededToReveal =
-      this.__internal__getChiselUseNeededToRevealAtCoord(candidate.coord);
-    const currentBestMoveUseNeededToReveal =
-      this.__internal__getChiselUseNeededToRevealAtCoord(currentBestMove.coord);
+    const candidateUseNeededToReveal = this.__internal__getChiselUseNeededToRevealAtCoord(candidate.coord);
+    const currentBestMoveUseNeededToReveal = this.__internal__getChiselUseNeededToRevealAtCoord(currentBestMove.coord);
     if (candidateUseNeededToReveal < currentBestMoveUseNeededToReveal) {
       return candidate;
     }
@@ -598,19 +481,11 @@ class AutomationUnderground {
   static __internal__getCellVisibleNeighborCount(index) {
     let visibleNeighborCount = 0;
 
-    for (const offset of [
-      -App.game.underground.mine.width,
-      -1,
-      1,
-      App.game.underground.mine.width,
-    ]) {
+    for (const offset of [-App.game.underground.mine.width, -1, 1, App.game.underground.mine.width]) {
       const neighborIndex = index + offset;
 
       // Skip out of grid indexes
-      if (
-        neighborIndex < 0 ||
-        neighborIndex >= App.game.underground.mine.grid.length
-      ) {
+      if (neighborIndex < 0 || neighborIndex >= App.game.underground.mine.grid.length) {
         continue;
       }
 
@@ -676,11 +551,7 @@ class AutomationUnderground {
   static __internal__getHammerRevealEfficiency(index) {
     const coord = App.game.underground.mine.getCoordinateForGridIndex(index);
 
-    const isBorderCell =
-      coord.x == 0 ||
-      coord.x == App.game.underground.mine.width - 1 ||
-      coord.y == 0 ||
-      coord.y == App.game.underground.mine.height - 1;
+    const isBorderCell = coord.x == 0 || coord.x == App.game.underground.mine.width - 1 || coord.y == 0 || coord.y == App.game.underground.mine.height - 1;
 
     // Don't consider hammer use on border cells
     if (isBorderCell) {

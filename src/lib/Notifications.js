@@ -34,18 +34,8 @@ class AutomationNotifications {
    * @param {string} subModule: [optional] The automation sub-module name
    */
   static sendNotif(message, module = null, subModule = null) {
-    if (
-      Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ==
-        "true" &&
-      Automation.Utils.LocalStorage.getValue(this.Settings[module]) == "true"
-    ) {
-      this.__internal__sendNotification(
-        message,
-        module,
-        subModule,
-        NotificationConstants.NotificationOption.primary,
-        3000
-      );
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) == "true" && Automation.Utils.LocalStorage.getValue(this.Settings[module]) == "true") {
+      this.__internal__sendNotification(message, module, subModule, NotificationConstants.NotificationOption.primary, 3000);
     }
   }
 
@@ -59,13 +49,7 @@ class AutomationNotifications {
    */
   static sendWarningNotif(message, module = null, subModule = null) {
     // Don't filter warnings, even if the notifications were disabled
-    this.__internal__sendNotification(
-      message,
-      module,
-      subModule,
-      NotificationConstants.NotificationOption.warning,
-      10000
-    );
+    this.__internal__sendNotification(message, module, subModule, NotificationConstants.NotificationOption.warning, 10000);
   }
 
   /*********************************************************************\
@@ -83,12 +67,7 @@ class AutomationNotifications {
     Automation.Menu.addSeparator(notificationContainer);
 
     let notificationTooltip = "Enables automation-related notifications";
-    Automation.Menu.addAutomationButton(
-      "Notifications",
-      this.Settings.FeatureEnabled,
-      notificationTooltip,
-      notificationContainer
-    );
+    Automation.Menu.addAutomationButton("Notifications", this.Settings.FeatureEnabled, notificationTooltip, notificationContainer);
 
     // Build the advanced settings
     this.__internal__buildAdvancedSettings(notificationContainer);
@@ -104,51 +83,24 @@ class AutomationNotifications {
     let notificationsSettingPanel = Automation.Menu.addSettingPanel(parent);
     notificationsSettingPanel.style.textAlign = "right";
 
-    let titleDiv = Automation.Menu.createTitleElement(
-      "Notifications advanced settings"
-    );
+    let titleDiv = Automation.Menu.createTitleElement("Notifications advanced settings");
     titleDiv.style.marginBottom = "10px";
     notificationsSettingPanel.appendChild(titleDiv);
 
     let focusQuestsLabel = "Show Focus feature notifications";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      focusQuestsLabel,
-      this.Settings.Focus,
-      "",
-      notificationsSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(focusQuestsLabel, this.Settings.Focus, "", notificationsSettingPanel);
 
     let hatcheryLabel = "Show Hatchery feature notifications";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      hatcheryLabel,
-      this.Settings.Hatchery,
-      "",
-      notificationsSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(hatcheryLabel, this.Settings.Hatchery, "", notificationsSettingPanel);
 
     let miningLabel = "Show Mining feature notifications";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      miningLabel,
-      this.Settings.Mining,
-      "",
-      notificationsSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(miningLabel, this.Settings.Mining, "", notificationsSettingPanel);
 
     let farmingLabel = "Show Farming feature notifications";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      farmingLabel,
-      this.Settings.Farming,
-      "",
-      notificationsSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(farmingLabel, this.Settings.Farming, "", notificationsSettingPanel);
 
     let shopLabel = "Show Auto Shop feature notifications";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-      shopLabel,
-      this.Settings.Shop,
-      "",
-      notificationsSettingPanel
-    );
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(shopLabel, this.Settings.Shop, "", notificationsSettingPanel);
   }
 
   /**
@@ -160,13 +112,7 @@ class AutomationNotifications {
    * @param          type: The PokéClicker notification type
    * @param {number} timeout: The notification display timeout
    */
-  static __internal__sendNotification(
-    message,
-    module,
-    subModule,
-    type,
-    timeout
-  ) {
+  static __internal__sendNotification(message, module, subModule, type, timeout) {
     let titleStr = "Automation";
     if (module !== null) {
       titleStr += " > " + module;

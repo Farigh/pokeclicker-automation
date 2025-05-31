@@ -24,23 +24,11 @@ class AutomationGym {
 
       // Add an on/off button
       let autoGymTooltip = "Automatically starts the selected gym fight";
-      let autoGymButton = Automation.Menu.addAutomationButton(
-        "Auto Fight",
-        this.Settings.FeatureEnabled,
-        autoGymTooltip,
-        gymDiv,
-        true
-      );
-      autoGymButton.addEventListener(
-        "click",
-        this.__internal__toggleGymFight.bind(this),
-        false
-      );
+      let autoGymButton = Automation.Menu.addAutomationButton("Auto Fight", this.Settings.FeatureEnabled, autoGymTooltip, gymDiv, true);
+      autoGymButton.addEventListener("click", this.__internal__toggleGymFight.bind(this), false);
 
       // Add gym selector drop-down list
-      this.GymSelectElem = Automation.Menu.createDropDownListElement(
-        "selectedAutomationGym"
-      );
+      this.GymSelectElem = Automation.Menu.createDropDownListElement("selectedAutomationGym");
       this.GymSelectElem.style.marginRight = "5px";
       gymDiv.appendChild(this.GymSelectElem);
 
@@ -48,10 +36,7 @@ class AutomationGym {
       Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
     } else {
       // Set the div visibility and content watcher
-      setInterval(
-        this.__internal__updateDivVisibilityAndContent.bind(this),
-        200
-      ); // Refresh every 0.2s
+      setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 200); // Refresh every 0.2s
     }
   }
 
@@ -77,19 +62,14 @@ class AutomationGym {
   static __internal__toggleGymFight(enable) {
     // If we got the click event, use the button status
     if (enable !== true && enable !== false) {
-      enable =
-        Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) ===
-        "true";
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
     }
 
     if (enable) {
       // Only set a loop if there is none active
       if (this.__internal__autoGymLoop === null) {
         // Set auto-gym loop
-        this.__internal__autoGymLoop = setInterval(
-          this.__internal__gymFightLoop.bind(this),
-          50
-        ); // Runs every game tick
+        this.__internal__autoGymLoop = setInterval(this.__internal__gymFightLoop.bind(this), 50); // Runs every game tick
       }
     } else {
       // Unregister the loop
@@ -119,14 +99,8 @@ class AutomationGym {
     if (App.game.gameState === GameConstants.GameState.town) {
       const selectedGym = GymList[Automation.Gym.GymSelectElem.value];
 
-      if (
-        Automation.Gym.GymSelectElem.selectedIndex < 0 ||
-        selectedGym.parent.name !== player.town.name
-      ) {
-        Automation.Menu.forceAutomationState(
-          this.Settings.FeatureEnabled,
-          false
-        );
+      if (Automation.Gym.GymSelectElem.selectedIndex < 0 || selectedGym.parent.name !== player.town.name) {
+        Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
         return;
       }
 
@@ -150,16 +124,12 @@ class AutomationGym {
         if (player.town.content.filter((x) => GymList[x.town]).length > 0) {
           this.__internal__updateGymList(player.town.name, true);
 
-          Automation.Menu.forceAutomationState(
-            this.Settings.FeatureEnabled,
-            false
-          );
+          Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
         }
         this.__internal__previousTown = player.town.name;
       }
 
-      this.__internal__gymFightButton.hidden =
-        this.__internal__currentGymListSize == 0;
+      this.__internal__gymFightButton.hidden = this.__internal__currentGymListSize == 0;
     } else if (App.game.gameState === GameConstants.GameState.gym) {
       this.__internal__updateGymList(this.__internal__previousTown, false);
     } else {
@@ -177,15 +147,9 @@ class AutomationGym {
    */
   static __internal__updateGymList(townName, rebuild) {
     const gymList = TownList[townName].content.filter((x) => GymList[x.town]);
-    const unlockedGymCount = gymList.reduce(
-      (count, gym) => count + (gym.isUnlocked() ? 1 : 0),
-      0
-    );
+    const unlockedGymCount = gymList.reduce((count, gym) => count + (gym.isUnlocked() ? 1 : 0), 0);
 
-    if (
-      this.__internal__currentGymListSize === unlockedGymCount &&
-      this.__internal__previousTown === townName
-    ) {
+    if (this.__internal__currentGymListSize === unlockedGymCount && this.__internal__previousTown === townName) {
       return;
     }
 

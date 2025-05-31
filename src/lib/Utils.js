@@ -59,12 +59,7 @@ class AutomationUtils {
    * @returns True if the arrays are equals, False otherwise
    */
   static areArrayEquals(a, b) {
-    return (
-      Array.isArray(a) &&
-      Array.isArray(b) &&
-      a.length === b.length &&
-      a.every((val, index) => val === b[index])
-    );
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((val, index) => val === b[index]);
   }
 
   /**
@@ -156,9 +151,7 @@ class AutomationUtils {
       return lowerBound;
     };
 
-    let result = collection
-      .slice(0, maxSortedElementCount)
-      .sort(compareCallback);
+    let result = collection.slice(0, maxSortedElementCount).sort(compareCallback);
     const maxResultLength = result.length;
     const collectionLength = collection.length;
     for (let index = maxResultLength; index < collectionLength; ++index) {

@@ -52,11 +52,8 @@ class AutomationUtilsPokeball {
     this.__internal__resetFilter(pokeballType);
 
     // Only consider Contagious pokémons
-    this.__internal__automationFilter.options.pokerus =
-      pokeballFilterOptions.pokerus.createSetting();
-    this.__internal__automationFilter.options.pokerus.observableValue(
-      GameConstants.Pokerus.Contagious
-    );
+    this.__internal__automationFilter.options.pokerus = pokeballFilterOptions.pokerus.createSetting();
+    this.__internal__automationFilter.options.pokerus.observableValue(GameConstants.Pokerus.Contagious);
 
     this.enableAutomationFilter();
   }
@@ -68,16 +65,12 @@ class AutomationUtilsPokeball {
    */
   static restrictCaptureToShadow(includeAlreadyCaught) {
     // Only consider Shadow pokémons
-    this.__internal__automationFilter.options.shadow =
-      pokeballFilterOptions.shadow.createSetting();
+    this.__internal__automationFilter.options.shadow = pokeballFilterOptions.shadow.createSetting();
 
     // Filter caught shadow
     if (!includeAlreadyCaught) {
-      this.__internal__automationFilter.options.caughtShadow =
-        pokeballFilterOptions.caughtShadow.createSetting();
-      this.__internal__automationFilter.options.caughtShadow.observableValue(
-        false
-      );
+      this.__internal__automationFilter.options.caughtShadow = pokeballFilterOptions.caughtShadow.createSetting();
+      this.__internal__automationFilter.options.caughtShadow.observableValue(false);
     }
   }
 
@@ -87,11 +80,8 @@ class AutomationUtilsPokeball {
    * @param pokemonType: The pokemon type to capture
    */
   static restrictCaptureToPokemonType(pokemonType) {
-    this.__internal__automationFilter.options.pokemonType =
-      pokeballFilterOptions.pokemonType.createSetting();
-    this.__internal__automationFilter.options.pokemonType.observableValue(
-      pokemonType
-    );
+    this.__internal__automationFilter.options.pokemonType = pokeballFilterOptions.pokemonType.createSetting();
+    this.__internal__automationFilter.options.pokemonType.observableValue(pokemonType);
   }
 
   /*********************************************************************\
@@ -106,28 +96,19 @@ class AutomationUtilsPokeball {
    */
   static __internal__initAutomationFilter() {
     // Look for the automation filter
-    this.__internal__automationFilter =
-      App.game.pokeballFilters.getFilterByName(
-        this.__internal__automationFilterName
-      );
+    this.__internal__automationFilter = App.game.pokeballFilters.getFilterByName(this.__internal__automationFilterName);
 
     if (this.__internal__automationFilter) {
       return;
     }
 
     // No Automation filter, create one
-    const existingFilterIds = App.game.pokeballFilters
-      .list()
-      .map((filter) => filter.uuid);
+    const existingFilterIds = App.game.pokeballFilters.list().map((filter) => filter.uuid);
     App.game.pokeballFilters.createFilter();
-    this.__internal__automationFilter = App.game.pokeballFilters
-      .list()
-      .filter((filter) => !existingFilterIds.includes(filter.uuid))[0];
+    this.__internal__automationFilter = App.game.pokeballFilters.list().filter((filter) => !existingFilterIds.includes(filter.uuid))[0];
 
     // Rename the filter so we can retrieve it next time
-    this.__internal__automationFilter._name(
-      this.__internal__automationFilterName
-    );
+    this.__internal__automationFilter._name(this.__internal__automationFilterName);
 
     // Make sure it has priority over other filters
     this.__internal__prioritizeAutomationFilter();
@@ -138,40 +119,18 @@ class AutomationUtilsPokeball {
    */
   static __internal__ensureFilterConsistency() {
     // Make sure it was not removed by the user
-    if (
-      App.game.pokeballFilters
-        .list()
-        .filter(
-          (filter) =>
-            filter.uuid ==
-            Automation.Utils.Pokeball.__internal__automationFilter.uuid
-        ).length == 0
-    ) {
-      App.game.pokeballFilters.list.push(
-        Automation.Utils.Pokeball.__internal__automationFilter
-      );
+    if (App.game.pokeballFilters.list().filter((filter) => filter.uuid == Automation.Utils.Pokeball.__internal__automationFilter.uuid).length == 0) {
+      App.game.pokeballFilters.list.push(Automation.Utils.Pokeball.__internal__automationFilter);
     }
 
     // Make sure it has the right name
-    if (
-      !this.__internal__automationFilter._name() ==
-      this.__internal__automationFilterName
-    ) {
-      this.__internal__automationFilter._name(
-        this.__internal__automationFilterName
-      );
+    if (!this.__internal__automationFilter._name() == this.__internal__automationFilterName) {
+      this.__internal__automationFilter._name(this.__internal__automationFilterName);
     }
 
     // Make sure it is the highest priority filter
-    const priorityMaxIndex = Settings.getSetting(
-      "catchFilters.invertPriorityOrder"
-    ).value
-      ? -1
-      : 1;
-    if (
-      App.game.pokeballFilters.list().at(priorityMaxIndex).uuid !=
-      Automation.Utils.Pokeball.__internal__automationFilter.uuid
-    ) {
+    const priorityMaxIndex = Settings.getSetting("catchFilters.invertPriorityOrder").value ? -1 : 1;
+    if (App.game.pokeballFilters.list().at(priorityMaxIndex).uuid != Automation.Utils.Pokeball.__internal__automationFilter.uuid) {
       this.__internal__prioritizeAutomationFilter();
     }
   }
@@ -200,30 +159,15 @@ class AutomationUtilsPokeball {
    */
   static __internal__prioritizeAutomationFilter() {
     // Copy all filters to prevent UI desynchronization (inspired from the in-game reset feature)
-    const automationIndex = App.game.pokeballFilters
-      .list()
-      .findIndex(
-        (filter) => filter.uuid == this.__internal__automationFilter.uuid
-      );
-    let newOrderedList = App.game.pokeballFilters
-      .list()
-      .map(({ name, options, ball, enabled, inverted }) => {
-        const newFilter = new PokeballFilter(
-          name,
-          {},
-          ball(),
-          enabled(),
-          inverted()
-        );
-        newFilter.options = options;
-        return newFilter;
-      });
+    const automationIndex = App.game.pokeballFilters.list().findIndex((filter) => filter.uuid == this.__internal__automationFilter.uuid);
+    let newOrderedList = App.game.pokeballFilters.list().map(({ name, options, ball, enabled, inverted }) => {
+      const newFilter = new PokeballFilter(name, {}, ball(), enabled(), inverted());
+      newFilter.options = options;
+      return newFilter;
+    });
 
     // Remove the automation filter from the list and save it as the new internal filter
-    this.__internal__automationFilter = newOrderedList.splice(
-      automationIndex,
-      1
-    )[0];
+    this.__internal__automationFilter = newOrderedList.splice(automationIndex, 1)[0];
 
     // The user can invert the priority using a game setting
     if (Settings.getSetting("catchFilters.invertPriorityOrder").value) {

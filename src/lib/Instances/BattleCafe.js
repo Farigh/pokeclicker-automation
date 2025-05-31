@@ -12,10 +12,7 @@ class AutomationBattleCafe {
       this.__internal__buildMenu();
     } else if (initStep == Automation.InitSteps.Finalize) {
       // Set the div visibility and content watcher
-      setInterval(
-        this.__internal__updateDivVisibilityAndContent.bind(this),
-        1000
-      ); // Refresh every 1s
+      setInterval(this.__internal__updateDivVisibilityAndContent.bind(this), 1000); // Refresh every 1s
     }
   }
 
@@ -34,15 +31,10 @@ class AutomationBattleCafe {
    */
   static __internal__buildMenu() {
     // Store the in-game modal internally
-    this.__internal__battleCafeInGameModal =
-      document.getElementById("battleCafeModal");
+    this.__internal__battleCafeInGameModal = document.getElementById("battleCafeModal");
 
     let battleCafeTitle = "☕ Battle Café ☕";
-    const battleCafeContainer = Automation.Menu.addFloatingCategory(
-      "automationBattleCafe",
-      battleCafeTitle,
-      this.__internal__battleCafeInGameModal
-    );
+    const battleCafeContainer = Automation.Menu.addFloatingCategory("automationBattleCafe", battleCafeTitle, this.__internal__battleCafeInGameModal);
 
     // Update the style to fit the width according to the panel content
     const mainContainer = battleCafeContainer.parentElement;
@@ -61,67 +53,25 @@ class AutomationBattleCafe {
       this.__internal__battleCafeSweetContainers.push(currentSweetContainer);
 
       currentSweetContainer.appendChild(document.createElement("br"));
-      currentSweetContainer.appendChild(
-        document.createTextNode("Day (6:00 → 18:00)")
-      );
+      currentSweetContainer.appendChild(document.createTextNode("Day (6:00 → 18:00)"));
       currentSweetContainer.appendChild(document.createElement("br"));
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.dayClockwiseBelow5,
-        currentSweetContainer
-      );
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.dayClockwiseAbove5,
-        currentSweetContainer
-      );
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.dayCounterclockwiseBelow5,
-        currentSweetContainer
-      );
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.dayCounterclockwiseAbove5,
-        currentSweetContainer
-      );
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayClockwiseBelow5, currentSweetContainer);
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayClockwiseAbove5, currentSweetContainer);
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayCounterclockwiseBelow5, currentSweetContainer);
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.dayCounterclockwiseAbove5, currentSweetContainer);
 
       currentSweetContainer.appendChild(document.createElement("br"));
-      currentSweetContainer.appendChild(
-        document.createTextNode("Dusk (17:00 → 18:00)")
-      );
+      currentSweetContainer.appendChild(document.createTextNode("Dusk (17:00 → 18:00)"));
       currentSweetContainer.appendChild(document.createElement("br"));
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.at5Above10,
-        currentSweetContainer
-      );
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.at5Above10, currentSweetContainer);
 
       currentSweetContainer.appendChild(document.createElement("br"));
-      currentSweetContainer.appendChild(
-        document.createTextNode("Night (18:00 → 6:00)")
-      );
+      currentSweetContainer.appendChild(document.createTextNode("Night (18:00 → 6:00)"));
       currentSweetContainer.appendChild(document.createElement("br"));
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.nightClockwiseBelow5,
-        currentSweetContainer
-      );
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.nightClockwiseAbove5,
-        currentSweetContainer
-      );
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.nightCounterclockwiseBelow5,
-        currentSweetContainer
-      );
-      this.__internal__addInfo(
-        sweetData,
-        GameConstants.AlcremieSpins.nightCounterclockwiseAbove5,
-        currentSweetContainer
-      );
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.nightClockwiseBelow5, currentSweetContainer);
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.nightClockwiseAbove5, currentSweetContainer);
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.nightCounterclockwiseBelow5, currentSweetContainer);
+      this.__internal__addInfo(sweetData, GameConstants.AlcremieSpins.nightCounterclockwiseAbove5, currentSweetContainer);
       battleCafeContainer.appendChild(currentSweetContainer);
     }
   }
@@ -239,9 +189,7 @@ class AutomationBattleCafe {
       }
 
       if (this.__internal__currentlyVisibleSweet != null) {
-        this.__internal__battleCafeSweetContainers[
-          this.__internal__currentlyVisibleSweet
-        ].hidden = true;
+        this.__internal__battleCafeSweetContainers[this.__internal__currentlyVisibleSweet].hidden = true;
       }
 
       this.__internal__battleCafeSweetContainers[selectedSweet].hidden = false;
@@ -256,15 +204,11 @@ class AutomationBattleCafe {
    */
   static __internal__refreshCaughtStatus(pokemonName) {
     // Refresh the caught status
-    const internalCaughtData =
-      this.__internal__caughtPokemonIndicators.get(pokemonName);
-    const caughtStatus = Automation.Utils.getPokemonCaughtStatus(
-      internalCaughtData.pokemonId
-    );
+    const internalCaughtData = this.__internal__caughtPokemonIndicators.get(pokemonName);
+    const caughtStatus = Automation.Utils.getPokemonCaughtStatus(internalCaughtData.pokemonId);
 
     if (caughtStatus != internalCaughtData.currentStatus) {
-      internalCaughtData.container.innerHTML =
-        Automation.Menu.getCaughtStatusImage(caughtStatus);
+      internalCaughtData.container.innerHTML = Automation.Menu.getCaughtStatusImage(caughtStatus);
       internalCaughtData.container.style.position = "relative";
       internalCaughtData.container.style.bottom = "2px";
       internalCaughtData.container.style.marginLeft = "3px";
@@ -272,17 +216,12 @@ class AutomationBattleCafe {
     }
 
     // Refresh the pokérus status
-    const internalPokerusData =
-      this.__internal__pokemonPokerusIndicators.get(pokemonName);
-    const pokerusStatus = PartyController.getPokerusStatus(
-      internalPokerusData.pokemonId
-    );
+    const internalPokerusData = this.__internal__pokemonPokerusIndicators.get(pokemonName);
+    const pokerusStatus = PartyController.getPokerusStatus(internalPokerusData.pokemonId);
 
     if (pokerusStatus != internalPokerusData.currentStatus) {
-      internalPokerusData.container.innerHTML =
-        Automation.Menu.getPokerusStatusImage(pokerusStatus);
-      internalPokerusData.container.style.paddingLeft =
-        internalPokerusData.container.innerHTML == "" ? "0px" : "3px";
+      internalPokerusData.container.innerHTML = Automation.Menu.getPokerusStatusImage(pokerusStatus);
+      internalPokerusData.container.style.paddingLeft = internalPokerusData.container.innerHTML == "" ? "0px" : "3px";
       internalPokerusData.currentStatus = pokerusStatus;
     }
   }
