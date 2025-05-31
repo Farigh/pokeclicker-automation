@@ -45,11 +45,20 @@ class AutomationFocusPokerusCure {
    */
 
   static __buildAdvancedSettings(parent) {
+    // Add routes or dungeons priority option
+    Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.PrioritizeRoutes, true);
+
     // Disable Beastball usage by default
     Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.AllowBeastBallUsage, false); // Disable Alternate forms skipping by default
 
+    // This setting is used to skip alternate forms, like Alolan or Galarian forms
     Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.SkipAlternateForms, false); // Beastball usage setting
 
+    // Prioritize routes over dungeons setting
+    const priorityTooltip = "If enabled, the automation will prioritize routes over dungeons.";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton("Prioritize routes over dungeons", this.__internal__advancedSettings.PrioritizeRoutes, priorityTooltip, parent);
+
+    // Beastball usage setting
     const tooltip =
       "Allows the automation to use Beastball to catch UltraBeast pokémons." +
       Automation.Menu.TooltipSeparator +
@@ -57,13 +66,17 @@ class AutomationFocusPokerusCure {
       "UltraBeast pokémons will be ignored.";
     Automation.Menu.addLabeledAdvancedSettingsToggleButton("Use Beastballs to catch UltraBeast pokémons", this.__internal__advancedSettings.AllowBeastBallUsage, tooltip, parent); // Alternate forms skipping setting
 
+    // This setting is used to skip alternate forms, like Alolan or Galarian forms
     const alternateTooltip = "If enabled, only pokémon's base form will be considered";
     Automation.Menu.addLabeledAdvancedSettingsToggleButton("Skip Alternate form pokémons", this.__internal__advancedSettings.SkipAlternateForms, alternateTooltip, parent);
-  } /*********************************************************************\
-    |***    Internal members, should never be used by other classes    ***|
-    \*********************************************************************/
+  }
+
+  /*********************************************************************\
+  |***    Internal members, should never be used by other classes    ***|
+  \*********************************************************************/
 
   static __internal__advancedSettings = {
+    PrioritizeRoutes: "Focus-PokerusCure-PrioritizeRoutes",
     AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage",
     SkipAlternateForms: "Focus-PokerusCure-SkipAlternateForms",
   };
@@ -85,7 +98,7 @@ class AutomationFocusPokerusCure {
 
     Automation.Click.toggleAutoClick(true); // Set pokérus cure loop
 
-    this.__internal__pokerusCureLoop = setInterval(this.__internal__focusOnPokerusCure.bind(this), 10000); // Runs every 10 seconds
+    this.__internal__pokerusCureLoop = setInterval(this.__internal__focusOnPokerusCure.bind(this), 1000); // Runs every 1 seconds
     this.__internal__focusOnPokerusCure();
   }
   /**
@@ -118,22 +131,65 @@ class AutomationFocusPokerusCure {
         Automation.Focus.__ensureNoInstanceIsInProgress();
       }
       return;
-    } // If the currently used route still has contagious pokémons, continue with it
+    }
 
-    if (this.__internal__currentRouteData != null && this.__internal__doesRouteHaveAnyPokemonNeedingCure(this.__internal__currentRouteData.route, true)) {
-      this.__internal__captureInfectedPokemons();
-      return;
-    } // If the currently used dungeon still has contagious pokémons, continue with it
+    const prioritizeRoutes = Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.PrioritizeRoutes) === "true";
 
-    if (this.__internal__currentDungeonData != null && this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon, true)) {
-      this.__internal__captureInfectedPokemons();
-      return;
-    } // Try the next route
+    let targetChosen = false;
 
-    this.__internal__setNextPokerusRoute(); // Or the next dungeon
+    if (prioritizeRoutes) {
+      // If the currently used route still has contagious pokémons, continue with it
+      if (this.__internal__currentRouteData != null && this.__internal__doesRouteHaveAnyPokemonNeedingCure(this.__internal__currentRouteData.route, true)) {
+        this.__internal__captureInfectedPokemons();
+        return;
+      }
 
-    if (this.__internal__currentRouteData == null) {
+      // Try the next route
+      this.__internal__setNextPokerusRoute();
+      if (this.__internal__currentRouteData != null) {
+        targetChosen = true;
+      }
+
+      // If no route found or not prioritized, try dungeons
+      if (!targetChosen) {
+        // If the currently used dungeon still has contagious pokémons, continue with it
+        if (this.__internal__currentDungeonData != null && this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon, true)) {
+          this.__internal__captureInfectedPokemons();
+          return;
+        }
+        // Or the next dungeon
+        this.__internal__setNextPokerusDungeon();
+        if (this.__internal__currentDungeonData != null) {
+          targetChosen = true;
+        }
+      }
+    } else {
+      // Prioritize Dungeons
+      // If the currently used dungeon still has contagious pokémons, continue with it
+      if (this.__internal__currentDungeonData != null && this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon, true)) {
+        this.__internal__captureInfectedPokemons();
+        return;
+      }
+
+      // Try the next dungeon
       this.__internal__setNextPokerusDungeon();
+      if (this.__internal__currentDungeonData != null) {
+        targetChosen = true;
+      }
+
+      // If no dungeon found or not prioritized, try routes
+      if (!targetChosen) {
+        // If the currently used route still has contagious pokémons, continue with it
+        if (this.__internal__currentRouteData != null && this.__internal__doesRouteHaveAnyPokemonNeedingCure(this.__internal__currentRouteData.route, true)) {
+          this.__internal__captureInfectedPokemons();
+          return;
+        }
+        // Try the next route
+        this.__internal__setNextPokerusRoute();
+        if (this.__internal__currentRouteData != null) {
+          targetChosen = true;
+        }
+      }
     }
 
     if (this.__internal__currentRouteData != null || this.__internal__currentDungeonData != null) {
