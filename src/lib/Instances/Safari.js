@@ -183,7 +183,6 @@ class AutomationSafari {
     const repeatButtonContainer = document.createElement("div");
     repeatButtonContainer.style.display = "inline-block";
     repeatButtonContainer.style.paddingRight = "10px";
-    repeatButtonContainer.style.zIndex = "10";
     featureButton.parentElement.parentElement.appendChild(repeatButtonContainer);
 
     const repeatButtonTooltip = "Set the automation mode." + Automation.Menu.TooltipSeparator + "You can swith between:\n" + "One run, then stop | Infinit reruns";
@@ -192,9 +191,9 @@ class AutomationSafari {
     const repeatButton = Automation.Menu.createButtonElement(`${this.Settings.InfinitRepeat}-${containerId}`);
     repeatButton.textContent = "⮔";
     repeatButton.style.fontSize = "2.4em";
-    repeatButton.style.color = "#f5f5f5";
+    // repeatButton.style.color = "#f5f5f5";
+    repeatButton.style.color = "#ff0000";
     repeatButton.style.bottom = "4px";
-    repeatButton.style.zIndex = "11";
     repeatButtonContainer.classList.add("hasAutomationTooltip");
     repeatButtonContainer.setAttribute("automation-tooltip-text", repeatButtonTooltip);
     repeatButtonContainer.appendChild(repeatButton);
@@ -208,7 +207,6 @@ class AutomationSafari {
     repeatOnceSpan.style.top = "2px";
     repeatOnceSpan.style.fontSize = "0.34em";
     repeatOnceSpan.style.fontWeight = "800";
-    repeatOnceSpan.style.zIndex = "12";
     repeatButton.appendChild(repeatOnceSpan);
 
     const repeatInfinitSpan = document.createElement("span");
@@ -219,7 +217,6 @@ class AutomationSafari {
     repeatInfinitSpan.style.top = "1px";
     repeatInfinitSpan.style.fontSize = "0.5em";
     repeatInfinitSpan.style.fontWeight = "400";
-    repeatInfinitSpan.style.zIndex = "12";
     repeatButton.appendChild(repeatInfinitSpan);
 
     return { featureButton, repeatButton, repeatOnceSpan, repeatInfinitSpan };
