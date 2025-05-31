@@ -3,6 +3,7 @@
  */
 class AutomationSafari {
   static Settings = {
+    FastAnimations: "Safari-FastAnimations",
     CollectItems: "Safari-CollectItems",
     FeatureEnabled: "Safari-HuntEnabled",
     FocusOnBaitAchievements: "Safari-BaitAchievements",
@@ -18,6 +19,7 @@ class AutomationSafari {
   static initialize(initStep) {
     if (initStep == Automation.InitSteps.BuildMenu) {
       // Set the advanced settings default values
+      Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FastAnimations, false);
       Automation.Utils.LocalStorage.setDefaultValue(this.Settings.CollectItems, true);
       Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FocusOnBaitAchievements, false);
       Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SkipResistant, false);
@@ -29,6 +31,9 @@ class AutomationSafari {
 
       // Disable the feature by default
       Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
+
+      // Init fast animations state
+      this.__internal__toggleFastAnimations();
     } else {
       // Initialize internal data
       this.__internal__baitAchievements = AchievementHandler.achievementList.filter((a) => Automation.Utils.isInstanceOf(a.property, "SafariBaitRequirement"));
@@ -61,6 +66,21 @@ class AutomationSafari {
   static __internal__waitBeforeActing = -1;
 
   static __internal__baitAchievements = [];
+
+  static __internal__cachedAnimSpeeds = Object.assign({}, SafariBattle.Speed);
+  static __internal__cachedMoveSpeed = Safari.moveSpeed;
+  static __internal__fastAnimationsEnabled = false;
+
+  /**
+   * @brief Toggles the fast animations in Safari battles.
+   */
+  static __internal__toggleFastAnimations() {
+    this.__internal__fastAnimationsEnabled = Automation.Utils.LocalStorage.getValue(this.Settings.FastAnimations) === "true";
+    for (const anim of Object.keys(SafariBattle.Speed)) {
+      SafariBattle.Speed[anim] = this.__internal__fastAnimationsEnabled ? this.__internal__cachedAnimSpeeds[anim] / 2 : this.__internal__cachedAnimSpeeds[anim];
+    }
+    Safari.moveSpeed = this.__internal__fastAnimationsEnabled ? this.__internal__cachedMoveSpeed / 2 : this.__internal__cachedMoveSpeed;
+  }
 
   /**
    * @brief Builds the menu
@@ -104,6 +124,11 @@ class AutomationSafari {
     const titleDiv = Automation.Menu.createTitleElement("Safari advanced settings");
     titleDiv.style.marginBottom = "10px";
     safariSettingPanel.appendChild(titleDiv);
+
+    // Fast Animations button
+    const fastAnimLabel = "Fast Animations";
+    const fastAnimTooltip = "Speeds up the Safari battle animations.";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(fastAnimLabel, "Safari-FastAnimations", fastAnimTooltip, safariSettingPanel);
 
     // Focus on bait achievements button
     const achievementLabel = "Prioritize bait use to unlock achievements";
@@ -240,6 +265,9 @@ class AutomationSafari {
    * It will automatically enter the safari zone.
    */
   static __internal__safariAutomationLoop() {
+    // Check fast animations state
+    this.__internal__toggleFastAnimations();
+
     // Run the safari if not already
     if (!Safari.inProgress()) {
       // Enter the safari again (since the end of the first run closed the modal)
