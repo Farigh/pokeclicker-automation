@@ -24,6 +24,46 @@ class AutomationSeller {
   \*********************************************************************/
 
   static __internal__sellerContainer = null;
+  static __internal__sellLoop = null;
+
+  static __internal__treasureList = [
+    "Rare_bone",
+    "Star_piece",
+    "Revive",
+    "Max_revive",
+    "Iron_ball",
+    "Heart_scale",
+    "Light_clay",
+    "Odd_keystone",
+    "Hard_stone",
+    "Oval_stone",
+    "Everstone",
+    "Smooth_rock",
+    "Heat_rock",
+    "Icy_rock",
+    "Damp_rock",
+  ];
+
+  static __internal__plateList = [
+    "Draco_plate",
+    "Dread_plate",
+    "Earth_plate",
+    "Fist_plate",
+    "Flame_plate",
+    "Icicle_plate",
+    "Insect_plate",
+    "Iron_plate",
+    "Meadow_plate",
+    "Mind_plate",
+    "Sky_plate",
+    "Splash_plate",
+    "Spooky_plate",
+    "Stone_plate",
+    "Toxic_plate",
+    "Zap_plate",
+    "Pixie_plate",
+    "Blank_plate",
+  ];
 
   /**
    * @brief Builds the menu
@@ -61,7 +101,46 @@ class AutomationSeller {
     Automation.Menu.addLabeledAdvancedSettingsToggleButton(autoSellPlatesLabel, this.Settings.AutoSellPlates, autoSellPlatesTooltip, sellerSettingPanel);
   }
 
-  static __internal__toggleAutoSeller(enable) {}
+  static __internal__toggleAutoSeller(enable) {
+    if (enable !== true && enable !== false) {
+      enable = Automation.Utils.LocalStorage.getValue(this.Settings.FeatureEnabled) === "true";
+    }
+
+    if (enable) {
+      if (this.__internal__sellLoop === null) {
+        this.__internal__sellLoop = setInterval(this.__internal__sell.bind(this), 10000);
+        this.__internal__sell();
+      }
+    } else {
+      clearInterval(this.__internal__sellLoop);
+      this.__internal__sellLoop = null;
+    }
+  }
+
+  static __internal__sell() {
+    const sellList = [];
+
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellTreasures) === "true") sellList.push.apply(sellList, this.__internal__treasureList);
+
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push.apply(sellList, this.__internal__plateList);
+
+    sellList.forEach((targetItem) => {
+      if (sellList.length > 0 && player && player.itemList) {
+        const itemToSell = UndergroundItems.list.find((item) => item && item.itemName === targetItem);
+
+        if (itemToSell && player.itemList[targetItem]() > 0) {
+          const quantity = player.itemList[targetItem]();
+
+          UndergroundTrading.sellAmount = quantity;
+          UndergroundTrading.selectedTradeFromItem = itemToSell;
+
+          if (UndergroundTrading.canSell) {
+            UndergroundTrading.sell();
+          }
+        }
+      }
+    });
+  }
 
   /**
    * @brief Watches for the in-game functionality to be unlocked.
