@@ -43,15 +43,22 @@ class AutomationSeller {
     const autoSellerButton = Automation.Menu.addAutomationButton("Auto Seller", this.Settings.FeatureEnabled, autoSellerTooltip, this.__internal__sellerContainer);
     autoSellerButton.addEventListener("click", this.toggleAutoSeller.bind(this), false);
 
+    // Build advanced settings panel
+    const sellerSettingPanel = Automation.Menu.addSettingPanel(autoFarmingButton.parentElement.parentElement);
+
+    const titleDiv = Automation.Menu.createTitleElement("Seller advanced settings");
+    titleDiv.style.marginBottom = "10px";
+    sellerSettingPanel.appendChild(titleDiv);
+
     // Automatically sell treasures
     const autoSellTreasuresLabel = "Auto Sell Treasures";
     const autoSellTreasuresTooltip = "Automatically sell each treasures every 10s.";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(autoSellTreasuresLabel, this.Settings.AutoSellTreasures, autoSellTreasuresTooltip, this.__internal__sellerContainer);
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(autoSellTreasuresLabel, this.Settings.AutoSellTreasures, autoSellTreasuresTooltip, sellerSettingPanel);
 
     // Automatically sell treasures
     const autoSellPlatesLabel = "Auto Sell Plates";
     const autoSellPlatesTooltip = "Automatically sell each plates every 10s.";
-    Automation.Menu.addLabeledAdvancedSettingsToggleButton(autoSellPlatesLabel, this.Settings.AutoSellPlates, autoSellPlatesTooltip, this.__internal__sellerContainer);
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(autoSellPlatesLabel, this.Settings.AutoSellPlates, autoSellPlatesTooltip, sellerSettingPanel);
   }
 
   static __internal__toggleAutoSeller(enable) {}
