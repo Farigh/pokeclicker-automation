@@ -135,6 +135,8 @@ class AutomationSeller {
       if (sellList.length > 0 && player && player.itemList) {
         const itemToSell = UndergroundItems.list.find((item) => item && item.itemName === targetItem);
 
+        Automation.Notifications.sendNotif(`SELL ${itemToSell} !`, "Seller");
+
         if (itemToSell && player.itemList[targetItem]() > 0) {
           const quantity = player.itemList[targetItem]();
 
