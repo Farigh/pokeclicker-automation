@@ -121,7 +121,7 @@ class AutomationSeller {
   }
 
   static __internal__sell() {
-    Automation.Notifications.sendNotif("start selling", "Seller");
+    const diamondCurrencyBefore = App.game.wallet.currencies[GameConstants.Currency.diamond]();
 
     var sellList = [];
 
@@ -135,8 +135,6 @@ class AutomationSeller {
       if (sellList.length > 0 && player && player.itemList) {
         const itemToSell = UndergroundItems.list.find((item) => item && item.itemName === targetItem);
 
-        Automation.Notifications.sendNotif(`SELL ${itemToSell} !`, "Seller");
-
         if (itemToSell && player.itemList[targetItem]() > 0) {
           const quantity = player.itemList[targetItem]();
 
@@ -144,31 +142,17 @@ class AutomationSeller {
           UndergroundTrading.selectedTradeFromItem = itemToSell;
 
           if (UndergroundTrading.canSell) {
-            Automation.Notifications.sendNotif("SELL", "Seller");
-
             UndergroundTrading.sell();
-          } else {
-            Automation.Notifications.sendNotif();
-
-            Automation.Notifications.sendNotif(`❌ Impossible de vendre ${itemToSell.itemName}. Vérifiez les conditions.`, "Seller");
-            Automation.Notifications.sendNotif(`   - sellAmount: ${UndergroundTrading.sellAmount}`, "Seller");
-            // Vérifie si hasSellValue existe avant de l'appeler
-            if (typeof itemToSell.hasSellValue === "function") {
-              Automation.Notifications.sendNotif(`   - hasSellValue(): ${itemToSell.hasSellValue()}`, "Seller");
-            } else {
-              Automation.Notifications.sendNotif(`   - hasSellValue(): N/A (fonction non trouvée)`, "Seller");
-            }
-            Automation.Notifications.sendNotif(`   - quantité en inventaire: ${player.itemList[targetItem]()}`, "Seller");
           }
-        } else if (itemToSell && player.itemList[targetItem]() === 0) {
-          // Automation.Notifications.sendNotif(`ℹ️ Pas de ${targetItem} en inventaire, pas de vente.`); // Décommenter si tu veux ce log
-        } else {
-          Automation.Notifications.sendNotif(`❓ Objet "${targetItem}" non trouvé dans UndergroundItems.list ou player.itemList.`, "Seller");
         }
-      } else {
-        Automation.Notifications.sendNotif("⚠️ UndergroundItems.list ou player.itemList non défini ou n'est pas un tableau, la vente automatique ne peut pas fonctionner pour le moment.", "Seller");
       }
     });
+
+    const diamondCurrencyAfter = App.game.wallet.currencies[GameConstants.Currency.diamond]();
+    const currencyImage = `<img src="assets/images/currency/${GameConstants.Currency[diamond]}.svg" height="25px">`;
+
+    if (diamondCurrencyAfter > diamondCurrencyBefore)
+      Automation.Notifications.sendNotif(`Seller sold treasure for ${diamondCurrencyAfter - diamondCurrencyBefore} ${currencyImage} and some gems`, "Seller");
   }
 
   static __internal__setDefaultValues() {
