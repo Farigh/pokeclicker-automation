@@ -16,6 +16,7 @@ class AutomationSeller {
   static initialize(initStep) {
     if (initStep === Automation.InitSteps.BuildMenu) {
       this.__internal__buildMenu();
+      this.__internal__setDefaultValues();
     }
   }
 
@@ -144,6 +145,11 @@ class AutomationSeller {
         }
       }
     });
+  }
+
+  static __internal__setDefaultValues() {
+    Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AutoSellTreasures, true);
+    Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AutoSellPlates, true);
   }
 
   /**
