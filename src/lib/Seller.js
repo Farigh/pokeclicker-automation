@@ -118,11 +118,15 @@ class AutomationSeller {
   }
 
   static __internal__sell() {
+    console.log("start selling");
+
     const sellList = [];
 
     if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellTreasures) === "true") sellList.push.apply(sellList, this.__internal__treasureList);
 
     if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push.apply(sellList, this.__internal__plateList);
+
+    console.log(sellList);
 
     sellList.forEach((targetItem) => {
       if (sellList.length > 0 && player && player.itemList) {
