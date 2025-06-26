@@ -102,6 +102,9 @@ class AutomationNotifications {
 
     let shopLabel = "Show Auto Shop feature notifications";
     Automation.Menu.addLabeledAdvancedSettingsToggleButton(shopLabel, this.Settings.Shop, "", notificationsSettingPanel);
+
+    let sellerLabel = "Show Auto Seller feature notifications";
+    Automation.Menu.addLabeledAdvancedSettingsToggleButton(sellerLabel, this.Settings.Seller, "", notificationsSettingPanel);
   }
 
   /**

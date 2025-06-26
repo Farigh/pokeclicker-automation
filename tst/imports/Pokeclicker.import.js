@@ -84,6 +84,7 @@ import "tst/stubs/Type/TypeHelper.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundController.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItem.pokeclicker.stub.js";
 import "tst/stubs/Underground/UndergroundItems.pokeclicker.stub.js";
+import "tst/stubs/Underground/UndergroundTrading.pokeclicker.stub.js";
 
 // Import pokeclicker Weather types and classes
 import "tst/stubs/Weather/WeatherCondition.pokeclicker.stub.js"; // Used by Weather, needs to be imported first
