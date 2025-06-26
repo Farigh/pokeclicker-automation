@@ -149,7 +149,7 @@ class AutomationSeller {
     });
 
     const diamondCurrencyAfter = App.game.wallet.currencies[GameConstants.Currency.diamond]();
-    const currencyImage = `<img src="assets/images/currency/${GameConstants.Currency[diamond]}.svg" height="25px">`;
+    const currencyImage = `<img src="assets/images/currency/diamond.svg" height="25px">`;
 
     if (diamondCurrencyAfter > diamondCurrencyBefore)
       Automation.Notifications.sendNotif(`Seller sold treasure for ${diamondCurrencyAfter - diamondCurrencyBefore} ${currencyImage} and some gems`, "Seller");
