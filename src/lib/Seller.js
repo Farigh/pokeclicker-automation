@@ -44,7 +44,7 @@ class AutomationSeller {
     autoSellerButton.addEventListener("click", this.__internal__toggleAutoSeller.bind(this), false);
 
     // Build advanced settings panel
-    const sellerSettingPanel = Automation.Menu.addSettingPanel(autoFarmingButton.parentElement.parentElement);
+    const sellerSettingPanel = Automation.Menu.addSettingPanel(autoSellerButton.parentElement.parentElement);
 
     const titleDiv = Automation.Menu.createTitleElement("Seller advanced settings");
     titleDiv.style.marginBottom = "10px";
