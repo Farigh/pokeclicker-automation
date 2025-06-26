@@ -50,6 +50,7 @@ class AutomationComponentLoader {
     this.__addScript("src/lib/Menu.js");
     this.__addScript("src/lib/Notifications.js");
     this.__addScript("src/lib/Shop.js");
+    this.__addScript("src/lib/Seller.js");
     this.__addScript("src/lib/Trivia.js");
     this.__addScript("src/lib/Underground.js");
     this.__addScript("src/lib/Utils.js");
