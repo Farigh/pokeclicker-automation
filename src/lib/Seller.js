@@ -164,6 +164,9 @@ class AutomationSeller {
   }
 
   static __internal__setDefaultValues() {
+    // Enable AutoBuy by default
+    Automation.Utils.LocalStorage.setDefaultValue(this.Settings.FeatureEnabled, true);
+
     Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AutoSellTreasures, true);
     Automation.Utils.LocalStorage.setDefaultValue(this.Settings.AutoSellPlates, true);
   }
