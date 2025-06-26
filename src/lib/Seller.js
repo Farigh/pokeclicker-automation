@@ -17,7 +17,7 @@ class AutomationSeller {
     if (initStep === Automation.InitSteps.BuildMenu) {
       this.__internal__buildMenu();
       this.__internal__setDefaultValues();
-    } else if (initStep === Automation.initStep.Finalize) {
+    } else if (initStep === Automation.InitSteps.Finalize) {
       this.__internal__toggleAutoSeller();
     }
   }
