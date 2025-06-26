@@ -41,7 +41,7 @@ class AutomationSeller {
 
     const autoSellerTooltip = "Automatically sell treasures and plates" + Automation.Menu.TooltipSeparator + "Auto sell treasures and plates for diamonds and gems.";
     const autoSellerButton = Automation.Menu.addAutomationButton("Auto Seller", this.Settings.FeatureEnabled, autoSellerTooltip, this.__internal__sellerContainer);
-    autoSellerButton.addEventListener("click", this.toggleAutoSeller.bind(this), false);
+    autoSellerButton.addEventListener("click", this.__internal__toggleAutoSeller.bind(this), false);
 
     // Build advanced settings panel
     const sellerSettingPanel = Automation.Menu.addSettingPanel(autoFarmingButton.parentElement.parentElement);
