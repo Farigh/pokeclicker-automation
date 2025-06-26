@@ -129,8 +129,6 @@ class AutomationSeller {
 
     if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push(...this.__internal__plateList);
 
-    Automation.Notifications.sendNotif(`SELL ${sellList.length}`, "Seller");
-
     sellList.forEach((targetItem) => {
       if (sellList.length > 0 && player && player.itemList) {
         const itemToSell = UndergroundItems.list.find((item) => item && item.itemName === targetItem);
