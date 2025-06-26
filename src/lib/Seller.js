@@ -156,12 +156,12 @@ class AutomationSeller {
             } else {
               Automation.Notifications.sendNotif(`   - hasSellValue(): N/A (fonction non trouvée)`, "Seller");
             }
-            Automation.Notifications.sendNotif(`   - quantité en inventaire: ${player.itemList[targetItemName]()}`, "Seller");
+            Automation.Notifications.sendNotif(`   - quantité en inventaire: ${player.itemList[targetItem]()}`, "Seller");
           }
-        } else if (itemToSell && player.itemList[targetItemName]() === 0) {
-          // Automation.Notifications.sendNotif(`ℹ️ Pas de ${targetItemName} en inventaire, pas de vente.`); // Décommenter si tu veux ce log
+        } else if (itemToSell && player.itemList[targetItem]() === 0) {
+          // Automation.Notifications.sendNotif(`ℹ️ Pas de ${targetItem} en inventaire, pas de vente.`); // Décommenter si tu veux ce log
         } else {
-          Automation.Notifications.sendNotif(`❓ Objet "${targetItemName}" non trouvé dans UndergroundItems.list ou player.itemList.`, "Seller");
+          Automation.Notifications.sendNotif(`❓ Objet "${targetItem}" non trouvé dans UndergroundItems.list ou player.itemList.`, "Seller");
         }
       } else {
         Automation.Notifications.sendNotif("⚠️ UndergroundItems.list ou player.itemList non défini ou n'est pas un tableau, la vente automatique ne peut pas fonctionner pour le moment.", "Seller");
