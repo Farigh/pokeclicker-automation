@@ -123,13 +123,13 @@ class AutomationSeller {
   static __internal__sell() {
     Automation.Notifications.sendNotif("start selling", "Seller");
 
-    const sellList = [];
+    var sellList = [];
 
-    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellTreasures) === "true") sellList.push.apply(sellList, this.__internal__treasureList);
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellTreasures) === "true") sellList.push(...this.__internal__treasureList);
 
-    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push.apply(sellList, this.__internal__plateList);
+    if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push(...this.__internal__plateList);
 
-    Automation.Notifications.sendNotif("LIST " + sellList.length, "Seller");
+    Automation.Notifications.sendNotif(`SELL ${sellList.length}`, "Seller");
 
     sellList.forEach((targetItem) => {
       if (sellList.length > 0 && player && player.itemList) {
