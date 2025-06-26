@@ -129,6 +129,8 @@ class AutomationSeller {
 
     if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push.apply(sellList, this.__internal__plateList);
 
+    Automation.Notifications.sendNotif("LIST " + sellList.length, "Seller");
+
     sellList.forEach((targetItem) => {
       if (sellList.length > 0 && player && player.itemList) {
         const itemToSell = UndergroundItems.list.find((item) => item && item.itemName === targetItem);
@@ -140,6 +142,8 @@ class AutomationSeller {
           UndergroundTrading.selectedTradeFromItem = itemToSell;
 
           if (UndergroundTrading.canSell) {
+            Automation.Notifications.sendNotif("SELL", "Seller");
+
             UndergroundTrading.sell();
           } else {
             Automation.Notifications.sendNotif();
