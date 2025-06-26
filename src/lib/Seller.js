@@ -119,15 +119,13 @@ class AutomationSeller {
   }
 
   static __internal__sell() {
-    console.log("start selling");
+    Automation.Notifications.sendNotif("start selling", "Seller");
 
     const sellList = [];
 
     if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellTreasures) === "true") sellList.push.apply(sellList, this.__internal__treasureList);
 
     if (Automation.Utils.LocalStorage.getValue(this.Settings.AutoSellPlates) === "true") sellList.push.apply(sellList, this.__internal__plateList);
-
-    console.log(sellList);
 
     sellList.forEach((targetItem) => {
       if (sellList.length > 0 && player && player.itemList) {
@@ -141,8 +139,26 @@ class AutomationSeller {
 
           if (UndergroundTrading.canSell) {
             UndergroundTrading.sell();
+          } else {
+            Automation.Notifications.sendNotif();
+
+            Automation.Notifications.sendNotif(`❌ Impossible de vendre ${itemToSell.itemName}. Vérifiez les conditions.`, "Seller");
+            Automation.Notifications.sendNotif(`   - sellAmount: ${UndergroundTrading.sellAmount}`, "Seller");
+            // Vérifie si hasSellValue existe avant de l'appeler
+            if (typeof itemToSell.hasSellValue === "function") {
+              Automation.Notifications.sendNotif(`   - hasSellValue(): ${itemToSell.hasSellValue()}`, "Seller");
+            } else {
+              Automation.Notifications.sendNotif(`   - hasSellValue(): N/A (fonction non trouvée)`, "Seller");
+            }
+            Automation.Notifications.sendNotif(`   - quantité en inventaire: ${player.itemList[targetItemName]()}`, "Seller");
           }
+        } else if (itemToSell && player.itemList[targetItemName]() === 0) {
+          // Automation.Notifications.sendNotif(`ℹ️ Pas de ${targetItemName} en inventaire, pas de vente.`); // Décommenter si tu veux ce log
+        } else {
+          Automation.Notifications.sendNotif(`❓ Objet "${targetItemName}" non trouvé dans UndergroundItems.list ou player.itemList.`, "Seller");
         }
+      } else {
+        Automation.Notifications.sendNotif("⚠️ UndergroundItems.list ou player.itemList non défini ou n'est pas un tableau, la vente automatique ne peut pas fonctionner pour le moment.", "Seller");
       }
     });
   }

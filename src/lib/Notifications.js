@@ -9,6 +9,7 @@ class AutomationNotifications {
     Farming: "Notifications-Farming",
     Hatchery: "Notifications-Hatchery",
     Shop: "Notifications-Shop",
+    Seller: "Notifications-Seller",
     Mining: "Notifications-Mining",
     Focus: "Notifications-Focus",
   };
