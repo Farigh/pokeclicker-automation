@@ -7,7 +7,8 @@
 class AutomationUnderground
 {
     static Settings = {
-                          FeatureEnabled: "Mining-Enabled"
+                          FeatureEnabled: "Mining-Enabled",
+                          SafeBombs: "Mining-SafeBombs"
                       };
 
     /**
@@ -20,6 +21,9 @@ class AutomationUnderground
         // Only consider the BuildMenu init step
         if (initStep == Automation.InitSteps.BuildMenu)
         {
+            // Enable safe bombs usage by default
+            Automation.Utils.LocalStorage.setDefaultValue(this.Settings.SafeBombs, true);
+
             this.__internal__buildMenu();
         }
         else
@@ -121,6 +125,20 @@ class AutomationUnderground
         const miningButton =
             Automation.Menu.addAutomationButton("Mining", this.Settings.FeatureEnabled, autoMiningTooltip, this.__internal__undergroundContainer);
         miningButton.addEventListener("click", this.toggleAutoMining.bind(this), false);
+
+        // Build advanced settings panel
+        const miningSettingPanel = Automation.Menu.addSettingPanel(miningButton.parentElement.parentElement);
+
+        const titleDiv = Automation.Menu.createTitleElement("Mining advanced settings");
+        titleDiv.style.marginBottom = "10px";
+        miningSettingPanel.appendChild(titleDiv);
+
+        const safeBombsTooltip = "If enabled, bombs will only be used when no item is visible"
+                               + Automation.Menu.TooltipSeparator
+                               + "The bomb has a high destruction rate when hitting a tile\n"
+                               + "with a visible item. Enable at your own risks";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
+            "Only use bombs when no item is visible", this.Settings.SafeBombs, safeBombsTooltip, miningSettingPanel);
     }
 
     /**
@@ -216,7 +234,8 @@ class AutomationUnderground
         const bombTool = App.game.underground.tools.getTool(UndergroundToolType.Bomb);
         if (!actionOccured
             && (!areAllItemFound || ((bombTool.restoreRate > 0) && (bombTool.durability == 1)))
-            && bombTool.canUseTool())
+            && bombTool.canUseTool()
+            && this.__internal__isBombSafeToUse())
         {
             // Use the bomb on the center-most cell
             App.game.underground.tools.useTool(UndergroundToolType.Bomb, centerMostCellCoord.x, centerMostCellCoord.y);
@@ -682,5 +701,16 @@ class AutomationUnderground
         const index = App.game.underground.mine.getGridIndexForCoordinate(coord)
         const cell = App.game.underground.mine.grid[index];
         return Math.floor(cell.layerDepth / 2) + (cell.layerDepth % 2);
+    }
+
+    /**
+     * @brief Checks if the bomb is safe to use, based on the use settings and the grid configuration
+     *
+     * @returns True if the bomb is safe to use, false otherwise
+     */
+    static __internal__isBombSafeToUse()
+    {
+        return (Automation.Utils.LocalStorage.getValue(this.Settings.SafeBombs) !== "true")
+            || ((App.game.underground.mine?.itemsPartiallyFound - App.game.underground.mine?.itemsFound) == 0);
     }
 }
