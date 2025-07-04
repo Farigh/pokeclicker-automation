@@ -890,47 +890,6 @@ class AutomationHatchery
     }
 
     /**
-     * @brief Adds fossils from the user's inventory to the hatchery
-     *
-     * Only one fossil of a given type will be added at once.
-     * Only fossils that can hatch an uncaught pokémon will be considered.
-     */
-    static __internal__addFossilsToHatchery()
-    {
-        const currentlyHeldFossils =
-            UndergroundItems.list.filter((it) => it.valueType === UndergroundItemValueType.Fossil && player.itemList[it.itemName]() > 0);
-
-        let i = 0;
-        while (App.game.breeding.hasFreeEggSlot() && (i < currentlyHeldFossils.length))
-        {
-            const fossil = currentlyHeldFossils[i];
-
-            const associatedPokemon = GameConstants.FossilToPokemon[fossil.name];
-            const hasPokemon = App.game.party.caughtPokemon.some((partyPokemon) => (partyPokemon.name === associatedPokemon));
-
-            // Use an egg only if:
-            //   - a slot is available
-            //   - the player has one
-            //   - the corresponding pokémon is from an unlocked region
-            //   - the pokémon associated to the fossil is not already held by the player
-            //   - the fossil is not already in hatchery
-            if (App.game.breeding.hasFreeEggSlot()
-                && (player.itemList[fossil.itemName]() > 0)
-                && PokemonHelper.calcNativeRegion(GameConstants.FossilToPokemon[fossil.name]) <= player.highestRegion()
-                && !hasPokemon
-                && ![3, 2, 1, 0].some((index) => !App.game.breeding.eggList[index]().isNone()
-                                              && (App.game.breeding.eggList[index]().pokemon === associatedPokemon)))
-            {
-                // Hatching a fossil is performed by selling it
-                UndergroundController.sellMineItem(fossil);
-                Automation.Notifications.sendNotif("Added a " + fossil.name + " to the Hatchery!", "Hatchery");
-            }
-
-            i++;
-        }
-    }
-
-    /**
      * @brief Gets the next pokémons to breed
      *
      * @returns The sorted list of pokémon to hatch
