@@ -372,14 +372,6 @@ for (const eggType of [ "Fire", "Water", "Grass", "Fighting", "Electric", "Drago
 }
 
 buffer += `\n\n\n\n`;
-
-buffer += `\n        // Fossil pokemons\n`;
-for (const pokename of Object.values(GameConstants.FossilToPokemon))
-{
-    buffer += dataPrinter(pokename);
-}
-
-buffer += `\n\n\n\n`;
 prevRegion = -1;
 gymRegisteredPokemons = new Set();
 for (const gymName in GymList)

@@ -86,21 +86,6 @@ class GameConstants
 
     static FARM_PLOT_WIDTH = 5;
 
-    static FossilToPokemon =
-        {
-            'Helix Fossil': 'Omanyte',
-            'Dome Fossil': 'Kabuto',
-            'Old Amber': 'Aerodactyl',
-            'Root Fossil': 'Lileep',
-            'Claw Fossil': 'Anorith',
-            'Armor Fossil': 'Shieldon',
-            'Skull Fossil': 'Cranidos',
-            'Cover Fossil': 'Tirtouga',
-            'Plume Fossil': 'Archen',
-            'Jaw Fossil': 'Tyrunt',
-            'Sail Fossil': 'Amaura',
-        };
-
     static GameState =
         {
             0: "idle",
