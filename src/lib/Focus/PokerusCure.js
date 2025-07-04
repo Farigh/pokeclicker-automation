@@ -518,11 +518,13 @@ class AutomationFocusPokerusCure
      */
     static __internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailablePokemons, skipBosses = false)
     {
-        let pokemonList = dungeon.pokemonList;
+        let pokemonList = this.__internal__getPokemonNames(dungeon.normalEncounterList, onlyConsiderAvailablePokemons);
 
         if (!skipBosses)
         {
             const dungeonRegion = TownList[dungeon.name].region;
+
+            // TODO Use dungeon.bossEncounterList here ?
 
             // Add pokemon bosses
             for (const boss of dungeon.bossList)
@@ -534,8 +536,8 @@ class AutomationFocusPokerusCure
                     if (onlyConsiderAvailablePokemons)
                     {
                         const isBossLocked = boss.options?.requirement
-                                        ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion)
-                                        : false;
+                                           ? !this.__internal__isRequirementCompleted(boss.options?.requirement, dungeonRegion)
+                                           : false;
                         if (isBossLocked) continue;
                     }
 
@@ -560,24 +562,6 @@ class AutomationFocusPokerusCure
             }
         }
 
-        // Add any trainer shadow pokemons
-        for (const trainer of dungeon.enemyList)
-        {
-            // Only consider trainers
-            if (!Automation.Utils.isInstanceOf(trainer, "DungeonTrainer"))
-            {
-                continue;
-            }
-
-            for (const pokemon of trainer.team.filter(p => p.shadow == 1))
-            {
-                if (!pokemonList.includes(pokemon.name))
-                {
-                    pokemonList.push(pokemon.name);
-                }
-            }
-        }
-
         // Filter alternate forms, if asked for
         if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
         {
@@ -586,6 +570,25 @@ class AutomationFocusPokerusCure
         }
 
         return pokemonList;
+    }
+
+    /**
+     * @brief Extracts the pokemon names from the given @p encounterList
+     *
+     * @param encounterList: The encounter list
+     * @param {boolean} onlyConsiderAvailablePokemons: Whether only currently available pokémon should be considered
+     */
+    static __internal__getPokemonNames(encounterList, onlyConsiderAvailablePokemons)
+    {
+        return encounterList.filter((encounter) =>
+            {
+                // Remove any trainer
+                return !encounter.shadowTrainer
+                    // Filter mimics as well, for now
+                    && !encounter.mimic
+                    // Filter hidden entries, if needed
+                    && (!onlyConsiderAvailablePokemons || !encounter.hide);
+            }).map(p => p.pokemonName);
     }
 
     /**
