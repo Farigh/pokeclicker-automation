@@ -42,17 +42,6 @@ class Breeding
         return new Egg(type, this.getSteps(dataPokemon.eggCycles), pokemonName);
     }
 
-    createFossilEgg(fossil)
-    {
-        const pokemonName = GameConstants.FossilToPokemon[fossil];
-        const pokemonNativeRegion = PokemonHelper.calcNativeRegion(pokemonName);
-        if (pokemonNativeRegion > player.highestRegion())
-        {
-            return new Egg();
-        }
-        return this.createEgg(pokemonName, EggType.Fossil);
-    }
-
     createTypedEgg(type)
     {
         const pokemonName = this.__getNextPokemonToHatch(type);

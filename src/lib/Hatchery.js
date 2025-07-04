@@ -13,7 +13,6 @@ class AutomationHatchery
                           SpreadPokerus: "Hatchery-SpreadPokerus",
                           UnlockMegaEvolutions: "Hatchery-UnlockMegaEvolutions",
                           SkipAlreadyUnlockedMegaEvolutions: "Hatchery-SkipAlreadyUnlockedMegaEvolutions",
-                          UseFossils: "Hatchery-UseFossils",
                           UseEggs: "Hatchery-UseEggs",
                           PrioritizedSorting: "Hatchery-PrioritizedSorting",
                           PrioritizedSortingDescending: "Hatchery-PrioritizedSortingDescending",
@@ -182,11 +181,6 @@ class AutomationHatchery
         titleDiv.style.marginBottom = "10px";
         hatcherySettingPanel.appendChild(titleDiv);
 
-        const fossilTooltip = "Add fossils to the hatchery as well"
-                            + Automation.Menu.TooltipSeparator
-                            + "Only fossils for which pokémon are not currently held are added";
-        Automation.Menu.addLabeledAdvancedSettingsToggleButton(
-            "Hatch Fossils that can breed an uncaught pokémon", this.Settings.UseFossils, fossilTooltip, hatcherySettingPanel);
         const eggTooltip = "Add eggs to the hatchery as well"
                          + Automation.Menu.TooltipSeparator
                          + "Only eggs for which some pokémon are not currently held are added\n"
@@ -825,8 +819,7 @@ class AutomationHatchery
      *
      * If any egg is ready to hatch, it will be.
      * If any spot is available:
-     *   - [if anabled] An egg will be added from the user's inventory, if such egg can hatch an uncaught pokémon
-     *   - [if anabled] A fossil will be added from the user's inventory, if such fossil can hatch an uncaught pokémon
+     *   - [if enabled] An egg will be added from the user's inventory, if such egg can hatch an uncaught pokémon
      *   - The pokémon at max level (100), with the highet breeding efficiency, will be added
      *     If the 'No shiny 1st' feature is enabled, shiny pokémon will only be added if no none-shiny ones are available
      */
@@ -844,12 +837,6 @@ class AutomationHatchery
             this.__internal__addEggsToHatchery();
         }
 
-        // Then try to use fossils, if enabled
-        if (Automation.Utils.LocalStorage.getValue(this.Settings.UseFossils) === "true")
-        {
-            this.__internal__addFossilsToHatchery();
-        }
-
         // Now add lvl 100 pokémons to empty slots if we can
         if (App.game.breeding.hasFreeEggSlot())
         {
@@ -857,7 +844,7 @@ class AutomationHatchery
             const pokemonToBreed = this.__internal__getSortedPokemonToBreed();
 
             // Do not add pokémons to the queue as it reduces the overall attack
-            // (this will also allow the player to add pokémons, eggs or fossils manually)
+            // (this will also allow the player to add pokémons or eggs manually)
             let i = 0;
             while ((i < pokemonToBreed.length) && App.game.breeding.hasFreeEggSlot())
             {
