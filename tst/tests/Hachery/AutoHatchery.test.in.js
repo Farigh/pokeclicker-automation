@@ -245,26 +245,6 @@ describe(`${AutomationTestUtils.categoryPrefix}Egg breeding`, () =>
     });
 });
 
-/* TODO Fixup those tests
-describe(`${AutomationTestUtils.categoryPrefix}Fossil breeding`, () =>
-{
-    // Test when player has an egg that can hatch uncaught pokemon, for each handled types
-    let possibleFossils = Object.keys(GameConstants.FossilToPokemon);
-    test.each(possibleFossils)("Having a %s that can hatch uncaught pokemon", (fossilName) =>
-    {
-        // Give the player an egg
-        player.mineInventory().find(i => i.name == fossilName).__amount = 1;
-
-        // Simulate the loop
-        Automation.Hatchery.__internal__hatcheryLoop();
-
-        expect(App.game.breeding.__eggList[0].pokemon).toEqual(GameConstants.FossilToPokemon[fossilName]);
-        expect(App.game.breeding.__eggList[0].isNone()).toBe(false);
-        expect(App.game.breeding.__eggList[0].type).toBe(EggType.Fossil);
-    });
-});
-*/
-
 describe(`${AutomationTestUtils.categoryPrefix}Party pokémon breeding`, () =>
 {
     // Test when the player has a lvl 100 pokemon in his party
