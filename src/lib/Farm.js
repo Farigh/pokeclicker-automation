@@ -2333,7 +2333,8 @@ class AutomationFarm
         }
 
         // Only consider unwanted berries
-        if (plot.berry === expectedBerryType)
+        if ((plot.berry === expectedBerryType)
+            || ((this.__internal__currentStrategy != null) && (plot.berry === this.__internal__currentStrategy.berryToUnlock)))
         {
             return false;
         }
