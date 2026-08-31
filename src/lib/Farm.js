@@ -2594,7 +2594,15 @@ class AutomationFarm
             return true;
         }
 
-        const totalCount = App.game.farming.berryInventory[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
+        let totalCount = App.game.farming.berryInventory[berryType]();
+
+        // TODO Make if faster by including planted berries count even when the auto-shovel is enabled
+        // (can't be done for now because the next strategy would shovel the target berry)
+        if (Automation.Utils.LocalStorage.getValue(this.Settings.UseShovel) !== "true")
+        {
+            totalCount += this.__internal__getPlantedBerriesCount(berryType);
+        }
+
         return (totalCount < targetCount);
     }
 }
