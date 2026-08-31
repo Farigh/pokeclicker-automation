@@ -52,7 +52,7 @@ class Plot
     {
         this.berry = berryType;
         this.age = 0;
-        this.berryData = App.game.farming.berryData[this.berry];
+        this.berryData = BerryList[this.berry];
     }
 
     stage()

@@ -840,10 +840,10 @@ class AutomationFocusQuests
                 continue;
             }
 
-            let berryData = App.game.farming.berryData[index];
+            let berryData = BerryList[index];
 
             // Don't consider out-of-stock berries
-            if (App.game.farming.berryList[index]() === 0)
+            if (App.game.farming.berryInventory[index]() === 0)
             {
                 continue;
             }

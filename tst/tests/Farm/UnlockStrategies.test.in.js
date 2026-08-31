@@ -63,7 +63,7 @@ function setAllBerriesToRipe()
     {
         if (!plot.isEmpty())
         {
-            const berryData = App.game.farming.berryData[plot.berry];
+            const berryData = BerryList[plot.berry];
             plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
     }
@@ -176,7 +176,7 @@ function runBerryMutationTest(targetBerry,
     }
 
     App.game.farming.plotList[8].plant(targetBerry);
-    const targetBerryData = App.game.farming.berryData[targetBerry];
+    const targetBerryData = BerryList[targetBerry];
     App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
     Automation.Farm.__internal__farmLoop();
 
@@ -217,7 +217,7 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
     let lastBerryTime = 0;
     for (const berryType of expectedOrder)
     {
-        const currentBerryTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+        const currentBerryTime = BerryList[berryType].growthTime[PlotStage.Bloom];
         if (lastBerryTime == 0)
         {
             berryPlantOrder.push([]);
@@ -231,7 +231,7 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
         berryPlantOrder.at(-1).push(berryType);
     }
 
-    const targetAge = App.game.farming.berryData[expectedOrder[0]].growthTime[PlotStage.Bloom];
+    const targetAge = BerryList[expectedOrder[0]].growthTime[PlotStage.Bloom];
     const agingPlot = App.game.farming.plotList[expectedConfig[expectedOrder[0]][0]];
     for (const index of expectedOrder.keys())
     {
@@ -246,7 +246,7 @@ function checkMutationLayoutRotation(expectedConfig, expectedOrder)
             break;
         }
 
-        const nextBerryGrowingTime = App.game.farming.berryData[expectedOrder[index + 1]].growthTime[PlotStage.Bloom];
+        const nextBerryGrowingTime = BerryList[expectedOrder[index + 1]].growthTime[PlotStage.Bloom];
 
         // Simulate the berry age getting close to the next rotation
         agingPlot.age = targetAge - nextBerryGrowingTime - 1;
@@ -296,7 +296,7 @@ function runBerryMutationTestNoTiming(targetBerry,
         }
 
         App.game.farming.plotList[8].plant(targetBerry);
-        const targetBerryData = App.game.farming.berryData[targetBerry];
+        const targetBerryData = BerryList[targetBerry];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
         Automation.Farm.__internal__farmLoop();
 
@@ -438,7 +438,7 @@ beforeAll(() =>
 // Test when player does not have enough berries to unlock anything
 test('Not enough berry to unlock anything', () =>
 {
-    const cheriData = App.game.farming.berryData[BerryType.Cheri];
+    const cheriData = BerryList[BerryType.Cheri];
 
     // Expect the current strategy to be pointing to the first one
     expect(Automation.Farm.__internal__currentStrategy).toBe(Automation.Farm.__internal__unlockStrategySelection[0]);
@@ -619,7 +619,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 1 unlocks`, () =>
         // Simulate the planted berries riping
         for (const index of [ 6, 7, 8, 11, 12, 13, 16, 17, 18 ])
         {
-            const berryData = App.game.farming.berryData[App.game.farming.plotList[index].berry];
+            const berryData = BerryList[App.game.farming.plotList[index].berry];
             App.game.farming.plotList[index].age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
         Automation.Farm.__internal__farmLoop();
@@ -985,7 +985,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 2 unlocks`, () =>
         {
             if (!plot.isEmpty())
             {
-                const berryData = App.game.farming.berryData[plot.berry];
+                const berryData = BerryList[plot.berry];
                 plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
             }
         }
@@ -1294,7 +1294,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // Simulate the planted berries riping
         for (const plot of App.game.farming.plotList)
         {
-            const berryData = App.game.farming.berryData[plot.berry];
+            const berryData = BerryList[plot.berry];
             plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
         Automation.Farm.__internal__farmLoop();
@@ -1465,7 +1465,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 3 unlocks`, () =>
         // Simulate the planted berries riping
         for (const plot of App.game.farming.plotList)
         {
-            const berryData = App.game.farming.berryData[plot.berry];
+            const berryData = BerryList[plot.berry];
             plot.age = berryData.growthTime[PlotStage.Bloom] + 1;
         }
         Automation.Farm.__internal__farmLoop();
@@ -1673,7 +1673,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         expect(Automation.Utils.OakItem.ForbiddenItems).toEqual([]);
 
         // Simulate the berries being close to death
-        const cheriBerryData = App.game.farming.berryData[BerryType.Cheri];
+        const cheriBerryData = BerryList[BerryType.Cheri];
         for (const plot of App.game.farming.plotList)
         {
             plot.age = cheriBerryData.growthTime[PlotStage.Berry] - 1;
@@ -1701,7 +1701,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         // Simulate a mutation in plot 8
         App.game.farming.plotList[8].die();
         App.game.farming.plotList[8].plant(BerryType.Kasib);
-        const targetBerryData = App.game.farming.berryData[BerryType.Kasib];
+        const targetBerryData = BerryList[BerryType.Kasib];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
         Automation.Farm.__internal__farmLoop();
 
@@ -1944,7 +1944,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
         runBerryMutationTestNoTiming(BerryType.Chilan, chilanUnlockFirstStep, true);
 
         // This should not change until the berries are ripe
-        const chopleBerryData = App.game.farming.berryData[BerryType.Chople];
+        const chopleBerryData = BerryList[BerryType.Chople];
         for (const index of [ 6, 8, 16, 18 ])
         {
             App.game.farming.plotList[index].age = chopleBerryData.growthTime[PlotStage.Bloom];
@@ -1983,7 +1983,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Gen 4 unlocks`, () =>
 
         // Simulate a berry mutation in plot 8
         App.game.farming.plotList[8].plant(BerryType.Chilan);
-        const targetBerryData = App.game.farming.berryData[BerryType.Chilan];
+        const targetBerryData = BerryList[BerryType.Chilan];
         App.game.farming.plotList[8].age = targetBerryData.growthTime[PlotStage.Bloom] + 1;
         Automation.Farm.__internal__farmLoop();
 
@@ -2470,8 +2470,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(1, expectedConfigBefore, [ BerryType.Micle ]);
 
         // The strategy should start as soon as the berry reaches the
-        App.game.farming.plotList[12].age = App.game.farming.berryData[BerryType.Micle].growthTime[PlotStage.Bloom]
-                                          - App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom];
+        App.game.farming.plotList[12].age = BerryList[BerryType.Micle].growthTime[PlotStage.Bloom]
+                                          - BerryList[BerryType.Rindo].growthTime[PlotStage.Bloom];
 
         strategy.action();
 
@@ -2516,8 +2516,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        const occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
-        let ageDiff = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
+        const occaBloomTime = BerryList[BerryType.Occa].growthTime[PlotStage.Bloom];
+        let ageDiff = BerryList[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
         simulateTimePassing(ageDiff + 1);
 
         // The next step should proceed normally once berries reaches the matching age
@@ -2527,7 +2527,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        const passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        const passhoBloomTime = BerryList[BerryType.Passho].growthTime[PlotStage.Bloom];
         ageDiff = occaBloomTime - passhoBloomTime;
         simulateTimePassing(ageDiff);
 
@@ -2538,7 +2538,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        ageDiff = passhoBloomTime - App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
+        ageDiff = passhoBloomTime - BerryList[BerryType.Wacan].growthTime[PlotStage.Bloom];
         simulateTimePassing(ageDiff);
 
         // The next step should proceed normally once berries reaches the matching age
@@ -2548,7 +2548,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        ageDiff = App.game.farming.berryData[BerryType.Custap].growthTime[PlotStage.Bloom] - App.game.farming.plotList[12].age;
+        ageDiff = BerryList[BerryType.Custap].growthTime[PlotStage.Bloom] - App.game.farming.plotList[12].age;
         simulateTimePassing(ageDiff + 1);
 
         // As soon as the extra berry can be harvested, it should be
@@ -2582,7 +2582,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(1, expectedConfigBefore, [ BerryType.Micle ]);
 
         // The strategy should start as soon as the berry can be harvested
-        App.game.farming.plotList[7].age = App.game.farming.berryData[BerryType.Micle].growthTime[PlotStage.Bloom] + 1;
+        App.game.farming.plotList[7].age = BerryList[BerryType.Micle].growthTime[PlotStage.Bloom] + 1;
 
         strategy.action();
 
@@ -2637,11 +2637,11 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         App.game.farming.plotList[5].plant(BerryType.Liechi);
 
         // Set the berries just under the planting time
-        const rindoTime = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom];
-        const liechiDiffTime = App.game.farming.berryData[BerryType.Liechi].growthTime[PlotStage.Bloom] - rindoTime;
-        App.game.farming.plotList[0].age = liechiDiffTime + App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
-        App.game.farming.plotList[2].age = liechiDiffTime + App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
-        App.game.farming.plotList[5].age = liechiDiffTime + App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
+        const rindoTime = BerryList[BerryType.Rindo].growthTime[PlotStage.Bloom];
+        const liechiDiffTime = BerryList[BerryType.Liechi].growthTime[PlotStage.Bloom] - rindoTime;
+        App.game.farming.plotList[0].age = liechiDiffTime + BerryList[BerryType.Occa].growthTime[PlotStage.Bloom];
+        App.game.farming.plotList[2].age = liechiDiffTime + BerryList[BerryType.Passho].growthTime[PlotStage.Bloom];
+        App.game.farming.plotList[5].age = liechiDiffTime + BerryList[BerryType.Wacan].growthTime[PlotStage.Bloom];
 
         // Simulate the strategy callback
         strategy.action();
@@ -2659,8 +2659,8 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        const occaBloomTime = App.game.farming.berryData[BerryType.Occa].growthTime[PlotStage.Bloom];
-        let ageDiff = App.game.farming.berryData[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
+        const occaBloomTime = BerryList[BerryType.Occa].growthTime[PlotStage.Bloom];
+        let ageDiff = BerryList[BerryType.Rindo].growthTime[PlotStage.Bloom] - occaBloomTime;
         simulateTimePassing(ageDiff + 1);
 
         // The next step should proceed normally once berries reaches the matching age
@@ -2671,7 +2671,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        const passhoBloomTime = App.game.farming.berryData[BerryType.Passho].growthTime[PlotStage.Bloom];
+        const passhoBloomTime = BerryList[BerryType.Passho].growthTime[PlotStage.Bloom];
         ageDiff = occaBloomTime - passhoBloomTime;
         simulateTimePassing(ageDiff);
 
@@ -2683,7 +2683,7 @@ describe(`${AutomationTestUtils.categoryPrefix}Mutation strategy with occupied p
         checkCurrentLayout(expectedBerries.length, expectedConfig, expectedBerries);
 
         // Simulate the berries aging
-        ageDiff = passhoBloomTime - App.game.farming.berryData[BerryType.Wacan].growthTime[PlotStage.Bloom];
+        ageDiff = passhoBloomTime - BerryList[BerryType.Wacan].growthTime[PlotStage.Bloom];
         simulateTimePassing(ageDiff);
 
         // The next step should proceed normally once berries reaches the matching age

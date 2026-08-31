@@ -694,7 +694,7 @@ class AutomationFarm
     {
         if (this.__internal__freeSlotCount > 0)
         {
-            const selectedBerryCount = App.game.farming.berryList[berryToPlant]();
+            const selectedBerryCount = App.game.farming.berryInventory[berryToPlant]();
 
             if (selectedBerryCount > 0)
             {
@@ -1663,7 +1663,7 @@ class AutomationFarm
                 action: function()
                 {
                     let berryToPlant = berryType;
-                    if (App.game.farming.plotBerryCost(slotIndex).amount <= App.game.farming.berryList[berryType]())
+                    if (App.game.farming.plotBerryCost(slotIndex).amount <= App.game.farming.berryInventory[berryType]())
                     {
                         // Not enough farm point, lets plant some Cheri berries to get some fast
                         berryToPlant = BerryType.Cheri;
@@ -1955,9 +1955,9 @@ class AutomationFarm
                     (berryType) =>
                     {
                         const alreadyPlantedCount = Automation.Farm.__internal__getPlantedBerriesCount(berryType);
-                        const berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
+                        const berryHarvestAmount = BerryList[berryType].harvestAmount;
 
-                        return (App.game.farming.berryList[berryType]() >= (berriesMinAmount - (alreadyPlantedCount * berryHarvestAmount)));
+                        return (App.game.farming.berryInventory[berryType]() >= (berriesMinAmount - (alreadyPlantedCount * berryHarvestAmount)));
                     });
             };
 
@@ -1972,8 +1972,8 @@ class AutomationFarm
                         continue;
                     }
 
-                    let neededAmount = (berriesMinAmount - App.game.farming.berryList[berryType]());
-                    const berryHarvestAmount = App.game.farming.berryData[berryType].harvestAmount;
+                    let neededAmount = (berriesMinAmount - App.game.farming.berryInventory[berryType]());
+                    const berryHarvestAmount = BerryList[berryType].harvestAmount;
 
                     const alreadyPlantedCount = this.__internal__getPlantedBerriesCount(berryType);
                     neededAmount -= (alreadyPlantedCount * berryHarvestAmount);
@@ -2007,7 +2007,7 @@ class AutomationFarm
         // Build the list of berries under the minimum threshold
         strategy.setFoatingPanelContent = function()
             {
-                const berriesNeeded = berriesToGather.filter(berryType => App.game.farming.berryList[berryType]() < berriesMinAmount);
+                const berriesNeeded = berriesToGather.filter(berryType => App.game.farming.berryInventory[berryType]() < berriesMinAmount);
 
                 if (this.__internal__floatingPanelStateData == berriesNeeded)
                 {
@@ -2390,7 +2390,7 @@ class AutomationFarm
 
             // Compute Bloom target time
             const firstBerryType = berriesOrder[0];
-            const firstBerryBloomDuration = App.game.farming.berryData[firstBerryType].growthTime[PlotStage.Bloom];
+            const firstBerryBloomDuration = BerryList[firstBerryType].growthTime[PlotStage.Bloom];
             let bloomTarget = firstBerryBloomDuration;
             for (const index of berriesIndexes[firstBerryType])
             {
@@ -2422,7 +2422,7 @@ class AutomationFarm
                 {
                     if (expectedBerryType === BerryType.None)
                     {
-                        const berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
+                        const berryBloomDuration = BerryList[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
                         if (berryBloomDuration <= bloomTarget)
                         {
                             // Berries that would bloom before any of the strategy's berries are not a problem
@@ -2431,8 +2431,8 @@ class AutomationFarm
                     }
                     else
                     {
-                        const berryBloomDuration = App.game.farming.berryData[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
-                        const expectedBerryTime = App.game.farming.berryData[expectedBerryType].growthTime[PlotStage.Bloom];
+                        const berryBloomDuration = BerryList[plot.berry].growthTime[PlotStage.Bloom] - plot.age;
+                        const expectedBerryTime = BerryList[expectedBerryType].growthTime[PlotStage.Bloom];
                         if (berryBloomDuration <= (bloomTarget - expectedBerryTime))
                         {
                             // Berries that would bloom before the plot is required by the strategy are not a problem
@@ -2449,7 +2449,7 @@ class AutomationFarm
                 // Plant berries, if the conditions are met
                 for (const berryType of berriesOrder)
                 {
-                    const currentBerryBloomDuration = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+                    const currentBerryBloomDuration = BerryList[berryType].growthTime[PlotStage.Bloom];
 
                     // Wait to sync riping
                     if (currentBerryBloomDuration < bloomTarget)
@@ -2494,11 +2494,11 @@ class AutomationFarm
         const berriesOrder = this.__internal__getBerryPlantingOrder(berriesIndexes);
         const berriesDelay = new Map();
 
-        const maxRipeTime = App.game.farming.berryData[berriesOrder[0]].growthTime[PlotStage.Bloom];
+        const maxRipeTime = BerryList[berriesOrder[0]].growthTime[PlotStage.Bloom];
 
         for (const berryType of berriesOrder)
         {
-            const currentRipeTime = App.game.farming.berryData[berryType].growthTime[PlotStage.Bloom];
+            const currentRipeTime = BerryList[berryType].growthTime[PlotStage.Bloom];
             berriesDelay.set(berryType, GameConstants.formatTime(maxRipeTime - currentRipeTime));
         }
         const longestBerryRipeTime = berriesDelay.get(parseInt(berriesOrder[0]));
@@ -2576,7 +2576,7 @@ class AutomationFarm
     static __internal__getBerryPlantingOrder(berriesIndexes)
     {
         return [...Object.keys(berriesIndexes)].map(x => parseInt(x)).sort(
-            (a, b) => App.game.farming.berryData[b].growthTime[PlotStage.Bloom] - App.game.farming.berryData[a].growthTime[PlotStage.Bloom]);
+            (a, b) => BerryList[b].growthTime[PlotStage.Bloom] - BerryList[a].growthTime[PlotStage.Bloom]);
     }
 
     /**
@@ -2594,7 +2594,7 @@ class AutomationFarm
             return true;
         }
 
-        const totalCount = App.game.farming.berryList[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
+        const totalCount = App.game.farming.berryInventory[berryType]() + this.__internal__getPlantedBerriesCount(berryType);
         return (totalCount < targetCount);
     }
 }
