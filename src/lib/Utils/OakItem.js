@@ -17,7 +17,8 @@ class AutomationUtilsOakItem
                            OakItemType.Amulet_Coin,
                            OakItemType.Rocky_Helmet,
                            OakItemType.Exp_Share,
-                           OakItemType.Magma_Stone
+                           OakItemType.Magma_Stone,
+                           OakItemType.Shiny_Charm
                        ];
 
         /**
@@ -27,7 +28,8 @@ class AutomationUtilsOakItem
                                   OakItemType.Magic_Ball,
                                   OakItemType.Shiny_Charm,
                                   OakItemType.Rocky_Helmet,
-                                  OakItemType.Exp_Share
+                                  OakItemType.Exp_Share,
+                                  OakItemType.Amulet_Coin
                               ];
 
         /**
@@ -37,7 +39,8 @@ class AutomationUtilsOakItem
                                 OakItemType.Rocky_Helmet,
                                 OakItemType.Exp_Share,
                                 OakItemType.Magma_Stone,
-                                OakItemType.Amulet_Coin
+                                OakItemType.Amulet_Coin,
+                                OakItemType.Shiny_Charm
                             ];
     }
 
@@ -57,6 +60,13 @@ class AutomationUtilsOakItem
             {
                 // Skip any forbidden item
                 if (this.ForbiddenItems.includes(item))
+                {
+                    return false;
+                }
+
+                // Skip Rocky helmet if in "No click attack" challenge
+                if (App.game.challenges.list.disableClickAttack.active()
+                    && (item === OakItemType.Rocky_Helmet))
                 {
                     return false;
                 }
