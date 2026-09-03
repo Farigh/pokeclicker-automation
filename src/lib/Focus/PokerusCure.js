@@ -230,6 +230,16 @@ class AutomationFocusPokerusCure
             // Enable auto dungeon fight
             Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
+            // Avoid wasting dungeon tokens if the run conditions are already met
+            Automation.Dungeon.setBeforeNewRunCallBack(function()
+                {
+                    if (!this.__internal__doesDungeonHaveAnyPokemonNeedingCure(this.__internal__currentDungeonData.dungeon, true))
+                    {
+                        // Reload the Focus automation
+                        this.__internal__focusOnPokerusCure();
+                    }
+                }.bind(this));
+
             // Only force pokemon fights if one of those needs curing
             if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.nonBossPokemons, true))
             {
