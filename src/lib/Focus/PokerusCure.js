@@ -48,6 +48,9 @@ class AutomationFocusPokerusCure
         // Disable Alternate forms skipping by default
         Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.SkipAlternateForms, false);
 
+        // Enable mimic pokémons by default
+        Automation.Utils.LocalStorage.setDefaultValue(this.__internal__advancedSettings.IncludeMimicPokemons, true);
+
         // Beastball usage setting
         const tooltip = "Allows the automation to use Beastball to catch UltraBeast pokémons."
                       + Automation.Menu.TooltipSeparator
@@ -64,6 +67,13 @@ class AutomationFocusPokerusCure
                                                                this.__internal__advancedSettings.SkipAlternateForms,
                                                                alternateTooltip,
                                                                parent);
+
+        // Mimic pokemon inclusion setting
+        const mimicTooltip = "If enabled, the dungeon automation will force chest pickup";
+        Automation.Menu.addLabeledAdvancedSettingsToggleButton("Include mimic pokémons from dungeon chests",
+                                                               this.__internal__advancedSettings.IncludeMimicPokemons,
+                                                               mimicTooltip,
+                                                               parent);
     }
 
     /*********************************************************************\
@@ -72,6 +82,7 @@ class AutomationFocusPokerusCure
 
     static __internal__advancedSettings = {
                                               AllowBeastBallUsage: "Focus-PokerusCure-AllowBeastBallUsage",
+                                              IncludeMimicPokemons: "Focus-PokerusCure-IncludeMimicPokemons",
                                               SkipAlternateForms: "Focus-PokerusCure-SkipAlternateForms"
                                           };
 
@@ -244,12 +255,18 @@ class AutomationFocusPokerusCure
             if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.nonBossPokemons, true))
             {
                 // Bypass user settings, especially the 'Skip fights' one
-                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+                Automation.Dungeon.AutomationRequestedModes = [ Automation.Dungeon.InternalModes.ForcePokemonFight ];
             }
             else
             {
                 // Go straight to the boss if every other pokemons have been cured
-                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+                Automation.Dungeon.AutomationRequestedModes = [ Automation.Dungeon.InternalModes.ForceDungeonCompletion ];
+            }
+
+            if ((Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.IncludeMimicPokemons) === "true")
+                && this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.mimicPokemons, true))
+            {
+                Automation.Dungeon.AutomationRequestedModes.push(Automation.Dungeon.InternalModes.ForceChestOpening);
             }
         }
     }
@@ -299,11 +316,15 @@ class AutomationFocusPokerusCure
                       // Don't consider dungeon that the player can't access yet
                    && Automation.Utils.Route.canMoveToTown(TownList[data.dungeon.name]), this);
 
-        if (this.__internal__currentDungeonData)
+        if (this.__internal__currentDungeonData != null)
         {
             // Save current instance non-boss pokémons for dungeon strategy optimisation
             this.__internal__currentDungeonData.nonBossPokemons =
                 this.__internal__getEveryPokemonForDungeon(this.__internal__currentDungeonData.dungeon, false, true);
+
+            // Save current instance mimic pokémons for dungeon strategy optimisation
+            this.__internal__currentDungeonData.mimicPokemons =
+                this.__internal__getEveryMimicPokemonForDungeon(this.__internal__currentDungeonData.dungeon);
 
             // Determine if the beast ball is the only catching option
             this.__internal__currentDungeonData.needsBeastBall =
@@ -388,9 +409,22 @@ class AutomationFocusPokerusCure
      */
     static __internal__doesDungeonHaveAnyPokemonNeedingCure(dungeon, onlyConsiderAvailableContagiousPokemons = false)
     {
+        // Check for pokémons needing cure in the standard pokemon list
         const pokemonList = this.__internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailableContagiousPokemons);
+        if (this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons))
+        {
+            return true;
+        }
 
-        return this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons);
+        if (onlyConsiderAvailableContagiousPokemons
+            && (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.IncludeMimicPokemons) !== "true"))
+        {
+            return false;
+        }
+
+        // Check for pokémons needing cure in the mimic pokemon list
+        const mimicList = this.__internal__getEveryMimicPokemonForDungeon(dungeon);
+        return this.__internal__doesAnyPokemonNeedCuring(mimicList, onlyConsiderAvailableContagiousPokemons);
     }
 
     /**
@@ -404,7 +438,7 @@ class AutomationFocusPokerusCure
     static __internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons)
     {
         // Skip UltraBeast pokémons if the player disabled the feature or there is no Beastball left
-        const skipUltraBeasts = (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.AllowBeastBallUsage) == "false")
+        const skipUltraBeasts = (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.AllowBeastBallUsage) === "false")
                              || (App.game.pokeballs.getBallQuantity(GameConstants.Pokeball.Beastball) === 0);
 
         return pokemonList.some((pokemonName) =>
@@ -452,7 +486,13 @@ class AutomationFocusPokerusCure
      */
     static __internal__doesDungeonNeedBeastBalls(dungeon)
     {
-        const pokemonList = this.__internal__getEveryPokemonForDungeon(dungeon, true);
+        let pokemonList = this.__internal__getEveryPokemonForDungeon(dungeon, true);
+
+        if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.IncludeMimicPokemons) === "true")
+        {
+            pokemonList.concat(this.__internal__getEveryMimicPokemonForDungeon(dungeon));
+        }
+
         return pokemonList.every((pokemonName) =>
             {
                 const pokemon = App.game.party.getPokemonByName(pokemonName);
@@ -508,7 +548,8 @@ class AutomationFocusPokerusCure
         pokemonList.filter((item, index) => pokemonList.indexOf(item) === index);
 
         // Filter alternate forms, if asked for
-        if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
+        if (onlyConsiderAvailablePokemons
+            && (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) === "true"))
         {
             // Alternate forms have a floating point id
             pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
@@ -573,7 +614,36 @@ class AutomationFocusPokerusCure
         }
 
         // Filter alternate forms, if asked for
-        if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
+        if (onlyConsiderAvailablePokemons
+            && (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) === "true"))
+        {
+            // Alternate forms have a floating point id
+            pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
+        }
+
+        return pokemonList;
+    }
+
+    /**
+     * @brief Gets the list of possible mimic pokémon that can be found in chests for the given @p dungeon
+     *
+     * @param dungeon: The dungeon to get the pokémon of
+     * @param {boolean} onlyConsiderAvailablePokemons: Whether only currently available pokémon should be considered
+     *
+     * @returns The list of pokémon
+     */
+    static __internal__getEveryMimicPokemonForDungeon(dungeon)
+    {
+        let pokemonList = dungeon.normalEncounterList.filter((encounter) =>
+            {
+                // Only consider mimics
+                return encounter.mimic
+                    // Filter hidden entries
+                    && !encounter.hide;
+            }).map(p => p.pokemonName);
+
+        // Filter alternate forms, if asked for
+        if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) === "true")
         {
             // Alternate forms have a floating point id
             pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
