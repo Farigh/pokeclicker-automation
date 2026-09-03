@@ -179,7 +179,7 @@ class AutomationFocusShadowPurification
         Automation.Dungeon.setBeforeNewRunCallBack(this.__internal__tryToPurifyShadowPokemon.bind(this));
 
         // Bypass user settings, especially the 'Skip fights' one
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+        Automation.Dungeon.AutomationRequestedMode = [ Automation.Dungeon.InternalModes.ForcePokemonFight ];
     }
 
     /**

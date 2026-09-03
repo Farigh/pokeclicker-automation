@@ -244,12 +244,17 @@ class AutomationFocusPokerusCure
             if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.nonBossPokemons, true))
             {
                 // Bypass user settings, especially the 'Skip fights' one
-                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForcePokemonFight;
+                Automation.Dungeon.AutomationRequestedModes = [ Automation.Dungeon.InternalModes.ForcePokemonFight ];
             }
             else
             {
                 // Go straight to the boss if every other pokemons have been cured
-                Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+                Automation.Dungeon.AutomationRequestedModes = [ Automation.Dungeon.InternalModes.ForceDungeonCompletion ];
+            }
+
+            if (this.__internal__doesAnyPokemonNeedCuring(this.__internal__currentDungeonData.mimicPokemons, true))
+            {
+                Automation.Dungeon.AutomationRequestedModes.push(Automation.Dungeon.InternalModes.ForceChestOpening);
             }
         }
     }
@@ -304,6 +309,10 @@ class AutomationFocusPokerusCure
             // Save current instance non-boss pokémons for dungeon strategy optimisation
             this.__internal__currentDungeonData.nonBossPokemons =
                 this.__internal__getEveryPokemonForDungeon(this.__internal__currentDungeonData.dungeon, false, true);
+
+            // Save current instance mimic pokémons for dungeon strategy optimisation
+            this.__internal__currentDungeonData.mimicPokemons =
+                this.__internal__getEveryMimicPokemonForDungeon(this.__internal__currentDungeonData.dungeon);
 
             // Determine if the beast ball is the only catching option
             this.__internal__currentDungeonData.needsBeastBall =
@@ -388,9 +397,16 @@ class AutomationFocusPokerusCure
      */
     static __internal__doesDungeonHaveAnyPokemonNeedingCure(dungeon, onlyConsiderAvailableContagiousPokemons = false)
     {
+        // Check for pokémons needing cure in the standard pokemon list
         const pokemonList = this.__internal__getEveryPokemonForDungeon(dungeon, onlyConsiderAvailableContagiousPokemons);
+        if (this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons))
+        {
+            return true;
+        }
 
-        return this.__internal__doesAnyPokemonNeedCuring(pokemonList, onlyConsiderAvailableContagiousPokemons);
+        // Check for pokémons needing cure in the mimic pokemon list
+        const mimicList = this.__internal__getEveryMimicPokemonForDungeon(dungeon);
+        return this.__internal__doesAnyPokemonNeedCuring(mimicList, onlyConsiderAvailableContagiousPokemons);
     }
 
     /**
@@ -574,6 +590,34 @@ class AutomationFocusPokerusCure
 
         // Filter alternate forms, if asked for
         if (onlyConsiderAvailablePokemons && Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
+        {
+            // Alternate forms have a floating point id
+            pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
+        }
+
+        return pokemonList;
+    }
+
+    /**
+     * @brief Gets the list of possible mimic pokémon that can be found in chests for the given @p dungeon
+     *
+     * @param dungeon: The dungeon to get the pokémon of
+     * @param {boolean} onlyConsiderAvailablePokemons: Whether only currently available pokémon should be considered
+     *
+     * @returns The list of pokémon
+     */
+    static __internal__getEveryMimicPokemonForDungeon(dungeon)
+    {
+        let pokemonList = dungeon.normalEncounterList.filter((encounter) =>
+            {
+                // Only consider mimics
+                return encounter.mimic
+                    // Filter hidden entries
+                    && !encounter.hide;
+            }).map(p => p.pokemonName);
+
+        // Filter alternate forms, if asked for
+        if (Automation.Utils.LocalStorage.getValue(this.__internal__advancedSettings.SkipAlternateForms) == "true")
         {
             // Alternate forms have a floating point id
             pokemonList = pokemonList.filter((pokemonName) => Number.isInteger(pokemonMap[pokemonName].id));
