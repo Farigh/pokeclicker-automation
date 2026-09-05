@@ -625,8 +625,8 @@ class AutomationFocusQuests
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
         // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.AutomationRequestedMode = (catchShadows) ? Automation.Dungeon.InternalModes.ForcePokemonFight
-                                                                    : Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+        Automation.Dungeon.AutomationRequestedMode = (catchShadows) ? [ Automation.Dungeon.InternalModes.ForcePokemonFight ]
+                                                                    : [ Automation.Dungeon.InternalModes.ForceDungeonCompletion ];
     }
 
     /**

@@ -376,7 +376,7 @@ class AutomationFocusAchievements
         Automation.Menu.forceAutomationState(Automation.Dungeon.Settings.FeatureEnabled, true);
 
         // Bypass user settings like the stop on pokedex one
-        Automation.Dungeon.AutomationRequestedMode = Automation.Dungeon.InternalModes.ForceDungeonCompletion;
+        Automation.Dungeon.AutomationRequestedModes = [ Automation.Dungeon.InternalModes.ForceDungeonCompletion ];
     }
 
     /**

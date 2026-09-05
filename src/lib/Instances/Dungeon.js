@@ -13,12 +13,12 @@ class AutomationDungeon
                       };
 
     static InternalModes = {
-                               None: 0,
                                ForceDungeonCompletion: 1,
-                               ForcePokemonFight: 2
+                               ForcePokemonFight: 2,
+                               ForceChestOpening: 3
                            };
 
-    static AutomationRequestedMode = this.InternalModes.None;
+    static AutomationRequestedModes = [];
 
     /**
      * @brief Builds the menu
@@ -405,7 +405,7 @@ class AutomationDungeon
         // Cleanup StopAfterThisRun internal mode that was set while the dungeon was not running
         if (this.__internal__stopAfterThisRun)
         {
-            this.AutomationRequestedMode = this.InternalModes.None;
+            this.AutomationRequestedModes = [];
             this.__internal__stopAfterThisRun = false;
         }
 
@@ -429,7 +429,7 @@ class AutomationDungeon
             this.__internal__autoDungeonLoop = null;
 
             // Reset any automation mode
-            this.AutomationRequestedMode = this.InternalModes.None;
+            this.AutomationRequestedModes = [];
             this.__internal__stopAfterThisRun = false;
 
             // Disable automation catch filter
@@ -450,12 +450,12 @@ class AutomationDungeon
      */
     static __internal__dungeonFightLoop()
     {
-        const forceDungeonProcessing = (this.AutomationRequestedMode == this.InternalModes.ForceDungeonCompletion)
-                                    || (this.AutomationRequestedMode == this.InternalModes.ForcePokemonFight);
+        const forceDungeonProcessing = (this.AutomationRequestedModes != []);
 
         const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
-                         && (this.AutomationRequestedMode != this.InternalModes.ForcePokemonFight);
-        const skipChests = (this.__internal__chestMinRarityDropdownList.selectedValue == this.__internal__chestTypes.skipall);
+                         && !this.AutomationRequestedModes.includes(this.InternalModes.ForcePokemonFight);
+        const skipChests = (this.__internal__chestMinRarityDropdownList.selectedValue == this.__internal__chestTypes.skipall)
+                        && !this.AutomationRequestedModes.includes(this.InternalModes.ForceChestOpening);
         const skipBoss = (Automation.Utils.LocalStorage.getValue(this.Settings.SkipBoss) === "true")
                       && !forceDungeonProcessing;
 
@@ -490,7 +490,7 @@ class AutomationDungeon
                 }
 
                 Automation.Menu.forceAutomationState(this.Settings.FeatureEnabled, false);
-                this.AutomationRequestedMode = this.InternalModes.None;
+                this.AutomationRequestedModes = [];
             }
             else
             {
@@ -597,7 +597,7 @@ class AutomationDungeon
                         // Equip the selected pokeball (if None is set, or the automation forced a mode, keep the user in-game setting)
                         const ballToCatchBoss = parseInt(Automation.Utils.LocalStorage.getValue(this.Settings.BossCatchPokeballToUse));
                         if ((ballToCatchBoss != GameConstants.Pokeball.None)
-                            && (this.AutomationRequestedMode == this.InternalModes.None))
+                            && (this.AutomationRequestedModes == []))
                         {
                             Automation.Utils.Pokeball.catchEverythingWith(ballToCatchBoss);
                         }
@@ -920,8 +920,8 @@ class AutomationDungeon
                 }
 
                 // The 'stop on pokedex' feature might be enable and the pokedex already completed
-                if ((this.AutomationRequestedMode != this.InternalModes.ForceDungeonCompletion)
-                    && (this.AutomationRequestedMode != this.InternalModes.ForcePokemonFight)
+                if (!this.AutomationRequestedModes.includes(this.InternalModes.ForceDungeonCompletion)
+                    && !this.AutomationRequestedModes.includes(this.InternalModes.ForcePokemonFight)
                     && (Automation.Utils.LocalStorage.getValue(this.Settings.StopOnPokedex) == "true")
                     && this.__internal__isDungeonCompleted())
                 {
@@ -1003,11 +1003,16 @@ class AutomationDungeon
      */
     static __internal__addChestPosition(cell)
     {
-        // Don't add the chest if its rarity is lower than the user selected one
-        const currentChestRarity = this.__internal__chestTypes[cell.tile.metadata.tier];
-        if (currentChestRarity < this.__internal__chestMinRarityDropdownList.selectedValue)
+        const forceChestOpening = this.AutomationRequestedModes.includes(this.InternalModes.ForceChestOpening);
+
+        if (!forceChestOpening)
         {
-            return;
+            // Don't add the chest if its rarity is lower than the user selected one
+            const currentChestRarity = this.__internal__chestTypes[cell.tile.metadata.tier];
+            if (currentChestRarity < this.__internal__chestMinRarityDropdownList.selectedValue)
+            {
+                return;
+            }
         }
 
         // Don't add the chest if it was already added to the list
@@ -1024,6 +1029,8 @@ class AutomationDungeon
      */
     static __internal__getChestLeftToOpenCount()
     {
+        const forceChestOpening = this.AutomationRequestedModes.includes(this.InternalModes.ForceChestOpening);
+
         let result = 0;
         for (const tile of DungeonRunner.map.board().flat().flat())
         {
@@ -1031,7 +1038,7 @@ class AutomationDungeon
             {
                 const currentChestRarity = Automation.Dungeon.__internal__chestTypes[tile.metadata.tier];
 
-                if (currentChestRarity >= this.__internal__chestMinRarityDropdownList.selectedValue)
+                if (forceChestOpening || (currentChestRarity >= this.__internal__chestMinRarityDropdownList.selectedValue))
                 {
                     result++;
                 }
