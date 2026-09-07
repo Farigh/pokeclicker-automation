@@ -450,7 +450,7 @@ class AutomationDungeon
      */
     static __internal__dungeonFightLoop()
     {
-        const forceDungeonProcessing = (this.AutomationRequestedModes != []);
+        const forceDungeonProcessing = (this.AutomationRequestedModes.length != 0);
 
         const avoidFights = (Automation.Utils.LocalStorage.getValue(this.Settings.AvoidEncounters) === "true")
                          && !this.AutomationRequestedModes.includes(this.InternalModes.ForcePokemonFight);
