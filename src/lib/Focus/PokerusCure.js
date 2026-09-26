@@ -686,6 +686,12 @@ class AutomationFocusPokerusCure
 
         for (const req of requirements)
         {
+            // Ignore null requirements
+            if (req == null)
+            {
+                continue;
+            }
+
             if (Automation.Utils.isInstanceOf(req, "WeatherRequirement"))
             {
                 if (!req.weather.includes(Weather.regionalWeather[region]()))
